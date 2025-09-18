@@ -1,7 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://www.opensymphony.com/sitemesh/page" prefix="page" %>
-<page:title>Home</page:title>
 
 <header class="hero">
     <div class="container">

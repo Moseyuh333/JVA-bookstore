@@ -1,6 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib uri="http://www.opensymphony.com/sitemesh/page" prefix="page" %>
-<page:title>Login</page:title>
 
 <div class="container" style="max-width: 480px;">
   <h2 class="mb-3">Login</h2>
