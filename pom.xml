@@ -78,9 +78,9 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>com.github.jsimone</groupId>
+                                    <groupId>com.heroku</groupId>
                                     <artifactId>webapp-runner</artifactId>
-                                    <version>9.0.56.0</version>
+                                    <version>9.0.81.1</version>
                                     <destFileName>webapp-runner.jar</destFileName>
                                     <outputDirectory>${project.build.directory}/dependency</outputDirectory>
                                 </artifactItem>
