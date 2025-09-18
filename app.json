@@ -1,0 +1,16 @@
+{
+  "name": "JVA Bookstore",
+  "description": "Servlet + JSP/JSTL + JDBC + PostgreSQL + Sitemesh + JWT",
+  "env": {
+    "JWT_SECRET": {
+      "description": "JWT signing secret",
+      "required": false
+    }
+  },
+  "buildpacks": [
+    {"url": "heroku/java"}
+  ],
+  "addons": [
+    "heroku-postgresql:hobby-dev"
+  ]
+}
