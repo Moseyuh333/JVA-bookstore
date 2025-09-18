@@ -6,7 +6,9 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import java.util.Date;
 
 public class JwtUtil {
-    private static final String SECRET_KEY = "your_secret_key";
+    private static final String DEFAULT_SECRET = "your_secret_key";
+    private static final String SECRET_KEY = System.getenv("JWT_SECRET") != null && !System.getenv("JWT_SECRET").isEmpty()
+            ? System.getenv("JWT_SECRET") : DEFAULT_SECRET;
     private static final long EXPIRATION_TIME = 86400000; // 1 day in ms
 
     public static String generateToken(String username) {
