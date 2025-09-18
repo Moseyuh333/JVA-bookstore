@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE sitemesh PUBLIC "-//OpenSymphony Group//DTD SiteMesh 2.0 Decorators//EN" "http://www.opensymphony.com/dtds/sitemesh-2.0-decorators.dtd">
 <sitemesh>
     <property name="decorators-file">/WEB-INF/decorators.xml</property>
 </sitemesh>

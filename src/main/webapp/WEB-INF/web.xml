@@ -7,6 +7,10 @@
     <filter>
         <filter-name>sitemesh</filter-name>
         <filter-class>com.opensymphony.sitemesh.webapp.SiteMeshFilter</filter-class>
+        <init-param>
+            <param-name>config</param-name>
+            <param-value>/WEB-INF/sitemesh.xml</param-value>
+        </init-param>
     </filter>
     <filter-mapping>
         <filter-name>sitemesh</filter-name>
