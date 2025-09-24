@@ -1,0 +1,12 @@
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\BookstoreApplication.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\controller\BookApiController.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\controller\BookController.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\controller\HomeController.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\entity\Book.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\entity\Category.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\entity\Review.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\repository\BookRepository.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\repository\CategoryRepository.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\repository\ReviewRepository.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\service\BookService.java
+C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\service\ReviewService.java

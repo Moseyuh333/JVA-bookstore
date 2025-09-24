@@ -1,0 +1,12 @@
+com\example\bookstore\controller\BookController.class
+com\example\bookstore\service\BookService.class
+com\example\bookstore\entity\Review.class
+com\example\bookstore\repository\ReviewRepository.class
+com\example\bookstore\controller\BookApiController.class
+com\example\bookstore\BookstoreApplication.class
+com\example\bookstore\service\ReviewService.class
+com\example\bookstore\repository\BookRepository.class
+com\example\bookstore\entity\Category.class
+com\example\bookstore\repository\CategoryRepository.class
+com\example\bookstore\entity\Book.class
+com\example\bookstore\controller\HomeController.class
