@@ -1,12 +1,12 @@
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\BookstoreApplication.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\controller\BookApiController.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\controller\BookController.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\controller\HomeController.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\entity\Book.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\entity\Category.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\entity\Review.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\repository\BookRepository.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\repository\CategoryRepository.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\repository\ReviewRepository.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\service\BookService.java
-C:\Users\Admin\Downloads\bookstore-detail-jsp\src\main\java\com\example\bookstore\service\ReviewService.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\BookstoreApplication.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\controller\BookApiController.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\controller\BookController.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\controller\HomeController.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\entity\Book.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\entity\Category.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\entity\Review.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\repository\BookRepository.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\repository\CategoryRepository.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\repository\ReviewRepository.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\service\BookService.java
+D:\LT WEB\workspace3\bookstore-detail\src\main\java\bookstore\service\ReviewService.java
