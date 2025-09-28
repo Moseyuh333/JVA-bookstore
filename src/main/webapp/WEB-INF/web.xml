@@ -26,26 +26,7 @@
         <location>/error.jsp</location>
     </error-page>
 
-    <!-- Servlet Mappings -->
-    <servlet>
-        <servlet-name>AuthServlet</servlet-name>
-        <servlet-class>web.AuthServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>AuthServlet</servlet-name>
-        <url-pattern>/api/login</url-pattern>
-        <url-pattern>/api/auth/register</url-pattern>
-        <url-pattern>/api/auth/reset-password</url-pattern>
-    </servlet-mapping>
-
-    <servlet>
-        <servlet-name>VerifyServlet</servlet-name>
-        <servlet-class>web.VerifyServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>VerifyServlet</servlet-name>
-        <url-pattern>/api/auth/verify</url-pattern>
-    </servlet-mapping>
+    <!-- Servlet mappings handled by @WebServlet annotations -->
 
     <servlet>
         <servlet-name>ResetServlet</servlet-name>
