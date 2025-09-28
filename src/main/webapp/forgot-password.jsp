@@ -39,7 +39,7 @@
     </form>
     <div id="forgotResult" class="mt-3"></div>
     <div class="mt-3 text-center">
-      <a href="login.jsp" style="color:#3949ab;">Back to Login</a>
+      <a href="index.jsp" style="color:#3949ab;">🏠 Home</a> | <a href="login.jsp" style="color:#3949ab;">Back to Login</a>
     </div>
   </div>
   <script>

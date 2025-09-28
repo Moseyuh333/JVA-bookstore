@@ -45,7 +45,7 @@
   <button class="btn btn-primary w-100" style="background:#3949ab;border:none;" type="submit">Login</button>
   </form>
   <div class="mt-3 text-center">
-    <a href="register.jsp" style="color:#3949ab;">Register</a> | <a href="forgot-password.jsp" style="color:#3949ab;">Forgot Password?</a>
+    <a href="index.jsp" style="color:#3949ab;">🏠 Home</a> | <a href="register.jsp" style="color:#3949ab;">Register</a> | <a href="forgot-password.jsp" style="color:#3949ab;">Forgot Password?</a>
   </div>
   <hr/>
   <div>
