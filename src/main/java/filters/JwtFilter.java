@@ -12,6 +12,11 @@ import java.io.IOException;
 public class JwtFilter implements Filter {
 
     @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        // Initialization if needed
+    }
+
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
@@ -28,5 +33,10 @@ public class JwtFilter implements Filter {
         resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         resp.setContentType("application/json");
         resp.getWriter().write("{\"error\":\"Unauthorized\"}");
+    }
+
+    @Override
+    public void destroy() {
+        // Cleanup if needed
     }
 }

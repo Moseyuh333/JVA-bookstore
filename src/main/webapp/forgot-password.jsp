@@ -25,7 +25,7 @@
 <body>
   <div class="auth-card" style="max-width: 480px; width: 90%;">
     <div class="text-center my-4">
-      <div style="width:64px;height:64px;background:#3949ab;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;color:white;font-size:28px;font-weight:bold;">NK</div>
+      <img src="assets/img/nkbookstore-logo.png" alt="NKbookstore Logo" style="width:64px;height:64px;border-radius:50%;">
       <h2 class="mb-1 mt-3" style="color:#1a237e;font-weight:700;letter-spacing:1px;">NKbookstore</h2>
       <div class="text-muted small">by bibo090809@gmail.com</div>
     </div>
