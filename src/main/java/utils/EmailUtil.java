@@ -35,7 +35,8 @@ public class EmailUtil {
 
     public static void sendVerificationEmail(String toEmail, String token, String username) {
         String subject = "Verify your NKbookstore account";
-        String verificationUrl = "http://localhost:8080/api/auth/verify?token=" + token;
+        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "https://jva-bookstore.herokuapp.com";
+        String verificationUrl = baseUrl + "/api/auth/verify?token=" + token;
         String body = "Hello " + username + ",\n\n" +
                       "Please click the following link to verify your email:\n" +
                       verificationUrl + "\n\n" +
@@ -47,7 +48,8 @@ public class EmailUtil {
 
     public static void sendResetEmail(String toEmail, String token, String username) {
         String subject = "Reset your NKbookstore password";
-        String resetUrl = "http://localhost:8080/reset-password.jsp?token=" + token; // Assume a reset page
+        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "https://jva-bookstore.herokuapp.com";
+        String resetUrl = baseUrl + "/reset-password.jsp?token=" + token;
         String body = "Hello " + username + ",\n\n" +
                       "You requested a password reset. Click the link below to set a new password:\n" +
                       resetUrl + "\n\n" +
