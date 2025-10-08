@@ -21,6 +21,14 @@ public class JwtFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
+        String path = req.getRequestURI();
+        System.out.println("JwtFilter: Request URI = " + path);
+        // Allow public endpoints without token
+        if (path.equals("/api/auth/register") || path.equals("/api/login") || path.equals("/api/auth/reset-password") || path.equals("/api/auth/verify")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = req.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
