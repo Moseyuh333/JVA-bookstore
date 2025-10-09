@@ -72,6 +72,17 @@ public class DBUtil {
                     }
                 }
 
+                // Add reset_token column if missing
+                try {
+                    String addResetTokenSQL = "ALTER TABLE users ADD COLUMN reset_token VARCHAR(255)";
+                    stmt.execute(addResetTokenSQL);
+                } catch (SQLException e) {
+                    // Ignore if column already exists
+                    if (!e.getMessage().contains("already exists")) {
+                        throw e;
+                    }
+                }
+
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)");
