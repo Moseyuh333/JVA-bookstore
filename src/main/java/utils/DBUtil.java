@@ -61,6 +61,17 @@ public class DBUtil {
                     ")";
                 stmt.execute(createTableSQL);
 
+                // Add verification_token column if missing
+                try {
+                    String addColumnSQL = "ALTER TABLE users ADD COLUMN verification_token VARCHAR(255)";
+                    stmt.execute(addColumnSQL);
+                } catch (SQLException e) {
+                    // Ignore if column already exists
+                    if (!e.getMessage().contains("already exists")) {
+                        throw e;
+                    }
+                }
+
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)");
