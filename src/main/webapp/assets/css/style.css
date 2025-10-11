@@ -1,9 +1,195 @@
 /* Basic site styles */
 :root{
   --primary: #0d6efd;
+  --secondary: #6610f2;
+  --accent: #ff6b6b;
+  --dark: #2c3e50;
+  --light: #f8f9fa;
+  --shadow: 0 4px 20px rgba(0,0,0,0.1);
+  --transition: all 0.3s ease;
 }
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  padding: 5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+  opacity: 0.3;
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+.search-bar {
+  max-width: 600px;
+  margin: 2rem auto;
+}
+.search-bar .input-group {
+  box-shadow: var(--shadow);
+  border-radius: 50px;
+  overflow: hidden;
+}
+.search-bar .form-control {
+  border: none;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+}
+.search-bar .btn {
+  border: none;
+  padding: 0 2rem;
+  background: var(--accent);
+  color: white;
+}
+
+/* Book Cards */
+.book-card {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  height: 100%;
+  border: none;
+}
+.book-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+.book-image {
+  height: 250px;
+  background: var(--light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  color: var(--primary);
+}
+.book-info {
+  padding: 1.5rem;
+}
+.book-title {
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 0.5rem;
+}
+.book-author {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.book-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.book-price .original {
+  text-decoration: line-through;
+  color: #6c757d;
+  font-size: 1rem;
+  margin-right: 0.5rem;
+}
+
+/* Sections */
+.section-title {
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 3rem;
+  text-align: center;
+}
+.section-bg-light {
+  background: var(--light);
+  padding: 5rem 0;
+}
+.section-bg-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  padding: 5rem 0;
+}
+
+/* Flash Sale */
+.flash-sale {
+  background: linear-gradient(135deg, var(--accent) 0%, #ff8e53 100%);
+  color: white;
+  padding: 3rem 0;
+  text-align: center;
+}
+.flash-timer {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 1rem 0;
+}
+.discount-badge {
+  background: white;
+  color: var(--accent);
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-weight: 600;
+}
+
+/* Carousel */
+.carousel-item img {
+  height: 400px;
+  object-fit: cover;
+}
+
+/* Categories */
+.category-card {
+  background: white;
+  border-radius: 10px;
+  padding: 2rem;
+  text-align: center;
+  transition: var(--transition);
+  box-shadow: var(--shadow);
+}
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+.category-icon {
+  font-size: 3rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+/* Newsletter */
+.newsletter {
+  background: var(--dark);
+  color: white;
+  padding: 3rem 0;
+  text-align: center;
+}
+.newsletter .input-group {
+  max-width: 500px;
+  margin: 2rem auto 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 3rem 0;
+  }
+  .book-image {
+    height: 200px;
+  }
+  .section-bg-light, .section-bg-primary {
+    padding: 3rem 0;
+  }
+}
+
+/* Legacy styles */
 header.hero{
-  background: linear-gradient(135deg, var(--primary), #6610f2);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: #fff;
   padding: 4rem 0;
   border-bottom-left-radius: 1.5rem;

@@ -18,14 +18,36 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand fw-semibold" href="${pageContext.request.contextPath}/">JVA Bookstore</a>
+            <a class="navbar-brand fw-semibold" href="${pageContext.request.contextPath}/">NK Bookstore</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="nav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item"><a class="nav-link" href="${pageContext.request.contextPath}/">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="${pageContext.request.contextPath}/health">Health</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Categories
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
+                            <li><a class="dropdown-item" href="#">Fiction</a></li>
+                            <li><a class="dropdown-item" href="#">Non-Fiction</a></li>
+                            <li><a class="dropdown-item" href="#">Children's Books</a></li>
+                            <li><a class="dropdown-item" href="#">Educational</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="#deals">Deals</a></li>
+                </ul>
+                <form class="d-flex me-3" style="max-width: 300px;">
+                    <input class="form-control me-2" type="search" placeholder="Search books..." aria-label="Search">
+                    <button class="btn btn-outline-light" type="submit"><i class="fas fa-search"></i></button>
+                </form>
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="login.jsp">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="register.jsp">Register</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-secondary">0</span></a>
+                    </li>
                 </ul>
             </div>
         </div>
