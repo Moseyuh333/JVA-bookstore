@@ -140,6 +140,19 @@ public class DBUtil {
         }
     }
 
+    public static boolean isUserVerified(String username) throws SQLException {
+        String sql = "SELECT verified FROM users WHERE username = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBoolean("verified");
+                }
+                return false;
+            }
+        }
+    }
+
     public static String getUserByEmail(String email) throws SQLException {
         String sql = "SELECT username FROM users WHERE email = ?";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {

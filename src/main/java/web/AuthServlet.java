@@ -59,20 +59,14 @@ public class AuthServlet extends HttpServlet {
             return;
         }
 
-        String hash = DBUtil.getUserPasswordHash(username);
-        // Fetch verified status
-        String sql = "SELECT verified FROM users WHERE username = ?";
-        try (var conn = DBUtil.getConnection(); var pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
-            try (var rs = pstmt.executeQuery()) {
-                if (rs.next() && !rs.getBoolean("verified")) {
-                    resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    out.write("{\"error\":\"Account not verified. Please check your email.\"}");
-                    return;
-                }
-            }
+        // Check if user is verified
+        if (!DBUtil.isUserVerified(username)) {
+            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            out.write("{\"error\":\"Account not verified. Please check your email.\"}");
+            return;
         }
 
+        String hash = DBUtil.getUserPasswordHash(username);
         if (hash != null && BCrypt.checkpw(password, hash)) {
             String token = JwtUtil.generateToken(username);
             out.write("{\"token\":\"" + token + "\", \"message\":\"Login successful\"}");
@@ -111,7 +105,7 @@ public class AuthServlet extends HttpServlet {
         DBUtil.createUser(username, email, hash, verificationToken);
         EmailUtil.sendVerificationEmail(email, verificationToken, username);
 
-        out.write("{\"message\":\"Registration successful. Please check your email to verify your account.\"}");
+        out.write("{\"message\":\"Registration pending. Please check your email to verify your account before logging in.\"}");
     }
 
     private void handleResetPassword(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {
