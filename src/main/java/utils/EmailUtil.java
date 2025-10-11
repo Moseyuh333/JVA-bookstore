@@ -16,15 +16,24 @@ public class EmailUtil {
     private static Session session;
 
     static {
-        try (InputStream input = EmailUtil.class.getClassLoader().getResourceAsStream("email.properties")) {
-            props = new Properties();
-            props.load(input);
-        } catch (IOException e) {
-            System.err.println("Failed to load email.properties: " + e.getMessage());
+        props = new Properties();
+        String host = System.getenv("SMTP_HOST");
+        if (host != null) {
+            props.setProperty("mail.smtp.host", host);
+            String port = System.getenv("SMTP_PORT");
+            props.setProperty("mail.smtp.port", port != null ? port : "587");
+            props.setProperty("mail.smtp.auth", "true");
+            props.setProperty("mail.smtp.starttls.enable", "true");
+        } else {
+            try (InputStream input = EmailUtil.class.getClassLoader().getResourceAsStream("email.properties")) {
+                props.load(input);
+            } catch (IOException e) {
+                System.err.println("Failed to load email.properties: " + e.getMessage());
+            }
         }
 
-        final String username = props.getProperty("smtp.user");
-        final String password = props.getProperty("smtp.pass");
+        final String username = System.getenv("SMTP_USER") != null ? System.getenv("SMTP_USER") : props.getProperty("smtp.user");
+        final String password = System.getenv("SMTP_PASS") != null ? System.getenv("SMTP_PASS") : props.getProperty("smtp.pass");
 
         session = Session.getInstance(props, new javax.mail.Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
@@ -63,7 +72,8 @@ public class EmailUtil {
     private static void sendEmail(String to, String subject, String body) {
         try {
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(props.getProperty("smtp.from")));
+            String from = System.getenv("SMTP_FROM") != null ? System.getenv("SMTP_FROM") : props.getProperty("smtp.from");
+            message.setFrom(new InternetAddress(from));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
             message.setSubject(subject);
             message.setText(body);
