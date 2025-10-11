@@ -5,8 +5,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><decorator:title default="JVA Bookstore"/></title>
+    <title><decorator:title default="NK Bookstore"/></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/style.css" />
     <decorator:head/>
     <style>
@@ -52,11 +53,11 @@
             </div>
         </div>
     </nav>
-    <main class="container my-5">
+    <main class="my-5">
         <decorator:body/>
     </main>
     <footer class="border-top py-3 text-center text-muted small">
-        <div class="container">© <span id="year"></span> JVA Bookstore</div>
+        <div class="container">© <span id="year"></span> NK Bookstore</div>
     </footer>
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
