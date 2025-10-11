@@ -1,117 +1,332 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookish Bliss Haven | Home</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
+        body { font-family: 'Roboto', sans-serif; }
+        .hero-bg { background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('http://static.photos/books/1200x630/42'); background-size: cover; background-position: center; }
+        .book-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .title-font { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-amber-800 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <a href="index.jsp" class="flex items-center space-x-2">
+                    <i data-feather="book-open" class="w-6 h-6"></i>
+                    <span class="title-font text-xl font-bold">Bookish Bliss Haven</span>
+                </a>
+                <div class="hidden md:flex space-x-8">
+                    <a href="index.jsp" class="hover:text-amber-200 font-medium">Home</a>
+                    <a href="shop.jsp" class="hover:text-amber-200 font-medium">Shop</a>
+                    <a href="collections.jsp" class="hover:text-amber-200 font-medium">Collections</a>
+                    <a href="about.jsp" class="hover:text-amber-200 font-medium">About</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="login.jsp" class="p-2 rounded-full hover:bg-amber-700">
+                        <i data-feather="user" class="w-5 h-5"></i>
+                    </a>
+                    <a href="register.jsp" class="p-2 rounded-full hover:bg-amber-700">
+                        <i data-feather="edit" class="w-5 h-5"></i>
+                    </a>
+                    <a href="forgot-password.jsp" class="p-2 rounded-full hover:bg-amber-700">
+                        <i data-feather="key" class="w-5 h-5"></i>
+                    </a>
+                    <button class="p-2 rounded-full hover:bg-amber-700">
+                        <i data-feather="search" class="w-5 h-5"></i>
+                    </button>
+                    <button class="p-2 rounded-full hover:bg-amber-700">
+                        <i data-feather="shopping-cart" class="w-5 h-5"></i>
+                        <span class="sr-only">Cart</span>
+                    </button>
+                    <button class="md:hidden p-2 rounded-full hover:bg-amber-700">
+                        <i data-feather="menu" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-<section class="py-5 home-hero">
-    <div class="container">
-        <div class="row g-4 align-items-stretch">
-            <div class="col-xl-3 d-none d-xl-block">
-                <div class="card category-panel shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <p class="text-uppercase text-muted small fw-semibold mb-3">Danh mục nổi bật</p>
-                        <div class="d-grid gap-2">
-                            <a href="#" class="btn btn-outline-primary btn-sm text-start d-flex align-items-center gap-2">
-                                <i class="fas fa-fire"></i><span>Sách bán chạy</span>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary btn-sm text-start d-flex align-items-center gap-2">
-                                <i class="fas fa-book-open"></i><span>Văn học Việt Nam</span>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary btn-sm text-start d-flex align-items-center gap-2">
-                                <i class="fas fa-globe-americas"></i><span>Văn học nước ngoài</span>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary btn-sm text-start d-flex align-items-center gap-2">
-                                <i class="fas fa-lightbulb"></i><span>Kỹ năng sống</span>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary btn-sm text-start d-flex align-items-center gap-2">
-                                <i class="fas fa-rocket"></i><span>Khám phá - STEM</span>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary btn-sm text-start d-flex align-items-center gap-2">
-                                <i class="fas fa-child"></i><span>Sách thiếu nhi</span>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary btn-sm text-start d-flex align-items-center gap-2">
-                                <i class="fas fa-graduation-cap"></i><span>Giáo khoa - tham khảo</span>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary btn-sm text-start d-flex align-items-center gap-2">
-                                <i class="fas fa-percent"></i><span>Ưu đãi đang diễn ra</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+    <!-- Hero Section -->
+    <section class="hero-bg text-white py-32 px-4">
+        <div class="container mx-auto text-center">
+            <h1 class="title-font text-4xl md:text-6xl font-bold mb-6">Discover Your Next Favorite Read</h1>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">Explore our curated collection of timeless classics and contemporary masterpieces</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full transition duration-300">
+                    Browse Collection
+                </button>
+                <button class="bg-white hover:bg-gray-100 text-amber-800 font-bold py-3 px-8 rounded-full transition duration-300">
+                    Join Our Book Club
+                </button>
             </div>
-            <div class="col-xl-6 col-lg-7">
-                <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-indicators">
-                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-                    </div>
-                    <div class="carousel-inner shadow-sm">
-                        <div class="carousel-item active" data-bs-interval="6000">
-                            <div class="card border-0 text-white hero-slide" style="background: linear-gradient(135deg, #f25f2a 0%, #f6a93a 100%);">
-                                <div class="card-body p-5">
-                                    <span class="badge text-white">Sách mới</span>
-                                    <h2 class="fw-bold display-6 mb-2">Bộ sưu tập hè 2024</h2>
-                                    <p>Chọn lọc những tựa sách truyền cảm hứng cho hành trình học hỏi và thư giãn của bạn.</p>
-                                    <a href="#" class="btn btn-light btn-lg">Khám phá ngay</a>
-                                </div>
-                            </div>
+        </div>
+    </section>
+
+    <!-- Featured Books -->
+    <section class="py-16 px-4">
+        <div class="container mx-auto">
+            <h2 class="title-font text-3xl font-bold text-center mb-12">Featured Books</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                <!-- Book Card 1 -->
+                <div class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
+                    <img src="http://static.photos/books/320x240/1" alt="Book Cover" class="w-full h-64 object-cover">
+                    <div class="p-4">
+                        <h3 class="title-font font-bold text-lg mb-1">The Silent Patient</h3>
+                        <p class="text-gray-600 text-sm mb-2">Alex Michaelides</p>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-amber-700">$14.99</span>
+                            <button class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
+                                Add to Cart
+                            </button>
                         </div>
-                        <div class="carousel-item" data-bs-interval="6000">
-                            <div class="card border-0 text-white hero-slide" style="background: linear-gradient(135deg, #1b3151 0%, #314e78 100%);">
-                                <div class="card-body p-5">
-                                    <span class="badge text-white">Combo ưu đãi</span>
-                                    <h2 class="fw-bold display-6 mb-2">Giảm đến 45% - Chỉ cuối tuần</h2>
-                                    <p>Ưu tiên cho các combo kỹ năng và sách ngoại ngữ. Số lượng quà tặng giới hạn.</p>
-                                    <a href="#" class="btn btn-outline-light btn-lg">Đặt mua ngay</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="carousel-item" data-bs-interval="6000">
-                            <div class="card border-0 text-white hero-slide" style="background: linear-gradient(135deg, #f8b400 0%, #f1592a 100%);">
-                                <div class="card-body p-5">
-                                    <span class="badge text-white">Thành viên</span>
-                                    <h2 class="fw-bold display-6 mb-2">Góc đọc giả thân thiết</h2>
-                                    <p>Tích điểm nhanh hơn, nhận voucher độc quyền và ưu đãi sinh nhật hấp dẫn.</p>
-                                    <a href="register.jsp" class="btn btn-light btn-lg">Tham gia hội viên</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                </div>
-            </div>
-            <div class="col-xl-3 d-none d-xl-flex flex-column gap-3">
-                <div class="card border-0 shadow-sm flex-grow-1">
-                    <div class="card-body">
-                        <span class="badge bg-warning-subtle text-warning fw-semibold mb-2">-15%</span>
-                        <h5 class="fw-bold text-secondary">Gói học tập mới</h5>
-                        <p class="text-muted mb-3">Bộ sách luyện thi THPT Quốc gia 2024 kèm flashcard và đề mẫu.</p>
-                        <a href="#" class="btn btn-link text-decoration-none fw-semibold text-primary px-0">Xem chi tiết</a>
                     </div>
                 </div>
-                <div class="card border-0 shadow-sm flex-grow-1">
-                    <div class="card-body d-flex flex-column gap-3">
-                        <div>
-                            <h5 class="fw-bold text-secondary mb-1">Miễn phí vận chuyển</h5>
-                            <p class="text-muted mb-0">Áp dụng cho đơn từ 299.000đ tại HCM &amp; Hà Nội - giao nhanh 2h.</p>
+                <!-- Book Card 2 -->
+                <div class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
+                    <img src="http://static.photos/books/320x240/2" alt="Book Cover" class="w-full h-64 object-cover">
+                    <div class="p-4">
+                        <h3 class="title-font font-bold text-lg mb-1">Educated</h3>
+                        <p class="text-gray-600 text-sm mb-2">Tara Westover</p>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-amber-700">$12.99</span>
+                            <button class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
+                                Add to Cart
+                            </button>
                         </div>
-                        <div class="bg-light rounded-3 px-3 py-2 text-secondary fw-semibold">
-                            <i class="fas fa-phone-volume me-2"></i>Hotline: 1900 9999
+                    </div>
+                </div>
+                <!-- Book Card 3 -->
+                <div class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
+                    <img src="http://static.photos/books/320x240/3" alt="Book Cover" class="w-full h-64 object-cover">
+                    <div class="p-4">
+                        <h3 class="title-font font-bold text-lg mb-1">Where the Crawdads Sing</h3>
+                        <p class="text-gray-600 text-sm mb-2">Delia Owens</p>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-amber-700">$15.99</span>
+                            <button class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Book Card 4 -->
+                <div class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
+                    <img src="http://static.photos/books/320x240/4" alt="Book Cover" class="w-full h-64 object-cover">
+                    <div class="p-4">
+                        <h3 class="title-font font-bold text-lg mb-1">Atomic Habits</h3>
+                        <p class="text-gray-600 text-sm mb-2">James Clear</p>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-amber-700">$16.99</span>
+                            <button class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
+                                Add to Cart
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="py-5 bg-white">
+    <!-- Why Choose Us -->
+    <section class="bg-amber-50 py-16 px-4">
+        <div class="container mx-auto">
+            <h2 class="title-font text-3xl font-bold text-center mb-12">Why Choose Us</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center p-6">
+                    <div class="bg-amber-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4">
+                        <i data-feather="award" class="w-8 h-8 text-amber-700"></i>
+                    </div>
+                    <h3 class="title-font font-bold text-xl mb-2">Curated Selection</h3>
+                    <p class="text-gray-700">Handpicked books by our team of literary experts to ensure quality reading.</p>
+                </div>
+                <div class="text-center p-6">
+                    <div class="bg-amber-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4">
+                        <i data-feather="truck" class="w-8 h-8 text-amber-700"></i>
+                    </div>
+                    <h3 class="title-font font-bold text-xl mb-2">Fast Shipping</h3>
+                    <p class="text-gray-700">Get your books delivered quickly with our reliable shipping partners.</p>
+                </div>
+                <div class="text-center p-6">
+                    <div class="bg-amber-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4">
+                        <i data-feather="heart" class="w-8 h-8 text-amber-700"></i>
+                    </div>
+                    <h3 class="title-font font-bold text-xl mb-2">Reading Community</h3>
+                    <p class="text-gray-700">Join our vibrant community of book lovers for discussions and events.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-16 px-4 bg-white">
+        <div class="container mx-auto">
+            <h2 class="title-font text-3xl font-bold text-center mb-12">What Our Readers Say</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <img src="http://static.photos/people/100x100/1" alt="Reader" class="w-12 h-12 rounded-full mr-4 object-cover">
+                        <div>
+                            <h4 class="font-bold">Sarah Johnson</h4>
+                            <div class="flex text-amber-500">
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 italic">"The best selection of books I've found online! Their recommendations are always spot on."</p>
+                </div>
+                <!-- Testimonial 2 -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <img src="http://static.photos/people/100x100/2" alt="Reader" class="w-12 h-12 rounded-full mr-4 object-cover">
+                        <div>
+                            <h4 class="font-bold">Michael Chen</h4>
+                            <div class="flex text-amber-500">
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 italic">"Fast delivery and excellent packaging. My books always arrive in perfect condition."</p>
+                </div>
+                <!-- Testimonial 3 -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <img src="http://static.photos/people/100x100/3" alt="Reader" class="w-12 h-12 rounded-full mr-4 object-cover">
+                        <div>
+                            <h4 class="font-bold">Emma Rodriguez</h4>
+                            <div class="flex text-amber-500">
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4 fill-current"></i>
+                                <i data-feather="star" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 italic">"Love their seasonal reading lists and book club recommendations. Found so many new favorites!"</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="bg-amber-800 text-white py-16 px-4">
+        <div class="container mx-auto max-w-4xl text-center">
+            <h2 class="title-font text-3xl font-bold mb-4">Stay in the Literary Loop</h2>
+            <p class="mb-8 text-amber-100 max-w-2xl mx-auto">Subscribe to our newsletter for new releases, exclusive deals, and reading recommendations.</p>
+            <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto sm:max-w-xl">
+                <input type="email" placeholder="Your email address" class="flex-grow px-4 py-3 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <button type="submit" class="bg-white hover:bg-gray-100 text-amber-800 font-bold py-3 px-6 rounded-full transition duration-300 whitespace-nowrap">
+                    Subscribe
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300 py-12 px-4">
+        <div class="container mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="title-font text-white text-xl font-bold mb-4">Bookish Bliss Haven</h3>
+                    <p class="mb-4">Your trusted source for quality books and literary inspiration.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="hover:text-white">
+                            <i data-feather="facebook" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="hover:text-white">
+                            <i data-feather="twitter" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="hover:text-white">
+                            <i data-feather="instagram" class="w-5 h-5"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold mb-4">Shop</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-white">New Arrivals</a></li>
+                        <li><a href="#" class="hover:text-white">Bestsellers</a></li>
+                        <li><a href="#" class="hover:text-white">Fiction</a></li>
+                        <li><a href="#" class="hover:text-white">Non-Fiction</a></li>
+                        <li><a href="#" class="hover:text-white">Gift Cards</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold mb-4">Help</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-white">FAQ</a></li>
+                        <li><a href="#" class="hover:text-white">Shipping</a></li>
+                        <li><a href="#" class="hover:text-white">Returns</a></li>
+                        <li><a href="#" class="hover:text-white">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold mb-4">Contact</h4>
+                    <address class="not-italic space-y-2">
+                        <div class="flex items-start">
+                            <i data-feather="map-pin" class="w-5 h-5 mr-2 mt-0.5"></i>
+                            <span>123 Literary Lane, Booktown, BT12 3AB</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i data-feather="mail" class="w-5 h-5 mr-2"></i>
+                            <a href="mailto:info@bookishhavn.com" class="hover:text-white">info@bookishhaven.com</a>
+                        </div>
+                        <div class="flex items-center">
+                            <i data-feather="phone" class="w-5 h-5 mr-2"></i>
+                            <a href="tel:+1234567890" class="hover:text-white">(123) 456-7890</a>
+                        </div>
+                    </address>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
+                <p>&copy; 2023 Bookish Bliss Haven. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        feather.replace();
+        // Simple animation for book cards on scroll
+        document.addEventListener('DOMContentLoaded', function() {
+            const bookCards = document.querySelectorAll('.book-card');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+            bookCards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.6s ease-out';
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>
     <div class="container">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
             <div class="col">
