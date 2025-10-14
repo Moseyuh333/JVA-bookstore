@@ -69,4 +69,12 @@
         <servlet-name>HealthServlet</servlet-name>
         <url-pattern>/api/health</url-pattern>
     </servlet-mapping>
+        <servlet>
+        <servlet-name>BookDetailServlet</servlet-name>
+        <servlet-class>web.BookDetailServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>BookDetailServlet</servlet-name>
+        <url-pattern>/books/detail</url-pattern>
+    </servlet-mapping>
 </web-app>
