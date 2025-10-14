@@ -21,8 +21,8 @@ public class AuthServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
         String path = req.getServletPath();
-
-        try (PrintWriter out = resp.getWriter()) {
+        PrintWriter out = resp.getWriter();
+        try {
             if ("/api/login".equals(path)) {
                 handleLogin(req, resp, out);
             } else if ("/api/auth/register".equals(path)) {
@@ -35,9 +35,9 @@ public class AuthServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            try (PrintWriter out = resp.getWriter()) {
-                out.write("{\"error\":\"" + e.getMessage() + "\"}");
-            }
+            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+        } finally {
+            out.flush();
         }
     }
 
