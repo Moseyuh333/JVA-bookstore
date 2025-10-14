@@ -4,9 +4,35 @@
     <html lang="en">
 
     <head>
-      <meta charset="UTF-8">
-      <title>${bookTitle} | Book Details</title>
-      <script src="https://cdn.tailwindcss.com"></script>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${bookTitle} | Book Details</title>
+        <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://unpkg.com/feather-icons"></script>
+        <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
+
+            body {
+                font-family: 'Roboto', sans-serif;
+            }
+
+            .hero-bg {
+                background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('http://static.photos/books/1200x630/42');
+                background-size: cover;
+                background-position: center;
+            }
+
+            .book-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+
+            .title-font {
+                font-family: 'Playfair Display', serif;
+            }
+        </style>
     </head>
 
     <body class="bg-[#111] text-gray-100 font-sans">
