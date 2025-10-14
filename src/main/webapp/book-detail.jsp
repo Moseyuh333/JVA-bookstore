@@ -1,106 +1,67 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>${bookTitle} | Book Details</title>
+  <title>Book Details | Bookish Bliss Haven</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
+    body { font-family: 'Roboto', sans-serif; background-color: #111; color: #eee; }
+    .title-font { font-family: 'Playfair Display', serif; }
+  </style>
 </head>
-
-<body class="bg-[#111] text-gray-100 font-sans">
-  <!-- Navbar -->
-  <nav class="bg-[#5C2E0C] text-white shadow-md">
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <nav class="bg-amber-800 text-white shadow-lg">
     <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-      <a href="${pageContext.request.contextPath}/index.jsp" class="flex items-center space-x-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6h4m6 4V6a2 2 0 00-2-2H4a2 2 0 00-2 2v14l4-2 4 2 4-2 4 2 4-2z"/>
-        </svg>
-        <span class="font-bold text-lg">Bookish Bliss Haven</span>
+      <a href="${pageContext.request.contextPath}/index.jsp" class="flex items-center gap-2 text-xl font-bold title-font">
+        <i data-feather="book-open"></i> Bookish Bliss Haven
       </a>
+      <a href="${pageContext.request.contextPath}/index.jsp" class="text-amber-200 hover:text-white">← Back to Home</a>
     </div>
   </nav>
 
-  <!-- Main content -->
-  <div class="container mx-auto py-12 px-6">
-    <c:if test="${not empty error}">
-      <div class="bg-red-800/60 text-red-200 px-4 py-3 rounded">${error}</div>
-    </c:if>
-
-    <c:if test="${empty error}">
-      <div class="flex flex-col md:flex-row bg-[#1b1b1b] rounded-lg shadow-lg overflow-hidden">
-        <!-- Book cover -->
-        <div class="md:w-1/3 flex justify-center items-center bg-[#2b2b2b] p-6">
-          <img src="<c:out value='${bookImage != null && bookImage ne "" ? bookImage : "https://placehold.co/300x400"}'/>"
-               alt="${bookTitle}" class="rounded-lg shadow-md max-h-[480px] object-cover">
+  <!-- Book detail section -->
+  <main class="flex-grow">
+    <div class="container mx-auto px-6 py-12">
+      <div class="bg-neutral-900 rounded-xl shadow-lg overflow-hidden grid grid-cols-1 md:grid-cols-2">
+        <!-- Book Image -->
+        <div class="flex items-center justify-center bg-neutral-800 p-8">
+          <img src="${book.coverImage}" alt="${book.title}"
+               class="max-h-[400px] rounded shadow-md object-contain">
         </div>
 
-        <!-- Book info -->
-        <div class="md:w-2/3 p-8 flex flex-col justify-center">
-          <h1 class="text-3xl font-bold text-amber-400 mb-3">${bookTitle}</h1>
+        <!-- Book Info -->
+        <div class="p-8 md:p-12">
+          <h1 class="title-font text-3xl md:text-4xl font-bold text-amber-400 mb-3">${book.title}</h1>
+          <p class="italic text-gray-400 mb-2">by ${book.author != null ? book.author : "Unknown author"}</p>
+          <p class="text-amber-500 mb-1"><strong>Category:</strong> ${book.category}</p>
 
-          <p class="text-sm text-gray-400 mb-2">
-            by <c:choose>
-              <c:when test="${not empty bookAuthor}">${bookAuthor}</c:when>
-              <c:otherwise><span class="italic text-gray-500">Unknown author</span></c:otherwise>
-            </c:choose>
+          <p class="${book.stock_text eq 'In stock' ? 'text-green-400' : 'text-red-400'} font-semibold mb-2">
+            ${book.stock_text}
           </p>
 
-          <p class="text-gray-300 mb-3">
-            <span class="font-semibold text-amber-500">Category:</span> ${bookCategory}
-          </p>
+          <p class="text-2xl font-bold text-amber-400 mb-4">$${book.price}</p>
 
-          <!-- Rating + stock -->
-          <div class="flex items-center gap-4 mb-4">
-            <c:if test="${not empty bookRatingInt}">
-              <span class="inline-flex items-center bg-amber-700/20 text-amber-400 px-3 py-1 rounded-full text-sm">
-                ★ <%= String.format("%.1f", (request.getAttribute("bookRatingInt") != null ? Double.parseDouble(request.getAttribute("bookRatingInt").toString()) : 0.0)) %>/5
-              </span>
-            </c:if>
-            <c:choose>
-              <c:when test="${bookInStock}">
-                <span class="text-green-400 font-medium">${bookStockText}</span>
-              </c:when>
-              <c:otherwise>
-                <span class="text-red-400 font-medium">Out of stock</span>
-              </c:otherwise>
-            </c:choose>
-          </div>
+          <p class="text-gray-300 leading-relaxed mb-6">${book.description}</p>
 
-          <!-- Price -->
-          <p class="text-2xl font-bold text-amber-400 mb-6">
-            <c:choose>
-              <c:when test="${not empty bookPrice}">$${bookPrice}</c:when>
-              <c:otherwise>—</c:otherwise>
-            </c:choose>
-          </p>
-
-          <!-- Description -->
-          <p class="text-gray-300 leading-relaxed mb-6">
-            <c:out value='${bookDescription != null ? bookDescription : "No description available."}'/>
-          </p>
-
-          <!-- Buttons -->
-          <div class="flex gap-3">
-            <a href="#" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-full font-semibold">Add to Cart</a>
-            <c:if test="${not empty bookUrl}">
-              <a href="${bookUrl}" target="_blank"
-                 class="border border-amber-600 hover:bg-amber-700/20 text-amber-400 px-6 py-3 rounded-full font-semibold">
-                View Source
-              </a>
-            </c:if>
-          </div>
+          <button class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded-full transition">
+            Add to Cart
+          </button>
         </div>
       </div>
-    </c:if>
-  </div>
+    </div>
+  </main>
 
   <!-- Footer -->
-  <footer class="bg-[#5C2E0C] text-center text-gray-200 py-4 mt-12">
-    &copy; <span id="year"></span> Bookish Bliss Haven · All rights reserved
+  <footer class="bg-neutral-950 text-gray-400 text-center py-6 mt-12 text-sm">
+    © <span id="year"></span> Bookish Bliss Haven — All rights reserved.
   </footer>
 
+  <script src="https://unpkg.com/feather-icons"></script>
   <script>
+    feather.replace();
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
