@@ -7,7 +7,7 @@ import javax.servlet.annotation.*;
 import java.io.IOException;
 import java.sql.*;
 
-@WebServlet(name = "BooksDetailServlet", urlPatterns = {"/books/detail"})
+@WebServlet(name = "BookDetailServlet", urlPatterns = {"/books/detail"})
 public class BookDetailServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
