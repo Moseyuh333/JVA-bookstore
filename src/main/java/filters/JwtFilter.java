@@ -30,7 +30,7 @@ public class JwtFilter implements Filter {
         }
 
         String authHeader = req.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        if (authHeader != null && authHeader.startsWith("Bearer ") && authHeader.length() > 7) {
             String token = authHeader.substring(7);
             String user = JwtUtil.validateToken(token);
             if (user != null) {

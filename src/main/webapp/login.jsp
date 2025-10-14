@@ -47,9 +47,7 @@
     <div class="text-muted small">by bibo090809@gmail.com</div>
   </div>
   <h2 class="mb-3">Login</h2>
-  <% if ("true".equals(request.getParameter("verified"))) { %>
-    <div class="alert alert-success">Email verified successfully! You can now login.</div>
-  <% } %>
+
   <form id="loginForm">
     <div class="mb-3">
       <label class="form-label">Username</label>
@@ -78,16 +76,41 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = new URLSearchParams(new FormData(form));
-    const res = await fetch('api/login', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: data});
-    if(res.ok){
-      const json = await res.json();
-      token = json.token;
-      document.getElementById('loadBooks').disabled = false;
-      document.getElementById('result').textContent = 'Login successful. Token acquired.';
-    } else {
-      const text = await res.text();
-      try { const j = JSON.parse(text); document.getElementById('result').textContent = 'Login failed: ' + (j.error || text); }
-      catch(e){ document.getElementById('result').textContent = 'Login failed: ' + text; }
+    
+    try {
+      const res = await fetch('<%= request.getContextPath() %>/api/login', {
+        method: 'POST', 
+        headers: {'Content-Type':'application/x-www-form-urlencoded'}, 
+        body: data
+      });
+      
+      if(res.ok){
+        const json = await res.json();
+        
+        // Save token to localStorage
+        localStorage.setItem('auth_token', json.token);
+        
+        // Show success message
+        document.getElementById('result').innerHTML = '<div class="alert alert-success">✅ Đăng nhập thành công! Đang chuyển hướng...</div>';
+        
+        // Redirect to homepage after a short delay
+        setTimeout(() => {
+          window.location.href = '<%= request.getContextPath() %>/';
+        }, 1500);
+        
+      } else {
+        const text = await res.text();
+        let errorMessage = '';
+        try { 
+          const j = JSON.parse(text); 
+          errorMessage = j.error || text;
+        } catch(e){ 
+          errorMessage = text; 
+        }
+        document.getElementById('result').innerHTML = '<div class="alert alert-danger">❌ Đăng nhập thất bại: ' + errorMessage + '</div>';
+      }
+    } catch (error) {
+      document.getElementById('result').innerHTML = '<div class="alert alert-danger">❌ Lỗi kết nối. Vui lòng thử lại.</div>';
     }
   });
 
