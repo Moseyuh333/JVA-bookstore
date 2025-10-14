@@ -129,10 +129,10 @@
                             <img src="http://static.photos/books/320x240/1" alt="Book Cover"
                                 class="w-full h-64 object-cover">
                             <div class="p-4">
-                                <h3 class="title-font font-bold text-lg mb-1">The Silent Patient</h3>
+                                <h3 class="title-font font-bold text-lg mb-1">A Light in the Attic</h3>
                                 <p class="text-gray-600 text-sm mb-2">Alex Michaelides</p>
                                 <div class="flex justify-between items-center">
-                                    <span class="font-bold text-amber-700">$14.99</span>
+                                    <span class="font-bold text-amber-700">£51.77</span>
                                     <span class="text-sm text-amber-600 font-semibold">View Details →</span>
                                 </div>
                             </div>
@@ -153,10 +153,10 @@
                             <img src="http://static.photos/books/320x240/2" alt="Book Cover"
                                 class="w-full h-64 object-cover">
                             <div class="p-4">
-                                <h3 class="title-font font-bold text-lg mb-1">Educated</h3>
+                                <h3 class="title-font font-bold text-lg mb-1">Tipping the Velvet</h3>
                                 <p class="text-gray-600 text-sm mb-2">Tara Westover</p>
                                 <div class="flex justify-between items-center">
-                                    <span class="font-bold text-amber-700">$12.99</span>
+                                    <span class="font-bold text-amber-700">£53.74</span>
                                     <span class="text-sm text-amber-600 font-semibold">View Details →</span>
                                 </div>
                             </div>
@@ -177,10 +177,10 @@
                             <img src="http://static.photos/books/320x240/3" alt="Book Cover"
                                 class="w-full h-64 object-cover">
                             <div class="p-4">
-                                <h3 class="title-font font-bold text-lg mb-1">Where the Crawdads Sing</h3>
+                                <h3 class="title-font font-bold text-lg mb-1">Soumission</h3>
                                 <p class="text-gray-600 text-sm mb-2">Delia Owens</p>
                                 <div class="flex justify-between items-center">
-                                    <span class="font-bold text-amber-700">$15.99</span>
+                                    <span class="font-bold text-amber-700">£50.10</span>
                                     <span class="text-sm text-amber-600 font-semibold">View Details →</span>
                                 </div>
                             </div>
@@ -200,10 +200,10 @@
                             <img src="http://static.photos/books/320x240/4" alt="Book Cover"
                                 class="w-full h-64 object-cover">
                             <div class="p-4">
-                                <h3 class="title-font font-bold text-lg mb-1">Atomic Habits</h3>
+                                <h3 class="title-font font-bold text-lg mb-1">Sharp Objects</h3>
                                 <p class="text-gray-600 text-sm mb-2">James Clear</p>
                                 <div class="flex justify-between items-center">
-                                    <span class="font-bold text-amber-700">$16.99</span>
+                                    <span class="font-bold text-amber-700">£47.82</span>
                                     <span class="text-sm text-amber-600 font-semibold">View Details →</span>
                                 </div>
                             </div>
