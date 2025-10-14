@@ -7,7 +7,7 @@ import javax.servlet.annotation.*;
 import java.io.IOException;
 import java.sql.*;
 
-@WebServlet("/books/review")
+@WebServlet(name = "ReviewServlet", urlPatterns = {"/books/review"})
 public class ReviewServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
