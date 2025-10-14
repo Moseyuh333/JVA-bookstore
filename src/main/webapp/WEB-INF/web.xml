@@ -60,7 +60,7 @@
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>BookDetailServlet</servlet-name>
-		<url-pattern>/book</url-pattern>
+		<url-pattern>/books/detail</url-pattern>
 	</servlet-mapping>
 
 	<servlet>
@@ -69,7 +69,7 @@
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>ReviewServlet</servlet-name>
-		<url-pattern>/review</url-pattern>
+		<url-pattern>/books/review</url-pattern>
 	</servlet-mapping>
 
 </web-app>
