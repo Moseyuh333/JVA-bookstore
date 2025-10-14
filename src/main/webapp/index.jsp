@@ -32,12 +32,23 @@
                     <a href="<%=request.getContextPath()%>/about.jsp" class="hover:text-amber-200 font-medium">About</a>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <!-- User Dropdown -->
+                    <!-- Right-side visible navigation -->
+                    <a href="<%=request.getContextPath()%>/shop.jsp" class="hidden sm:inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700">
+                        <i data-feather="shopping-bag" class="w-5 h-5 mr-1"></i>
+                        <span class="font-medium">Shop</span>
+                    </a>
+                    <a href="#" class="hidden sm:inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700">
+                        <i data-feather="search" class="w-5 h-5 mr-1"></i>
+                        <span class="font-medium">Search</span>
+                    </a>
+
+                    <!-- Account / Profile Dropdown -->
                     <div class="relative">
-                        <button id="userDropdownBtn" class="p-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
-                            <i data-feather="user" class="w-5 h-5"></i>
+                        <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
+                            <i data-feather="user" class="w-5 h-5 mr-1"></i>
+                            <span id="accountBtnLabel" class="font-medium">Account</span>
                         </button>
-                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                             <div class="py-2">
                                 <a href="<%=request.getContextPath()%>/login.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
                                     <i data-feather="log-in" class="w-4 h-4 mr-2"></i>
@@ -55,15 +66,9 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <button class="p-2 rounded-full hover:bg-amber-700">
-                        <i data-feather="search" class="w-5 h-5"></i>
-                    </button>
-                    <button class="p-2 rounded-full hover:bg-amber-700">
-                        <i data-feather="shopping-cart" class="w-5 h-5"></i>
-                        <span class="sr-only">Cart</span>
-                    </button>
-                    <button class="md:hidden p-2 rounded-full hover:bg-amber-700">
+
+                    <!-- Mobile hamburger (optional) -->
+                    <button class="md:hidden p-2 rounded-full hover:bg-amber-700" aria-label="Menu">
                         <i data-feather="menu" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -380,6 +385,9 @@
                     </div>
                 `;
                 feather.replace();
+                // Update account button label
+                const lbl = document.getElementById('accountBtnLabel');
+                if (lbl) lbl.textContent = 'Profile';
             }
         }
         
@@ -404,6 +412,9 @@
                     </div>
                 `;
                 feather.replace();
+                // Update account button label
+                const lbl = document.getElementById('accountBtnLabel');
+                if (lbl) lbl.textContent = 'Account';
             }
         }
         
@@ -440,7 +451,7 @@
                 card.style.transition = 'all 0.6s ease-out';
                 observer.observe(card);
             });
-        });
+        
     </script>
 </body>
 </html>
