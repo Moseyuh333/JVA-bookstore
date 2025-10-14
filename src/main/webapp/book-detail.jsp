@@ -159,6 +159,98 @@
                   </p>
                 </div>
 
+                <!-- Related Books -->
+                <c:if test="${not empty relatedBooks}">
+                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
+                      Related Books
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                      <c:forEach var="b" items="${relatedBooks}">
+                        <div class="bg-[#222] rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+                          <a href="${pageContext.request.contextPath}/books/detail?id=${b.id}">
+                            <img src="<c:out value='${b.coverImage != null && b.coverImage ne "" ? b.coverImage : "
+                              https://placehold.co/300x400"}' />"
+                            alt="${b.title}" class="w-full h-56 object-cover">
+                            <div class="p-4">
+                              <h3 class="text-amber-400 font-semibold text-lg truncate">${b.title}</h3>
+                              <p class="text-gray-400 text-sm mb-2">${b.author}</p>
+                              <p class="text-amber-300 font-semibold">£
+                                <fmt:formatNumber value="${b.price}" type="number" minFractionDigits="2" />
+                              </p>
+                            </div>
+                          </a>
+                        </div>
+                      </c:forEach>
+                    </div>
+                  </div>
+                </c:if>
+
+                <!-- Reviews Section -->
+                <div id="reviews" class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                  <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
+                    Reader Reviews
+                  </h2>
+
+                  <!-- Hiển thị danh sách đánh giá -->
+                  <c:if test="${not empty reviews}">
+                    <c:forEach var="r" items="${reviews}">
+                      <div class="border-b border-[#333] py-4">
+                        <div class="flex justify-between items-center mb-1">
+                          <span class="font-semibold text-gray-200">${r.authorName}</span>
+                          <span class="text-sm text-gray-500">
+                            <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                          </span>
+                        </div>
+                        <div class="flex mb-2">
+                          <c:forEach var="i" begin="1" end="5">
+                            <c:choose>
+                              <c:when test="${i <= r.rating}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400 fill-yellow-400"
+                                  viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975..." />
+                                </svg>
+                              </c:when>
+                              <c:otherwise>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 fill-gray-500"
+                                  viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0..." />
+                                </svg>
+                              </c:otherwise>
+                            </c:choose>
+                          </c:forEach>
+                        </div>
+                        <p class="text-gray-300">${r.comment}</p>
+                      </div>
+                    </c:forEach>
+                  </c:if>
+
+                  <!-- Form đánh giá -->
+                  <div class="mt-6">
+                    <form method="post" action="${pageContext.request.contextPath}/books/review">
+                      <input type="hidden" name="bookId" value="${bookId}" />
+                      <div class="flex flex-col gap-3">
+                        <input type="text" name="authorName" placeholder="Your name (optional)"
+                          class="px-4 py-2 rounded bg-[#222] text-gray-200 focus:outline-none focus:ring focus:ring-amber-500">
+                        <select name="rating"
+                          class="px-4 py-2 rounded bg-[#222] text-gray-200 focus:outline-none focus:ring focus:ring-amber-500">
+                          <option value="5">★★★★★ - Excellent</option>
+                          <option value="4">★★★★☆ - Good</option>
+                          <option value="3">★★★☆☆ - Average</option>
+                          <option value="2">★★☆☆☆ - Poor</option>
+                          <option value="1">★☆☆☆☆ - Terrible</option>
+                        </select>
+                        <textarea name="comment" rows="3" placeholder="Write your review..."
+                          class="px-4 py-2 rounded bg-[#222] text-gray-200 focus:outline-none focus:ring focus:ring-amber-500"></textarea>
+                        <button type="submit"
+                          class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-full font-semibold w-fit">
+                          Submit Review
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
                 <!-- Product Info Table -->
                 <div class="bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md">
                   <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Product Information
