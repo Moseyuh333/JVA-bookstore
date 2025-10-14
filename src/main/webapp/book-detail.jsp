@@ -4,37 +4,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>${bookTitle} | Book Details</title>
+  <title>${bookTitle} | Bookish Bliss Haven</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-gray-100">
+<body class="bg-[#1a1a1a] text-gray-100 font-sans">
 
-  <!-- Breadcrumb -->
-  <nav class="bg-gray-800 text-sm text-gray-300 py-3 px-6">
-    <div class="container mx-auto flex items-center space-x-2">
-      <a href="${pageContext.request.contextPath}/index.jsp" class="text-blue-400 hover:underline">Home</a>
-      <span>/</span>
-      <a href="#" class="text-blue-400 hover:underline">Books</a>
-      <span>/</span>
-      <a href="#" class="text-blue-400 hover:underline">${bookCategory}</a>
-      <span>/</span>
-      <span class="text-gray-400">${bookTitle}</span>
+  <!-- Navbar -->
+  <nav class="bg-[#5c2e05] text-white shadow-md">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="${pageContext.request.contextPath}/index.jsp" class="flex items-center space-x-2">
+        <i data-feather="book-open" class="w-6 h-6"></i>
+        <span class="font-bold text-xl tracking-wide">Bookish Bliss Haven</span>
+      </a>
+      <div class="flex space-x-6 text-sm">
+        <a href="${pageContext.request.contextPath}/books" class="hover:text-amber-300">Shop</a>
+        <a href="#" class="hover:text-amber-300">Collections</a>
+        <a href="#" class="hover:text-amber-300">About</a>
+      </div>
     </div>
   </nav>
 
-  <!-- Content -->
-  <div class="container mx-auto px-6 py-10">
-    <div class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col md:flex-row gap-10">
+  <!-- Breadcrumb -->
+  <div class="bg-[#2a2a2a] text-sm text-gray-400 py-3 px-6">
+    <div class="container mx-auto">
+      <a href="${pageContext.request.contextPath}/index.jsp" class="text-amber-400 hover:underline">Home</a> /
+      <a href="${pageContext.request.contextPath}/books" class="text-amber-400 hover:underline">Books</a> /
+      <span class="text-gray-300">${bookTitle}</span>
+    </div>
+  </div>
 
-      <!-- Image -->
-      <div class="w-full md:w-1/3 flex justify-center">
-        <img src="<c:out value='${bookImage}'/>" alt="${bookTitle}" class="rounded-lg shadow-lg object-cover max-h-[500px]">
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-10">
+    <div class="grid md:grid-cols-2 gap-10 items-start bg-[#222] rounded-xl p-8 shadow-lg border border-[#3a2a1d]">
+
+      <!-- Book Image -->
+      <div class="flex justify-center">
+        <img src="<c:out value='${bookImage}'/>"
+             alt="${bookTitle}"
+             class="rounded-lg shadow-lg object-cover max-h-[480px] border border-[#4b3421]">
       </div>
 
-      <!-- Book Info -->
-      <div class="flex-1 space-y-4">
-        <h1 class="text-3xl font-semibold">${bookTitle}</h1>
-        <p class="text-green-400 text-2xl font-bold">£${bookPrice}</p>
+      <!-- Info Section -->
+      <div class="space-y-4">
+        <h1 class="text-3xl font-bold text-white">${bookTitle}</h1>
+        <p class="text-gray-400 italic">
+          <c:choose>
+            <c:when test="${not empty bookAuthor}">by ${bookAuthor}</c:when>
+            <c:otherwise>Unknown author</c:otherwise>
+          </c:choose>
+        </p>
+        <p class="text-amber-400 text-lg">Category: <span class="text-gray-200">${bookCategory}</span></p>
+
+        <p class="text-3xl font-semibold text-amber-400">£${bookPrice}</p>
 
         <p class="text-sm">
           <c:choose>
@@ -48,7 +69,7 @@
         </p>
 
         <!-- Rating -->
-        <div class="text-yellow-400 text-xl">
+        <div class="text-yellow-400 text-xl flex gap-1">
           <%
             Object ratingObj = request.getAttribute("bookRatingInt");
             double rating = 0.0;
@@ -63,32 +84,31 @@
           <% for (int i = fullStars + (halfStar ? 1 : 0); i < 5; i++) { %> ☆ <% } %>
         </div>
 
-        <!-- Warning -->
-        <div class="bg-amber-900/20 border border-amber-700 text-amber-300 px-4 py-3 rounded">
-          <strong>Warning!</strong> This is a demo website for web scraping purposes.
-          Prices and ratings here were randomly assigned and have no real meaning.
+        <!-- Demo Warning -->
+        <div class="bg-[#4b2c0a] border border-[#7b5322] text-amber-200 px-4 py-3 rounded-md">
+          <strong>⚠ Demo Notice:</strong> Prices and ratings shown are for demonstration purposes only.
         </div>
 
-        <!-- Buttons -->
-        <div class="flex gap-4 pt-4">
-          <button class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded">Add to basket</button>
-          <a href="${bookUrl}" target="_blank" class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded">
-            View Source
-          </a>
+        <div class="flex gap-4 pt-6">
+          <a href="#" class="bg-[#b87333] hover:bg-[#d18f4f] text-white px-6 py-3 rounded-full font-semibold transition">Add to Cart</a>
+          <c:if test="${not empty bookUrl}">
+            <a href="${bookUrl}" target="_blank" class="bg-transparent border border-[#b87333] text-[#b87333] hover:bg-[#b87333] hover:text-white px-6 py-3 rounded-full font-semibold transition">View Source</a>
+          </c:if>
         </div>
       </div>
     </div>
 
-    <!-- Product Description -->
-    <div class="mt-10 bg-gray-800 rounded-lg shadow-lg p-6">
-      <h2 class="text-xl font-semibold text-amber-400 mb-3">Product Description</h2>
+    <!-- Description -->
+    <div class="mt-10 bg-[#222] rounded-xl p-8 border border-[#3a2a1d] shadow">
+      <h2 class="text-xl font-semibold text-amber-400 mb-4">Product Description</h2>
       <p class="text-gray-300 leading-relaxed">
         <c:out value='${bookDescription != null ? bookDescription : "No description available."}'/>
       </p>
     </div>
   </div>
 
-  <footer class="bg-gray-950 text-center text-gray-400 py-6 mt-8">
+  <!-- Footer -->
+  <footer class="bg-[#111] text-gray-400 text-center py-6 border-t border-[#3a2a1d]">
     &copy; <span id="year"></span> Bookish Bliss Haven · All rights reserved
   </footer>
 
