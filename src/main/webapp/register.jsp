@@ -77,14 +77,14 @@
 			const res = await fetch('api/auth/register', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: data});
 			const text = await res.text();
 			if (res.ok) {
-				document.getElementById('regResult').innerHTML = '<div class="alert alert-success">Registration successful. Please check your email to verify your account before logging in.</div>';
+				document.getElementById('regResult').innerHTML = '<div class="alert alert-success"><strong>🎉 Đăng ký thành công!</strong><br>Chúng tôi đã gửi email xác nhận đến địa chỉ của bạn. Vui lòng kiểm tra hộp thư và click vào liên kết xác nhận để kích hoạt tài khoản trước khi đăng nhập.</div>';
 			} else {
 				let msg = text;
 				try { const j = JSON.parse(text); msg = j.error || text; } catch(_){}
-				document.getElementById('regResult').innerHTML = '<div class="alert alert-danger">' + msg + '</div>';
+				document.getElementById('regResult').innerHTML = '<div class="alert alert-danger"><strong>❌ Lỗi đăng ký:</strong> ' + msg + '</div>';
 			}
 		} catch (err) {
-			document.getElementById('regResult').innerHTML = '<div class="alert alert-danger">Request failed: ' + err.message + '</div>';
+			document.getElementById('regResult').innerHTML = '<div class="alert alert-danger"><strong>❌ Kết nối thất bại:</strong> ' + err.message + '</div>';
 		} finally {
 			btn.disabled = false;
 			btn.textContent = 'Sign up';

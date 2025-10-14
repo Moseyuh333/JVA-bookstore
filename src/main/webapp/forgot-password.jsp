@@ -70,14 +70,14 @@
 			const res = await fetch('api/auth/reset-password', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: data});
 			const text = await res.text();
 			if (res.ok) {
-				document.getElementById('forgotResult').innerHTML = '<div class="alert alert-success">If the email exists, a reset link has been sent.</div>';
+				document.getElementById('forgotResult').innerHTML = '<div class="alert alert-success"><strong>📧 Email đã được gửi!</strong><br>Nếu địa chỉ email tồn tại trong hệ thống, chúng tôi đã gửi liên kết đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn.</div>';
 			} else {
 				let msg = text;
 				try { const j = JSON.parse(text); msg = j.error || text; } catch(_){}
-				document.getElementById('forgotResult').innerHTML = '<div class="alert alert-danger">' + msg + '</div>';
+				document.getElementById('forgotResult').innerHTML = '<div class="alert alert-danger"><strong>❌ Lỗi:</strong> ' + msg + '</div>';
 			}
 		} catch (err) {
-			document.getElementById('forgotResult').innerHTML = '<div class="alert alert-danger">Request failed: ' + err.message + '</div>';
+			document.getElementById('forgotResult').innerHTML = '<div class="alert alert-danger"><strong>❌ Kết nối thất bại:</strong> ' + err.message + '</div>';
 		} finally {
 			btn.disabled = false;
 			btn.textContent = 'Send reset link';

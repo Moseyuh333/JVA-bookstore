@@ -43,30 +43,51 @@ public class EmailUtil {
     }
 
     public static void sendVerificationEmail(String toEmail, String token, String username) {
-        String subject = "Verify your NKbookstore account";
-        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "https://jva-bookstore.herokuapp.com";
+        String subject = "Xác nhận tài khoản NKBookstore - Verification Required";
+        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "http://localhost:8080";
         String verificationUrl = baseUrl + "/api/auth/verify?token=" + token;
-        String body = "Hello " + username + ",\n\n" +
-                      "Please click the following link to verify your email:\n" +
+        
+        String body = "Chào " + username + ",\n\n" +
+                      "Cảm ơn bạn đã đăng ký tài khoản tại NKBookstore!\n\n" +
+                      "Để hoàn tất quá trình đăng ký, vui lòng click vào liên kết bên dưới để xác nhận email:\n" +
                       verificationUrl + "\n\n" +
-                      "If you did not create an account, ignore this email.\n\n" +
-                      "Best regards,\nNKbookstore Team";
+                      "Liên kết này có hiệu lực trong 24 giờ.\n" +
+                      "Nếu bạn không thực hiện đăng ký này, vui lòng bỏ qua email này.\n\n" +
+                      "Trân trọng,\n" +
+                      "Đội ngũ NKBookstore\n" +
+                      "📚 Kho sách trực tuyến hàng đầu Việt Nam";
 
         sendEmail(toEmail, subject, body);
     }
 
     public static void sendResetEmail(String toEmail, String token, String username) {
-        String subject = "Reset your NKbookstore password";
-        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "https://jva-bookstore.herokuapp.com";
+        String subject = "Đặt lại mật khẩu NKBookstore - Password Reset Request";
+        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "http://localhost:8080";
         String resetUrl = baseUrl + "/reset-password.jsp?token=" + token;
-        String body = "Hello " + username + ",\n\n" +
-                      "You requested a password reset. Click the link below to set a new password:\n" +
+        
+        String body = "Chào " + username + ",\n\n" +
+                      "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại NKBookstore.\n\n" +
+                      "Để tạo mật khẩu mới, vui lòng click vào liên kết bên dưới:\n" +
                       resetUrl + "\n\n" +
-                      "This link expires in 1 hour.\n" +
-                      "If you did not request this, ignore this email.\n\n" +
-                      "Best regards,\nNKbookstore Team";
+                      "⚠️  Liên kết này có hiệu lực trong 1 giờ.\n" +
+                      "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n" +
+                      "Để bảo mật tài khoản, không chia sẻ liên kết này với bất kỳ ai.\n\n" +
+                      "Trân trọng,\n" +
+                      "Đội ngũ NKBookstore\n" +
+                      "📚 Kho sách trực tuyến hàng đầu Việt Nam";
 
         sendEmail(toEmail, subject, body);
+    }
+
+    public static void testEmailConnection(String testEmail) {
+        String subject = "NKBookstore - Test Email Configuration";
+        String body = "Chào bạn,\n\n" +
+                      "Đây là email test để kiểm tra cấu hình MailerToGo.\n" +
+                      "Nếu bạn nhận được email này, cấu hình email đã hoạt động thành công!\n\n" +
+                      "Trân trọng,\n" +
+                      "Đội ngũ NKBookstore";
+        
+        sendEmail(testEmail, subject, body);
     }
 
     private static void sendEmail(String to, String subject, String body) {
@@ -79,7 +100,7 @@ public class EmailUtil {
             message.setText(body);
 
             Transport.send(message);
-            System.out.println("Email sent successfully to " + to);
+            System.out.println("Email sent successfully to " + to + " via MailerToGo SMTP");
         } catch (MessagingException e) {
             System.err.println("Failed to send email to " + to + ": " + e.getMessage());
         }
