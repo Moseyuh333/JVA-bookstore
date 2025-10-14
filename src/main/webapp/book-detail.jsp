@@ -4,35 +4,35 @@
     <html lang="en">
 
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${bookTitle} | Book Details</title>
-        <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://unpkg.com/feather-icons"></script>
-        <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${bookTitle} | Book Details</title>
+      <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+      <script src="https://cdn.tailwindcss.com"></script>
+      <script src="https://unpkg.com/feather-icons"></script>
+      <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
 
-            body {
-                font-family: 'Roboto', sans-serif;
-            }
+        body {
+          font-family: 'Roboto', sans-serif;
+        }
 
-            .hero-bg {
-                background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('http://static.photos/books/1200x630/42');
-                background-size: cover;
-                background-position: center;
-            }
+        .hero-bg {
+          background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('http://static.photos/books/1200x630/42');
+          background-size: cover;
+          background-position: center;
+        }
 
-            .book-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            }
+        .book-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
 
-            .title-font {
-                font-family: 'Playfair Display', serif;
-            }
-        </style>
+        .title-font {
+          font-family: 'Playfair Display', serif;
+        }
+      </style>
     </head>
 
     <body class="bg-[#111] text-gray-100 font-sans">
@@ -152,9 +152,24 @@
                       <td class="py-3 font-semibold text-gray-400">Availability</td>
                       <td>
                         <c:choose>
-                          <c:when test="${bookInStock}">In stock (${bookStockText})</c:when>
-                          <c:otherwise>Out of stock</c:otherwise>
+                          <c:when test="${not empty bookAvailability}">
+                            <c:choose>
+                              <c:when test="${fn:containsIgnoreCase(bookAvailability, 'in stock')}">
+                                <span class="text-green-400 font-medium">${bookAvailability}</span>
+                              </c:when>
+                              <c:when test="${fn:containsIgnoreCase(bookAvailability, 'out')}">
+                                <span class="text-red-400 font-medium">${bookAvailability}</span>
+                              </c:when>
+                              <c:otherwise>
+                                <span class="text-amber-400">${bookAvailability}</span>
+                              </c:otherwise>
+                            </c:choose>
+                          </c:when>
+                          <c:otherwise>
+                            <span class="text-gray-400 italic">No info</span>
+                          </c:otherwise>
                         </c:choose>
+
                       </td>
                     </tr>
                     <tr>
