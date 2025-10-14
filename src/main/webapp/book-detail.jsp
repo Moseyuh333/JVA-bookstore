@@ -83,11 +83,21 @@
                       </span>
                     </c:if>
                     <c:choose>
-                      <c:when test="${bookInStock}">
-                        <span class="text-green-400 font-medium">${bookStockText}</span>
+                      <c:when test="${not empty bookAvailability}">
+                        <c:choose>
+                          <c:when test="${fn:containsIgnoreCase(bookAvailability, 'in stock')}">
+                            <span class="text-green-400 font-medium">${bookAvailability}</span>
+                          </c:when>
+                          <c:when test="${fn:containsIgnoreCase(bookAvailability, 'out')}">
+                            <span class="text-red-400 font-medium">${bookAvailability}</span>
+                          </c:when>
+                          <c:otherwise>
+                            <span class="text-amber-400">${bookAvailability}</span>
+                          </c:otherwise>
+                        </c:choose>
                       </c:when>
                       <c:otherwise>
-                        <span class="text-red-400 font-medium">Out of stock</span>
+                        <span class="text-gray-400 italic">No info</span>
                       </c:otherwise>
                     </c:choose>
                   </div>
