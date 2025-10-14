@@ -182,10 +182,6 @@
                                 <div class="flex justify-between items-center">
                                     <span class="font-bold text-amber-700">$15.99</span>
                                     <span class="text-sm text-amber-600 font-semibold">View Details →</span>
-                                    <button
-                                        class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
-                                        Add to Cart
-                                    </button>
                                 </div>
                             </div>
                         </a>
@@ -209,10 +205,6 @@
                                 <div class="flex justify-between items-center">
                                     <span class="font-bold text-amber-700">$16.99</span>
                                     <span class="text-sm text-amber-600 font-semibold">View Details →</span>
-                                    <button
-                                        class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
-                                        Add to Cart
-                                    </button>
                                 </div>
                             </div>
                         </a>
