@@ -86,10 +86,10 @@
                       <c:when test="${not empty bookAvailability}">
                         <c:choose>
                           <c:when test="${fn:containsIgnoreCase(bookAvailability, 'in stock')}">
-                            <span class="text-green-400 font-medium">${bookAvailability}</span>
+                            <span class="text-green-400 font-medium">✔ ${bookAvailability}</span>
                           </c:when>
                           <c:when test="${fn:containsIgnoreCase(bookAvailability, 'out')}">
-                            <span class="text-red-400 font-medium">${bookAvailability}</span>
+                            <span class="text-red-400 font-medium">✖ ${bookAvailability}</span>
                           </c:when>
                           <c:otherwise>
                             <span class="text-amber-400">${bookAvailability}</span>
@@ -105,7 +105,7 @@
                   <!-- Price -->
                   <p class="text-2xl font-bold text-amber-400 mb-6">
                     <c:choose>
-                      <c:when test="${not empty bookPrice}">$${bookPrice}</c:when>
+                      <c:when test="${not empty bookPrice}">$£{bookPrice}</c:when>
                       <c:otherwise>—</c:otherwise>
                     </c:choose>
                   </p>
@@ -151,15 +151,15 @@
                       </tr>
                       <tr>
                         <td class="py-3 font-semibold text-gray-400">Price (excl. tax)</td>
-                        <td>$${bookPrice}</td>
+                        <td>$£{bookPrice}</td>
                       </tr>
                       <tr>
                         <td class="py-3 font-semibold text-gray-400">Price (incl. tax)</td>
-                        <td>$${bookPrice}</td>
+                        <td>$£{bookPrice}</td>
                       </tr>
                       <tr>
                         <td class="py-3 font-semibold text-gray-400">Tax</td>
-                        <td>$0.00</td>
+                        <td>£0.00</td>
                       </tr>
                       <tr>
                         <td class="py-3 font-semibold text-gray-400">Availability</td>
