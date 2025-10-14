@@ -6,6 +6,7 @@ import javax.servlet.http.*;
 import javax.servlet.annotation.*;
 import java.io.IOException;
 import java.sql.*;
+import java.util.*;
 
 @WebServlet(name = "BookDetailServlet", urlPatterns = { "/books/detail" })
 public class BookDetailServlet extends HttpServlet {
@@ -42,6 +43,43 @@ public class BookDetailServlet extends HttpServlet {
                 req.setAttribute("bookUpc", rs.getString("upc"));
                 req.setAttribute("bookAvailability", rs.getString("availability"));
                 req.setAttribute("reviewCount", rs.getInt("number_of_reviews"));
+
+                // Gợi ý sách liên quan (cùng category hoặc author)
+                PreparedStatement psRelated = conn.prepareStatement(
+                        "SELECT id, title, author, price, cover_image " +
+                                "FROM books WHERE (category = ? OR author = ?) AND id <> ? LIMIT 4");
+                psRelated.setString(1, rs.getString("category"));
+                psRelated.setString(2, rs.getString("author"));
+                psRelated.setInt(3, rs.getInt("id"));
+
+                ResultSet rsRelated = psRelated.executeQuery();
+                List<Map<String, Object>> relatedBooks = new ArrayList<>();
+                while (rsRelated.next()) {
+                    Map<String, Object> b = new HashMap<>();
+                    b.put("id", rsRelated.getInt("id"));
+                    b.put("title", rsRelated.getString("title"));
+                    b.put("author", rsRelated.getString("author"));
+                    b.put("price", rsRelated.getBigDecimal("price"));
+                    b.put("coverImage", rsRelated.getString("cover_image"));
+                    relatedBooks.add(b);
+                }
+                req.setAttribute("relatedBooks", relatedBooks);
+
+                // === Reviews ===
+                PreparedStatement psReviews = conn.prepareStatement(
+                        "SELECT author_name, rating, comment, created_at FROM reviews WHERE book_id = ? ORDER BY created_at DESC");
+                psReviews.setInt(1, rs.getInt("id"));
+                ResultSet rsReviews = psReviews.executeQuery();
+                java.util.List<java.util.Map<String, Object>> reviews = new java.util.ArrayList<>();
+                while (rsReviews.next()) {
+                    java.util.Map<String, Object> r = new java.util.HashMap<>();
+                    r.put("authorName", rsReviews.getString("author_name"));
+                    r.put("rating", rsReviews.getInt("rating"));
+                    r.put("comment", rsReviews.getString("comment"));
+                    r.put("createdAt", rsReviews.getTimestamp("created_at"));
+                    reviews.add(r);
+                }
+                req.setAttribute("reviews", reviews);
             } else {
                 req.setAttribute("error", "Book not found!");
             }
@@ -51,5 +89,6 @@ public class BookDetailServlet extends HttpServlet {
 
         RequestDispatcher rd = req.getRequestDispatcher("/book-detail.jsp");
         rd.forward(req, resp);
+
     }
 }
