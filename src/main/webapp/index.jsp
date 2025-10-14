@@ -332,6 +332,17 @@
             const userDropdownBtn = document.getElementById('userDropdownBtn');
             const userDropdown = document.getElementById('userDropdown');
             
+            // Check if user is logged in
+            const token = localStorage.getItem('auth_token');
+            const isLoggedIn = token && token.length > 0;
+            
+            // Update dropdown content based on login status
+            if (isLoggedIn) {
+                updateDropdownForLoggedInUser();
+            } else {
+                updateDropdownForGuestUser();
+            }
+            
             if (userDropdownBtn && userDropdown) {
                 userDropdownBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -348,6 +359,68 @@
                     e.stopPropagation();
                 });
             }
+        });
+        
+        function updateDropdownForLoggedInUser() {
+            const userDropdown = document.getElementById('userDropdown');
+            if (userDropdown) {
+                userDropdown.innerHTML = `
+                    <div class="py-2">
+                        <div class="px-4 py-2 text-sm text-gray-600 border-b">
+                            <i data-feather="user" class="w-4 h-4 inline mr-2"></i>
+                            Xin chào!
+                        </div>
+                        <a href="<%=request.getContextPath()%>/profile.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                            <i data-feather="settings" class="w-4 h-4 mr-2"></i>
+                            Hồ sơ cá nhân
+                        </a>
+                        <a href="#" onclick="logout()" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                            <i data-feather="log-out" class="w-4 h-4 mr-2"></i>
+                            Đăng xuất
+                        </a>
+                    </div>
+                `;
+                feather.replace();
+            }
+        }
+        
+        function updateDropdownForGuestUser() {
+            const userDropdown = document.getElementById('userDropdown');
+            if (userDropdown) {
+                userDropdown.innerHTML = `
+                    <div class="py-2">
+                        <a href="<%=request.getContextPath()%>/login.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                            <i data-feather="log-in" class="w-4 h-4 mr-2"></i>
+                            Đăng nhập
+                        </a>
+                        <a href="<%=request.getContextPath()%>/register.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                            <i data-feather="user-plus" class="w-4 h-4 mr-2"></i>
+                            Đăng ký
+                        </a>
+                        <hr class="my-1">
+                        <a href="<%=request.getContextPath()%>/forgot-password.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                            <i data-feather="key" class="w-4 h-4 mr-2"></i>
+                            Quên mật khẩu
+                        </a>
+                    </div>
+                `;
+                feather.replace();
+            }
+        }
+        
+        function logout() {
+            // Remove token from localStorage
+            localStorage.removeItem('auth_token');
+            
+            // Update dropdown to guest user
+            updateDropdownForGuestUser();
+            
+            // Optional: Show logout confirmation
+            alert('Đăng xuất thành công!');
+            
+            // Refresh the page to update UI
+            window.location.reload();
+        }
             // Set current year for copyright badge
             const y = document.getElementById('year');
             if (y) y.textContent = new Date().getFullYear();

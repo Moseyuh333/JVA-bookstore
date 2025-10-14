@@ -214,8 +214,16 @@
     <script>
         let currentUser = null;
 
-        // Load user profile on page load
+        // Check authentication on page load
         document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                // Redirect to login if not authenticated
+                alert('Vui lòng đăng nhập để truy cập trang này.');
+                window.location.href = '<%= request.getContextPath() %>/login.jsp';
+                return;
+            }
+            
             loadUserProfile();
             loadOrderHistory();
         });
@@ -239,7 +247,12 @@
         });
 
         function loadUserProfile() {
-            fetch('<%= request.getContextPath() %>/api/profile')
+            const token = localStorage.getItem('auth_token');
+            fetch('<%= request.getContextPath() %>/api/profile', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -266,10 +279,12 @@
             const formData = new FormData(document.getElementById('profileForm'));
             const profileData = Object.fromEntries(formData);
 
+            const token = localStorage.getItem('auth_token');
             fetch('<%= request.getContextPath() %>/api/profile', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
                 },
                 body: JSON.stringify(profileData)
             })
@@ -299,10 +314,12 @@
             const formData = new FormData(document.getElementById('changePasswordForm'));
             const passwordData = Object.fromEntries(formData);
 
+            const token = localStorage.getItem('auth_token');
             fetch('<%= request.getContextPath() %>/api/profile/password', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
                 },
                 body: JSON.stringify(passwordData)
             })
@@ -322,7 +339,12 @@
         }
 
         function loadOrderHistory() {
-            fetch('<%= request.getContextPath() %>/api/profile/orders')
+            const token = localStorage.getItem('auth_token');
+            fetch('<%= request.getContextPath() %>/api/profile/orders', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -394,10 +416,12 @@
             const formData = new FormData(document.getElementById('deleteAccountForm'));
             const deleteData = Object.fromEntries(formData);
 
+            const token = localStorage.getItem('auth_token');
             fetch('<%= request.getContextPath() %>/api/profile/delete', {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
                 },
                 body: JSON.stringify(deleteData)
             })
