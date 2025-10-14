@@ -1,3 +1,4 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <footer class="bg-gray-900 text-gray-300 py-12 px-4 mt-16">
   <div class="container mx-auto">
     <div class="flex justify-center mb-10">
