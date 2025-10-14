@@ -53,7 +53,7 @@ public class DBUtil {
                     "username VARCHAR(50) UNIQUE NOT NULL," +
                     "email VARCHAR(100) UNIQUE NOT NULL," +
                     "password_hash VARCHAR(255) NOT NULL," +
-                    "verified BOOLEAN DEFAULT FALSE," +
+                    "email_verified BOOLEAN DEFAULT FALSE," +
                     "verification_token VARCHAR(255)," +
                     "reset_token VARCHAR(255)," +
                     "reset_expiry TIMESTAMP," +

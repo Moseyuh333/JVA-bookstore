@@ -77,7 +77,8 @@
 			const res = await fetch('api/auth/register', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: data});
 			const text = await res.text();
 			if (res.ok) {
-				document.getElementById('regResult').innerHTML = '<div class="alert alert-success"><strong>🎉 Đăng ký thành công!</strong><br>Chúng tôi đã gửi email xác nhận đến địa chỉ của bạn. Vui lòng kiểm tra hộp thư và click vào liên kết xác nhận để kích hoạt tài khoản trước khi đăng nhập.</div>';
+				document.getElementById('regResult').innerHTML = '<div class="alert alert-success"><strong>🎉 Đăng ký thành công!</strong><br>Tài khoản của bạn đã được tạo và kích hoạt. Bạn có thể <a href="login.jsp" class="alert-link">đăng nhập ngay</a>!</div>';
+				setTimeout(() => window.location.href = 'login.jsp', 2000);
 			} else {
 				let msg = text;
 				try { const j = JSON.parse(text); msg = j.error || text; } catch(_){}
