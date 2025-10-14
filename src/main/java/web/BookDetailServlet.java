@@ -21,12 +21,12 @@ public class BookDetailServlet extends HttpServlet {
 
         try (Connection conn = DBUtil.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
-                    "SELECT id, title, author, price, description, cover_image, category, rating_avg, rating_count, stock "
-                            +
+                    "SELECT id, title, author, price, description, cover_image, category, rating_avg, " +
+                            "stock_text, book_url, upc, availability, number_of_reviews, stock " +
                             "FROM books WHERE id = ?");
-
             ps.setInt(1, Integer.parseInt(id));
             ResultSet rs = ps.executeQuery();
+
             if (rs.next()) {
                 req.setAttribute("bookId", rs.getInt("id"));
                 req.setAttribute("bookTitle", rs.getString("title"));
@@ -36,9 +36,12 @@ public class BookDetailServlet extends HttpServlet {
                 req.setAttribute("bookImage", rs.getString("cover_image"));
                 req.setAttribute("bookCategory", rs.getString("category"));
                 req.setAttribute("bookRating", rs.getDouble("rating_avg"));
-                req.setAttribute("bookRatingCount", rs.getInt("rating_count"));
+                req.setAttribute("bookStockText", rs.getString("stock_text"));
                 req.setAttribute("bookStock", rs.getInt("stock"));
-
+                req.setAttribute("bookUrl", rs.getString("book_url"));
+                req.setAttribute("bookUpc", rs.getString("upc"));
+                req.setAttribute("bookAvailability", rs.getString("availability"));
+                req.setAttribute("reviewCount", rs.getInt("number_of_reviews"));
             } else {
                 req.setAttribute("error", "Book not found!");
             }
