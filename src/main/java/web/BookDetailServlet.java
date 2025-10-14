@@ -67,19 +67,24 @@ public class BookDetailServlet extends HttpServlet {
 
                 // === Reviews ===
                 PreparedStatement psReviews = conn.prepareStatement(
-                        "SELECT author_name, rating, comment, created_at FROM reviews WHERE book_id = ? ORDER BY created_at DESC");
+                        "SELECT r.rating, r.content, r.created_at, u.username " +
+                                "FROM reviews r LEFT JOIN users u ON r.user_id = u.id " +
+                                "WHERE r.book_id = ? ORDER BY r.created_at DESC");
                 psReviews.setInt(1, rs.getInt("id"));
                 ResultSet rsReviews = psReviews.executeQuery();
+
                 java.util.List<java.util.Map<String, Object>> reviews = new java.util.ArrayList<>();
                 while (rsReviews.next()) {
                     java.util.Map<String, Object> r = new java.util.HashMap<>();
-                    r.put("authorName", rsReviews.getString("author_name"));
+                    r.put("authorName",
+                            rsReviews.getString("username") != null ? rsReviews.getString("username") : "Ẩn danh");
                     r.put("rating", rsReviews.getInt("rating"));
-                    r.put("comment", rsReviews.getString("comment"));
+                    r.put("comment", rsReviews.getString("content"));
                     r.put("createdAt", rsReviews.getTimestamp("created_at"));
                     reviews.add(r);
                 }
                 req.setAttribute("reviews", reviews);
+
             } else {
                 req.setAttribute("error", "Book not found!");
             }
