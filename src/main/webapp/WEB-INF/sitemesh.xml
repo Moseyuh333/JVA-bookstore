@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<sitemesh>
-    <property name="decorators-file">/WEB-INF/decorators.xml</property>
-</sitemesh>
