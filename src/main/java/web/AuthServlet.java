@@ -58,17 +58,24 @@ public class AuthServlet extends HttpServlet {
         }
 
         // Check if user is verified
-        if (!DBUtil.isUserVerified(username)) {
+        boolean isVerified = DBUtil.isUserVerified(username);
+        System.out.println("DEBUG Login - User verified: " + isVerified);
+        if (!isVerified) {
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
             out.write("{\"error\":\"Account not verified. Please check your email.\"}");
             return;
         }
 
         String hash = DBUtil.getUserPasswordHash(username);
+        System.out.println("DEBUG Login - Username: " + username + ", Hash found: " + (hash != null));
         if (hash != null && BCrypt.checkpw(password, hash)) {
             String token = JwtUtil.generateToken(username);
-            out.write("{\"token\":\"" + token + "\", \"message\":\"Login successful\"}");
+            System.out.println("DEBUG Login - Token generated: " + (token != null));
+            String response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
+            System.out.println("DEBUG Login - Response: " + response);
+            out.write(response);
         } else {
+            System.out.println("DEBUG Login - Password check failed");
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.write("{\"error\":\"Invalid credentials\"}");
         }

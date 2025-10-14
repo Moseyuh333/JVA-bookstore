@@ -141,12 +141,12 @@ public class DBUtil {
     }
 
     public static boolean isUserVerified(String username) throws SQLException {
-        String sql = "SELECT verified FROM users WHERE username = ?";
+        String sql = "SELECT email_verified FROM users WHERE username = ?";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getBoolean("verified");
+                    return rs.getBoolean("email_verified");
                 }
                 return false;
             }
@@ -167,7 +167,7 @@ public class DBUtil {
     }
 
     public static boolean verifyUser(String token) throws SQLException {
-        String sql = "UPDATE users SET verified = TRUE, verification_token = NULL WHERE verification_token = ?";
+        String sql = "UPDATE users SET email_verified = TRUE, verification_token = NULL WHERE verification_token = ?";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, token);
             return pstmt.executeUpdate() > 0;
