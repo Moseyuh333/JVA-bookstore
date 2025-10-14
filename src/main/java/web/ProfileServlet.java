@@ -509,7 +509,7 @@ public class ProfileServlet extends HttpServlet {
 
     private String getTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+        if (bearerToken != null && bearerToken.startsWith("Bearer ") && bearerToken.length() > 7) {
             return bearerToken.substring(7);
         }
         

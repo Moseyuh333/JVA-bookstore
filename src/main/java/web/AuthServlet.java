@@ -67,8 +67,17 @@ public class AuthServlet extends HttpServlet {
         }
 
         String hash = DBUtil.getUserPasswordHash(username);
-        System.out.println("DEBUG Login - Username: " + username + ", Hash found: " + (hash != null));
-        if (hash != null && BCrypt.checkpw(password, hash)) {
+        System.out.println("DEBUG Login - Username: " + username + ", Hash found: " + (hash != null) + ", Hash length: " + (hash != null ? hash.length() : 0));
+        
+        // Validate hash before BCrypt check
+        if (hash == null || hash.trim().isEmpty()) {
+            System.out.println("DEBUG Login - Empty or null password hash");
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.write("{\"error\":\"Invalid credentials\"}");
+            return;
+        }
+        
+        if (BCrypt.checkpw(password, hash)) {
             String token = JwtUtil.generateToken(username);
             System.out.println("DEBUG Login - Token generated: " + (token != null));
             String response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
