@@ -60,14 +60,8 @@ public class AuthServlet extends HttpServlet {
             return;
         }
 
-        // Check if user is verified
-        boolean isVerified = DBUtil.isUserVerified(username);
-        System.out.println("DEBUG Login - User verified: " + isVerified);
-        if (!isVerified) {
-            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            out.write("{\"error\":\"Account not verified. Please check your email.\"}");
-            return;
-        }
+        // Skip email verification - allow all users to login
+        System.out.println("DEBUG Login - Email verification skipped");
 
         String hash = DBUtil.getUserPasswordHash(username);
         System.out.println("DEBUG Login - Username: " + username + ", Hash found: " + (hash != null) + ", Hash length: " + (hash != null ? hash.length() : 0));
@@ -117,12 +111,11 @@ public class AuthServlet extends HttpServlet {
         }
 
         String hash = BCrypt.hashpw(password, BCrypt.gensalt());
-        String verificationToken = UUID.randomUUID().toString();
 
-        DBUtil.createUser(username, email, hash, verificationToken);
-        EmailUtil.sendVerificationEmail(email, verificationToken, username);
+        // Create user without verification - set as verified immediately
+        DBUtil.createUserVerified(username, email, hash);
 
-        out.write("{\"message\":\"Registration pending. Please check your email to verify your account before logging in.\"}");
+        out.write("{\"message\":\"Registration successful! You can now login with your credentials.\"}");
     }
 
     private void handleResetPassword(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {

@@ -107,6 +107,16 @@ public class DBUtil {
         }
     }
 
+    public static void createUserVerified(String username, String email, String passwordHash) throws SQLException {
+        String sql = "INSERT INTO users (username, email, password_hash, email_verified) VALUES (?, ?, ?, true)";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, email);
+            pstmt.setString(3, passwordHash);
+            pstmt.executeUpdate();
+        }
+    }
+
     public static boolean userExists(String username) throws SQLException {
         String sql = "SELECT 1 FROM users WHERE username = ?";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {

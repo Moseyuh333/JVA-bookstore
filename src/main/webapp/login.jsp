@@ -47,9 +47,7 @@
     <div class="text-muted small">by bibo090809@gmail.com</div>
   </div>
   <h2 class="mb-3">Login</h2>
-  <% if ("true".equals(request.getParameter("verified"))) { %>
-    <div class="alert alert-success"><strong>✅ Xác nhận email thành công!</strong><br>Tài khoản của bạn đã được kích hoạt. Bạn có thể đăng nhập ngay bây giờ.</div>
-  <% } %>
+
   <form id="loginForm">
     <div class="mb-3">
       <label class="form-label">Username</label>
