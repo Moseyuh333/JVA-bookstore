@@ -19,6 +19,7 @@ import java.util.UUID;
 public class AuthServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        System.out.println("DEBUG AuthServlet - doPost called, path: " + req.getServletPath());
         resp.setContentType("application/json");
         String path = req.getServletPath();
         PrintWriter out = resp.getWriter();
@@ -42,8 +43,10 @@ public class AuthServlet extends HttpServlet {
     }
 
     private void handleLogin(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {
+        System.out.println("DEBUG AuthServlet - handleLogin called");
         String username = req.getParameter("username");
         String password = req.getParameter("password");
+        System.out.println("DEBUG AuthServlet - username: " + username + ", password provided: " + (password != null && !password.isEmpty()));
 
         if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
