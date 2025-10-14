@@ -78,23 +78,21 @@
                     <!-- Stock status -->
                     <div class="flex items-center gap-2 mb-3">
                       <c:choose>
-                        <c:when test="${bookInStock}">
-                          <span class="text-green-400 font-medium flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-green-400" fill="none"
-                              viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                            In stock (${bookStockText})
-                          </span>
+                        <c:when test="${not empty bookAvailability}">
+                          <c:choose>
+                            <c:when test="${fn:containsIgnoreCase(bookAvailability, 'in stock')}">
+                              <span class="text-green-400 font-medium">✔ ${bookAvailability}</span>
+                            </c:when>
+                            <c:when test="${fn:containsIgnoreCase(bookAvailability, 'out')}">
+                              <span class="text-red-400 font-medium">✖ ${bookAvailability}</span>
+                            </c:when>
+                            <c:otherwise>
+                              <span class="text-amber-400">${bookAvailability}</span>
+                            </c:otherwise>
+                          </c:choose>
                         </c:when>
                         <c:otherwise>
-                          <span class="text-red-400 font-medium flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-red-400" fill="none"
-                              viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Out of stock
-                          </span>
+                          <span class="text-gray-400 italic">No info</span>
                         </c:otherwise>
                       </c:choose>
                     </div>
