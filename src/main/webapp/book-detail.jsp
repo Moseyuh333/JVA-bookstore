@@ -42,75 +42,77 @@
             </div>
 
             <!-- Book info -->
-            <div class="md:w-2/3 p-8 flex flex-col justify-center">
-              <h1 class="text-3xl font-bold text-amber-400 mb-3">${bookTitle}</h1>
+            <div class="md:w-2/3 p-8 flex flex-col justify-center items-start md:items-center text-left md:text-left">
+              <div class="max-w-[600px] w-full">
+                <h1 class="text-3xl font-bold text-amber-400 mb-3">${bookTitle}</h1>
 
-              <p class="text-sm text-gray-400 mb-2">
-                by <c:choose>
-                  <c:when test="${not empty bookAuthor}">${bookAuthor}</c:when>
-                  <c:otherwise><span class="italic text-gray-500">Unknown author</span></c:otherwise>
-                </c:choose>
-              </p>
+                <p class="text-sm text-gray-400 mb-2">
+                  by <c:choose>
+                    <c:when test="${not empty bookAuthor}">${bookAuthor}</c:when>
+                    <c:otherwise><span class="italic text-gray-500">Unknown author</span></c:otherwise>
+                  </c:choose>
+                </p>
 
-              <p class="text-gray-300 mb-3">
-                <span class="font-semibold text-amber-500">Category:</span> ${bookCategory}
-              </p>
+                <p class="text-gray-300 mb-3">
+                  <span class="font-semibold text-amber-500">Category:</span> ${bookCategory}
+                </p>
 
-              <!-- Rating + stock -->
-              <div class="flex items-center gap-4 mb-4">
-                <c:if test="${not empty bookRatingInt}">
-                  <span class="inline-flex items-center bg-amber-700/20 text-amber-400 px-3 py-1 rounded-full text-sm">
-                    ★ <%= String.format("%.1f", (request.getAttribute("bookRatingInt") !=null ?
-                      Double.parseDouble(request.getAttribute("bookRatingInt").toString()) : 0.0)) %>/5
-                  </span>
-                </c:if>
-                <c:choose>
-                  <c:when test="${bookInStock}">
-                    <span class="text-green-400 font-medium">${bookStockText}</span>
-                  </c:when>
-                  <c:otherwise>
-                    <span class="text-red-400 font-medium">Out of stock</span>
-                  </c:otherwise>
-                </c:choose>
-              </div>
+                <!-- Rating + stock -->
+                <div class="flex items-center gap-4 mb-4">
+                  <c:if test="${not empty bookRatingInt}">
+                    <span
+                      class="inline-flex items-center bg-amber-700/20 text-amber-400 px-3 py-1 rounded-full text-sm">
+                      ★ <%= String.format("%.1f", (request.getAttribute("bookRatingInt") !=null ?
+                        Double.parseDouble(request.getAttribute("bookRatingInt").toString()) : 0.0)) %>/5
+                    </span>
+                  </c:if>
+                  <c:choose>
+                    <c:when test="${bookInStock}">
+                      <span class="text-green-400 font-medium">${bookStockText}</span>
+                    </c:when>
+                    <c:otherwise>
+                      <span class="text-red-400 font-medium">Out of stock</span>
+                    </c:otherwise>
+                  </c:choose>
+                </div>
 
-              <!-- Price -->
-              <p class="text-2xl font-bold text-amber-400 mb-6">
-                <c:choose>
-                  <c:when test="${not empty bookPrice}">$${bookPrice}</c:when>
-                  <c:otherwise>—</c:otherwise>
-                </c:choose>
-              </p>
+                <!-- Price -->
+                <p class="text-2xl font-bold text-amber-400 mb-6">
+                  <c:choose>
+                    <c:when test="${not empty bookPrice}">$${bookPrice}</c:when>
+                    <c:otherwise>—</c:otherwise>
+                  </c:choose>
+                </p>
 
-              <!-- Description -->
-              <p class="text-gray-300 leading-relaxed mb-6">
-                <c:out value='${bookDescription != null ? bookDescription : "No description available."}' />
-              </p>
+                <!-- Description -->
+                <p class="text-gray-300 leading-relaxed mb-6 text-justify tracking-wide">
+                  <c:out value='${bookDescription != null ? bookDescription : "No description available."}' />
+                </p>
 
-              <!-- Buttons -->
-              <div class="flex gap-3">
-                <a href="#" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-full font-semibold">Add
-                  to Cart</a>
-                <c:if test="${not empty bookUrl}">
-                  <a href="${bookUrl}" target="_blank"
-                    class="border border-amber-600 hover:bg-amber-700/20 text-amber-400 px-6 py-3 rounded-full font-semibold">
-                    View Source
-                  </a>
-                </c:if>
+                <!-- Buttons -->
+                <div class="flex gap-3">
+                  <a href="#"
+                    class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-full font-semibold">Add to
+                    Cart</a>
+                  <c:if test="${not empty bookUrl}">
+                    <a href="${bookUrl}" target="_blank"
+                      class="border border-amber-600 hover:bg-amber-700/20 text-amber-400 px-6 py-3 rounded-full font-semibold">
+                      View Source
+                    </a>
+                  </c:if>
+                </div>
               </div>
             </div>
-          </div>
-        </c:if>
-      </div>
 
-      <!-- Footer -->
-      <footer class="bg-[#5C2E0C] text-center text-gray-200 py-4 mt-12">
-        &copy; <span id="year"></span> Bookish Bliss Haven · All rights reserved
-      </footer>
 
-      <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
-      </script>
+            <!-- Footer -->
+            <footer class="bg-[#5C2E0C] text-center text-gray-200 py-4 mt-12">
+              &copy; <span id="year"></span> Bookish Bliss Haven · All rights reserved
+            </footer>
+
+            <script>
+              document.getElementById('year').textContent = new Date().getFullYear();
+            </script>
     </body>
 
     </html>
