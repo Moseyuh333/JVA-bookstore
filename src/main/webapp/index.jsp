@@ -32,15 +32,30 @@
                     <a href="<%=request.getContextPath()%>/about.jsp" class="hover:text-amber-200 font-medium">About</a>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <a href="<%=request.getContextPath()%>/login.jsp" class="p-2 rounded-full hover:bg-amber-700">
-                        <i data-feather="user" class="w-5 h-5"></i>
-                    </a>
-                    <a href="<%=request.getContextPath()%>/register.jsp" class="p-2 rounded-full hover:bg-amber-700">
-                        <i data-feather="edit" class="w-5 h-5"></i>
-                    </a>
-                    <a href="<%=request.getContextPath()%>/forgot-password.jsp" class="p-2 rounded-full hover:bg-amber-700">
-                        <i data-feather="key" class="w-5 h-5"></i>
-                    </a>
+                    <!-- User Dropdown -->
+                    <div class="relative">
+                        <button id="userDropdownBtn" class="p-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
+                            <i data-feather="user" class="w-5 h-5"></i>
+                        </button>
+                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                            <div class="py-2">
+                                <a href="<%=request.getContextPath()%>/login.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                                    <i data-feather="log-in" class="w-4 h-4 mr-2"></i>
+                                    Đăng nhập
+                                </a>
+                                <a href="<%=request.getContextPath()%>/register.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                                    <i data-feather="user-plus" class="w-4 h-4 mr-2"></i>
+                                    Đăng ký
+                                </a>
+                                <hr class="my-1">
+                                <a href="<%=request.getContextPath()%>/forgot-password.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                                    <i data-feather="key" class="w-4 h-4 mr-2"></i>
+                                    Quên mật khẩu
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <button class="p-2 rounded-full hover:bg-amber-700">
                         <i data-feather="search" class="w-5 h-5"></i>
                     </button>
@@ -140,28 +155,28 @@
     <!-- Why Choose Us -->
     <section class="bg-amber-50 py-16 px-4">
         <div class="container mx-auto">
-            <h2 class="title-font text-3xl font-bold text-center mb-12">Why Choose Us</h2>
+            <h2 class="title-font text-3xl font-bold text-center mb-12">Tại sao chọn chúng tôi</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="text-center p-6">
                     <div class="bg-amber-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4">
                         <i data-feather="award" class="w-8 h-8 text-amber-700"></i>
                     </div>
-                    <h3 class="title-font font-bold text-xl mb-2">Curated Selection</h3>
-                    <p class="text-gray-700">Handpicked books by our team of literary experts to ensure quality reading.</p>
+                    <h3 class="title-font font-bold text-xl mb-2">Tuyển chọn đặc biệt</h3>
+                    <p class="text-gray-700">Những cuốn sách được chọn lọc bởi đội ngũ chuyên gia văn học để đảm bảo chất lượng đọc.</p>
                 </div>
                 <div class="text-center p-6">
                     <div class="bg-amber-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4">
                         <i data-feather="truck" class="w-8 h-8 text-amber-700"></i>
                     </div>
-                    <h3 class="title-font font-bold text-xl mb-2">Fast Shipping</h3>
-                    <p class="text-gray-700">Get your books delivered quickly with our reliable shipping partners.</p>
+                    <h3 class="title-font font-bold text-xl mb-2">Giao hàng nhanh</h3>
+                    <p class="text-gray-700">Nhận sách nhanh chóng với đối tác vận chuyển đáng tin cậy của chúng tôi.</p>
                 </div>
                 <div class="text-center p-6">
                     <div class="bg-amber-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4">
                         <i data-feather="heart" class="w-8 h-8 text-amber-700"></i>
                     </div>
-                    <h3 class="title-font font-bold text-xl mb-2">Reading Community</h3>
-                    <p class="text-gray-700">Join our vibrant community of book lovers for discussions and events.</p>
+                    <h3 class="title-font font-bold text-xl mb-2">Cộng đồng đọc sách</h3>
+                    <p class="text-gray-700">Tham gia cộng đồng những người yêu sách sôi động để thảo luận và sự kiện.</p>
                 </div>
             </div>
         </div>
@@ -170,7 +185,7 @@
     <!-- Testimonials -->
     <section class="py-16 px-4 bg-white">
         <div class="container mx-auto">
-            <h2 class="title-font text-3xl font-bold text-center mb-12">What Our Readers Say</h2>
+            <h2 class="title-font text-3xl font-bold text-center mb-12">Độc giả nói gì về chúng tôi</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <!-- Testimonial 1 -->
                 <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
@@ -187,7 +202,7 @@
                             </div>
                         </div>
                     </div>
-                    <p class="text-gray-700 italic">"The best selection of books I've found online! Their recommendations are always spot on."</p>
+                    <p class="text-gray-700 italic">"Lựa chọn sách tuyệt vời nhất mà tôi tìm thấy trực tuyến! Những gợi ý của họ luôn chính xác."</p>
                 </div>
                 <!-- Testimonial 2 -->
                 <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
@@ -204,7 +219,7 @@
                             </div>
                         </div>
                     </div>
-                    <p class="text-gray-700 italic">"Fast delivery and excellent packaging. My books always arrive in perfect condition."</p>
+                    <p class="text-gray-700 italic">"Giao hàng nhanh và đóng gói tuyệt vời. Sách của tôi luôn đến trong tình trạng hoàn hảo."</p>
                 </div>
                 <!-- Testimonial 3 -->
                 <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
@@ -221,7 +236,7 @@
                             </div>
                         </div>
                     </div>
-                    <p class="text-gray-700 italic">"Love their seasonal reading lists and book club recommendations. Found so many new favorites!"</p>
+                    <p class="text-gray-700 italic">"Yêu thích danh sách đọc theo mùa và gợi ý câu lạc bộ sách. Tìm thấy rất nhiều cuốn sách yêu thích mới!"</p>
                 </div>
             </div>
         </div>
@@ -230,12 +245,12 @@
     <!-- Newsletter -->
     <section class="bg-amber-800 text-white py-16 px-4">
         <div class="container mx-auto max-w-4xl text-center">
-            <h2 class="title-font text-3xl font-bold mb-4">Stay in the Literary Loop</h2>
-            <p class="mb-8 text-amber-100 max-w-2xl mx-auto">Subscribe to our newsletter for new releases, exclusive deals, and reading recommendations.</p>
+            <h2 class="title-font text-3xl font-bold mb-4">Cập nhật tin tức văn học</h2>
+            <p class="mb-8 text-amber-100 max-w-2xl mx-auto">Đăng ký nhận bản tin để biết về sách mới, ưu đãi độc quyền và gợi ý đọc sách.</p>
             <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto sm:max-w-xl">
-                <input type="email" placeholder="Your email address" class="flex-grow px-4 py-3 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <input type="email" placeholder="Địa chỉ email của bạn" class="flex-grow px-4 py-3 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
                 <button type="submit" class="bg-white hover:bg-gray-100 text-amber-800 font-bold py-3 px-6 rounded-full transition duration-300 whitespace-nowrap">
-                    Subscribe
+                    Đăng ký
                 </button>
             </form>
         </div>
@@ -247,7 +262,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
                     <h3 class="title-font text-white text-xl font-bold mb-4">Bookish Bliss Haven</h3>
-                    <p class="mb-4">Your trusted source for quality books and literary inspiration.</p>
+                    <p class="mb-4">Nguồn sách chất lượng và cảm hứng văn học đáng tin cậy của bạn.</p>
                     <div class="flex space-x-4">
                         <a href="#" class="hover:text-white">
                             <i data-feather="facebook" class="w-5 h-5"></i>
@@ -261,39 +276,39 @@
                     </div>
                 </div>
                 <div>
-                    <h4 class="text-white font-bold mb-4">Shop</h4>
+                    <h4 class="text-white font-bold mb-4">Mua sắm</h4>
                     <ul class="space-y-2">
-                        <li><a href="#" class="hover:text-white">New Arrivals</a></li>
-                        <li><a href="#" class="hover:text-white">Bestsellers</a></li>
-                        <li><a href="#" class="hover:text-white">Fiction</a></li>
-                        <li><a href="#" class="hover:text-white">Non-Fiction</a></li>
-                        <li><a href="#" class="hover:text-white">Gift Cards</a></li>
+                        <li><a href="#" class="hover:text-white">Sách mới</a></li>
+                        <li><a href="#" class="hover:text-white">Sách bán chạy</a></li>
+                        <li><a href="#" class="hover:text-white">Tiểu thuyết</a></li>
+                        <li><a href="#" class="hover:text-white">Phi tiểu thuyết</a></li>
+                        <li><a href="#" class="hover:text-white">Thẻ quà tặng</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="text-white font-bold mb-4">Help</h4>
+                    <h4 class="text-white font-bold mb-4">Hỗ trợ</h4>
                     <ul class="space-y-2">
-                        <li><a href="#" class="hover:text-white">FAQ</a></li>
-                        <li><a href="#" class="hover:text-white">Shipping</a></li>
-                        <li><a href="#" class="hover:text-white">Returns</a></li>
-                        <li><a href="#" class="hover:text-white">Contact Us</a></li>
-                        <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-white">Câu hỏi thường gặp</a></li>
+                        <li><a href="#" class="hover:text-white">Vận chuyển</a></li>
+                        <li><a href="#" class="hover:text-white">Đổi trả</a></li>
+                        <li><a href="#" class="hover:text-white">Liên hệ</a></li>
+                        <li><a href="#" class="hover:text-white">Chính sách bảo mật</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="text-white font-bold mb-4">Contact</h4>
+                    <h4 class="text-white font-bold mb-4">Liên hệ</h4>
                     <address class="not-italic space-y-2">
                         <div class="flex items-start">
                             <i data-feather="map-pin" class="w-5 h-5 mr-2 mt-0.5"></i>
-                            <span>123 Literary Lane, Booktown, BT12 3AB</span>
+                            <span>123 Đường Văn Học, Quận Sách, TP.HCM</span>
                         </div>
                         <div class="flex items-center">
                             <i data-feather="mail" class="w-5 h-5 mr-2"></i>
-                            <a href="mailto:info@bookishhavn.com" class="hover:text-white">info@bookishhaven.com</a>
+                            <a href="mailto:info@bookishhaven.com" class="hover:text-white">info@bookishhaven.com</a>
                         </div>
                         <div class="flex items-center">
                             <i data-feather="phone" class="w-5 h-5 mr-2"></i>
-                            <a href="tel:+1234567890" class="hover:text-white">(123) 456-7890</a>
+                            <a href="tel:+84901234567" class="hover:text-white">0901 234 567</a>
                         </div>
                     </address>
                 </div>
@@ -306,8 +321,30 @@
 
     <script>
         feather.replace();
-        // Simple animation for book cards on scroll
+        
+        // User dropdown functionality
         document.addEventListener('DOMContentLoaded', function() {
+            const userDropdownBtn = document.getElementById('userDropdownBtn');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            if (userDropdownBtn && userDropdown) {
+                userDropdownBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userDropdown.classList.toggle('hidden');
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function() {
+                    userDropdown.classList.add('hidden');
+                });
+                
+                // Prevent dropdown from closing when clicking inside it
+                userDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+            
+            // Simple animation for book cards on scroll
             const bookCards = document.querySelectorAll('.book-card');
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {

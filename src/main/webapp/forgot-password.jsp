@@ -1,6 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib uri="http://www.opensymphony.com/sitemesh/page" prefix="page" %>
-<page:title>Forgot Password</page:title>
+<%@ taglib uri="http://www.opensymphony.com/sitemesh/decorator" prefix="decorator" %>
+<decorator:head>
+    <title>Forgot Password - NKbookstore</title>
+</decorator:head>
 
 <div class="container" style="max-width: 520px;">
 	<div class="text-center my-4">
