@@ -126,7 +126,7 @@
                     <div
                         class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300 block hover:-translate-y-1 hover:shadow-lg">
                         <a href="${pageContext.request.contextPath}/books/detail?id=1">
-                            <img src="http://static.photos/books/320x240/1" alt="Book Cover"
+                            <img src="https://books.toscrape.com/../media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg" alt="Book Cover"
                                 class="w-full h-64 object-cover">
                             <div class="p-4">
                                 <h3 class="title-font font-bold text-lg mb-1">A Light in the Attic</h3>
@@ -150,7 +150,7 @@
                         class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300 block hover:-translate-y-1 hover:shadow-lg">
                         <a href="${pageContext.request.contextPath}/books/detail?id=2"
                             class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300 block hover:-translate-y-1 hover:shadow-lg">
-                            <img src="http://static.photos/books/320x240/2" alt="Book Cover"
+                            <img src="https://books.toscrape.com/../media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg" alt="Book Cover"
                                 class="w-full h-64 object-cover">
                             <div class="p-4">
                                 <h3 class="title-font font-bold text-lg mb-1">Tipping the Velvet</h3>
@@ -174,7 +174,7 @@
                         class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300 block hover:-translate-y-1 hover:shadow-lg">
                         <a href="${pageContext.request.contextPath}/books/detail?id=3"
                             class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
-                            <img src="http://static.photos/books/320x240/3" alt="Book Cover"
+                            <img src="https://books.toscrape.com/../media/cache/3e/ef/3eef99c9d9adef34639f510662022830.jpg" alt="Book Cover"
                                 class="w-full h-64 object-cover">
                             <div class="p-4">
                                 <h3 class="title-font font-bold text-lg mb-1">Soumission</h3>
@@ -197,7 +197,7 @@
                         class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300 block hover:-translate-y-1 hover:shadow-lg">
                         <a href="${pageContext.request.contextPath}/books/detail?id=4"
                             class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
-                            <img src="http://static.photos/books/320x240/4" alt="Book Cover"
+                            <img src="https://books.toscrape.com/../media/cache/32/51/3251cf3a3412f53f339e42cac2134093.jpg" alt="Book Cover"
                                 class="w-full h-64 object-cover">
                             <div class="p-4">
                                 <h3 class="title-font font-bold text-lg mb-1">Sharp Objects</h3>
