@@ -34,11 +34,9 @@ public class AuthServlet extends HttpServlet {
                 out.write("{\"error\":\"Endpoint not found\"}");
             }
         } catch (Exception e) {
-            System.err.println("AuthServlet error: " + e.getMessage());
-            e.printStackTrace();
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             try (PrintWriter out = resp.getWriter()) {
-                out.write("{\"error\":\"Internal server error: " + e.getMessage() + "\"}");
+                out.write("{\"error\":\"" + e.getMessage() + "\"}");
             }
         }
     }
