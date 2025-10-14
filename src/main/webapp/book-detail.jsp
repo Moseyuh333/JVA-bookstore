@@ -84,11 +84,6 @@
           <% for (int i = fullStars + (halfStar ? 1 : 0); i < 5; i++) { %> ☆ <% } %>
         </div>
 
-        <!-- Demo Warning -->
-        <div class="bg-[#4b2c0a] border border-[#7b5322] text-amber-200 px-4 py-3 rounded-md">
-          <strong>⚠ Demo Notice:</strong> Prices and ratings shown are for demonstration purposes only.
-        </div>
-
         <div class="flex gap-4 pt-6">
           <a href="#" class="bg-[#b87333] hover:bg-[#d18f4f] text-white px-6 py-3 rounded-full font-semibold transition">Add to Cart</a>
           <c:if test="${not empty bookUrl}">
