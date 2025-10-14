@@ -44,15 +44,16 @@ public class AuthServlet extends HttpServlet {
 
     private void handleLogin(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {
         System.out.println("DEBUG AuthServlet - handleLogin called");
-        String username = req.getParameter("username");
-        String password = req.getParameter("password");
-        System.out.println("DEBUG AuthServlet - username: " + username + ", password provided: " + (password != null && !password.isEmpty()));
+        try {
+            String username = req.getParameter("username");
+            String password = req.getParameter("password");
+            System.out.println("DEBUG AuthServlet - username: " + username + ", password provided: " + (password != null && !password.isEmpty()));
 
-        if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.write("{\"error\":\"Username and password required\"}");
-            return;
-        }
+            if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.write("{\"error\":\"Username and password required\"}");
+                return;
+            }
 
         if (!DBUtil.userExists(username)) {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -84,6 +85,12 @@ public class AuthServlet extends HttpServlet {
             System.out.println("DEBUG Login - Password check failed");
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.write("{\"error\":\"Invalid credentials\"}");
+        }
+        } catch (Exception e) {
+            System.out.println("DEBUG Login - Exception: " + e.getMessage());
+            e.printStackTrace();
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.write("{\"error\":\"Login error: " + e.getMessage() + "\"}");
         }
     }
 
