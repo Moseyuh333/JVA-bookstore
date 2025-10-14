@@ -260,6 +260,13 @@
     <!-- Footer -->
     <footer class="bg-gray-900 text-gray-300 py-12 px-4">
         <div class="container mx-auto">
+            <!-- Compact copyright badge moved above footer columns -->
+            <div class="flex justify-center mb-10">
+                <span class="inline-flex items-center gap-2 bg-gray-800 text-amber-200 px-4 py-2 rounded-full text-sm shadow-sm">
+                    <i data-feather="shield" class="w-4 h-4"></i>
+                    <span>&copy; <span id="year"></span> Bookish Bliss Haven · Mọi quyền được bảo lưu</span>
+                </span>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
                     <h3 class="title-font text-white text-xl font-bold mb-4">Bookish Bliss Haven</h3>
@@ -314,9 +321,6 @@
                     </address>
                 </div>
             </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-                <p>&copy; 2023 Bookish Bliss Haven. All rights reserved.</p>
-            </div>
         </div>
     </footer>
 
@@ -344,6 +348,9 @@
                     e.stopPropagation();
                 });
             }
+            // Set current year for copyright badge
+            const y = document.getElementById('year');
+            if (y) y.textContent = new Date().getFullYear();
             
             // Simple animation for book cards on scroll
             const bookCards = document.querySelectorAll('.book-card');
