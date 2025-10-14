@@ -7,7 +7,7 @@ import javax.servlet.annotation.*;
 import java.io.IOException;
 import java.sql.*;
 
-@WebServlet(name = "BookDetailServlet", urlPatterns = {"/books/detail"})
+@WebServlet(name = "BookDetailServlet", urlPatterns = { "/books/detail" })
 public class BookDetailServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -21,24 +21,24 @@ public class BookDetailServlet extends HttpServlet {
 
         try (Connection conn = DBUtil.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, title, author, price, description, cover_image, category, rating_int, rating_text, in_stock, stock_text, book_url " +
-                "FROM books WHERE id = ?"
-            );
+                    "SELECT id, title, author, price, description, cover_image, category, rating_avg, rating_count, stock "
+                            +
+                            "FROM books WHERE id = ?");
+
             ps.setInt(1, Integer.parseInt(id));
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 req.setAttribute("bookId", rs.getInt("id"));
                 req.setAttribute("bookTitle", rs.getString("title"));
-                req.setAttribute("bookAuthor", rs.getString("author"));       // có thể null vì CSV không có author; OK
+                req.setAttribute("bookAuthor", rs.getString("author"));
                 req.setAttribute("bookPrice", rs.getBigDecimal("price"));
                 req.setAttribute("bookDescription", rs.getString("description"));
-                req.setAttribute("bookImage", rs.getString("cover_image"));   // có thể null
+                req.setAttribute("bookImage", rs.getString("cover_image"));
                 req.setAttribute("bookCategory", rs.getString("category"));
-                req.setAttribute("bookRatingInt", rs.getObject("rating_int"));
-                req.setAttribute("bookRatingText", rs.getString("rating_text"));
-                req.setAttribute("bookInStock", rs.getBoolean("in_stock"));
-                req.setAttribute("bookStockText", rs.getString("stock_text"));
-                req.setAttribute("bookUrl", rs.getString("book_url"));
+                req.setAttribute("bookRating", rs.getDouble("rating_avg"));
+                req.setAttribute("bookRatingCount", rs.getInt("rating_count"));
+                req.setAttribute("bookStock", rs.getInt("stock"));
+
             } else {
                 req.setAttribute("error", "Book not found!");
             }
