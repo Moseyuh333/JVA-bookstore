@@ -1,109 +1,102 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>${bookTitle} | Bookish Bliss Haven</title>
+  <title>${bookTitle} | Book Details</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#1a1a1a] text-gray-100 font-sans">
 
+<body class="bg-[#111] text-gray-100 font-sans">
   <!-- Navbar -->
-  <nav class="bg-[#5c2e05] text-white shadow-md">
-    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+  <nav class="bg-[#5C2E0C] text-white shadow-md">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
       <a href="${pageContext.request.contextPath}/index.jsp" class="flex items-center space-x-2">
-        <i data-feather="book-open" class="w-6 h-6"></i>
-        <span class="font-bold text-xl tracking-wide">Bookish Bliss Haven</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6h4m6 4V6a2 2 0 00-2-2H4a2 2 0 00-2 2v14l4-2 4 2 4-2 4 2 4-2z"/>
+        </svg>
+        <span class="font-bold text-lg">Bookish Bliss Haven</span>
       </a>
-      <div class="flex space-x-6 text-sm">
-        <a href="${pageContext.request.contextPath}/books" class="hover:text-amber-300">Shop</a>
-        <a href="#" class="hover:text-amber-300">Collections</a>
-        <a href="#" class="hover:text-amber-300">About</a>
-      </div>
     </div>
   </nav>
 
-  <!-- Breadcrumb -->
-  <div class="bg-[#2a2a2a] text-sm text-gray-400 py-3 px-6">
-    <div class="container mx-auto">
-      <a href="${pageContext.request.contextPath}/index.jsp" class="text-amber-400 hover:underline">Home</a> /
-      <a href="${pageContext.request.contextPath}/books" class="text-amber-400 hover:underline">Books</a> /
-      <span class="text-gray-300">${bookTitle}</span>
-    </div>
-  </div>
+  <!-- Main content -->
+  <div class="container mx-auto py-12 px-6">
+    <c:if test="${not empty error}">
+      <div class="bg-red-800/60 text-red-200 px-4 py-3 rounded">${error}</div>
+    </c:if>
 
-  <!-- Main Content -->
-  <div class="container mx-auto px-6 py-10">
-    <div class="grid md:grid-cols-2 gap-10 items-start bg-[#222] rounded-xl p-8 shadow-lg border border-[#3a2a1d]">
-
-      <!-- Book Image -->
-      <div class="flex justify-center">
-        <img src="<c:out value='${bookImage}'/>"
-             alt="${bookTitle}"
-             class="rounded-lg shadow-lg object-cover max-h-[480px] border border-[#4b3421]">
-      </div>
-
-      <!-- Info Section -->
-      <div class="space-y-4">
-        <h1 class="text-3xl font-bold text-white">${bookTitle}</h1>
-        <p class="text-gray-400 italic">
-          <c:choose>
-            <c:when test="${not empty bookAuthor}">by ${bookAuthor}</c:when>
-            <c:otherwise>Unknown author</c:otherwise>
-          </c:choose>
-        </p>
-        <p class="text-amber-400 text-lg">Category: <span class="text-gray-200">${bookCategory}</span></p>
-
-        <p class="text-3xl font-semibold text-amber-400">£${bookPrice}</p>
-
-        <p class="text-sm">
-          <c:choose>
-            <c:when test="${bookInStock}">
-              <span class="text-green-400">✔ In stock (${bookStockText})</span>
-            </c:when>
-            <c:otherwise>
-              <span class="text-red-500">✖ Out of stock</span>
-            </c:otherwise>
-          </c:choose>
-        </p>
-
-        <!-- Rating -->
-        <div class="text-yellow-400 text-xl flex gap-1">
-          <%
-            Object ratingObj = request.getAttribute("bookRatingInt");
-            double rating = 0.0;
-            if (ratingObj != null) {
-              try { rating = Double.parseDouble(ratingObj.toString()); } catch (Exception ignored) {}
-            }
-            int fullStars = (int) rating;
-            boolean halfStar = (rating - fullStars) >= 0.5;
-          %>
-          <% for (int i = 0; i < fullStars; i++) { %> ★ <% } %>
-          <% if (halfStar) { %> ☆ <% } %>
-          <% for (int i = fullStars + (halfStar ? 1 : 0); i < 5; i++) { %> ☆ <% } %>
+    <c:if test="${empty error}">
+      <div class="flex flex-col md:flex-row bg-[#1b1b1b] rounded-lg shadow-lg overflow-hidden">
+        <!-- Book cover -->
+        <div class="md:w-1/3 flex justify-center items-center bg-[#2b2b2b] p-6">
+          <img src="<c:out value='${bookImage != null && bookImage ne "" ? bookImage : "https://placehold.co/300x400"}'/>"
+               alt="${bookTitle}" class="rounded-lg shadow-md max-h-[480px] object-cover">
         </div>
 
-        <div class="flex gap-4 pt-6">
-          <a href="#" class="bg-[#b87333] hover:bg-[#d18f4f] text-white px-6 py-3 rounded-full font-semibold transition">Add to Cart</a>
-          <c:if test="${not empty bookUrl}">
-            <a href="${bookUrl}" target="_blank" class="bg-transparent border border-[#b87333] text-[#b87333] hover:bg-[#b87333] hover:text-white px-6 py-3 rounded-full font-semibold transition">View Source</a>
-          </c:if>
+        <!-- Book info -->
+        <div class="md:w-2/3 p-8 flex flex-col justify-center">
+          <h1 class="text-3xl font-bold text-amber-400 mb-3">${bookTitle}</h1>
+
+          <p class="text-sm text-gray-400 mb-2">
+            by <c:choose>
+              <c:when test="${not empty bookAuthor}">${bookAuthor}</c:when>
+              <c:otherwise><span class="italic text-gray-500">Unknown author</span></c:otherwise>
+            </c:choose>
+          </p>
+
+          <p class="text-gray-300 mb-3">
+            <span class="font-semibold text-amber-500">Category:</span> ${bookCategory}
+          </p>
+
+          <!-- Rating + stock -->
+          <div class="flex items-center gap-4 mb-4">
+            <c:if test="${not empty bookRatingInt}">
+              <span class="inline-flex items-center bg-amber-700/20 text-amber-400 px-3 py-1 rounded-full text-sm">
+                ★ <%= String.format("%.1f", (request.getAttribute("bookRatingInt") != null ? Double.parseDouble(request.getAttribute("bookRatingInt").toString()) : 0.0)) %>/5
+              </span>
+            </c:if>
+            <c:choose>
+              <c:when test="${bookInStock}">
+                <span class="text-green-400 font-medium">${bookStockText}</span>
+              </c:when>
+              <c:otherwise>
+                <span class="text-red-400 font-medium">Out of stock</span>
+              </c:otherwise>
+            </c:choose>
+          </div>
+
+          <!-- Price -->
+          <p class="text-2xl font-bold text-amber-400 mb-6">
+            <c:choose>
+              <c:when test="${not empty bookPrice}">$${bookPrice}</c:when>
+              <c:otherwise>—</c:otherwise>
+            </c:choose>
+          </p>
+
+          <!-- Description -->
+          <p class="text-gray-300 leading-relaxed mb-6">
+            <c:out value='${bookDescription != null ? bookDescription : "No description available."}'/>
+          </p>
+
+          <!-- Buttons -->
+          <div class="flex gap-3">
+            <a href="#" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-full font-semibold">Add to Cart</a>
+            <c:if test="${not empty bookUrl}">
+              <a href="${bookUrl}" target="_blank"
+                 class="border border-amber-600 hover:bg-amber-700/20 text-amber-400 px-6 py-3 rounded-full font-semibold">
+                View Source
+              </a>
+            </c:if>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- Description -->
-    <div class="mt-10 bg-[#222] rounded-xl p-8 border border-[#3a2a1d] shadow">
-      <h2 class="text-xl font-semibold text-amber-400 mb-4">Product Description</h2>
-      <p class="text-gray-300 leading-relaxed">
-        <c:out value='${bookDescription != null ? bookDescription : "No description available."}'/>
-      </p>
-    </div>
+    </c:if>
   </div>
 
   <!-- Footer -->
-  <footer class="bg-[#111] text-gray-400 text-center py-6 border-t border-[#3a2a1d]">
+  <footer class="bg-[#5C2E0C] text-center text-gray-200 py-4 mt-12">
     &copy; <span id="year"></span> Bookish Bliss Haven · All rights reserved
   </footer>
 
