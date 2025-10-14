@@ -9,7 +9,6 @@
     <div class="text-muted small">by bibo090809@gmail.com</div>
   </div>
   <h2 class="mb-3">Login</h2>
-  <form id="loginForm">
   <% if ("true".equals(request.getParameter("verified"))) { %>
     <div class="alert alert-success">Email verified successfully! You can now login.</div>
   <% } %>
@@ -23,6 +22,10 @@
       <input class="form-control" type="password" name="password" required />
     </div>
     <button class="btn btn-primary" type="submit">Login</button>
+    <div class="mt-3 d-flex gap-3">
+      <a href="register.jsp">Create account</a>
+      <a href="forgot-password.jsp">Forgot password?</a>
+    </div>
   </form>
   <hr/>
   <div>
@@ -42,9 +45,11 @@
       const json = await res.json();
       token = json.token;
       document.getElementById('loadBooks').disabled = false;
-      document.getElementById('result').textContent = 'Token acquired.';
+      document.getElementById('result').textContent = 'Login successful. Token acquired.';
     } else {
-      document.getElementById('result').textContent = 'Login failed.';
+      const text = await res.text();
+      try { const j = JSON.parse(text); document.getElementById('result').textContent = 'Login failed: ' + (j.error || text); }
+      catch(e){ document.getElementById('result').textContent = 'Login failed: ' + text; }
     }
   });
 

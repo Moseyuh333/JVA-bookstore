@@ -21,24 +21,24 @@
     <nav class="bg-amber-800 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
-                <a href="index.jsp" class="flex items-center space-x-2">
+                <a href="<%=request.getContextPath()%>/index.jsp" class="flex items-center space-x-2">
                     <i data-feather="book-open" class="w-6 h-6"></i>
                     <span class="title-font text-xl font-bold">Bookish Bliss Haven</span>
                 </a>
                 <div class="hidden md:flex space-x-8">
-                    <a href="index.jsp" class="hover:text-amber-200 font-medium">Home</a>
-                    <a href="shop.jsp" class="hover:text-amber-200 font-medium">Shop</a>
-                    <a href="collections.jsp" class="hover:text-amber-200 font-medium">Collections</a>
-                    <a href="about.jsp" class="hover:text-amber-200 font-medium">About</a>
+                    <a href="<%=request.getContextPath()%>/index.jsp" class="hover:text-amber-200 font-medium">Home</a>
+                    <a href="<%=request.getContextPath()%>/shop.jsp" class="hover:text-amber-200 font-medium">Shop</a>
+                    <a href="<%=request.getContextPath()%>/collections.jsp" class="hover:text-amber-200 font-medium">Collections</a>
+                    <a href="<%=request.getContextPath()%>/about.jsp" class="hover:text-amber-200 font-medium">About</a>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <a href="login.jsp" class="p-2 rounded-full hover:bg-amber-700">
+                    <a href="<%=request.getContextPath()%>/login.jsp" class="p-2 rounded-full hover:bg-amber-700">
                         <i data-feather="user" class="w-5 h-5"></i>
                     </a>
-                    <a href="register.jsp" class="p-2 rounded-full hover:bg-amber-700">
+                    <a href="<%=request.getContextPath()%>/register.jsp" class="p-2 rounded-full hover:bg-amber-700">
                         <i data-feather="edit" class="w-5 h-5"></i>
                     </a>
-                    <a href="forgot-password.jsp" class="p-2 rounded-full hover:bg-amber-700">
+                    <a href="<%=request.getContextPath()%>/forgot-password.jsp" class="p-2 rounded-full hover:bg-amber-700">
                         <i data-feather="key" class="w-5 h-5"></i>
                     </a>
                     <button class="p-2 rounded-full hover:bg-amber-700">
