@@ -105,7 +105,7 @@
                   <!-- Price -->
                   <p class="text-2xl font-bold text-amber-400 mb-6">
                     <c:choose>
-                      <c:when test="${not empty bookPrice}">$£{bookPrice}</c:when>
+                      <c:when test="${not empty bookPrice}">£${bookPrice}</c:when>
                       <c:otherwise>—</c:otherwise>
                     </c:choose>
                   </p>
@@ -151,11 +151,11 @@
                       </tr>
                       <tr>
                         <td class="py-3 font-semibold text-gray-400">Price (excl. tax)</td>
-                        <td>$£{bookPrice}</td>
+                        <td>£${bookPrice}</td>
                       </tr>
                       <tr>
                         <td class="py-3 font-semibold text-gray-400">Price (incl. tax)</td>
-                        <td>$£{bookPrice}</td>
+                        <td>£${bookPrice}</td>
                       </tr>
                       <tr>
                         <td class="py-3 font-semibold text-gray-400">Tax</td>
