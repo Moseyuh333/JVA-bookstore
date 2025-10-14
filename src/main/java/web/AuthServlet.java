@@ -66,6 +66,8 @@ public class AuthServlet extends HttpServlet {
 
         String hash = DBUtil.getUserPasswordHash(username);
         System.out.println("DEBUG Login - Username: " + username + ", Hash found: " + (hash != null) + ", Hash length: " + (hash != null ? hash.length() : 0));
+        System.out.println("DEBUG Login - Password input: '" + password + "', Password length: " + password.length());
+        System.out.println("DEBUG Login - Hash: " + hash);
         
         // Validate hash before BCrypt check
         if (hash == null || hash.trim().isEmpty()) {
