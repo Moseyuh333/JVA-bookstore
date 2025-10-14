@@ -75,57 +75,58 @@
                       <span class="font-semibold text-amber-500">Category:</span> ${bookCategory}
                     </p>
 
-                    <!-- Rating + stock -->
-                    <div class="flex items-center gap-4 mb-4">
-                      <!-- Rating Stars -->
-                      <c:if test="${not empty bookRating}">
-                        <div class="flex items-center mb-4">
-                          <c:set var="fullStars" value="${bookRating >= 5 ? 5 : bookRating}" />
-                          <c:forEach var="i" begin="1" end="5">
-                            <c:choose>
-                              <c:when test="${i <= bookRating}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400 fill-yellow-400"
-                                  viewBox="0 0 20 20" fill="currentColor">
-                                  <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975a1 1 0 00.95.69h4.179c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.975c.3.921-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.176 0l-3.385 2.46c-.784.57-1.838-.197-1.54-1.118l1.287-3.975a1 1 0 00-.364-1.118L2.046 9.402c-.783-.57-.38-1.81.588-1.81h4.179a1 1 0 00.95-.69l1.286-3.975z" />
-                                </svg>
-                              </c:when>
-                              <c:otherwise>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 fill-gray-500"
-                                  viewBox="0 0 20 20" fill="currentColor">
-                                  <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975a1 1 0 00.95.69h4.179c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.975c.3.921-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.176 0l-3.385 2.46c-.784.57-1.838-.197-1.54-1.118l1.287-3.975a1 1 0 00-.364-1.118L2.046 9.402c-.783-.57-.38-1.81.588-1.81h4.179a1 1 0 00.95-.69l1.286-3.975z" />
-                                </svg>
-                              </c:otherwise>
-                            </c:choose>
-                          </c:forEach>
-
-                          <span class="ml-2 text-gray-400 text-sm">
-                            (
-                            <fmt:formatNumber value="${bookRating}" minFractionDigits="1" /> / 5)
-                          </span>
-                        </div>
-                      </c:if>
-
+                    <!-- Stock status -->
+                    <div class="flex items-center gap-2 mb-3">
                       <c:choose>
-                        <c:when test="${not empty bookAvailability}">
-                          <c:choose>
-                            <c:when test="${fn:containsIgnoreCase(bookAvailability, 'in stock')}">
-                              <span class="text-green-400 font-medium">✔ ${bookAvailability}</span>
-                            </c:when>
-                            <c:when test="${fn:containsIgnoreCase(bookAvailability, 'out')}">
-                              <span class="text-red-400 font-medium">✖ ${bookAvailability}</span>
-                            </c:when>
-                            <c:otherwise>
-                              <span class="text-amber-400">${bookAvailability}</span>
-                            </c:otherwise>
-                          </c:choose>
+                        <c:when test="${bookInStock}">
+                          <span class="text-green-400 font-medium flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-green-400" fill="none"
+                              viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            In stock (${bookStockText})
+                          </span>
                         </c:when>
                         <c:otherwise>
-                          <span class="text-gray-400 italic">No info</span>
+                          <span class="text-red-400 font-medium flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-red-400" fill="none"
+                              viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Out of stock
+                          </span>
                         </c:otherwise>
                       </c:choose>
                     </div>
+
+                    <!-- Rating Stars -->
+                    <c:if test="${not empty bookRating}">
+                      <div class="flex items-center mb-4">
+                        <c:forEach var="i" begin="1" end="5">
+                          <c:choose>
+                            <c:when test="${i <= bookRating}">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400 fill-yellow-400"
+                                viewBox="0 0 20 20" fill="currentColor">
+                                <path
+                                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975a1 1 0 00.95.69h4.179c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.975c.3.921-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.176 0l-3.385 2.46c-.784.57-1.838-.197-1.54-1.118l1.287-3.975a1 1 0 00-.364-1.118L2.046 9.402c-.783-.57-.38-1.81.588-1.81h4.179a1 1 0 00.95-.69l1.286-3.975z" />
+                              </svg>
+                            </c:when>
+                            <c:otherwise>
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 fill-gray-500"
+                                viewBox="0 0 20 20" fill="currentColor">
+                                <path
+                                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975a1 1 0 00.95.69h4.179c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.975c.3.921-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.176 0l-3.385 2.46c-.784.57-1.838-.197-1.54-1.118l1.287-3.975a1 1 0 00-.364-1.118L2.046 9.402c-.783-.57-.38-1.81.588-1.81h4.179a1 1 0 00.95-.69l1.286-3.975z" />
+                              </svg>
+                            </c:otherwise>
+                          </c:choose>
+                        </c:forEach>
+
+                        <span class="ml-2 text-gray-400 text-sm">
+                          (
+                          <fmt:formatNumber value="${bookRating}" minFractionDigits="1" /> / 5)
+                        </span>
+                      </div>
+                    </c:if>
 
                     <!-- Price -->
                     <p class="text-2xl font-bold text-amber-400 mb-6">
