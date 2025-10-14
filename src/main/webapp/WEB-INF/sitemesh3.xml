@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<sitemesh>
-    <mapping path="/*" decorator="/WEB-INF/decorators/main.jsp"/>
-    <decorators defaultdir="/WEB-INF/decorators">
-        <decorator name="main" page="main.jsp"/>
-    </decorators>
-</sitemesh>
