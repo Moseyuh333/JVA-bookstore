@@ -16,7 +16,7 @@ public class BookDetailServlet extends HttpServlet {
         String idParam = req.getParameter("id");
         if (idParam == null) {
             req.setAttribute("error", "Missing book ID.");
-            req.getRequestDispatcher("/books-detail.jsp").forward(req, resp);
+            req.getRequestDispatcher("/book-detail.jsp").forward(req, resp);
             return;
         }
 
@@ -25,14 +25,14 @@ public class BookDetailServlet extends HttpServlet {
             id = Integer.parseInt(idParam);
         } catch (NumberFormatException e) {
             req.setAttribute("error", "Invalid book ID format.");
-            req.getRequestDispatcher("/books-detail.jsp").forward(req, resp);
+            req.getRequestDispatcher("/book-detail.jsp").forward(req, resp);
             return;
         }
 
         List<String[]> books = loadBooksFromCSV(req);
         if (id < 1 || id > books.size()) {
             req.setAttribute("error", "Book not found.");
-            req.getRequestDispatcher("/books-detail.jsp").forward(req, resp);
+            req.getRequestDispatcher("/book-detail.jsp").forward(req, resp);
             return;
         }
 
@@ -59,7 +59,7 @@ public class BookDetailServlet extends HttpServlet {
         req.setAttribute("bookAuthor", null);
         req.setAttribute("bookImage", "http://static.photos/books/320x240/" + id);
 
-        req.getRequestDispatcher("/books-detail.jsp").forward(req, resp);
+        req.getRequestDispatcher("/book-detail.jsp").forward(req, resp);
     }
 
     private List<String[]> loadBooksFromCSV(HttpServletRequest req) throws IOException {
