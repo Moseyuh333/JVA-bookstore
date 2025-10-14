@@ -159,6 +159,55 @@
                   </p>
                 </div>
 
+                <!-- Product Info Table -->
+                <div class="bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md">
+                  <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Product Information
+                  </h2>
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full border-collapse">
+                      <tbody class="divide-y divide-[#333] text-gray-300">
+                        <tr>
+                          <td class="py-3 font-semibold w-1/3 text-gray-400">UPC</td>
+                          <td>${bookUpc}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-3 font-semibold text-gray-400">Product Type</td>
+                          <td>Books</td>
+                        </tr>
+                        <tr>
+                          <td class="py-3 font-semibold text-gray-400">Price (excl. tax)</td>
+                          <td>£${bookPrice}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-3 font-semibold text-gray-400">Price (incl. tax)</td>
+                          <td>£${bookPrice}</td>
+                        </tr>
+                        <tr>
+                          <td class="py-3 font-semibold text-gray-400">Tax</td>
+                          <td>£0.00</td>
+                        </tr>
+                        <tr>
+                          <td class="py-3 font-semibold text-gray-400">Availability</td>
+                          <td>
+                            <c:choose>
+                              <c:when test="${not empty bookAvailability}">
+                                ${bookAvailability}
+                              </c:when>
+                              <c:otherwise>
+                                Out of stock
+                              </c:otherwise>
+                            </c:choose>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="py-3 font-semibold text-gray-400">Number of reviews</td>
+                          <td>${reviewCount}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
                 <!-- Related Books -->
                 <c:if test="${not empty relatedBooks}">
                   <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
@@ -225,7 +274,7 @@
                     </c:forEach>
                   </c:if>
 
-                  <!-- Form đánh giá -->
+                  <!-- Review Form -->
                   <div class="mt-6">
                     <form method="post" action="${pageContext.request.contextPath}/books/review">
                       <input type="hidden" name="bookId" value="${bookId}" />
@@ -251,54 +300,7 @@
                   </div>
                 </div>
 
-                <!-- Product Info Table -->
-                <div class="bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md">
-                  <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Product Information
-                  </h2>
-                  <div class="overflow-x-auto">
-                    <table class="min-w-full border-collapse">
-                      <tbody class="divide-y divide-[#333] text-gray-300">
-                        <tr>
-                          <td class="py-3 font-semibold w-1/3 text-gray-400">UPC</td>
-                          <td>${bookUpc}</td>
-                        </tr>
-                        <tr>
-                          <td class="py-3 font-semibold text-gray-400">Product Type</td>
-                          <td>Books</td>
-                        </tr>
-                        <tr>
-                          <td class="py-3 font-semibold text-gray-400">Price (excl. tax)</td>
-                          <td>£${bookPrice}</td>
-                        </tr>
-                        <tr>
-                          <td class="py-3 font-semibold text-gray-400">Price (incl. tax)</td>
-                          <td>£${bookPrice}</td>
-                        </tr>
-                        <tr>
-                          <td class="py-3 font-semibold text-gray-400">Tax</td>
-                          <td>£0.00</td>
-                        </tr>
-                        <tr>
-                          <td class="py-3 font-semibold text-gray-400">Availability</td>
-                          <td>
-                            <c:choose>
-                              <c:when test="${not empty bookAvailability}">
-                                ${bookAvailability}
-                              </c:when>
-                              <c:otherwise>
-                                Out of stock
-                              </c:otherwise>
-                            </c:choose>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td class="py-3 font-semibold text-gray-400">Number of reviews</td>
-                          <td>${reviewCount}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                
               </c:if>
             </div>
 
