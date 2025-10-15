@@ -48,20 +48,30 @@
                     </div>
                 </c:if>
 
-                <c:if test="${not empty books}">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                        <c:forEach var="b" items="${books}">
-                            <a href="${pageContext.request.contextPath}/books/detail?id=${b.id}"
-                                class="bg-gray-900 rounded-lg overflow-hidden hover:scale-[1.03] transition block">
-                                <img src="${b.coverImage}" class="w-full h-64 object-cover" alt="${b.title}">
-                                <div class="p-4">
-                                    <h3 class="font-semibold mb-1 text-lg">${b.title}</h3>
-                                    <p class="text-sm text-gray-400">${b.author}</p>
-                                    <span class="text-amber-400 font-semibold">£${b.price}</span>
-                                </div>
-                            </a>
-                        </c:forEach>
+                <c:if test="${not empty relatedBooks}">
+                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
+                      Related Books
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                      <c:forEach var="b" items="${relatedBooks}">
+                        <div class="bg-[#222] rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+                          <a href="${pageContext.request.contextPath}/books/detail?id=${b.id}">
+                            <img src="<c:out value='${b.coverImage != null && b.coverImage ne "" ? b.coverImage : "
+                              https://placehold.co/300x400"}' />"
+                            alt="${b.title}" class="w-full h-56 object-cover">
+                            <div class="p-4">
+                              <h3 class="text-amber-400 font-semibold text-lg truncate">${b.title}</h3>
+                              <p class="text-gray-400 text-sm mb-2">${b.category}</p>
+                              <p class="text-amber-300 font-semibold">£
+                                <fmt:formatNumber value="${b.price}" type="number" minFractionDigits="2" />
+                              </p>
+                            </div>
+                          </a>
+                        </div>
+                      </c:forEach>
                     </div>
+                  </div>
                 </c:if>
 
                 <c:if test="${empty books}">
