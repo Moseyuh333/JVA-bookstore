@@ -19,6 +19,8 @@ public class DBUtil {
     static {
         try {
             String databaseUrl = System.getenv("DATABASE_URL");
+            System.out.println("=== DATABASE CONFIGURATION ===");
+            System.out.println("DATABASE_URL env present: " + (databaseUrl != null && !databaseUrl.isEmpty()));
             if (databaseUrl != null && !databaseUrl.isEmpty()) {
                 // Expected format: postgres://user:pass@host:port/db
                 URI dbUri = new URI(databaseUrl);
@@ -29,6 +31,9 @@ public class DBUtil {
                 url = jdbcUrl + "?sslmode=require";
             } else {
                 try (InputStream input = DBUtil.class.getClassLoader().getResourceAsStream("db.properties")) {
+                    if (input == null) {
+                        throw new RuntimeException("db.properties not found in classpath and DATABASE_URL env var not set");
+                    }
                     Properties prop = new Properties();
                     prop.load(input);
                     url = prop.getProperty("db.url");
@@ -37,6 +42,10 @@ public class DBUtil {
                 }
             }
             Class.forName("org.postgresql.Driver");
+            System.out.println("DB URL: " + (url != null ? url.replaceAll("(?<=[a-z]://)[^:]*:[^@]*", "***:***") : "NULL"));
+            System.out.println("DB User: " + (username != null ? username : "NULL"));
+            System.out.println("DB Password set: " + (password != null && !password.isEmpty()) + "");
+            System.out.println("=============================");
             initDatabase();
         } catch (URISyntaxException e) {
             throw new RuntimeException("Invalid DATABASE_URL", e);
@@ -108,6 +117,9 @@ public class DBUtil {
     }
 
     public static Connection getConnection() throws SQLException {
+        if (url == null || username == null || password == null) {
+            throw new SQLException("Database configuration not initialized. Ensure DATABASE_URL env var is set or db.properties exists.");
+        }
         return DriverManager.getConnection(url, username, password);
     }
 

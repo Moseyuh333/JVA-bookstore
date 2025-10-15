@@ -143,7 +143,13 @@ document.getElementById('emailForm').addEventListener('submit', async (e) => {
             body: new URLSearchParams({ email: email })
         });
         
-        const data = await res.json();
+        let data = {};
+        try {
+            data = await res.json();
+        } catch (parseErr) {
+            console.error('JSON parse error:', parseErr);
+            data = { error: 'Server error: invalid response' };
+        }
         
         if (res.ok) {
             currentEmail = email;
@@ -242,7 +248,13 @@ document.getElementById('resendBtn').addEventListener('click', async () => {
             body: new URLSearchParams({ email: currentEmail })
         });
         
-        const data = await res.json();
+        let data = {};
+        try {
+            data = await res.json();
+        } catch (parseErr) {
+            console.error('JSON parse error:', parseErr);
+            data = { error: 'Server error: invalid response' };
+        }
         
         if (res.ok) {
             showMessage('success', 'Mã OTP mới đã được gửi!');
