@@ -18,7 +18,7 @@ public class ShopServlet extends HttpServlet {
 
         try (Connection conn = DBUtil.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
-                    "SELECT id, title, author, price, cover_image FROM books ORDER BY id ASC LIMIT 1000");
+                    "SELECT id, title, price, category, cover_image FROM books LIMIT 1000;");
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
