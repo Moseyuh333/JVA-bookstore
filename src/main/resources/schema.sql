@@ -3,7 +3,11 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255),
+    phone VARCHAR(20),
+    birth_date DATE,
+    address TEXT,
     verified BOOLEAN DEFAULT FALSE,
     verification_token VARCHAR(255),
     reset_token VARCHAR(255),
@@ -16,33 +20,51 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token);
 
--- BOOKS 
+-- Create books table
 CREATE TABLE IF NOT EXISTS books (
-  id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  price DECIMAL(10,2),
-  in_stock BOOLEAN,           
-  stock_text VARCHAR(50),      
-  rating_text VARCHAR(20),     
-  rating_int INT,             
-  category VARCHAR(120),
-  book_url TEXT,               
-  cover_image TEXT             
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(255),
+    isbn VARCHAR(20),
+    price DECIMAL(10, 2) NOT NULL,
+    description TEXT,
+    category VARCHAR(100),
+    stock_quantity INTEGER DEFAULT 0,
+    image_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create orders table
+CREATE TABLE IF NOT EXISTS orders (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    shipping_address TEXT,
+    payment_method VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create order_items table
+CREATE TABLE IF NOT EXISTS order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    book_id INTEGER NOT NULL REFERENCES books(id),
+    quantity INTEGER NOT NULL,
+    unit_price DECIMAL(10, 2) NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Additional indexes for performance
 CREATE INDEX IF NOT EXISTS idx_books_category ON books(category);
-CREATE INDEX IF NOT EXISTS idx_books_rating ON books(rating_int);
-
--- REVIEWS TABLE
-CREATE TABLE IF NOT EXISTS reviews (
-  id SERIAL PRIMARY KEY,
-  book_id INT NOT NULL,
-  author_name VARCHAR(100),
-  rating INT CHECK (rating BETWEEN 1 AND 5),
-  comment TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_reviews_book FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_reviews_book ON reviews(book_id);
-CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at);
+CREATE INDEX IF NOT EXISTS idx_books_title ON books(title);
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_book_id ON order_items(book_id);
