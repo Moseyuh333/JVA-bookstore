@@ -19,11 +19,10 @@ import java.util.UUID;
 public class AuthServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println("DEBUG AuthServlet - doPost called, path: " + req.getServletPath());
         resp.setContentType("application/json");
         String path = req.getServletPath();
-        PrintWriter out = resp.getWriter();
-        try {
+
+        try (PrintWriter out = resp.getWriter()) {
             if ("/api/login".equals(path)) {
                 handleLogin(req, resp, out);
             } else if ("/api/auth/register".equals(path)) {
@@ -36,24 +35,21 @@ public class AuthServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
-        } finally {
-            out.flush();
+            try (PrintWriter out = resp.getWriter()) {
+                out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            }
         }
     }
 
     private void handleLogin(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {
-        System.out.println("DEBUG AuthServlet - handleLogin called");
-        try {
-            String username = req.getParameter("username");
-            String password = req.getParameter("password");
-            System.out.println("DEBUG AuthServlet - username: " + username + ", password provided: " + (password != null && !password.isEmpty()));
+        String username = req.getParameter("username");
+        String password = req.getParameter("password");
 
-            if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write("{\"error\":\"Username and password required\"}");
-                return;
-            }
+        if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"error\":\"Username and password required\"}");
+            return;
+        }
 
         if (!DBUtil.userExists(username)) {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -61,38 +57,20 @@ public class AuthServlet extends HttpServlet {
             return;
         }
 
-        // Skip email verification - allow all users to login
-        System.out.println("DEBUG Login - Email verification skipped");
-
-        String hash = DBUtil.getUserPasswordHash(username);
-        System.out.println("DEBUG Login - Username: " + username + ", Hash found: " + (hash != null) + ", Hash length: " + (hash != null ? hash.length() : 0));
-        System.out.println("DEBUG Login - Password input: '" + password + "', Password length: " + password.length());
-        System.out.println("DEBUG Login - Hash: " + hash);
-        
-        // Validate hash before BCrypt check
-        if (hash == null || hash.trim().isEmpty()) {
-            System.out.println("DEBUG Login - Empty or null password hash");
-            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            out.write("{\"error\":\"Invalid credentials\"}");
+        // Check if user is verified
+        if (!DBUtil.isUserVerified(username)) {
+            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            out.write("{\"error\":\"Account not verified. Please check your email.\"}");
             return;
         }
-        
-        if (BCrypt.checkpw(password, hash)) {
+
+        String hash = DBUtil.getUserPasswordHash(username);
+        if (hash != null && BCrypt.checkpw(password, hash)) {
             String token = JwtUtil.generateToken(username);
-            System.out.println("DEBUG Login - Token generated: " + (token != null));
-            String response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
-            System.out.println("DEBUG Login - Response: " + response);
-            out.write(response);
+            out.write("{\"token\":\"" + token + "\", \"message\":\"Login successful\"}");
         } else {
-            System.out.println("DEBUG Login - Password check failed");
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.write("{\"error\":\"Invalid credentials\"}");
-        }
-        } catch (Exception e) {
-            System.out.println("DEBUG Login - Exception: " + e.getMessage());
-            e.printStackTrace();
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"Login error: " + e.getMessage() + "\"}");
         }
     }
 
@@ -120,11 +98,12 @@ public class AuthServlet extends HttpServlet {
         }
 
         String hash = BCrypt.hashpw(password, BCrypt.gensalt());
+        String verificationToken = UUID.randomUUID().toString();
 
-        // Create user without verification - set as verified immediately
-        DBUtil.createUserVerified(username, email, hash);
+        DBUtil.createUser(username, email, hash, verificationToken);
+        EmailUtil.sendVerificationEmail(email, verificationToken, username);
 
-        out.write("{\"message\":\"Registration successful! You can now login with your credentials.\"}");
+        out.write("{\"message\":\"Registration pending. Please check your email to verify your account before logging in.\"}");
     }
 
     private void handleResetPassword(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {

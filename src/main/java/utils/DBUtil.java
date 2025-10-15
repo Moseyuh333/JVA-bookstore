@@ -53,7 +53,7 @@ public class DBUtil {
                     "username VARCHAR(50) UNIQUE NOT NULL," +
                     "email VARCHAR(100) UNIQUE NOT NULL," +
                     "password_hash VARCHAR(255) NOT NULL," +
-                    "email_verified BOOLEAN DEFAULT FALSE," +
+                    "verified BOOLEAN DEFAULT FALSE," +
                     "verification_token VARCHAR(255)," +
                     "reset_token VARCHAR(255)," +
                     "reset_expiry TIMESTAMP," +
@@ -107,16 +107,6 @@ public class DBUtil {
         }
     }
 
-    public static void createUserVerified(String username, String email, String passwordHash) throws SQLException {
-        String sql = "INSERT INTO users (username, email, password_hash, email_verified) VALUES (?, ?, ?, true)";
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
-            pstmt.setString(2, email);
-            pstmt.setString(3, passwordHash);
-            pstmt.executeUpdate();
-        }
-    }
-
     public static boolean userExists(String username) throws SQLException {
         String sql = "SELECT 1 FROM users WHERE username = ?";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -151,12 +141,12 @@ public class DBUtil {
     }
 
     public static boolean isUserVerified(String username) throws SQLException {
-        String sql = "SELECT email_verified FROM users WHERE username = ?";
+        String sql = "SELECT verified FROM users WHERE username = ?";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getBoolean("email_verified");
+                    return rs.getBoolean("verified");
                 }
                 return false;
             }
@@ -177,7 +167,7 @@ public class DBUtil {
     }
 
     public static boolean verifyUser(String token) throws SQLException {
-        String sql = "UPDATE users SET email_verified = TRUE, verification_token = NULL WHERE verification_token = ?";
+        String sql = "UPDATE users SET verified = TRUE, verification_token = NULL WHERE verification_token = ?";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, token);
             return pstmt.executeUpdate() > 0;
