@@ -92,17 +92,31 @@ public class EmailUtil {
 
     private static void sendEmail(String to, String subject, String body) {
         try {
+            System.out.println("=== Starting Email Send ===");
+            System.out.println("SMTP Host: " + props.getProperty("mail.smtp.host"));
+            System.out.println("SMTP Port: " + props.getProperty("mail.smtp.port"));
+            System.out.println("SMTP Auth: " + props.getProperty("mail.smtp.auth"));
+            System.out.println("SMTP TLS: " + props.getProperty("mail.smtp.starttls.enable"));
+            
             Message message = new MimeMessage(session);
             String from = System.getenv("SMTP_FROM") != null ? System.getenv("SMTP_FROM") : props.getProperty("smtp.from");
+            System.out.println("From: " + from);
+            System.out.println("To: " + to);
+            System.out.println("Subject: " + subject);
+            
             message.setFrom(new InternetAddress(from));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
             message.setSubject(subject);
             message.setText(body);
 
+            System.out.println("Sending email via Transport...");
             Transport.send(message);
-            System.out.println("Email sent successfully to " + to + " via MailerToGo SMTP");
+            System.out.println("✅ Email sent successfully to " + to + " via MailerToGo SMTP");
         } catch (MessagingException e) {
-            System.err.println("Failed to send email to " + to + ": " + e.getMessage());
+            System.err.println("❌ Failed to send email to " + to);
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Email sending failed: " + e.getMessage(), e);
         }
     }
 }

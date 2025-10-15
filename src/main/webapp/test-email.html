@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Email - MailerToGo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="card" style="max-width: 600px; margin: 0 auto;">
+            <div class="card-header bg-primary text-white">
+                <h2>📧 Test MailerToGo Configuration</h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>ℹ️ Thông tin:</strong><br>
+                    • SMTP Host: smtp.us-west-1.mailertogo.net<br>
+                    • SMTP Port: 587<br>
+                    • Plan: Micro (25,000 emails/month)<br>
+                    • Current usage: 0 emails sent
+                </div>
+                
+                <form id="testEmailForm">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Email nhận test:</strong></label>
+                        <input type="email" class="form-control" name="email" required 
+                               placeholder="your-email@example.com">
+                        <small class="text-muted">Nhập email của bạn để nhận email test</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        📧 Gửi Email Test
+                    </button>
+                </form>
+                
+                <div id="result" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('testEmailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('result');
+            const btn = e.target.querySelector('button');
+            const email = e.target.querySelector('input[name="email"]').value;
+            
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Đang gửi...';
+            resultDiv.innerHTML = '<div class="alert alert-info">⏳ Đang gửi email test...</div>';
+            
+            try {
+                const response = await fetch('/api/test-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ email: email })
+                });
+                
+                const text = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    data = { error: text };
+                }
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✅ Email đã gửi thành công!</strong><br>
+                            <hr>
+                            <p class="mb-0">
+                                Vui lòng kiểm tra email tại: <strong>${email}</strong><br>
+                                <small class="text-muted">
+                                    💡 Tip: Nếu không thấy email, hãy kiểm tra thư mục Spam/Junk
+                                </small>
+                            </p>
+                        </div>
+                        <div class="alert alert-warning">
+                            <strong>📊 Kiểm tra MailerToGo Dashboard:</strong><br>
+                            Sau khi gửi email, hãy refresh trang 
+                            <a href="https://mailertogo.com/dashboard" target="_blank" class="alert-link">
+                                MailerToGo Dashboard
+                            </a> 
+                            để xem số lượng email đã gửi tăng lên.
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>❌ Lỗi gửi email</strong><br>
+                            <code>${data.error || 'Unknown error'}</code><br>
+                            <hr>
+                            <small><strong>Có thể do:</strong><br>
+                            1. SMTP credentials chưa đúng<br>
+                            2. MailerToGo chưa kích hoạt<br>
+                            3. Server không thể kết nối đến SMTP<br>
+                            4. Email gửi đi bị block</small>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>❌ Lỗi kết nối</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '📧 Gửi Email Test';
+            }
+        });
+    </script>
+</body>
+</html>

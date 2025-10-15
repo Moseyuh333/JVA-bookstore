@@ -24,7 +24,12 @@ public class JwtFilter implements Filter {
         String path = req.getRequestURI();
         System.out.println("JwtFilter: Request URI = " + path);
         // Allow public endpoints without token
-        if (path.equals("/api/auth/register") || path.equals("/api/auth/login") || path.equals("/api/login") || path.equals("/api/auth/reset-password") || path.equals("/api/auth/verify")) {
+        if (path.equals("/api/auth/register") || 
+            path.equals("/api/auth/login") || 
+            path.equals("/api/login") || 
+            path.equals("/api/auth/reset-password") || 
+            path.equals("/api/auth/verify") ||
+            path.equals("/api/test-email")) {
             chain.doFilter(request, response);
             return;
         }
