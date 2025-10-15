@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
-@WebServlet(name = "ShopServlet", urlPatterns = { "/shop" })
+@WebServlet(name = "ShopServlet", urlPatterns = {"/shop"})
 public class ShopServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -17,9 +17,8 @@ public class ShopServlet extends HttpServlet {
         List<Map<String, Object>> books = new ArrayList<>();
 
         try (Connection conn = DBUtil.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement(
-                    "SELECT id, title, author, price, cover_image, category FROM books ORDER BY id ASC LIMIT 100"
-            );
+            String sql = "SELECT id, title, author, price, cover_image, category FROM books ORDER BY id ASC LIMIT 100";
+            PreparedStatement ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -31,10 +30,18 @@ public class ShopServlet extends HttpServlet {
                 b.put("coverImage", rs.getString("cover_image"));
                 b.put("category", rs.getString("category"));
                 books.add(b);
+
+                // In ra console để debug
+                System.out.println("Loaded book: " + rs.getString("title"));
+            }
+
+            if (books.isEmpty()) {
+                System.out.println("⚠️ Không có sách nào được load từ DB!");
             }
 
             req.setAttribute("books", books);
         } catch (Exception e) {
+            e.printStackTrace(); // In lỗi chi tiết
             req.setAttribute("error", e.getMessage());
         }
 

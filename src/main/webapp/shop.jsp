@@ -2,6 +2,7 @@
     <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
         <!DOCTYPE html>
         <html lang="en">
+
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -46,18 +47,11 @@
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                         <c:forEach var="b" items="${books}">
                             <a href="${pageContext.request.contextPath}/books/detail?id=${b.id}"
-                                class="bg-gray-900 rounded-lg overflow-hidden hover:scale-[1.03] hover:shadow-lg transition block">
-                                <img src="<c:out value='${b.coverImage != null && b.coverImage ne "" ? b.coverImage : "
-                                    https://placehold.co/300x400"}' />"
-                                alt="${b.title}"
-                                class="w-full h-64 object-cover">
-
-                                <!-- Info-->
+                                class="bg-gray-900 rounded-lg overflow-hidden hover:scale-[1.03] transition block">
+                                <img src="${b.coverImage}" class="w-full h-64 object-cover" alt="${b.title}">
                                 <div class="p-4">
-                                    <h3 class="font-semibold mb-1 text-lg line-clamp-2">${b.title}</h3>
-                                    <p class="text-sm text-gray-400 mb-1">
-                                        <c:out value="${b.author}" default="Unknown category" />
-                                    </p>
+                                    <h3 class="font-semibold mb-1 text-lg">${b.title}</h3>
+                                    <p class="text-sm text-gray-400">${b.author}</p>
                                     <span class="text-amber-400 font-semibold">£${b.price}</span>
                                 </div>
                             </a>
