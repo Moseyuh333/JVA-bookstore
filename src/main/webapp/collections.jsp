@@ -8,7 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans">
-  <jsp:include page="/WEB-INF/components/header.jsp" />
+  <jsp:include page="/WEB-INF/includes/header.jsp" />
 
   <section class="py-16 px-6 container mx-auto">
     <h1 class="text-4xl font-bold text-center text-amber-400 mb-12">Featured Collections</h1>
@@ -38,6 +38,6 @@
     </c:if>
   </section>
 
-  <jsp:include page="/WEB-INF/components/footer.jsp" />
+  <jsp:include page="/WEB-INF/includes/footer.jsp" />
 </body>
 </html>
