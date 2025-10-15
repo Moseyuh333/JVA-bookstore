@@ -14,32 +14,57 @@ import java.io.IOException;
 public class EmailUtil {
     private static Properties props;
     private static Session session;
+    private static String smtpUser;
+    private static String smtpPass;
 
     static {
         props = new Properties();
         String host = System.getenv("SMTP_HOST");
         if (host != null) {
+            // Use environment variables (for Heroku)
             props.setProperty("mail.smtp.host", host);
             String port = System.getenv("SMTP_PORT");
             props.setProperty("mail.smtp.port", port != null ? port : "587");
             props.setProperty("mail.smtp.auth", "true");
             props.setProperty("mail.smtp.starttls.enable", "true");
+            props.setProperty("mail.smtp.starttls.required", "true");
+            smtpUser = System.getenv("SMTP_USER");
+            smtpPass = System.getenv("SMTP_PASS");
         } else {
+            // Use email.properties file (for local)
             try (InputStream input = EmailUtil.class.getClassLoader().getResourceAsStream("email.properties")) {
-                props.load(input);
+                Properties tempProps = new Properties();
+                tempProps.load(input);
+                
+                // Convert smtp.* to mail.smtp.* format
+                props.setProperty("mail.smtp.host", tempProps.getProperty("smtp.host"));
+                props.setProperty("mail.smtp.port", tempProps.getProperty("smtp.port", "587"));
+                props.setProperty("mail.smtp.auth", tempProps.getProperty("mail.smtp.auth", "true"));
+                props.setProperty("mail.smtp.starttls.enable", tempProps.getProperty("mail.smtp.starttls.enable", "true"));
+                props.setProperty("mail.smtp.starttls.required", "true");
+                
+                smtpUser = tempProps.getProperty("smtp.user");
+                smtpPass = tempProps.getProperty("smtp.pass");
             } catch (IOException e) {
                 System.err.println("Failed to load email.properties: " + e.getMessage());
             }
         }
-
-        final String username = System.getenv("SMTP_USER") != null ? System.getenv("SMTP_USER") : props.getProperty("smtp.user");
-        final String password = System.getenv("SMTP_PASS") != null ? System.getenv("SMTP_PASS") : props.getProperty("smtp.pass");
+        
+        // Debug: print configuration
+        System.out.println("=== Email Configuration ===");
+        System.out.println("SMTP Host: " + props.getProperty("mail.smtp.host"));
+        System.out.println("SMTP Port: " + props.getProperty("mail.smtp.port"));
+        System.out.println("SMTP Username: " + (smtpUser != null ? smtpUser.substring(0, Math.min(8, smtpUser.length())) + "..." : "NULL"));
+        System.out.println("SMTP Password: " + (smtpPass != null ? "***" + smtpPass.substring(Math.max(0, smtpPass.length()-4)) : "NULL"));
 
         session = Session.getInstance(props, new javax.mail.Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(username, password);
+                return new PasswordAuthentication(smtpUser, smtpPass);
             }
         });
+        
+        // Enable debug mode for JavaMail (will show SMTP conversation)
+        session.setDebug(true);
     }
 
     public static void sendVerificationEmail(String toEmail, String token, String username) {
