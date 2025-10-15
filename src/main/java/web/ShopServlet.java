@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
-@WebServlet(name = "ShopServlet", urlPatterns = {"/shop"})
+@WebServlet(name = "ShopServlet", urlPatterns = { "/shop" })
 public class ShopServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -36,13 +36,14 @@ public class ShopServlet extends HttpServlet {
             }
 
             if (books.isEmpty()) {
-                System.out.println("⚠️ Không có sách nào được load từ DB!");
+                System.out.println("Không có sách nào được load từ DB!");
             }
 
             req.setAttribute("books", books);
         } catch (Exception e) {
-            e.printStackTrace(); // In lỗi chi tiết
-            req.setAttribute("error", e.getMessage());
+            e.printStackTrace();
+            req.setAttribute("error", "SQL Error: " + e.getMessage());
+
         }
 
         RequestDispatcher rd = req.getRequestDispatcher("/shop.jsp");

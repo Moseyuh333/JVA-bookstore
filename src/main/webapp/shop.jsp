@@ -42,6 +42,11 @@
             <!-- Main content -->
             <section class="py-16 px-6 container mx-auto">
                 <h1 class="text-4xl font-bold text-center text-amber-400 mb-10">All Books</h1>
+                <c:if test="${not empty error}">
+                    <div class="bg-red-900 text-white p-4 rounded mb-4">
+                        ${error}
+                    </div>
+                </c:if>
 
                 <c:if test="${not empty books}">
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
