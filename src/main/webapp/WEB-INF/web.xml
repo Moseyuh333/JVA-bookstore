@@ -31,6 +31,8 @@
         <servlet-name>AuthServlet</servlet-name>
         <url-pattern>/api/login</url-pattern>
         <url-pattern>/api/auth/register</url-pattern>
+        <url-pattern>/api/auth/send-otp</url-pattern>
+        <url-pattern>/api/auth/verify-otp</url-pattern>
         <url-pattern>/api/auth/reset-password</url-pattern>
     </servlet-mapping>
 
