@@ -17,7 +17,7 @@ public class ShopServlet extends HttpServlet {
         List<Map<String, Object>> books = new ArrayList<>();
 
         try (Connection conn = DBUtil.getConnection()) {
-            String sql = "SELECT id, title, author, price, cover_image, category FROM books ORDER BY id ASC LIMIT 100";
+            String sql = "SELECT id, title, author, price, cover_image, category FROM books LIMIT 10";
             PreparedStatement ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
