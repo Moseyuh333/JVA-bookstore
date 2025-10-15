@@ -223,7 +223,7 @@
                             alt="${b.title}" class="w-full h-56 object-cover">
                             <div class="p-4">
                               <h3 class="text-amber-400 font-semibold text-lg truncate">${b.title}</h3>
-                              <p class="text-gray-400 text-sm mb-2">${b.author}</p>
+                              <p class="text-gray-400 text-sm mb-2">${b.category}</p>
                               <p class="text-amber-300 font-semibold">£
                                 <fmt:formatNumber value="${b.price}" type="number" minFractionDigits="2" />
                               </p>

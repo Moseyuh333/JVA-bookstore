@@ -46,10 +46,9 @@ public class BookDetailServlet extends HttpServlet {
 
                 // Gợi ý sách liên quan (cùng category hoặc author)
                 PreparedStatement psRelated = conn.prepareStatement(
-                        "SELECT id, title, author, price, cover_image " +
-                                "FROM books WHERE (category = ? OR author = ?) AND id <> ? LIMIT 4");
+                        "SELECT id, title, price, cover_image " +
+                                "FROM books WHERE category = ? AND id <> ? LIMIT 4");
                 psRelated.setString(1, rs.getString("category"));
-                psRelated.setString(2, rs.getString("author"));
                 psRelated.setInt(3, rs.getInt("id"));
 
                 ResultSet rsRelated = psRelated.executeQuery();
@@ -58,7 +57,6 @@ public class BookDetailServlet extends HttpServlet {
                     Map<String, Object> b = new HashMap<>();
                     b.put("id", rsRelated.getInt("id"));
                     b.put("title", rsRelated.getString("title"));
-                    b.put("author", rsRelated.getString("author"));
                     b.put("price", rsRelated.getBigDecimal("price"));
                     b.put("coverImage", rsRelated.getString("cover_image"));
                     relatedBooks.add(b);
