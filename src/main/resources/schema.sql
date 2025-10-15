@@ -21,13 +21,13 @@ CREATE TABLE IF NOT EXISTS books (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   price DECIMAL(10,2),
-  in_stock BOOLEAN,            -- true nếu "In stock"
-  stock_text VARCHAR(50),      -- giữ nguyên chuỗi "In stock" hay khác
-  rating_text VARCHAR(20),     -- "One","Two","Three","Four","Five"
-  rating_int INT,              -- map về 1..5
+  in_stock BOOLEAN,           
+  stock_text VARCHAR(50),      
+  rating_text VARCHAR(20),     
+  rating_int INT,             
   category VARCHAR(120),
-  book_url TEXT,               -- url nguồn trong csv
-  cover_image TEXT             -- nếu sau này có ảnh, hiện để null
+  book_url TEXT,               
+  cover_image TEXT             
 );
 
 CREATE INDEX IF NOT EXISTS idx_books_category ON books(category);
