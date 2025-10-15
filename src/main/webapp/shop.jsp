@@ -73,10 +73,6 @@
                     </div>
                   </div>
                 </c:if>
-
-                <c:if test="${empty books}">
-                    <p class="text-center text-gray-400 mt-12">No books available at the moment.</p>
-                </c:if>
             </section>
 
             <!-- Footer -->
