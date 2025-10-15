@@ -3,6 +3,7 @@ package web;
 import utils.JwtUtil;
 import utils.DBUtil;
 import utils.EmailUtil;
+import utils.OTPUtil;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.servlet.ServletException;
@@ -15,7 +16,7 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.UUID;
 
-@WebServlet(name = "AuthServlet", urlPatterns = {"/api/login", "/api/auth/register", "/api/auth/reset-password"})
+@WebServlet(name = "AuthServlet", urlPatterns = {"/api/login", "/api/auth/register", "/api/auth/send-otp", "/api/auth/verify-otp", "/api/auth/reset-password"})
 public class AuthServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -26,6 +27,10 @@ public class AuthServlet extends HttpServlet {
         try {
             if ("/api/login".equals(path)) {
                 handleLogin(req, resp, out);
+            } else if ("/api/auth/send-otp".equals(path)) {
+                handleSendOTP(req, resp, out);
+            } else if ("/api/auth/verify-otp".equals(path)) {
+                handleVerifyOTP(req, resp, out);
             } else if ("/api/auth/register".equals(path)) {
                 handleRegister(req, resp, out);
             } else if ("/api/auth/reset-password".equals(path)) {
@@ -123,6 +128,14 @@ public class AuthServlet extends HttpServlet {
 
         // Create user without verification - set as verified immediately
         DBUtil.createUserVerified(username, email, hash);
+        
+        // Send welcome email (optional)
+        try {
+            EmailUtil.sendWelcomeEmail(email, username);
+        } catch (Exception e) {
+            System.err.println("Failed to send welcome email: " + e.getMessage());
+            // Don't block registration if email fails
+        }
 
         out.write("{\"message\":\"Registration successful! You can now login with your credentials.\"}");
     }
@@ -150,5 +163,88 @@ public class AuthServlet extends HttpServlet {
         }
 
         out.write("{\"message\":\"If the email exists, a reset link has been sent.\"}");
+    }
+    
+    private void handleSendOTP(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {
+        String email = req.getParameter("email");
+        
+        if (email == null || email.isEmpty()) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"error\":\"Email is required\"}");
+            return;
+        }
+        
+        // Check if can request new OTP (2 minutes cooldown)
+        if (!OTPUtil.canRequestNewOTP(email)) {
+            long remainingSeconds = OTPUtil.getRemainingCooldownSeconds(email);
+            resp.setStatus(429); // Too Many Requests
+            out.write("{\"error\":\"Please wait " + remainingSeconds + " seconds before requesting a new OTP\", \"remaining\":" + remainingSeconds + "}");
+            return;
+        }
+        
+        // Generate and store OTP
+        String otp = OTPUtil.generateOTP();
+        if (OTPUtil.storeOTP(email, otp)) {
+            // Send OTP via email
+            try {
+                EmailUtil.sendOTPEmail(email, otp);
+                System.out.println("OTP sent to: " + email);
+                out.write("{\"message\":\"OTP has been sent to your email\"}");
+            } catch (Exception e) {
+                System.err.println("Failed to send OTP email: " + e.getMessage());
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                out.write("{\"error\":\"Failed to send OTP email\"}");
+            }
+        } else {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.write("{\"error\":\"Failed to generate OTP\"}");
+        }
+    }
+    
+    private void handleVerifyOTP(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {
+        String email = req.getParameter("email");
+        String otp = req.getParameter("otp");
+        String username = req.getParameter("username");
+        String password = req.getParameter("password");
+        
+        if (email == null || otp == null || username == null || password == null) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"error\":\"Email, OTP, username, and password are required\"}");
+            return;
+        }
+        
+        // Verify OTP
+        if (OTPUtil.verifyOTP(email, otp)) {
+            // Check if username already exists
+            if (DBUtil.userExists(username)) {
+                resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                out.write("{\"error\":\"Username already exists\"}");
+                return;
+            }
+            
+            // Check if email already registered
+            if (DBUtil.emailExists(email)) {
+                resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                out.write("{\"error\":\"Email already registered\"}");
+                return;
+            }
+            
+            // Create user account
+            String hash = BCrypt.hashpw(password, BCrypt.gensalt());
+            DBUtil.createUserVerified(username, email, hash);
+            
+            // Send welcome email
+            try {
+                EmailUtil.sendWelcomeEmail(email, username);
+            } catch (Exception e) {
+                System.err.println("Failed to send welcome email: " + e.getMessage());
+            }
+            
+            System.out.println("User registered successfully: " + username);
+            out.write("{\"message\":\"Registration successful! You can now login.\"}");
+        } else {
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.write("{\"error\":\"Invalid or expired OTP. Please try again.\"}");
+        }
     }
 }

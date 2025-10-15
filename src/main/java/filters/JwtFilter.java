@@ -27,7 +27,10 @@ public class JwtFilter implements Filter {
         if (path.equals("/api/auth/register") || 
             path.equals("/api/auth/login") || 
             path.equals("/api/login") || 
+            path.equals("/api/auth/send-otp") ||
+            path.equals("/api/auth/verify-otp") ||
             path.equals("/api/auth/reset-password") || 
+            path.equals("/api/auth/reset") || 
             path.equals("/api/auth/verify") ||
             path.equals("/api/test-email")) {
             chain.doFilter(request, response);

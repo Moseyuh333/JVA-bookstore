@@ -86,6 +86,21 @@ public class DBUtil {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)");
+                
+                // Create OTP verifications table
+                String createOTPTableSQL = "CREATE TABLE IF NOT EXISTS otp_verifications (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "email VARCHAR(100) NOT NULL," +
+                    "otp_code VARCHAR(6) NOT NULL," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "expires_at TIMESTAMP NOT NULL," +
+                    "verified BOOLEAN DEFAULT FALSE," +
+                    "attempts INT DEFAULT 0" +
+                    ")";
+                stmt.execute(createOTPTableSQL);
+                
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_otp_email ON otp_verifications(email)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_otp_code ON otp_verifications(otp_code)");
             }
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
