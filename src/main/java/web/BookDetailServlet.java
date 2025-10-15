@@ -43,11 +43,13 @@ public class BookDetailServlet extends HttpServlet {
                 req.setAttribute("bookAvailability", rs.getString("availability"));
                 req.setAttribute("reviewCount", rs.getInt("number_of_reviews"));
 
+                String category = rs.getString("category");
+
                 // Gợi ý sách liên quan (cùng category)
                 PreparedStatement psRelated = conn.prepareStatement(
                         "SELECT id, title, price, cover_image " +
                                 "FROM books WHERE category = ? AND id <> ? LIMIT 4");
-                psRelated.setString(1, rs.getString("category"));
+                psRelated.setString(1, category); 
                 psRelated.setInt(2, rs.getInt("id"));
 
                 ResultSet rsRelated = psRelated.executeQuery();
@@ -56,7 +58,6 @@ public class BookDetailServlet extends HttpServlet {
                     Map<String, Object> b = new HashMap<>();
                     b.put("id", rsRelated.getInt("id"));
                     b.put("title", rsRelated.getString("title"));
-                    b.put("category", rsRelated.getString("category"));
                     b.put("price", rsRelated.getBigDecimal("price"));
                     b.put("coverImage", rsRelated.getString("cover_image"));
                     relatedBooks.add(b);
