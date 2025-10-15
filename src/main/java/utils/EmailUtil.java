@@ -1,0 +1,108 @@
+package utils;
+
+import java.util.Properties;
+import java.io.InputStream;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.io.IOException;
+
+public class EmailUtil {
+    private static Properties props;
+    private static Session session;
+
+    static {
+        props = new Properties();
+        String host = System.getenv("SMTP_HOST");
+        if (host != null) {
+            props.setProperty("mail.smtp.host", host);
+            String port = System.getenv("SMTP_PORT");
+            props.setProperty("mail.smtp.port", port != null ? port : "587");
+            props.setProperty("mail.smtp.auth", "true");
+            props.setProperty("mail.smtp.starttls.enable", "true");
+        } else {
+            try (InputStream input = EmailUtil.class.getClassLoader().getResourceAsStream("email.properties")) {
+                props.load(input);
+            } catch (IOException e) {
+                System.err.println("Failed to load email.properties: " + e.getMessage());
+            }
+        }
+
+        final String username = System.getenv("SMTP_USER") != null ? System.getenv("SMTP_USER") : props.getProperty("smtp.user");
+        final String password = System.getenv("SMTP_PASS") != null ? System.getenv("SMTP_PASS") : props.getProperty("smtp.pass");
+
+        session = Session.getInstance(props, new javax.mail.Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(username, password);
+            }
+        });
+    }
+
+    public static void sendVerificationEmail(String toEmail, String token, String username) {
+        String subject = "Xác nhận tài khoản NKBookstore - Verification Required";
+        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "http://localhost:8080";
+        String verificationUrl = baseUrl + "/api/auth/verify?token=" + token;
+        
+        String body = "Chào " + username + ",\n\n" +
+                      "Cảm ơn bạn đã đăng ký tài khoản tại NKBookstore!\n\n" +
+                      "Để hoàn tất quá trình đăng ký, vui lòng click vào liên kết bên dưới để xác nhận email:\n" +
+                      verificationUrl + "\n\n" +
+                      "Liên kết này có hiệu lực trong 24 giờ.\n" +
+                      "Nếu bạn không thực hiện đăng ký này, vui lòng bỏ qua email này.\n\n" +
+                      "Trân trọng,\n" +
+                      "Đội ngũ NKBookstore\n" +
+                      "📚 Kho sách trực tuyến hàng đầu Việt Nam";
+
+        sendEmail(toEmail, subject, body);
+    }
+
+    public static void sendResetEmail(String toEmail, String token, String username) {
+        String subject = "Đặt lại mật khẩu NKBookstore - Password Reset Request";
+        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "http://localhost:8080";
+        String resetUrl = baseUrl + "/reset-password.jsp?token=" + token;
+        
+        String body = "Chào " + username + ",\n\n" +
+                      "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại NKBookstore.\n\n" +
+                      "Để tạo mật khẩu mới, vui lòng click vào liên kết bên dưới:\n" +
+                      resetUrl + "\n\n" +
+                      "⚠️  Liên kết này có hiệu lực trong 1 giờ.\n" +
+                      "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n" +
+                      "Để bảo mật tài khoản, không chia sẻ liên kết này với bất kỳ ai.\n\n" +
+                      "Trân trọng,\n" +
+                      "Đội ngũ NKBookstore\n" +
+                      "📚 Kho sách trực tuyến hàng đầu Việt Nam";
+
+        sendEmail(toEmail, subject, body);
+    }
+
+    public static void testEmailConnection(String testEmail) {
+        String subject = "NKBookstore - Test Email Configuration";
+        String body = "Chào bạn,\n\n" +
+                      "Đây là email test để kiểm tra cấu hình MailerToGo.\n" +
+                      "Nếu bạn nhận được email này, cấu hình email đã hoạt động thành công!\n\n" +
+                      "Trân trọng,\n" +
+                      "Đội ngũ NKBookstore";
+        
+        sendEmail(testEmail, subject, body);
+    }
+
+    private static void sendEmail(String to, String subject, String body) {
+        try {
+            Message message = new MimeMessage(session);
+            String from = System.getenv("SMTP_FROM") != null ? System.getenv("SMTP_FROM") : props.getProperty("smtp.from");
+            message.setFrom(new InternetAddress(from));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+            message.setSubject(subject);
+            message.setText(body);
+
+            Transport.send(message);
+            System.out.println("Email sent successfully to " + to + " via MailerToGo SMTP");
+        } catch (MessagingException e) {
+            System.err.println("Failed to send email to " + to + ": " + e.getMessage());
+        }
+    }
+}

@@ -7,10 +7,6 @@
     <filter>
         <filter-name>sitemesh</filter-name>
         <filter-class>com.opensymphony.sitemesh.webapp.SiteMeshFilter</filter-class>
-        <init-param>
-            <param-name>config</param-name>
-            <param-value>/WEB-INF/sitemesh.xml</param-value>
-        </init-param>
     </filter>
     <filter-mapping>
         <filter-name>sitemesh</filter-name>
@@ -25,4 +21,52 @@
         <exception-type>java.lang.Throwable</exception-type>
         <location>/error.jsp</location>
     </error-page>
+
+    <!-- Servlet Mappings -->
+    <servlet>
+        <servlet-name>AuthServlet</servlet-name>
+        <servlet-class>web.AuthServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AuthServlet</servlet-name>
+        <url-pattern>/api/login</url-pattern>
+        <url-pattern>/api/auth/register</url-pattern>
+        <url-pattern>/api/auth/reset-password</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>VerifyServlet</servlet-name>
+        <servlet-class>web.VerifyServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>VerifyServlet</servlet-name>
+        <url-pattern>/api/auth/verify</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ResetServlet</servlet-name>
+        <servlet-class>web.ResetServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ResetServlet</servlet-name>
+        <url-pattern>/api/auth/reset</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>BooksApiServlet</servlet-name>
+        <servlet-class>web.BooksApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>BooksApiServlet</servlet-name>
+        <url-pattern>/api/books</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>HealthServlet</servlet-name>
+        <servlet-class>web.HealthServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>HealthServlet</servlet-name>
+        <url-pattern>/api/health</url-pattern>
+    </servlet-mapping>
 </web-app>

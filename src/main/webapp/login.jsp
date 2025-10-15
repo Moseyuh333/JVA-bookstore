@@ -1,12 +1,53 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-
-<div class="container" style="max-width: 480px;">
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - NKbookstore</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 2rem;
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .form-control:focus {
+          border-color: #3949ab;
+          box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.25);
+        }
+        .btn-primary {
+          background: #3949ab;
+          border: none;
+          transition: background 0.3s ease;
+        }
+        .btn-primary:hover {
+          background: #1a237e;
+        }
+    </style>
+</head>
+<body>
+<div class="auth-card" style="max-width: 480px; width: 90%;">
   <div class="text-center my-4">
-    <img src="assets/img/nkbookstore-logo.png" alt="NKbookstore Logo" style="height:64px;">
-    <h2 class="mb-1" style="color:#1a237e;font-weight:700;letter-spacing:1px;">NKbookstore</h2>
+    <img src="assets/img/nkbookstore-logo.png" alt="NKbookstore Logo" style="width:64px;height:64px;border-radius:50%;">
+    <h2 class="mb-1 mt-3" style="color:#1a237e;font-weight:700;letter-spacing:1px;">NKbookstore</h2>
     <div class="text-muted small">by bibo090809@gmail.com</div>
   </div>
-  <h4 class="mb-3" style="color:#3949ab;">Login</h4>
+  <h2 class="mb-3">Login</h2>
+
   <form id="loginForm">
     <div class="mb-3">
       <label class="form-label">Username</label>
@@ -16,11 +57,12 @@
       <label class="form-label">Password</label>
       <input class="form-control" type="password" name="password" required />
     </div>
-  <button class="btn btn-primary w-100" style="background:#3949ab;border:none;" type="submit">Login</button>
+    <button class="btn btn-primary" type="submit">Login</button>
+    <div class="mt-3 d-flex gap-3">
+      <a href="register.jsp">Create account</a>
+      <a href="forgot-password.jsp">Forgot password?</a>
+    </div>
   </form>
-  <div class="mt-3 text-center">
-    <a href="register.jsp" style="color:#3949ab;">Register</a> | <a href="forgot-password.jsp" style="color:#3949ab;">Forgot Password?</a>
-  </div>
   <hr/>
   <div>
     <button id="loadBooks" class="btn btn-outline-secondary" disabled>Load Protected Books</button>
@@ -34,14 +76,41 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = new URLSearchParams(new FormData(form));
-    const res = await fetch('api/login', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: data});
-    if(res.ok){
-      const json = await res.json();
-      token = json.token;
-      document.getElementById('loadBooks').disabled = false;
-      document.getElementById('result').textContent = 'Token acquired.';
-    } else {
-      document.getElementById('result').textContent = 'Login failed.';
+    
+    try {
+      const res = await fetch('<%= request.getContextPath() %>/api/login', {
+        method: 'POST', 
+        headers: {'Content-Type':'application/x-www-form-urlencoded'}, 
+        body: data
+      });
+      
+      if(res.ok){
+        const json = await res.json();
+        
+        // Save token to localStorage
+        localStorage.setItem('auth_token', json.token);
+        
+        // Show success message
+        document.getElementById('result').innerHTML = '<div class="alert alert-success">✅ Đăng nhập thành công! Đang chuyển hướng...</div>';
+        
+        // Redirect to homepage after a short delay
+        setTimeout(() => {
+          window.location.href = '<%= request.getContextPath() %>/';
+        }, 1500);
+        
+      } else {
+        const text = await res.text();
+        let errorMessage = '';
+        try { 
+          const j = JSON.parse(text); 
+          errorMessage = j.error || text;
+        } catch(e){ 
+          errorMessage = text; 
+        }
+        document.getElementById('result').innerHTML = '<div class="alert alert-danger">❌ Đăng nhập thất bại: ' + errorMessage + '</div>';
+      }
+    } catch (error) {
+      document.getElementById('result').innerHTML = '<div class="alert alert-danger">❌ Lỗi kết nối. Vui lòng thử lại.</div>';
     }
   });
 
@@ -51,3 +120,6 @@
     document.getElementById('result').textContent = text;
   });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

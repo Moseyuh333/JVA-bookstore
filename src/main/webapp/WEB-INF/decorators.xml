@@ -5,6 +5,11 @@
     </decorator>
     <excludes>
         <pattern>/WEB-INF/*</pattern>
+        <pattern>/index.jsp</pattern>
+        <pattern>/login.jsp</pattern>
+        <pattern>/register.jsp</pattern>
+        <pattern>/forgot-password.jsp</pattern>
+        <pattern>/reset-password.jsp</pattern>
     </excludes>
     
 </decorators>
