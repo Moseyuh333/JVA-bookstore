@@ -63,14 +63,6 @@
                   <div class="md:w-2/3 p-8 flex flex-col justify-center">
                     <h1 class="text-3xl font-bold text-amber-400 mb-3">${bookTitle}</h1>
 
-                    <p class="text-sm text-gray-400 mb-2">
-                      by
-                      <c:choose>
-                        <c:when test="${not empty bookAuthor}">${bookAuthor}</c:when>
-                        <c:otherwise><span class="italic text-gray-500">Unknown author</span></c:otherwise>
-                      </c:choose>
-                    </p>
-
                     <p class="text-gray-300 mb-3">
                       <span class="font-semibold text-amber-500">Category:</span> ${bookCategory}
                     </p>

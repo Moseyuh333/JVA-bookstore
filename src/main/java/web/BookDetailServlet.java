@@ -22,7 +22,7 @@ public class BookDetailServlet extends HttpServlet {
 
         try (Connection conn = DBUtil.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
-                    "SELECT id, title, author, price, description, cover_image, category, rating_avg, " +
+                    "SELECT id, title, price, description, cover_image, category, rating_avg, " +
                             "stock_text, book_url, upc, availability, number_of_reviews, stock " +
                             "FROM books WHERE id = ?");
             ps.setInt(1, Integer.parseInt(id));
@@ -31,7 +31,6 @@ public class BookDetailServlet extends HttpServlet {
             if (rs.next()) {
                 req.setAttribute("bookId", rs.getInt("id"));
                 req.setAttribute("bookTitle", rs.getString("title"));
-                req.setAttribute("bookAuthor", rs.getString("author"));
                 req.setAttribute("bookPrice", rs.getBigDecimal("price"));
                 req.setAttribute("bookDescription", rs.getString("description"));
                 req.setAttribute("bookImage", rs.getString("cover_image"));
@@ -44,7 +43,7 @@ public class BookDetailServlet extends HttpServlet {
                 req.setAttribute("bookAvailability", rs.getString("availability"));
                 req.setAttribute("reviewCount", rs.getInt("number_of_reviews"));
 
-                // Gợi ý sách liên quan (cùng category hoặc author)
+                // Gợi ý sách liên quan (cùng category)
                 PreparedStatement psRelated = conn.prepareStatement(
                         "SELECT id, title, price, cover_image " +
                                 "FROM books WHERE category = ? AND id <> ? LIMIT 4");
@@ -57,6 +56,7 @@ public class BookDetailServlet extends HttpServlet {
                     Map<String, Object> b = new HashMap<>();
                     b.put("id", rsRelated.getInt("id"));
                     b.put("title", rsRelated.getString("title"));
+                    b.put("category", rsRelated.getString("category"));
                     b.put("price", rsRelated.getBigDecimal("price"));
                     b.put("coverImage", rsRelated.getString("cover_image"));
                     relatedBooks.add(b);
