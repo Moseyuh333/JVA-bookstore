@@ -92,6 +92,17 @@ public class DBUtil {
                     }
                 }
 
+                // Add reset_expiry column if missing
+                try {
+                    String addResetExpirySQL = "ALTER TABLE users ADD COLUMN reset_expiry TIMESTAMP";
+                    stmt.execute(addResetExpirySQL);
+                } catch (SQLException e) {
+                    // Ignore if column already exists
+                    if (!e.getMessage().contains("already exists")) {
+                        throw e;
+                    }
+                }
+
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)");
@@ -239,6 +250,14 @@ public class DBUtil {
             pstmt.setString(1, newHash);
             pstmt.setString(2, email);
             return pstmt.executeUpdate() > 0;
+        }
+    }
+
+    public static void deleteAllUsers() throws SQLException {
+        String sql = "DELETE FROM users";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            int count = pstmt.executeUpdate();
+            System.out.println("Deleted " + count + " users from database");
         }
     }
 }
