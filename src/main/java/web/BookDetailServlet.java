@@ -49,7 +49,7 @@ public class BookDetailServlet extends HttpServlet {
                         "SELECT id, title, price, cover_image " +
                                 "FROM books WHERE category = ? AND id <> ? LIMIT 4");
                 psRelated.setString(1, rs.getString("category"));
-                psRelated.setInt(3, rs.getInt("id"));
+                psRelated.setInt(2, rs.getInt("id"));
 
                 ResultSet rsRelated = psRelated.executeQuery();
                 List<Map<String, Object>> relatedBooks = new ArrayList<>();
