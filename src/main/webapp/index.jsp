@@ -284,29 +284,25 @@
                         </a>
                     </li>
                     
-                    <% if (isLoggedIn) { %>
-                        <!-- User logged in -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-user"></i> <%= username %>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="profile.jsp"><i class="fas fa-user-circle"></i> Hồ sơ</a></li>
-                                <li><a class="dropdown-item" href="orders.jsp"><i class="fas fa-box"></i> Đơn hàng</a></li>
-                                <li><a class="dropdown-item" href="wishlist.jsp"><i class="fas fa-heart"></i> Yêu thích</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="/auth?action=logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-                            </ul>
-                        </li>
-                    <% } else { %>
-                        <!-- User not logged in -->
-                        <li class="nav-item">
-                            <a class="nav-link" href="login.jsp"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="register.jsp"><i class="fas fa-user-plus"></i> Đăng ký</a>
-                        </li>
-                    <% } %>
+                    <!-- User menu (will be updated by JavaScript) -->
+                    <li class="nav-item" id="navLoginItem">
+                        <a class="nav-link" href="login.jsp"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>
+                    </li>
+                    <li class="nav-item" id="navRegisterItem">
+                        <a class="nav-link" href="register.jsp"><i class="fas fa-user-plus"></i> Đăng ký</a>
+                    </li>
+                    <li class="nav-item dropdown" id="navUserMenu" style="display: none;">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> <span id="navUsername"></span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="profile.jsp"><i class="fas fa-user-circle"></i> Hồ sơ</a></li>
+                            <li><a class="dropdown-item" href="orders.jsp"><i class="fas fa-box"></i> Đơn hàng</a></li>
+                            <li><a class="dropdown-item" href="wishlist.jsp"><i class="fas fa-heart"></i> Yêu thích</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout(); return false;"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -393,8 +389,11 @@
         // Load books from API
         async function loadBooks(endpoint, containerId) {
             try {
-                const response = await fetch(`${API_BASE}/books/${endpoint}?limit=12&offset=0`);
-                if (!response.ok) throw new Error('Failed to load books');
+                const response = await fetch(`${API_BASE}/${endpoint}?limit=12&offset=0`);
+                if (!response.ok) {
+                    console.error(`Failed to load ${endpoint}:`, response.status);
+                    throw new Error('Failed to load books');
+                }
                 
                 const books = await response.json();
                 displayBooks(books, containerId);
@@ -530,12 +529,45 @@
         
         // Load all books on page load
         document.addEventListener('DOMContentLoaded', function() {
-            loadBooks('newest', 'newestBooks');
-            loadBooks('best-selling', 'bestSellingBooks');
-            loadBooks('top-rated', 'topRatedBooks');
-            loadBooks('favorites', 'favoriteBooks');
+            loadBooks('books/newest', 'newestBooks');
+            loadBooks('books/best-selling', 'bestSellingBooks');
+            loadBooks('books/top-rated', 'topRatedBooks');
+            loadBooks('books/favorites', 'favoriteBooks');
             updateCartCount();
+            updateNavbar(); // Update navbar based on login status
         });
+        
+        // Update navbar to show login/logout
+        function updateNavbar() {
+            const token = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+            
+            const loginItem = document.getElementById('navLoginItem');
+            const registerItem = document.getElementById('navRegisterItem');
+            const userMenu = document.getElementById('navUserMenu');
+            const usernameSpan = document.getElementById('navUsername');
+            
+            if (token && username) {
+                // User is logged in
+                if (loginItem) loginItem.style.display = 'none';
+                if (registerItem) registerItem.style.display = 'none';
+                if (userMenu) userMenu.style.display = 'block';
+                if (usernameSpan) usernameSpan.textContent = username;
+            } else {
+                // User is not logged in
+                if (loginItem) loginItem.style.display = 'block';
+                if (registerItem) registerItem.style.display = 'block';
+                if (userMenu) userMenu.style.display = 'none';
+            }
+        }
+        
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            alert('Đã đăng xuất thành công');
+            window.location.reload();
+        }
     </script>
 </body>
 </html>

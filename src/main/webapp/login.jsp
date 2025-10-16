@@ -87,8 +87,10 @@
       if(res.ok){
         const json = await res.json();
         
-        // Save token to localStorage
-        localStorage.setItem('auth_token', json.token);
+        // Save token and username to localStorage
+        localStorage.setItem('token', json.token);
+        const username = document.querySelector('input[name="username"]').value;
+        localStorage.setItem('username', username);
         
         // Show success message
         document.getElementById('result').innerHTML = '<div class="alert alert-success">✅ Đăng nhập thành công! Đang chuyển hướng...</div>';
