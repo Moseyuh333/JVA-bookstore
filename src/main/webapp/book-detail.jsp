@@ -2,165 +2,139 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-
 <!DOCTYPE html>
 <html lang="vi">
 
-<%@ include file="/WEB-INF/includes/header.jsp" %>
+  <%@ include file="/WEB-INF/includes/header.jsp" %>
 
-<div class="container mx-auto px-6 py-10">
+  <div class="max-w-6xl mx-auto px-6 py-12">
+    <c:if test="${not empty error}">
+      <div class="bg-red-600 text-white p-4 rounded">${error}</div>
+    </c:if>
 
-  <c:if test="${not empty error}">
-    <div class="bg-red-700/70 p-4 rounded text-red-100">${error}</div>
-  </c:if>
+    <c:if test="${empty error}">
+      <!-- BOOK DETAIL -->
+      <div class="flex flex-col md:flex-row bg-[#1b1b1b] rounded-lg p-6 gap-8 shadow-lg">
+        
+        <!-- Book Image -->
+        <div class="md:w-1/3 flex justify-center items-center">
+          <img src="<c:out value='${bookImage != null && bookImage ne "" ? bookImage : "https://placehold.co/400x550"}'/>"
+               alt="${bookTitle}" class="book-img max-w-[320px] max-h-[480px] object-contain">
+        </div>
 
-  <c:if test="${empty error}">
-    <!-- === Top Section: Cover + Info === -->
-    <div class="flex flex-col lg:flex-row gap-10 bg-[#1b1b1b] p-8 rounded-xl shadow-lg">
-      <!-- Left: Image -->
-      <div class="flex-1 flex justify-center items-start">
-        <img src="<c:out value='${bookImage != null && bookImage ne "" ? bookImage : "https://placehold.co/400x550"}'/>"
-             alt="${bookTitle}" class="rounded-lg shadow-md w-[320px] object-contain">
-      </div>
+        <!-- Info -->
+        <div class="md:w-2/3 flex flex-col justify-center">
+          <h1 class="text-3xl font-bold text-amber-400 mb-3">${bookTitle}</h1>
 
-      <!-- Right: Info -->
-      <div class="flex-[2] flex flex-col gap-4">
-        <h1 class="text-3xl font-bold text-amber-400">${bookTitle}</h1>
-        <p class="text-gray-300 text-sm">Tác giả: 
-          <span class="text-amber-300 font-medium">${bookAuthor}</span>
-        </p>
+          <p class="text-gray-400 mb-2">Tác giả: <span class="text-gray-200 font-medium">${bookAuthor}</span></p>
+          <p class="text-gray-400 mb-2">Nhà xuất bản: <span class="text-gray-200 font-medium">${bookPublisher}</span></p>
+          <p class="text-gray-400 mb-2">Danh mục: <span class="text-amber-400 font-medium">${bookCategory}</span></p>
+          <p class="text-gray-400 mb-2">Cửa hàng: <span class="text-amber-400 font-medium">${bookShop}</span></p>
 
-        <p class="text-gray-400 text-sm">Nhà xuất bản: 
-          <span class="text-amber-300">${bookPublisher}</span>
-        </p>
-
-        <p class="text-gray-400 text-sm">Danh mục: 
-          <span class="text-amber-300">${bookCategory}</span>
-        </p>
-
-        <!-- Rating -->
-        <c:if test="${bookRating > 0}">
-          <div class="flex items-center gap-1">
+          <!-- Rating -->
+          <div class="flex items-center gap-2 mt-2 mb-3">
             <c:forEach var="i" begin="1" end="5">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 
-                ${i <= bookRating ? 'text-yellow-400' : 'text-gray-500'}" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975..."/>
-              </svg>
+              <c:choose>
+                <c:when test="${i <= bookRating}">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.179c.969 0 1.371 1.24.588 1.81l-3.385 2.46
+                             1.287 3.975c.3.921-.755 1.688-1.54 1.118l-3.385-2.46-3.385 2.46c-.784.57-1.838-.197-1.54-1.118
+                             l1.287-3.975-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.179l1.286-3.975z"/>
+                  </svg>
+                </c:when>
+                <c:otherwise>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600 fill-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975..."/>
+                  </svg>
+                </c:otherwise>
+              </c:choose>
             </c:forEach>
-            <span class="ml-2 text-sm text-gray-400">
-              <fmt:formatNumber value="${bookRating}" minFractionDigits="1" /> / 5 
-              (<fmt:formatNumber value="${reviewCount}" /> đánh giá)
-            </span>
+            <span class="text-gray-400 text-sm ml-1">(${bookRating}/5)</span>
           </div>
-        </c:if>
 
-        <!-- Price -->
-        <div class="text-3xl font-bold text-amber-400">
-          <fmt:formatNumber value="${bookPrice}" type="number" /> đ
-          <c:if test="${bookDiscount > 0}">
-            <span class="text-sm text-gray-400 line-through ml-2">
-              <fmt:formatNumber value="${bookOriginalPrice}" type="number" /> đ
+          <!-- Price -->
+          <div class="flex items-baseline gap-3 mb-5">
+            <span class="text-3xl font-bold text-amber-400">
+              <fmt:formatNumber value="${bookPrice}" type="number" minFractionDigits="0" /> đ
             </span>
-          </c:if>
+            <c:if test="${not empty bookOriginalPrice}">
+              <span class="line-through text-gray-500 text-lg">
+                <fmt:formatNumber value="${bookOriginalPrice}" type="number" /> đ
+              </span>
+            </c:if>
+            <c:if test="${bookDiscount > 0}">
+              <span class="bg-red-600 text-white text-sm px-2 py-1 rounded">-${bookDiscount}%</span>
+            </c:if>
+          </div>
+
+          <!-- Stock -->
+          <p class="text-sm mb-4">
+            <span class="text-gray-400">Tình trạng:</span>
+            <c:choose>
+              <c:when test="${bookStock > 0}">
+                <span class="text-green-400 font-medium">Còn hàng (${bookStock} quyển)</span>
+              </c:when>
+              <c:otherwise>
+                <span class="text-red-500 font-medium">Hết hàng</span>
+              </c:otherwise>
+            </c:choose>
+          </p>
+
+          <!-- Buttons -->
+          <div class="flex gap-4">
+            <button class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-md">Mua ngay</button>
+            <button class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded-md">Thêm vào giỏ</button>
+          </div>
         </div>
+      </div>
 
-        <!-- Shop + Stock -->
-        <div class="text-sm">
-          <span class="text-gray-400">Nhà bán: </span>
-          <span class="font-semibold text-amber-300">${bookShop}</span>
+      <!-- Description -->
+      <div class="bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Mô tả sản phẩm</h2>
+        <p class="text-gray-300 leading-relaxed whitespace-pre-line">
+          <c:out value="${bookDescription != null ? bookDescription : 'Chưa có mô tả cho sản phẩm này.'}" />
+        </p>
+      </div>
+
+      <!-- Specifications -->
+      <c:if test="${not empty bookSpecifications}">
+        <div class="bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md">
+          <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Thông tin chi tiết</h2>
+          <table class="w-full text-gray-300">
+            <tbody class="divide-y divide-[#333]">
+              <c:forEach var="spec" items="${fn:split(bookSpecifications, '|')}">
+                <tr>
+                  <td class="py-3 font-medium w-1/3 text-gray-400">
+                    <c:out value="${fn:split(spec, ':')[0]}" />
+                  </td>
+                  <td class="py-3">
+                    <c:out value="${fn:split(spec, ':')[1]}" />
+                  </td>
+                </tr>
+              </c:forEach>
+            </tbody>
+          </table>
         </div>
-        <div class="text-sm">
-          <span class="text-gray-400">Tình trạng: </span>
-          <span class="text-green-400">${bookStock}</span>
-        </div>
+      </c:if>
 
-        <!-- Buttons -->
-        <div class="flex gap-4 mt-4">
-          <a href="#" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-semibold">Mua ngay</a>
-          <a href="#" class="bg-amber-600 hover:bg-amber-700 px-6 py-3 rounded-lg font-semibold">Thêm vào giỏ</a>
-          <c:if test="${not empty bookUrl}">
-            <a href="${bookUrl}" target="_blank" class="border border-amber-400 px-6 py-3 rounded-lg text-amber-400 hover:bg-amber-400 hover:text-black">
-              Xem trên Tiki
-            </a>
-          </c:if>
-        </div>
-      </div>
-    </div>
-
-    <!-- === Highlights === -->
-    <c:if test="${not empty bookHighlights}">
-      <div class="card mt-10 p-8">
-        <h2 class="section-title">Đặc điểm nổi bật</h2>
-        <ul class="list-disc pl-6 text-gray-300 leading-relaxed">
-          <c:forEach var="hl" items="${fn:split(bookHighlights, '|')}">
-            <li>${hl}</li>
-          </c:forEach>
-        </ul>
-      </div>
-    </c:if>
-
-    <!-- === Specifications === -->
-    <c:if test="${not empty bookSpecifications}">
-      <div class="card mt-10 p-8">
-        <h2 class="section-title">Thông tin chi tiết</h2>
-        <table class="w-full text-gray-300 border-t border-[#333]">
-          <tbody>
-            <c:forEach var="spec" items="${fn:split(bookSpecifications, '|')}">
-              <c:set var="pair" value="${fn:split(spec, ':')}" />
-              <tr class="border-b border-[#333]">
-                <td class="py-2 w-1/3 text-gray-400">${pair[0]}</td>
-                <td class="py-2">${pair[1]}</td>
-              </tr>
-            </c:forEach>
-          </tbody>
-        </table>
-      </div>
-    </c:if>
-
-    <!-- === Description === -->
-    <div class="card mt-10 p-8">
-      <h2 class="section-title">Mô tả sản phẩm</h2>
-      <div class="text-gray-300 leading-relaxed">
-        <c:out value="${bookDescription}" default="Chưa có mô tả cho sản phẩm này." escapeXml="false"/>
-      </div>
-    </div>
-
-    <!-- === Reviews === -->
-    <c:if test="${not empty bookReviews}">
-      <div class="card mt-10 p-8">
-        <h2 class="section-title">Khách hàng đánh giá</h2>
-        <ul class="space-y-4 text-gray-300">
-          <c:forEach var="rv" items="${fn:split(bookReviews, '|')}">
-            <li class="border-b border-[#333] pb-3">${rv}</li>
-          </c:forEach>
-        </ul>
-      </div>
-    </c:if>
-
-    <!-- === Related Books === -->
-    <c:if test="${not empty relatedBooks}">
-      <div class="card mt-10 p-8">
-        <h2 class="section-title">Sản phẩm tương tự</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-          <c:forEach var="b" items="${relatedBooks}">
-            <a href="${pageContext.request.contextPath}/books/detail?id=${b.id}" class="block bg-[#222] rounded-lg overflow-hidden hover:scale-[1.02] transition">
-              <img src="<c:out value='${b.coverImage != null && b.coverImage ne "" ? b.coverImage : "https://placehold.co/200x250"}'/>"
-                   alt="${b.title}" class="w-full h-56 object-cover">
-              <div class="p-3">
-                <h3 class="font-semibold text-amber-300 truncate">${b.title}</h3>
-                <p class="text-sm text-gray-400">
-                  <fmt:formatNumber value="${b.price}" type="number" /> đ
-                </p>
-              </div>
-            </a>
+      <!-- Reviews -->
+      <c:if test="${not empty reviews}">
+        <div class="bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md">
+          <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Đánh giá từ người đọc</h2>
+          <c:forEach var="r" items="${reviews}">
+            <div class="border-b border-[#333] py-4">
+              <p class="font-semibold text-gray-200 mb-1">${r.authorName}</p>
+              <p class="text-gray-400 mb-2 text-sm">
+                <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+              </p>
+              <p class="text-gray-300">${r.comment}</p>
+            </div>
           </c:forEach>
         </div>
-      </div>
+      </c:if>
     </c:if>
+  </div>
 
-  </c:if>
-</div>
-
-<%@ include file="/WEB-INF/includes/footer.jsp" %>
+  <%@ include file="/WEB-INF/includes/footer.jsp" %>
 </body>
 </html>
