@@ -387,34 +387,37 @@
                 return;
             }
             
-            container.innerHTML = books.map(book => `
-                <div class="col-lg-3 col-md-4 col-sm-6">
+            container.innerHTML = books.map(book => {
+                let ratingHtml = '';
+                if (book.averageRating > 0) {
+                    ratingHtml = `<div class="book-rating">
+                        <i class="fas fa-star"></i> \${book.averageRating.toFixed(1)}/5 
+                        (\${book.ratingCount} đánh giá)
+                    </div>`;
+                }
+                
+                return `<div class="col-lg-3 col-md-4 col-sm-6">
                     <div class="book-card">
-                        <img src="${book.imageUrl || 'https://via.placeholder.com/250x350?text=No+Image'}" 
-                             alt="${book.title}" class="book-image">
+                        <img src="\${book.imageUrl || 'https://via.placeholder.com/250x350?text=No+Image'}" 
+                             alt="\${book.title}" class="book-image">
                         <div class="book-body">
-                            <h5 class="book-title">${book.title}</h5>
-                            <p class="book-author">Tác giả: ${book.author}</p>
-                            <div class="book-price">₫${book.price.toLocaleString('vi-VN')}</div>
-                            ${book.averageRating > 0 ? `
-                                <div class="book-rating">
-                                    <i class="fas fa-star"></i> ${book.averageRating.toFixed(1)}/5 
-                                    (${book.ratingCount} đánh giá)
-                                </div>
-                            ` : ''}
+                            <h5 class="book-title">\${book.title}</h5>
+                            <p class="book-author">Tác giả: \${book.author}</p>
+                            <div class="book-price">₫\${book.price.toLocaleString('vi-VN')}</div>
+                            \${ratingHtml}
                             <div class="book-actions">
-                                <button class="btn-add-cart" onclick="addToCart(${book.id})">
+                                <button class="btn-add-cart" onclick="addToCart(\${book.id})">
                                     <i class="fas fa-shopping-cart"></i> Thêm
                                 </button>
-                                <button class="btn-wishlist" onclick="addToWishlist(${book.id})" 
+                                <button class="btn-wishlist" onclick="addToWishlist(\${book.id})" 
                                         title="Thêm vào yêu thích">
                                     <i class="far fa-heart"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
         
         // Add to cart
