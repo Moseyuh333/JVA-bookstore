@@ -1,53 +1,514 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.util.*" %>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bookish Bliss Haven | Home</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/feather-icons"></script>
+    <title>NK Bookstore - Cửa hàng sách trực tuyến</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
-        body { font-family: 'Roboto', sans-serif; }
-        .hero-bg { background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('http://static.photos/books/1200x630/42'); background-size: cover; background-position: center; }
-        .book-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-        .title-font { font-family: 'Playfair Display', serif; }
+        :root {
+            --primary-color: #8B4513;
+            --secondary-color: #D2691E;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            margin: 0 10px;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover {
+            color: #ffd700 !important;
+            transform: translateY(-2px);
+        }
+        
+        .cart-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .hero-section h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .hero-section p {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: var(--secondary-color);
+        }
+        
+        .book-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: var(--secondary-color);
+        }
+        
+        .book-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+        
+        .book-body {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .book-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            min-height: 45px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .book-author {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .book-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin: 10px 0;
+        }
+        
+        .book-rating {
+            font-size: 0.85rem;
+            color: #ff9800;
+            margin-bottom: 10px;
+        }
+        
+        .book-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+        }
+        
+        .btn-add-cart {
+            flex: 1;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-add-cart:hover {
+            background: var(--secondary-color);
+            transform: scale(1.02);
+        }
+        
+        .btn-wishlist {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .btn-wishlist:hover {
+            background: #f5f5f5;
+            border-color: var(--secondary-color);
+        }
+        
+        .products-section {
+            margin-bottom: 60px;
+        }
+        
+        .carousel-container {
+            position: relative;
+        }
+        
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(139, 69, 19, 0.8);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.3s;
+        }
+        
+        .carousel-nav:hover {
+            background: var(--secondary-color);
+        }
+        
+        .carousel-nav.prev {
+            left: -60px;
+        }
+        
+        .carousel-nav.next {
+            right: -60px;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+        }
+        
+        .footer {
+            background: var(--primary-color);
+            color: white;
+            padding: 40px 20px;
+            margin-top: 60px;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
     <!-- Navigation -->
-    <nav class="bg-amber-800 text-white shadow-lg">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex justify-between items-center">
-                <a href="<%=request.getContextPath()%>/index.jsp" class="flex items-center space-x-2">
-                    <i data-feather="book-open" class="w-6 h-6"></i>
-                    <span class="title-font text-xl font-bold">Bookish Bliss Haven</span>
-                </a>
-                <div class="hidden md:flex space-x-8">
-                    <a href="<%=request.getContextPath()%>/index.jsp" class="hover:text-amber-200 font-medium">Home</a>
-                    <a href="<%=request.getContextPath()%>/shop.jsp" class="hover:text-amber-200 font-medium">Shop</a>
-                    <a href="<%=request.getContextPath()%>/collections.jsp" class="hover:text-amber-200 font-medium">Collections</a>
-                    <a href="<%=request.getContextPath()%>/about.jsp" class="hover:text-amber-200 font-medium">About</a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <!-- Right-side visible navigation -->
-                    <a href="<%=request.getContextPath()%>/shop.jsp" class="hidden sm:inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700">
-                        <i data-feather="shopping-bag" class="w-5 h-5 mr-1"></i>
-                        <span class="font-medium">Shop</span>
-                    </a>
-                    <a href="#" class="hidden sm:inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700">
-                        <i data-feather="search" class="w-5 h-5 mr-1"></i>
-                        <span class="font-medium">Search</span>
-                    </a>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.jsp">
+                <i class="fas fa-book"></i> NK Bookstore
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.jsp"><i class="fas fa-home"></i> Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-th"></i> Danh mục</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-search"></i> Tìm kiếm</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="cart.jsp">
+                            <i class="fas fa-shopping-cart"></i> Giỏ hàng
+                            <span class="cart-badge" id="cartCount">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.jsp"><i class="fas fa-user"></i> Tài khoản</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-                    <!-- Account / Profile Dropdown -->
-                    <div class="relative">
-                        <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
-                            <i data-feather="user" class="w-5 h-5 mr-1"></i>
-                            <span id="accountBtnLabel" class="font-medium">Account</span>
-                        </button>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <h1><i class="fas fa-book-open"></i> Chào mừng đến NK Bookstore</h1>
+            <p>Khám phá thế giới sách với hàng ngàn đầu sách hay nhất</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Newest Books -->
+        <div class="products-section">
+            <h2 class="section-title"><i class="fas fa-star"></i> Sách Mới Nhất</h2>
+            <div id="newestBooks" class="row g-4">
+                <div class="col-12 loading-spinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Best Selling Books -->
+        <div class="products-section">
+            <h2 class="section-title"><i class="fas fa-fire"></i> Bán Chạy Nhất</h2>
+            <div id="bestSellingBooks" class="row g-4">
+                <div class="col-12 loading-spinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Rated Books -->
+        <div class="products-section">
+            <h2 class="section-title"><i class="fas fa-award"></i> Đánh Giá Cao Nhất</h2>
+            <div id="topRatedBooks" class="row g-4">
+                <div class="col-12 loading-spinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Favorite Books -->
+        <div class="products-section">
+            <h2 class="section-title"><i class="fas fa-heart"></i> Yêu Thích Nhất</h2>
+            <div id="favoriteBooks" class="row g-4">
+                <div class="col-12 loading-spinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-book"></i> NK Bookstore</h5>
+                    <p>Cửa hàng sách trực tuyến hàng đầu với hàng ngàn đầu sách hay</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p>&copy; 2025 NK Bookstore. Tất cả quyền được bảo lưu.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = '<%= request.getContextPath() %>/api';
+        
+        // Load books from API
+        async function loadBooks(endpoint, containerId) {
+            try {
+                const response = await fetch(`${API_BASE}/books/${endpoint}?limit=12&offset=0`);
+                if (!response.ok) throw new Error('Failed to load books');
+                
+                const books = await response.json();
+                displayBooks(books, containerId);
+            } catch (error) {
+                console.error('Error loading books:', error);
+                document.getElementById(containerId).innerHTML = 
+                    '<div class="col-12"><p class="text-danger">Không thể tải dữ liệu sách</p></div>';
+            }
+        }
+        
+        // Display books in grid
+        function displayBooks(books, containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (!books || books.length === 0) {
+                container.innerHTML = '<div class="col-12"><p>Không có sách nào</p></div>';
+                return;
+            }
+            
+            container.innerHTML = books.map(book => `
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="book-card">
+                        <img src="${book.imageUrl || 'https://via.placeholder.com/250x350?text=No+Image'}" 
+                             alt="${book.title}" class="book-image">
+                        <div class="book-body">
+                            <h5 class="book-title">${book.title}</h5>
+                            <p class="book-author">Tác giả: ${book.author}</p>
+                            <div class="book-price">₫${book.price.toLocaleString('vi-VN')}</div>
+                            ${book.averageRating > 0 ? `
+                                <div class="book-rating">
+                                    <i class="fas fa-star"></i> ${book.averageRating.toFixed(1)}/5 
+                                    (${book.ratingCount} đánh giá)
+                                </div>
+                            ` : ''}
+                            <div class="book-actions">
+                                <button class="btn-add-cart" onclick="addToCart(${book.id})">
+                                    <i class="fas fa-shopping-cart"></i> Thêm
+                                </button>
+                                <button class="btn-wishlist" onclick="addToWishlist(${book.id})" 
+                                        title="Thêm vào yêu thích">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Add to cart
+        async function addToCart(bookId) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    alert('Vui lòng đăng nhập trước');
+                    window.location.href = 'login.jsp';
+                    return;
+                }
+                
+                const response = await fetch(`${API_BASE}/cart/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ bookId, quantity: 1 })
+                });
+                
+                if (response.ok) {
+                    alert('Thêm vào giỏ hàng thành công!');
+                    updateCartCount();
+                } else {
+                    alert('Không thể thêm vào giỏ hàng');
+                }
+            } catch (error) {
+                console.error('Error adding to cart:', error);
+                alert('Lỗi khi thêm vào giỏ hàng');
+            }
+        }
+        
+        // Add to wishlist
+        async function addToWishlist(bookId) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    alert('Vui lòng đăng nhập trước');
+                    window.location.href = 'login.jsp';
+                    return;
+                }
+                
+                const response = await fetch(`${API_BASE}/wishlist/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ bookId })
+                });
+                
+                if (response.ok) {
+                    alert('Đã thêm vào yêu thích!');
+                } else {
+                    alert('Không thể thêm vào yêu thích');
+                }
+            } catch (error) {
+                console.error('Error adding to wishlist:', error);
+            }
+        }
+        
+        // Update cart count
+        async function updateCartCount() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                
+                const response = await fetch(`${API_BASE}/cart/count`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('cartCount').textContent = data.count || 0;
+                }
+            } catch (error) {
+                console.error('Error updating cart count:', error);
+            }
+        }
+        
+        // Load all books on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBooks('newest', 'newestBooks');
+            loadBooks('best-selling', 'bestSellingBooks');
+            loadBooks('top-rated', 'topRatedBooks');
+            loadBooks('favorites', 'favoriteBooks');
+            updateCartCount();
+        });
+    </script>
+</body>
+</html>
                         <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                             <div class="py-2">
                                 <a href="<%=request.getContextPath()%>/login.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
