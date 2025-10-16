@@ -261,4 +261,49 @@ public class BookDAO {
             rs.getTimestamp("updated_at").toLocalDateTime() : null);
         return book;
     }
+    
+    /**
+     * Create new book (for CSV import)
+     */
+    public static int createBook(Book book) {
+        String sql = "INSERT INTO books (title, author, isbn, price, description, category, " +
+                    "stock_quantity, image_url, average_rating, rating_count, views_count, " +
+                    "sales_count, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            
+            stmt.setString(1, book.getTitle());
+            stmt.setString(2, book.getAuthor());
+            stmt.setString(3, book.getIsbn());
+            stmt.setBigDecimal(4, book.getPrice());
+            stmt.setString(5, book.getDescription());
+            stmt.setString(6, book.getCategory());
+            stmt.setInt(7, book.getStockQuantity());
+            stmt.setString(8, book.getImageUrl());
+            stmt.setDouble(9, book.getAverageRating());
+            stmt.setInt(10, book.getRatingCount());
+            stmt.setInt(11, book.getViewsCount());
+            stmt.setInt(12, book.getSalesCount());
+            stmt.setTimestamp(13, book.getCreatedAt() != null ? 
+                Timestamp.valueOf(book.getCreatedAt()) : new Timestamp(System.currentTimeMillis()));
+            stmt.setTimestamp(14, book.getUpdatedAt() != null ? 
+                Timestamp.valueOf(book.getUpdatedAt()) : new Timestamp(System.currentTimeMillis()));
+            
+            int affectedRows = stmt.executeUpdate();
+            
+            if (affectedRows > 0) {
+                try (ResultSet rs = stmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return -1;
+    }
 }

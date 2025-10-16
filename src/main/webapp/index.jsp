@@ -251,6 +251,12 @@
     </style>
 </head>
 <body>
+    <%
+        // Check user session
+        String username = (String) session.getAttribute("username");
+        boolean isLoggedIn = (username != null && !username.isEmpty());
+    %>
+    
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
@@ -277,9 +283,30 @@
                             <span class="cart-badge" id="cartCount">0</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="profile.jsp"><i class="fas fa-user"></i> Tài khoản</a>
-                    </li>
+                    
+                    <% if (isLoggedIn) { %>
+                        <!-- User logged in -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user"></i> <%= username %>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="profile.jsp"><i class="fas fa-user-circle"></i> Hồ sơ</a></li>
+                                <li><a class="dropdown-item" href="orders.jsp"><i class="fas fa-box"></i> Đơn hàng</a></li>
+                                <li><a class="dropdown-item" href="wishlist.jsp"><i class="fas fa-heart"></i> Yêu thích</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/auth?action=logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                            </ul>
+                        </li>
+                    <% } else { %>
+                        <!-- User not logged in -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.jsp"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="register.jsp"><i class="fas fa-user-plus"></i> Đăng ký</a>
+                        </li>
+                    <% } %>
                 </ul>
             </div>
         </div>
