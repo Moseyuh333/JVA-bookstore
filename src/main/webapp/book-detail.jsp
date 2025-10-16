@@ -57,8 +57,7 @@
                     </c:if>
                     <c:if test="${bookDiscount > 0}">
                       <span class="bg-red-600 text-white text-sm px-2 py-1 rounded">
-                        -
-                        <fmt:formatNumber value="${bookDiscount}" type="number" />%
+                        -${bookDiscount}%
                       </span>
                     </c:if>
                   </div>
