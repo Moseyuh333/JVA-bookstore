@@ -5,20 +5,6 @@
 
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${bookTitle} | JVA Bookstore</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-  <style>
-    body { background-color: #0f0f0f; color: #eee; font-family: 'Roboto', sans-serif; }
-    .text-muted { color: #aaa; }
-    .card { background-color: #1a1a1a; border-radius: 0.75rem; }
-    .section-title { color: #fbbf24; font-weight: 600; margin-bottom: 1rem; }
-  </style>
-</head>
-<body class="bg-[#111] text-gray-100">
 
 <%@ include file="/WEB-INF/includes/header.jsp" %>
 
