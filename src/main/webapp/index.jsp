@@ -384,10 +384,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // API Configuration
         const API_BASE = '<%= request.getContextPath() %>/api';
+        console.log('[NK Bookstore] API Base:', API_BASE);
         
         // Load books from API
         async function loadBooks(endpoint, containerId) {
+            console.log('[NK Bookstore] Loading:', endpoint);
             try {
                 const response = await fetch(`${API_BASE}/${endpoint}?limit=12&offset=0`);
                 if (!response.ok) {
