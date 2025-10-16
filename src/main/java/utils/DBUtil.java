@@ -19,6 +19,8 @@ public class DBUtil {
     static {
         try {
             String databaseUrl = System.getenv("DATABASE_URL");
+            System.out.println("=== DATABASE CONFIGURATION ===");
+            System.out.println("DATABASE_URL env present: " + (databaseUrl != null && !databaseUrl.isEmpty()));
             if (databaseUrl != null && !databaseUrl.isEmpty()) {
                 // Expected format: postgres://user:pass@host:port/db
                 URI dbUri = new URI(databaseUrl);
@@ -29,6 +31,9 @@ public class DBUtil {
                 url = jdbcUrl + "?sslmode=require";
             } else {
                 try (InputStream input = DBUtil.class.getClassLoader().getResourceAsStream("db.properties")) {
+                    if (input == null) {
+                        throw new RuntimeException("db.properties not found in classpath and DATABASE_URL env var not set");
+                    }
                     Properties prop = new Properties();
                     prop.load(input);
                     url = prop.getProperty("db.url");
@@ -37,6 +42,10 @@ public class DBUtil {
                 }
             }
             Class.forName("org.postgresql.Driver");
+            System.out.println("DB URL: " + (url != null ? url.replaceAll("(?<=[a-z]://)[^:]*:[^@]*", "***:***") : "NULL"));
+            System.out.println("DB User: " + (username != null ? username : "NULL"));
+            System.out.println("DB Password set: " + (password != null && !password.isEmpty()) + "");
+            System.out.println("=============================");
             initDatabase();
         } catch (URISyntaxException e) {
             throw new RuntimeException("Invalid DATABASE_URL", e);
@@ -83,9 +92,35 @@ public class DBUtil {
                     }
                 }
 
+                // Add reset_expiry column if missing
+                try {
+                    String addResetExpirySQL = "ALTER TABLE users ADD COLUMN reset_expiry TIMESTAMP";
+                    stmt.execute(addResetExpirySQL);
+                } catch (SQLException e) {
+                    // Ignore if column already exists
+                    if (!e.getMessage().contains("already exists")) {
+                        throw e;
+                    }
+                }
+
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)");
+                
+                // Create OTP verifications table
+                String createOTPTableSQL = "CREATE TABLE IF NOT EXISTS otp_verifications (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "email VARCHAR(100) NOT NULL," +
+                    "otp_code VARCHAR(6) NOT NULL," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "expires_at TIMESTAMP NOT NULL," +
+                    "verified BOOLEAN DEFAULT FALSE," +
+                    "attempts INT DEFAULT 0" +
+                    ")";
+                stmt.execute(createOTPTableSQL);
+                
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_otp_email ON otp_verifications(email)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_otp_code ON otp_verifications(otp_code)");
             }
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
@@ -93,6 +128,9 @@ public class DBUtil {
     }
 
     public static Connection getConnection() throws SQLException {
+        if (url == null || username == null || password == null) {
+            throw new SQLException("Database configuration not initialized. Ensure DATABASE_URL env var is set or db.properties exists.");
+        }
         return DriverManager.getConnection(url, username, password);
     }
 
@@ -212,6 +250,14 @@ public class DBUtil {
             pstmt.setString(1, newHash);
             pstmt.setString(2, email);
             return pstmt.executeUpdate() > 0;
+        }
+    }
+
+    public static void deleteAllUsers() throws SQLException {
+        String sql = "DELETE FROM users";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            int count = pstmt.executeUpdate();
+            System.out.println("Deleted " + count + " users from database");
         }
     }
 }
