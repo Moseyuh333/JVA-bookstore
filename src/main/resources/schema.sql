@@ -25,12 +25,15 @@ CREATE TABLE IF NOT EXISTS books (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     author VARCHAR(255),
-    isbn VARCHAR(20),
     price DECIMAL(10, 2) NOT NULL,
     description TEXT,
     category VARCHAR(100),
     stock_quantity INTEGER DEFAULT 0,
     image_url VARCHAR(500),
+    average_rating DOUBLE PRECISION DEFAULT 0,
+    rating_count INTEGER DEFAULT 0,
+    views_count INTEGER DEFAULT 0,
+    sales_count INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

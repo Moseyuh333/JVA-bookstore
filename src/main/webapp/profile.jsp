@@ -1,4 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -212,252 +214,56 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentUser = null;
-
-        // Check authentication on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('jwtToken');
             if (!token) {
-                // Redirect to login if not authenticated
-                alert('Vui lòng đăng nhập để truy cập trang này.');
-                window.location.href = '<%= request.getContextPath() %>/login.jsp';
+                window.location.href = 'login.jsp';
                 return;
             }
-            
-            loadUserProfile();
-            loadOrderHistory();
-        });
 
-        // Profile form submission
-        document.getElementById('profileForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            updateProfile();
-        });
+            const API_BASE_URL = '<%= request.getContextPath() %>/api';
 
-        // Change password form submission
-        document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            changePassword();
-        });
+            // Function to fetch user profile
+            async function fetchUserProfile() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/user/profile`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
 
-        // Delete account form submission
-        document.getElementById('deleteAccountForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            deleteAccount();
-        });
-
-        function loadUserProfile() {
-            const token = localStorage.getItem('auth_token');
-            fetch('<%= request.getContextPath() %>/api/profile', {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        currentUser = data.user;
-                        document.getElementById('fullName').value = data.user.fullName || '';
-                        document.getElementById('email').value = data.user.email || '';
-                        document.getElementById('phone').value = data.user.phone || '';
-                        document.getElementById('birthDate').value = data.user.birthDate || '';
-                        document.getElementById('address').value = data.user.address || '';
-                    } else {
-                        showAlert('Không thể tải thông tin profile: ' + data.message, 'danger');
-                        if (data.message === 'Not authenticated') {
-                            window.location.href = '<%= request.getContextPath() %>/login.jsp';
+                    if (response.ok) {
+                        const user = await response.json();
+                        document.getElementById('fullName').value = user.fullName || '';
+                        document.getElementById('email').value = user.email || '';
+                        document.getElementById('phone').value = user.phone || '';
+                        if (user.birthDate) {
+                            // Backend sends date as array [yyyy, mm, dd] or timestamp
+                            let birthDate;
+                            if (Array.isArray(user.birthDate)) {
+                                // Format [yyyy, mm, dd] to yyyy-MM-dd
+                                const [year, month, day] = user.birthDate;
+                                birthDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            } else {
+                                // Assuming it's a timestamp or a string 'yyyy-mm-dd'
+                                birthDate = new Date(user.birthDate).toISOString().split('T')[0];
+                            }
+                            document.getElementById('birthDate').value = birthDate;
                         }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showAlert('Lỗi kết nối. Vui lòng thử lại.', 'danger');
-                });
-        }
-
-        function updateProfile() {
-            const formData = new FormData(document.getElementById('profileForm'));
-            const profileData = Object.fromEntries(formData);
-
-            const token = localStorage.getItem('auth_token');
-            fetch('<%= request.getContextPath() %>/api/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(profileData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('Cập nhật thông tin thành công!', 'success');
-                } else {
-                    showAlert('Lỗi: ' + data.message, 'danger');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('Lỗi kết nối. Vui lòng thử lại.', 'danger');
-            });
-        }
-
-        function changePassword() {
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-
-            if (newPassword !== confirmPassword) {
-                showAlert('Mật khẩu xác nhận không khớp!', 'danger');
-                return;
-            }
-
-            const formData = new FormData(document.getElementById('changePasswordForm'));
-            const passwordData = Object.fromEntries(formData);
-
-            const token = localStorage.getItem('auth_token');
-            fetch('<%= request.getContextPath() %>/api/profile/password', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(passwordData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('Đổi mật khẩu thành công!', 'success');
-                    document.getElementById('changePasswordForm').reset();
-                } else {
-                    showAlert('Lỗi: ' + data.message, 'danger');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('Lỗi kết nối. Vui lòng thử lại.', 'danger');
-            });
-        }
-
-        function loadOrderHistory() {
-            const token = localStorage.getItem('auth_token');
-            fetch('<%= request.getContextPath() %>/api/profile/orders', {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        displayOrderHistory(data.orders);
+                        document.getElementById('address').value = user.address || '';
+                    } else if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('jwtToken');
+                        window.location.href = 'login.jsp';
                     } else {
-                        document.getElementById('orderHistoryContent').innerHTML = 
-                            '<div class="text-center py-4"><p>Không thể tải lịch sử đơn hàng</p></div>';
+                        showToast('Lỗi tải thông tin người dùng.', 'error');
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('orderHistoryContent').innerHTML = 
-                        '<div class="text-center py-4"><p>Lỗi kết nối</p></div>';
-                });
-        }
-
-        function displayOrderHistory(orders) {
-            const container = document.getElementById('orderHistoryContent');
-            
-            if (orders.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-4">
-                        <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Bạn chưa có đơn hàng nào</p>
-                        <a href="<%= request.getContextPath() %>/" class="btn btn-primary">Mua sắm ngay</a>
-                    </div>
-                `;
-                return;
-            }
-
-            let html = '<div class="table-responsive"><table class="table table-striped">';
-            html += '<thead><tr><th>Mã đơn hàng</th><th>Ngày đặt</th><th>Tổng tiền</th><th>Trạng thái</th><th>Chi tiết</th></tr></thead><tbody>';
-            
-            orders.forEach(order => {
-                html += `
-                    <tr>
-                        <td>#${order.id}</td>
-                        <td>${new Date(order.orderDate).toLocaleDateString('vi-VN')}</td>
-                        <td>${order.totalAmount.toLocaleString('vi-VN')}đ</td>
-                        <td><span class="badge bg-${getStatusColor(order.status)}">${order.status}</span></td>
-                        <td><button class="btn btn-sm btn-outline-primary" onclick="viewOrderDetails(${order.id})">Xem</button></td>
-                    </tr>
-                `;
-            });
-            
-            html += '</tbody></table></div>';
-            container.innerHTML = html;
-        }
-
-        function getStatusColor(status) {
-            switch(status) {
-                case 'completed': return 'success';
-                case 'pending': return 'warning';
-                case 'cancelled': return 'danger';
-                default: return 'secondary';
-            }
-        }
-
-        function viewOrderDetails(orderId) {
-            // TODO: Implement order details modal
-            showAlert('Chức năng xem chi tiết đơn hàng sẽ được triển khai sau', 'info');
-        }
-
-        function deleteAccount() {
-            if (!confirm('Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác!')) {
-                return;
-            }
-
-            const formData = new FormData(document.getElementById('deleteAccountForm'));
-            const deleteData = Object.fromEntries(formData);
-
-            const token = localStorage.getItem('auth_token');
-            fetch('<%= request.getContextPath() %>/api/profile/delete', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(deleteData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('Tài khoản đã được xóa thành công. Bạn sẽ được chuyển về trang chủ.', 'success');
-                    setTimeout(() => {
-                        window.location.href = '<%= request.getContextPath() %>/';
-                    }, 2000);
-                } else {
-                    showAlert('Lỗi: ' + data.message, 'danger');
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
+                    showToast('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('Lỗi kết nối. Vui lòng thử lại.', 'danger');
-            });
-        }
+            }
 
-        function showAlert(message, type) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            document.getElementById('alertContainer').appendChild(alertDiv);
-            
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.parentNode.removeChild(alertDiv);
-                }
-            }, 5000);
-        }
+            // Initial fetch
+            fetchUserProfile();
+        });
     </script>
 </body>
 </html>

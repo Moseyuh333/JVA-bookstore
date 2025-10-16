@@ -23,6 +23,20 @@ public class Book {
     // Constructors
     public Book() {}
 
+    public Book(int id, String title, String author, String isbn, BigDecimal price, String category, 
+                int stockQuantity, String imageUrl, double averageRating, int ratingCount) {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.isbn = isbn;
+        this.price = price;
+        this.category = category;
+        this.stockQuantity = stockQuantity;
+        this.imageUrl = imageUrl;
+        this.averageRating = averageRating;
+        this.ratingCount = ratingCount;
+    }
+    
     public Book(int id, String title, String author, BigDecimal price, String category, 
                 int stockQuantity, String imageUrl, double averageRating, int ratingCount) {
         this.id = id;
@@ -81,17 +95,4 @@ public class Book {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    @Override
-    public String toString() {
-        return "Book{" +
-                "id=" + id +
-                ", title='" + title + '\'' +
-                ", author='" + author + '\'' +
-                ", price=" + price +
-                ", category='" + category + '\'' +
-                ", averageRating=" + averageRating +
-                ", ratingCount=" + ratingCount +
-                '}';
-    }
 }
