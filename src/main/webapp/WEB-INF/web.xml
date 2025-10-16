@@ -61,6 +61,7 @@
     <servlet-mapping>
         <servlet-name>BooksApiServlet</servlet-name>
         <url-pattern>/api/books</url-pattern>
+        <url-pattern>/api/books/*</url-pattern>
     </servlet-mapping>
 
     <servlet>

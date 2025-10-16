@@ -26,16 +26,16 @@
                     <span class="title-font text-xl font-bold">Bookish Bliss Haven</span>
                 </a>
                 <div class="hidden md:flex space-x-8">
-                    <a href="<%=request.getContextPath()%>/index.jsp" class="hover:text-amber-200 font-medium">Home</a>
-                    <a href="<%=request.getContextPath()%>/shop.jsp" class="hover:text-amber-200 font-medium">Shop</a>
-                    <a href="<%=request.getContextPath()%>/collections.jsp" class="hover:text-amber-200 font-medium">Collections</a>
-                    <a href="<%=request.getContextPath()%>/about.jsp" class="hover:text-amber-200 font-medium">About</a>
+                    <a href="<%=request.getContextPath()%>/index.jsp" class="hover:text-amber-200 font-medium">Trang chủ</a>
+                    <a href="<%=request.getContextPath()%>/catalog.jsp" class="hover:text-amber-200 font-medium">Danh mục</a>
+                    <a href="<%=request.getContextPath()%>/catalog.jsp?sort=best" class="hover:text-amber-200 font-medium">Bán chạy</a>
+                    <a href="<%=request.getContextPath()%>/catalog.jsp?sort=rated" class="hover:text-amber-200 font-medium">Đánh giá cao</a>
                 </div>
                 <div class="flex items-center space-x-4">
                     <!-- Right-side visible navigation -->
-                    <a href="<%=request.getContextPath()%>/shop.jsp" class="hidden sm:inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700">
+                    <a href="<%=request.getContextPath()%>/catalog.jsp" class="hidden sm:inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700">
                         <i data-feather="shopping-bag" class="w-5 h-5 mr-1"></i>
-                        <span class="font-medium">Shop</span>
+                        <span class="font-medium">Danh mục</span>
                     </a>
                     <a href="#" class="hidden sm:inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700">
                         <i data-feather="search" class="w-5 h-5 mr-1"></i>
@@ -46,7 +46,7 @@
                     <div class="relative">
                         <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
                             <i data-feather="user" class="w-5 h-5 mr-1"></i>
-                            <span id="accountBtnLabel" class="font-medium">Account</span>
+                            <span id="accountBtnLabel" class="font-medium">Tài khoản</span>
                         </button>
                         <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                             <div class="py-2">
@@ -82,76 +82,32 @@
             <h1 class="title-font text-4xl md:text-6xl font-bold mb-6">Discover Your Next Favorite Read</h1>
             <p class="text-xl mb-8 max-w-2xl mx-auto">Explore our curated collection of timeless classics and contemporary masterpieces</p>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <button class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full transition duration-300">
-                    Browse Collection
-                </button>
-                <button class="bg-white hover:bg-gray-100 text-amber-800 font-bold py-3 px-8 rounded-full transition duration-300">
-                    Join Our Book Club
-                </button>
+                <a href="<%=request.getContextPath()%>/catalog.jsp" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full transition duration-300">
+                    Khám phá danh mục
+                </a>
+                <a href="#newsletter" class="bg-white hover:bg-gray-100 text-amber-800 font-bold py-3 px-8 rounded-full transition duration-300">
+                    Tham gia cộng đồng
+                </a>
             </div>
         </div>
     </section>
 
-    <!-- Featured Books -->
-    <section class="py-16 px-4">
+    <!-- Dynamic Featured Sections -->
+    <section class="py-16 px-4" id="featuredSections">
         <div class="container mx-auto">
-            <h2 class="title-font text-3xl font-bold text-center mb-12">Featured Books</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                <!-- Book Card 1 -->
-                <div class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
-                    <img src="http://static.photos/books/320x240/1" alt="Book Cover" class="w-full h-64 object-cover">
-                    <div class="p-4">
-                        <h3 class="title-font font-bold text-lg mb-1">The Silent Patient</h3>
-                        <p class="text-gray-600 text-sm mb-2">Alex Michaelides</p>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-amber-700">$14.99</span>
-                            <button class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
-                                Add to Cart
-                            </button>
-                        </div>
-                    </div>
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-8">
+                <div>
+                    <h2 class="title-font text-3xl font-bold">Khám phá nổi bật</h2>
+                    <p class="text-gray-600 mt-2">Top 20 sách mới, bán chạy, được đánh giá và yêu thích nhất</p>
                 </div>
-                <!-- Book Card 2 -->
-                <div class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
-                    <img src="http://static.photos/books/320x240/2" alt="Book Cover" class="w-full h-64 object-cover">
-                    <div class="p-4">
-                        <h3 class="title-font font-bold text-lg mb-1">Educated</h3>
-                        <p class="text-gray-600 text-sm mb-2">Tara Westover</p>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-amber-700">$12.99</span>
-                            <button class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
-                                Add to Cart
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <!-- Book Card 3 -->
-                <div class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
-                    <img src="http://static.photos/books/320x240/3" alt="Book Cover" class="w-full h-64 object-cover">
-                    <div class="p-4">
-                        <h3 class="title-font font-bold text-lg mb-1">Where the Crawdads Sing</h3>
-                        <p class="text-gray-600 text-sm mb-2">Delia Owens</p>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-amber-700">$15.99</span>
-                            <button class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
-                                Add to Cart
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <!-- Book Card 4 -->
-                <div class="book-card bg-white rounded-lg overflow-hidden shadow-md transition duration-300">
-                    <img src="http://static.photos/books/320x240/4" alt="Book Cover" class="w-full h-64 object-cover">
-                    <div class="p-4">
-                        <h3 class="title-font font-bold text-lg mb-1">Atomic Habits</h3>
-                        <p class="text-gray-600 text-sm mb-2">James Clear</p>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-amber-700">$16.99</span>
-                            <button class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-full text-sm">
-                                Add to Cart
-                            </button>
-                        </div>
-                    </div>
+                <a href="<%=request.getContextPath()%>/catalog.jsp" class="inline-flex items-center text-amber-700 hover:text-amber-900 font-medium">
+                    Xem toàn bộ danh mục
+                    <i data-feather="arrow-right" class="w-4 h-4 ml-2"></i>
+                </a>
+            </div>
+            <div id="homeSectionsContainer" class="space-y-16">
+                <div id="homeSectionsLoading" class="text-center py-12 text-gray-500">
+                    Đang tải gợi ý sách...
                 </div>
             </div>
         </div>
@@ -248,7 +204,7 @@
     </section>
 
     <!-- Newsletter -->
-    <section class="bg-amber-800 text-white py-16 px-4">
+    <section class="bg-amber-800 text-white py-16 px-4" id="newsletter">
         <div class="container mx-auto max-w-4xl text-center">
             <h2 class="title-font text-3xl font-bold mb-4">Cập nhật tin tức văn học</h2>
             <p class="mb-8 text-amber-100 max-w-2xl mx-auto">Đăng ký nhận bản tin để biết về sách mới, ưu đãi độc quyền và gợi ý đọc sách.</p>
@@ -329,42 +285,173 @@
     </footer>
 
     <script>
-        feather.replace();
-        
-        // User dropdown functionality
-        document.addEventListener('DOMContentLoaded', function() {
+        const contextPath = '<%=request.getContextPath()%>';
+        const booksApiBase = `${contextPath}/api/books`;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace();
+            initUserDropdown();
+            loadHomeSections();
+            updateYearBadge();
+        });
+
+        async function loadHomeSections() {
+            const container = document.getElementById('homeSectionsContainer');
+            const loading = document.getElementById('homeSectionsLoading');
+            if (!container) {
+                return;
+            }
+            try {
+                const response = await fetch(`${booksApiBase}/sections?limit=8`);
+                if (!response.ok) {
+                    throw new Error('Failed to load sections');
+                }
+                const payload = await response.json();
+                container.innerHTML = '';
+                if (payload.sections && payload.sections.length > 0) {
+                    payload.sections.forEach(section => {
+                        container.appendChild(renderSection(section));
+                    });
+                } else {
+                    container.innerHTML = renderEmptyState();
+                }
+            } catch (error) {
+                console.error('Load sections error', error);
+                if (loading) {
+                    loading.textContent = 'Không thể tải dữ liệu sách. Vui lòng thử lại sau.';
+                }
+            } finally {
+                feather.replace();
+            }
+        }
+
+        function renderSection(section) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'space-y-6';
+            const safeBooks = Array.isArray(section.books) ? section.books.slice(0, 4) : [];
+            const sortKey = encodeURIComponent(section.sort || 'new');
+            const cardsHtml = safeBooks.length > 0 ? safeBooks.map(renderBookCard).join('') : renderSkeletonCards();
+            wrapper.innerHTML = `
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h3 class="title-font text-2xl font-bold">${section.title || 'Danh mục'}</h3>
+                        <p class="text-gray-500 text-sm">Những tựa sách nổi bật được độc giả quan tâm</p>
+                    </div>
+                    <a href="${contextPath}/catalog.jsp?sort=${sortKey}" class="inline-flex items-center text-amber-700 hover:text-amber-900 text-sm font-medium">
+                        Xem tất cả
+                        <i data-feather="arrow-right" class="w-4 h-4 ml-1"></i>
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    ${cardsHtml}
+                </div>
+            `;
+            return wrapper;
+        }
+
+        function renderBookCard(book) {
+            const title = book.title || 'Sách chưa cập nhật';
+            const author = book.author || 'Đang cập nhật';
+            const price = formatCurrency(book.price);
+            const image = book.imageUrl || 'https://placehold.co/320x420?text=Book';
+            const rating = typeof book.averageRating === 'number' ? book.averageRating.toFixed(1) : '0.0';
+            const ratingCount = book.ratingCount || 0;
+            return `
+                <div class="book-card bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 transition duration-300 flex flex-col">
+                    <div class="relative">
+                        <img src="${image}" alt="${escapeHtml(title)}" class="w-full h-56 object-cover">
+                        <span class="absolute top-3 left-3 bg-white/90 text-amber-700 text-xs font-semibold px-2 py-1 rounded-full shadow-sm">
+                            ${rating} ★ (${ratingCount})
+                        </span>
+                    </div>
+                    <div class="p-5 flex flex-col flex-grow">
+                        <h4 class="title-font font-semibold text-lg mb-1">${escapeHtml(title)}</h4>
+                        <p class="text-gray-500 text-sm mb-3">${escapeHtml(author)}</p>
+                        <p class="text-amber-700 font-bold mb-4">${price}</p>
+                        <div class="mt-auto flex flex-col gap-2">
+                            <button type="button" class="bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-full text-sm transition" data-book-id="${book.id}">
+                                Thêm vào giỏ
+                            </button>
+                            <a href="${contextPath}/catalog.jsp?highlight=${book.id}" class="text-center text-sm text-amber-700 hover:text-amber-900 font-medium">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSkeletonCards() {
+            return Array.from({ length: 4 }).map(() => `
+                <div class="bg-white border border-dashed border-amber-200 rounded-xl h-56 flex items-center justify-center text-amber-400 text-sm">
+                    Đang cập nhật
+                </div>
+            `).join('');
+        }
+
+        function renderEmptyState() {
+            return `
+                <div class="text-center py-16 bg-white rounded-xl border border-dashed border-amber-200 text-gray-500">
+                    Chưa có dữ liệu sách để hiển thị. Hãy thêm sách trong kho dữ liệu.
+                </div>
+            `;
+        }
+
+        function formatCurrency(value) {
+            if (value === null || value === undefined) {
+                return 'Liên hệ';
+            }
+            try {
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+            } catch (error) {
+                return value.toString();
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) {
+                return '';
+            }
+            return text.replace(/[&<>"']/g, function(match) {
+                switch (match) {
+                    case '&': return '&amp;';
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '"': return '&quot;';
+                    case "'": return '&#39;';
+                    default: return match;
+                }
+            });
+        }
+
+        function initUserDropdown() {
             const userDropdownBtn = document.getElementById('userDropdownBtn');
             const userDropdown = document.getElementById('userDropdown');
-            
-            // Check if user is logged in
             const token = localStorage.getItem('auth_token');
             const isLoggedIn = token && token.length > 0;
-            
-            // Update dropdown content based on login status
+
             if (isLoggedIn) {
                 updateDropdownForLoggedInUser();
             } else {
                 updateDropdownForGuestUser();
             }
-            
+
             if (userDropdownBtn && userDropdown) {
                 userDropdownBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     userDropdown.classList.toggle('hidden');
                 });
-                
-                // Close dropdown when clicking outside
+
                 document.addEventListener('click', function() {
                     userDropdown.classList.add('hidden');
                 });
-                
-                // Prevent dropdown from closing when clicking inside it
+
                 userDropdown.addEventListener('click', function(e) {
                     e.stopPropagation();
                 });
             }
-        });
-        
+        }
+
         function updateDropdownForLoggedInUser() {
             const userDropdown = document.getElementById('userDropdown');
             if (userDropdown) {
@@ -374,84 +461,65 @@
                             <i data-feather="user" class="w-4 h-4 inline mr-2"></i>
                             Xin chào!
                         </div>
-                        <a href="<%=request.getContextPath()%>/profile.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                        <a href="${contextPath}/profile.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
                             <i data-feather="settings" class="w-4 h-4 mr-2"></i>
                             Hồ sơ cá nhân
                         </a>
-                        <a href="#" onclick="logout()" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                        <a href="#" onclick="logout(); return false;" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
                             <i data-feather="log-out" class="w-4 h-4 mr-2"></i>
                             Đăng xuất
                         </a>
                     </div>
                 `;
-                feather.replace();
-                // Update account button label
                 const lbl = document.getElementById('accountBtnLabel');
-                if (lbl) lbl.textContent = 'Profile';
+                if (lbl) {
+                    lbl.textContent = 'Hồ sơ';
+                }
+                feather.replace();
             }
         }
-        
+
         function updateDropdownForGuestUser() {
             const userDropdown = document.getElementById('userDropdown');
             if (userDropdown) {
                 userDropdown.innerHTML = `
                     <div class="py-2">
-                        <a href="<%=request.getContextPath()%>/login.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                        <a href="${contextPath}/login.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
                             <i data-feather="log-in" class="w-4 h-4 mr-2"></i>
                             Đăng nhập
                         </a>
-                        <a href="<%=request.getContextPath()%>/register.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                        <a href="${contextPath}/register.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
                             <i data-feather="user-plus" class="w-4 h-4 mr-2"></i>
                             Đăng ký
                         </a>
                         <hr class="my-1">
-                        <a href="<%=request.getContextPath()%>/forgot-password.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                        <a href="${contextPath}/forgot-password.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
                             <i data-feather="key" class="w-4 h-4 mr-2"></i>
                             Quên mật khẩu
                         </a>
                     </div>
                 `;
-                feather.replace();
-                // Update account button label
                 const lbl = document.getElementById('accountBtnLabel');
-                if (lbl) lbl.textContent = 'Account';
+                if (lbl) {
+                    lbl.textContent = 'Tài khoản';
+                }
+                feather.replace();
             }
         }
-        
+
         function logout() {
-            // Remove token from localStorage
             localStorage.removeItem('auth_token');
-            
-            // Update dropdown to guest user
             updateDropdownForGuestUser();
-            
-            // Optional: Show logout confirmation
             alert('Đăng xuất thành công!');
-            
-            // Refresh the page to update UI
             window.location.reload();
         }
-            // Set current year for copyright badge
-            const y = document.getElementById('year');
-            if (y) y.textContent = new Date().getFullYear();
-            
-            // Simple animation for book cards on scroll
-            const bookCards = document.querySelectorAll('.book-card');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }
-                });
-            }, { threshold: 0.1 });
-            bookCards.forEach(card => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                card.style.transition = 'all 0.6s ease-out';
-                observer.observe(card);
-            });
-        
+
+        function updateYearBadge() {
+            const badge = document.getElementById('year');
+            if (badge) {
+                badge.textContent = new Date().getFullYear();
+            }
+        }
     </script>
 </body>
 </html>

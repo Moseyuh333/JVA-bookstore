@@ -121,6 +121,82 @@ public class DBUtil {
                 
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_otp_email ON otp_verifications(email)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_otp_code ON otp_verifications(otp_code)");
+
+                // Core catalog tables
+                String createBooksTableSQL = "CREATE TABLE IF NOT EXISTS books (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "title VARCHAR(255) NOT NULL," +
+                    "author VARCHAR(255)," +
+                    "isbn VARCHAR(20)," +
+                    "price DECIMAL(10, 2) NOT NULL," +
+                    "description TEXT," +
+                    "category VARCHAR(100)," +
+                    "stock_quantity INTEGER DEFAULT 0," +
+                    "image_url VARCHAR(500)," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createBooksTableSQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_books_category ON books(category)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_books_title ON books(title)");
+
+                String createOrdersTableSQL = "CREATE TABLE IF NOT EXISTS orders (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
+                    "order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "total_amount DECIMAL(10, 2) NOT NULL," +
+                    "status VARCHAR(50) DEFAULT 'pending'," +
+                    "shipping_address TEXT," +
+                    "payment_method VARCHAR(50)," +
+                    "notes TEXT," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createOrdersTableSQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date)");
+
+                String createOrderItemsTableSQL = "CREATE TABLE IF NOT EXISTS order_items (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +
+                    "book_id INTEGER NOT NULL REFERENCES books(id)," +
+                    "quantity INTEGER NOT NULL," +
+                    "unit_price DECIMAL(10, 2) NOT NULL," +
+                    "total_price DECIMAL(10, 2) NOT NULL," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createOrderItemsTableSQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_items_book_id ON order_items(book_id)");
+
+                // Engagement tables that power catalog ranking
+                String createBookFavoritesTableSQL = "CREATE TABLE IF NOT EXISTS book_favorites (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "user_id INTEGER REFERENCES users(id) ON DELETE CASCADE," +
+                    "book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createBookFavoritesTableSQL);
+                stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_book_favorites_user_book ON book_favorites(user_id, book_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_favorites_book_id ON book_favorites(book_id)");
+
+                String createBookReviewsTableSQL = "CREATE TABLE IF NOT EXISTS book_reviews (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "user_id INTEGER REFERENCES users(id) ON DELETE CASCADE," +
+                    "book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE," +
+                    "rating INTEGER CHECK (rating BETWEEN 1 AND 5)," +
+                    "title VARCHAR(255)," +
+                    "content TEXT," +
+                    "media_url VARCHAR(500)," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "status VARCHAR(20) DEFAULT 'published'" +
+                    ")";
+                stmt.execute(createBookReviewsTableSQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_book_id ON book_reviews(book_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_user_id ON book_reviews(user_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_status ON book_reviews(status)");
             }
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
