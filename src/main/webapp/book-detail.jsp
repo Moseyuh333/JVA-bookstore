@@ -124,21 +124,32 @@
               </div>
 
               <!-- ===== REVIEWS ===== -->
-              <c:if test="${not empty reviews}">
-                <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
-                  <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Đánh giá từ độc giả
-                  </h2>
-                  <c:forEach var="r" items="${reviews}">
-                    <div class="border-b border-[#333] py-4">
-                      <p class="font-semibold text-gray-200 mb-1">${r.authorName}</p>
-                      <p class="text-gray-400 mb-2 text-sm">
-                        <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
-                      </p>
-                      <p class="text-gray-300">${r.comment}</p>
+              <c:choose>
+                <c:when test="${not empty reviews}">
+                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Đánh giá từ độc giả
+                    </h2>
+                    <c:forEach var="r" items="${reviews}">
+                      <div class="border-b border-[#333] py-4">
+                        <p class="font-semibold text-gray-200 mb-1">${r.authorName}</p>
+                        <p class="text-gray-400 mb-2 text-sm">
+                          <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                        </p>
+                        <p class="text-gray-300">${r.comment}</p>
+                      </div>
+                    </c:forEach>
+                  </div>
+                </c:when>
+                <c:when test="${not empty bookReviews}">
+                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Đánh giá từ độc giả
+                    </h2>
+                    <div class="text-gray-300 leading-relaxed prose prose-invert max-w-none">
+                      <c:out value="${bookReviews}" escapeXml="false" />
                     </div>
-                  </c:forEach>
-                </div>
-              </c:if>
+                  </div>
+                </c:when>
+              </c:choose>
 
               <!-- ===== RELATED BOOKS ===== -->
               <c:if test="${not empty relatedBooks}">
@@ -166,33 +177,45 @@
                 </div>
               </c:if>
               <!-- ===== REVIEWS (Improved with Ratings) ===== -->
-              <c:if test="${not empty reviews}">
-                <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
-                  <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
-                    Đánh giá từ độc giả
-                  </h2>
-                  <c:forEach var="r" items="${reviews}">
-                    <div class="border-b border-[#333] py-4">
-                      <div class="flex justify-between items-center mb-1">
-                        <span class="font-semibold text-gray-200">${r.authorName}</span>
-                        <span class="text-sm text-gray-500">
-                          <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
-                        </span>
+              <c:choose>
+                <c:when test="${not empty reviews}">
+                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
+                      Đánh giá từ độc giả
+                    </h2>
+                    <c:forEach var="r" items="${reviews}">
+                      <div class="border-b border-[#333] py-4">
+                        <div class="flex justify-between items-center mb-1">
+                          <span class="font-semibold text-gray-200">${r.authorName}</span>
+                          <span class="text-sm text-gray-500">
+                            <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                          </span>
+                        </div>
+                        <div class="flex mb-2">
+                          <c:forEach var="i" begin="1" end="5">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                              class="h-4 w-4 ${i <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
+                              viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975..." />
+                            </svg>
+                          </c:forEach>
+                        </div>
+                        <p class="text-gray-300">${r.comment}</p>
                       </div>
-                      <div class="flex mb-2">
-                        <c:forEach var="i" begin="1" end="5">
-                          <svg xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4 ${i <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
-                            viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975..." />
-                          </svg>
-                        </c:forEach>
-                      </div>
-                      <p class="text-gray-300">${r.comment}</p>
+                    </c:forEach>
+                  </div>
+                </c:when>
+                <c:when test="${not empty bookReviews}">
+                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
+                      Đánh giá từ độc giả
+                    </h2>
+                    <div class="text-gray-300 leading-relaxed prose prose-invert max-w-none">
+                      <c:out value="${bookReviews}" escapeXml="false" />
                     </div>
-                  </c:forEach>
-                </div>
-              </c:if>
+                  </div>
+                </c:when>
+              </c:choose>
             </c:if>
           </div>
 
