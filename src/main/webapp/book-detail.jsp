@@ -56,9 +56,14 @@
                       </span>
                     </c:if>
                     <c:if test="${bookDiscount > 0}">
-                      <span class="bg-red-600 text-white text-sm px-2 py-1 rounded">
-                        -${bookDiscount}%
-                      </span>
+                      <c:if test="${bookOriginalPrice > bookPrice}">
+                        <c:set var="discountPercent"
+                          value="${(bookOriginalPrice - bookPrice) * 100 / bookOriginalPrice}" />
+                        <span class="bg-red-600 text-white text-sm px-2 py-1 rounded">
+                          -
+                          <fmt:formatNumber value="${discountPercent}" maxFractionDigits="0" />%
+                        </span>
+                      </c:if>
                     </c:if>
                   </div>
 
