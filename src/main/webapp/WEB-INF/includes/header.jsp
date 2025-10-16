@@ -30,8 +30,7 @@
             }
         </style>
     </head>
-
-    <!-- <body class="bg-gray-50"></body> -->
+    <body class="bg-gray-50">
     <!-- Navigation -->
     <nav class="bg-amber-800 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
