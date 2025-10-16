@@ -48,7 +48,47 @@ public class BookDetailServlet extends HttpServlet {
                 req.setAttribute("bookHighlights", rs.getString("highlights"));
                 req.setAttribute("bookSpecifications", rs.getString("specifications"));
                 req.setAttribute("bookDescription", rs.getString("description"));
-                req.setAttribute("bookReviews", rs.getString("reviews"));
+                String reviewsRaw = rs.getString("reviews");
+                req.setAttribute("bookReviews", reviewsRaw);
+
+                // Try to parse reviewsRaw into a collection the JSP can iterate.
+                // Expected simple JSON array like: [{"authorName":"A","createdAt":"2023-01-01","rating":5,"comment":"..."}, ...]
+                if (reviewsRaw != null && reviewsRaw.trim().startsWith("[")) {
+                    try {
+                        // Minimal parsing without external libs: look for objects and extract fields.
+                        List<Map<String, Object>> reviewsList = new ArrayList<>();
+                        String s = reviewsRaw.trim();
+                        // remove surrounding [ ]
+                        s = s.substring(1, s.length() - 1).trim();
+                        // split objects by '},{' (best-effort)
+                        String[] objs = s.split("\\},\\s*\\{");
+                        for (String obj : objs) {
+                            String o = obj.trim();
+                            if (!o.startsWith("{")) o = "{" + o;
+                            if (!o.endsWith("}")) o = o + "}";
+                            Map<String, Object> m = new HashMap<>();
+                            // extract simple string fields by regex
+                            java.util.regex.Pattern p = java.util.regex.Pattern.compile("\\\"(\\w+)\\\"\\s*:\\s*\\\"(.*?)\\\"");
+                            java.util.regex.Matcher mm = p.matcher(o);
+                            while (mm.find()) {
+                                String k = mm.group(1);
+                                String v = mm.group(2);
+                                m.put(k, v);
+                            }
+                            // rating numeric
+                            java.util.regex.Pattern pnum = java.util.regex.Pattern.compile("\\\"rating\\\"\\s*:\\s*(\\d+)");
+                            java.util.regex.Matcher mnum = pnum.matcher(o);
+                            if (mnum.find()) {
+                                m.put("rating", Integer.parseInt(mnum.group(1)));
+                            }
+                            reviewsList.add(m);
+                        }
+                        req.setAttribute("reviews", reviewsList);
+                    } catch (Exception ex) {
+                        // ignore parse errors and leave bookReviews as raw HTML/text
+                        ex.printStackTrace();
+                    }
+                }
 
                 // --- Gợi ý sách liên quan ---
                 String category = rs.getString("category");
