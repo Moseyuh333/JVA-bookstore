@@ -1,24 +1,15 @@
-# Implementation Summary
+> [!NOTE]
+> Báo cáo này là tài liệu tham khảo. Vui lòng xem `README.md` để biết trạng thái mới nhất.
+
+# 📊 Implementation Status
 
 ## ✅ What Has Been Completed
 
 ### 1. Database Schema Extended (DONE)
 - **20 new tables** created in `schema.sql`
 - All relationships properly defined with foreign keys
-- Indexes added for performance
-- Auto-migration support ready
-
-**New Tables:**
 - `delivery_addresses` - Multiple shipping addresses per user
 - `shopping_cart` & `cart_items` - Shopping cart management
-- `wishlist` - Favorite books
-- `product_views` - Recently viewed tracking
-- `ratings` - 1-5 star reviews
-- `comments` - Text + media comments
-- `coupons` - Discount codes
-- `payment_transactions` - Payment tracking
-
-### 2. Model Classes Created (7 files)
 ✅ `Book.java` - Product model with rating tracking
 ✅ `CartItem.java` - Shopping cart line items
 ✅ `Order.java` - Order with status tracking
@@ -52,18 +43,7 @@
 ### 5. Sample Data Included
 - 20 test books across 5 categories
 - 2 test users with profiles
-- 3 test delivery addresses
-- 4 test coupons (WELCOME10, SUMMER50K, LOYAL20, FREESHIP)
-- 4 test ratings with reviews
-- 4 test comments
-- 2 test orders with full details
-- Test wishlist items
-- Test cart items
-- Test product views
 
----
-
-## 📋 Next Steps - Priority Order
 
 ### PHASE 1: Complete DAO Layer (2-3 days)
 **Create 7 more DAO files** (follow BookDAO pattern):

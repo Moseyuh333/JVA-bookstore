@@ -8,8 +8,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Properties;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import models.User;
 
 public class DBUtil {
     private static String url;
@@ -56,74 +59,36 @@ public class DBUtil {
 
     private static void initDatabase() {
         try (Connection conn = getConnection()) {
-            try (Statement stmt = conn.createStatement()) {
-                String createTableSQL = "CREATE TABLE IF NOT EXISTS users (" +
-                    "id SERIAL PRIMARY KEY," +
-                    "username VARCHAR(50) UNIQUE NOT NULL," +
-                    "email VARCHAR(100) UNIQUE NOT NULL," +
-                    "password_hash VARCHAR(255) NOT NULL," +
-                    "email_verified BOOLEAN DEFAULT FALSE," +
-                    "verification_token VARCHAR(255)," +
-                    "reset_token VARCHAR(255)," +
-                    "reset_expiry TIMESTAMP," +
-                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                    ")";
-                stmt.execute(createTableSQL);
-
-                // Add verification_token column if missing
-                try {
-                    String addColumnSQL = "ALTER TABLE users ADD COLUMN verification_token VARCHAR(255)";
-                    stmt.execute(addColumnSQL);
-                } catch (SQLException e) {
-                    // Ignore if column already exists
-                    if (!e.getMessage().contains("already exists")) {
-                        throw e;
-                    }
-                }
-
-                // Add reset_token column if missing
-                try {
-                    String addResetTokenSQL = "ALTER TABLE users ADD COLUMN reset_token VARCHAR(255)";
-                    stmt.execute(addResetTokenSQL);
-                } catch (SQLException e) {
-                    // Ignore if column already exists
-                    if (!e.getMessage().contains("already exists")) {
-                        throw e;
-                    }
-                }
-
-                // Add reset_expiry column if missing
-                try {
-                    String addResetExpirySQL = "ALTER TABLE users ADD COLUMN reset_expiry TIMESTAMP";
-                    stmt.execute(addResetExpirySQL);
-                } catch (SQLException e) {
-                    // Ignore if column already exists
-                    if (!e.getMessage().contains("already exists")) {
-                        throw e;
-                    }
-                }
-
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)");
-                
-                // Create OTP verifications table
-                String createOTPTableSQL = "CREATE TABLE IF NOT EXISTS otp_verifications (" +
-                    "id SERIAL PRIMARY KEY," +
-                    "email VARCHAR(100) NOT NULL," +
-                    "otp_code VARCHAR(6) NOT NULL," +
-                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                    "expires_at TIMESTAMP NOT NULL," +
-                    "verified BOOLEAN DEFAULT FALSE," +
-                    "attempts INT DEFAULT 0" +
-                    ")";
-                stmt.execute(createOTPTableSQL);
-                
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_otp_email ON otp_verifications(email)");
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_otp_code ON otp_verifications(otp_code)");
-            }
+            runSqlScript(conn, "schema.sql");
+            runSqlScript(conn, "otp_schema.sql");
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
+        }
+    }
+
+    private static void runSqlScript(Connection conn, String resourceName) {
+        try (InputStream resource = DBUtil.class.getClassLoader().getResourceAsStream(resourceName)) {
+            if (resource == null) {
+                System.err.println("SQL resource not found: " + resourceName);
+                return;
+            }
+
+            String sql = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+            // Remove single line comments to avoid execution issues when splitting.
+            sql = sql.replaceAll("(?m)^\\s*--.*$", "");
+            String[] statements = sql.split(";\\s*");
+
+            try (Statement stmt = conn.createStatement()) {
+                for (String rawStatement : statements) {
+                    String statement = rawStatement.trim();
+                    if (statement.isEmpty()) {
+                        continue;
+                    }
+                    stmt.execute(statement);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to run SQL script " + resourceName + ": " + e.getMessage());
         }
     }
 
@@ -135,22 +100,26 @@ public class DBUtil {
     }
 
     public static void createUser(String username, String email, String passwordHash, String verificationToken) throws SQLException {
-        String sql = "INSERT INTO users (username, email, password_hash, verification_token) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO users (username, email, password_hash, full_name, role, email_verified, verification_token) VALUES (?, ?, ?, ?, ?, false, ?)";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, email);
             pstmt.setString(3, passwordHash);
-            pstmt.setString(4, verificationToken);
+            pstmt.setString(4, username);
+            pstmt.setString(5, "USER");
+            pstmt.setString(6, verificationToken);
             pstmt.executeUpdate();
         }
     }
 
     public static void createUserVerified(String username, String email, String passwordHash) throws SQLException {
-        String sql = "INSERT INTO users (username, email, password_hash, email_verified) VALUES (?, ?, ?, true)";
+        String sql = "INSERT INTO users (username, email, password_hash, full_name, role, email_verified) VALUES (?, ?, ?, ?, ?, true)";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, email);
             pstmt.setString(3, passwordHash);
+            pstmt.setString(4, username);
+            pstmt.setString(5, "USER");
             pstmt.executeUpdate();
         }
     }
@@ -199,6 +168,32 @@ public class DBUtil {
                 return false;
             }
         }
+    }
+
+    public static User getUserDetailsByUsername(String username) throws SQLException {
+        String sql = "SELECT id, username, email, password_hash, full_name, phone, address, birth_date, role, email_verified, created_at FROM users WHERE username = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    User user = new User();
+                    user.setId(rs.getInt("id"));
+                    user.setUsername(rs.getString("username"));
+                    user.setEmail(rs.getString("email"));
+                    user.setPasswordHash(rs.getString("password_hash"));
+                    user.setFullName(rs.getString("full_name"));
+                    user.setPhone(rs.getString("phone"));
+                    user.setAddress(rs.getString("address"));
+                    user.setBirthDate(rs.getDate("birth_date"));
+                    String role = rs.getString("role");
+                    user.setRole(role != null ? role : "USER");
+                    user.setEmailVerified(rs.getBoolean("email_verified"));
+                    user.setCreatedAt(rs.getTimestamp("created_at"));
+                    return user;
+                }
+            }
+        }
+        return null;
     }
 
     public static String getUserByEmail(String email) throws SQLException {

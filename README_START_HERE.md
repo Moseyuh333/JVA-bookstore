@@ -1,3 +1,6 @@
+> [!NOTE]
+> Tài liệu này được lưu để tham khảo lịch sử. Vui lòng đọc `README.md` để có hướng dẫn mới nhất.
+
 # 🎊 JVA Bookstore E-Commerce Complete Setup
 
 ## Summary of Work Completed

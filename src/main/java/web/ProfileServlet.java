@@ -99,8 +99,7 @@ public class ProfileServlet extends HttpServlet {
         try {
             // Get user from JWT token
             String token = getTokenFromRequest(request);
-            String email = JwtUtil.validateToken(token);
-            if (email == null) {
+            if (token == null || !JwtUtil.validateToken(token)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 responseMap.put("success", false);
                 responseMap.put("message", "Not authenticated");
@@ -108,14 +107,23 @@ public class ProfileServlet extends HttpServlet {
                 return;
             }
             
+            models.User userFromToken = JwtUtil.getSubject(token);
+            if (userFromToken == null) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                responseMap.put("success", false);
+                responseMap.put("message", "Invalid token data");
+                response.getWriter().write(gson.toJson(responseMap));
+                return;
+            }
+            
             try (Connection conn = DBUtil.getConnection()) {
-                String sql = "SELECT id, email, full_name, phone, birth_date, address, created_at FROM users WHERE email = ?";
+                String sql = "SELECT id, email, full_name, phone, birth_date, address, created_at FROM users WHERE id = ?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setString(1, email);
+                    stmt.setInt(1, userFromToken.getId());
                     try (ResultSet rs = stmt.executeQuery()) {
                         if (rs.next()) {
                             Map<String, Object> user = new HashMap<>();
-                            user.put("id", rs.getLong("id"));
+                            user.put("id", rs.getInt("id"));
                             user.put("email", rs.getString("email"));
                             user.put("fullName", rs.getString("full_name"));
                             user.put("phone", rs.getString("phone"));
@@ -528,7 +536,13 @@ public class ProfileServlet extends HttpServlet {
 
     private String getUserEmailFromRequest(HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        return JwtUtil.validateToken(token);
+        if (token != null && JwtUtil.validateToken(token)) {
+            models.User user = JwtUtil.getSubject(token);
+            if (user != null) {
+                return user.getEmail();
+            }
+        }
+        return null;
     }
 
     private Map<String, Object> readJsonRequest(HttpServletRequest request) throws IOException {

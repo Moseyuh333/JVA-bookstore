@@ -1,12 +1,11 @@
-# JVA Bookstore E-Commerce - Implementation Quick Start
+> [!NOTE]
+> Hướng dẫn này được giữ lại làm tài liệu phụ. Quy trình cập nhật nhất nằm trong `README.md`.
 
-## Current Status ✅
+# Quick Start Guide
+
+## Tổng quan ngắn gọn
 
 You now have:
-- ✅ **Extended Database Schema** - All tables for e-commerce system
-- ✅ **Model Classes** - Book, CartItem, Order, DeliveryAddress, Rating, Comment, Coupon
-- ✅ **DAO Layer Started** - BookDAO, CartDAO, CouponDAO (foundations for other DAOs)
-- ✅ **Comprehensive Guide** - ECOMMERCE_GUIDE.md
 
 ## What's Already Done in Your Project
 

@@ -1,14 +1,14 @@
--- Create users table for authentication
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(255),
     phone VARCHAR(20),
     birth_date DATE,
     address TEXT,
-    verified BOOLEAN DEFAULT FALSE,
+    role VARCHAR(50) DEFAULT 'USER',
+    email_verified BOOLEAN DEFAULT FALSE,
     verification_token VARCHAR(255),
     reset_token VARCHAR(255),
     reset_expiry TIMESTAMP,
@@ -91,8 +91,9 @@ CREATE TABLE IF NOT EXISTS cart_items (
     id SERIAL PRIMARY KEY,
     cart_id INTEGER NOT NULL REFERENCES shopping_cart(id) ON DELETE CASCADE,
     book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(cart_id, book_id) -- Ensures a book appears only once per cart
 );
 
 -- Create wishlist table

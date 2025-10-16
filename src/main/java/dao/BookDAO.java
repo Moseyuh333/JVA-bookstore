@@ -62,7 +62,8 @@ public class BookDAO {
     /**
      * Get books by category
      */
-    public static List<Book> getByCategory(String category, String sortBy, int limit, int offset) {
+    public static List<Book> getByCategory(String category, String sortBy, Double minPrice, Double maxPrice,
+                                           Double minRating, Boolean inStockOnly, int limit, int offset) {
         String orderBy = "created_at DESC"; // default
         if ("price_asc".equals(sortBy)) {
             orderBy = "price ASC";
@@ -74,10 +75,35 @@ public class BookDAO {
             orderBy = "sales_count DESC";
         }
 
-        String sql = "SELECT id, title, author, price, category, stock_quantity, image_url, " +
-                    "average_rating, rating_count FROM books WHERE category = ? " +
-                    "ORDER BY " + orderBy + " LIMIT ? OFFSET ?";
-        return queryBooks(sql, new Object[]{category, limit, offset});
+        StringBuilder sql = new StringBuilder("SELECT id, title, author, price, category, stock_quantity, image_url, " +
+                "average_rating, rating_count FROM books WHERE category = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(category);
+
+        if (minPrice != null) {
+            sql.append(" AND price >= ?");
+            params.add(minPrice);
+        }
+
+        if (maxPrice != null) {
+            sql.append(" AND price <= ?");
+            params.add(maxPrice);
+        }
+
+        if (minRating != null) {
+            sql.append(" AND average_rating >= ?");
+            params.add(minRating);
+        }
+
+        if (Boolean.TRUE.equals(inStockOnly)) {
+            sql.append(" AND stock_quantity > 0");
+        }
+
+        sql.append(" ORDER BY ").append(orderBy).append(" LIMIT ? OFFSET ?");
+        params.add(limit);
+        params.add(offset);
+
+        return queryBooks(sql.toString(), params.toArray());
     }
 
     /**
@@ -138,11 +164,36 @@ public class BookDAO {
     /**
      * Get total books count in category
      */
-    public static int getCategoryCount(String category) {
-        String sql = "SELECT COUNT(*) as total FROM books WHERE category = ?";
+    public static int getCategoryCount(String category, Double minPrice, Double maxPrice,
+                                       Double minRating, Boolean inStockOnly) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) as total FROM books WHERE category = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(category);
+
+        if (minPrice != null) {
+            sql.append(" AND price >= ?");
+            params.add(minPrice);
+        }
+
+        if (maxPrice != null) {
+            sql.append(" AND price <= ?");
+            params.add(maxPrice);
+        }
+
+        if (minRating != null) {
+            sql.append(" AND average_rating >= ?");
+            params.add(minRating);
+        }
+
+        if (Boolean.TRUE.equals(inStockOnly)) {
+            sql.append(" AND stock_quantity > 0");
+        }
+
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, category);
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rs.getInt("total");
@@ -210,10 +261,19 @@ public class BookDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             for (int i = 0; i < params.length; i++) {
-                if (params[i] instanceof String) {
-                    pstmt.setString(i + 1, (String) params[i]);
-                } else if (params[i] instanceof Integer) {
-                    pstmt.setInt(i + 1, (Integer) params[i]);
+                Object value = params[i];
+                if (value instanceof String) {
+                    pstmt.setString(i + 1, (String) value);
+                } else if (value instanceof Integer) {
+                    pstmt.setInt(i + 1, (Integer) value);
+                } else if (value instanceof Double) {
+                    pstmt.setDouble(i + 1, (Double) value);
+                } else if (value instanceof Float) {
+                    pstmt.setFloat(i + 1, (Float) value);
+                } else if (value instanceof Long) {
+                    pstmt.setLong(i + 1, (Long) value);
+                } else {
+                    pstmt.setObject(i + 1, value);
                 }
             }
             

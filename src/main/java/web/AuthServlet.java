@@ -1,5 +1,6 @@
 package web;
 
+import models.User;
 import utils.JwtUtil;
 import utils.DBUtil;
 import utils.EmailUtil;
@@ -83,11 +84,19 @@ public class AuthServlet extends HttpServlet {
         }
         
         if (BCrypt.checkpw(password, hash)) {
-            String token = JwtUtil.generateToken(username);
-            System.out.println("DEBUG Login - Token generated: " + (token != null));
-            String response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
-            System.out.println("DEBUG Login - Response: " + response);
-            out.write(response);
+            User user = DBUtil.getUserDetailsByUsername(username); // Fetch the full user object
+            if (user != null) {
+                String token = JwtUtil.generateToken(user);
+                System.out.println("DEBUG Login - Token generated: " + (token != null));
+                String response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
+                System.out.println("DEBUG Login - Response: " + response);
+                out.write(response);
+            } else {
+                // This case should ideally not happen if userExists and password check passed
+                System.out.println("DEBUG Login - User not found after password check");
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                out.write("{\"error\":\"User details not found after login\"}");
+            }
         } else {
             System.out.println("DEBUG Login - Password check failed");
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

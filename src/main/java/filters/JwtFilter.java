@@ -38,15 +38,17 @@ public class JwtFilter implements Filter {
             return;
         }
 
-        String authHeader = req.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ") && authHeader.length() > 7) {
-            String token = authHeader.substring(7);
-            String user = JwtUtil.validateToken(token);
-            if (user != null) {
-                chain.doFilter(request, response);
-                return;
-            }
+        if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
+            chain.doFilter(request, response);
+            return;
         }
+
+        String token = JwtUtil.getTokenFromRequest(req);
+        if (token != null && JwtUtil.validateToken(token)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         resp.setContentType("application/json");
         resp.getWriter().write("{\"error\":\"Unauthorized\"}");

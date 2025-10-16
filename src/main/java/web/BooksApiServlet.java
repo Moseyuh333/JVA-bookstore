@@ -27,8 +27,19 @@ public class BooksApiServlet extends HttpServlet {
         
         try {
             String pathInfo = req.getPathInfo();
-            int limit = Integer.parseInt(req.getParameter("limit") != null ? req.getParameter("limit") : "12");
-            int offset = Integer.parseInt(req.getParameter("offset") != null ? req.getParameter("offset") : "0");
+
+            int limit = parseInt(req.getParameter("limit"), 12);
+            int offsetParam = req.getParameter("offset") != null ? parseInt(req.getParameter("offset"), 0) : -1;
+            int page = parseInt(req.getParameter("page"), 1);
+            if (page < 1) {
+                page = 1;
+            }
+
+            if (offsetParam >= 0) {
+                page = (offsetParam / limit) + 1;
+            }
+
+            int offset = offsetParam >= 0 ? offsetParam : (page - 1) * limit;
             
             List<Book> books;
             
@@ -43,10 +54,59 @@ public class BooksApiServlet extends HttpServlet {
                 books = BookDAO.getTopRatedBooks(limit, offset);
             } else if (pathInfo.equals("/favorites")) {
                 books = BookDAO.getFavoriteBooks(limit, offset);
+            } else if (pathInfo.equals("/categories")) {
+                resp.setStatus(HttpServletResponse.SC_OK);
+                out.write(gson.toJson(BookDAO.getAllCategories()));
+                out.flush();
+                return;
             } else if (pathInfo.startsWith("/category/")) {
                 String category = pathInfo.substring("/category/".length());
                 String sortBy = req.getParameter("sortBy") != null ? req.getParameter("sortBy") : "created_at";
-                books = BookDAO.getByCategory(category, sortBy, limit, offset);
+                Double minPrice = parseDouble(req.getParameter("minPrice"));
+                Double maxPrice = parseDouble(req.getParameter("maxPrice"));
+                Double minRating = parseDouble(req.getParameter("minRating"));
+                Boolean inStockOnly = req.getParameter("inStock") != null ? Boolean.parseBoolean(req.getParameter("inStock")) : null;
+
+                books = BookDAO.getByCategory(category, sortBy, minPrice, maxPrice, minRating, inStockOnly, limit, offset);
+
+                boolean includeMeta = Boolean.parseBoolean(req.getParameter("meta"));
+                if (includeMeta) {
+                    int totalItems = BookDAO.getCategoryCount(category, minPrice, maxPrice, minRating, inStockOnly);
+                    int totalPages = limit > 0 ? (int) Math.ceil((double) totalItems / limit) : 1;
+
+                    java.util.Map<String, Object> payload = new java.util.HashMap<>();
+                    payload.put("items", books);
+
+                    java.util.Map<String, Object> pagination = new java.util.HashMap<>();
+                    pagination.put("page", page);
+                    pagination.put("pageSize", limit);
+                    pagination.put("totalItems", totalItems);
+                    pagination.put("totalPages", totalPages);
+                    pagination.put("hasNext", page < totalPages);
+                    pagination.put("hasPrevious", page > 1);
+                    payload.put("pagination", pagination);
+
+                    java.util.Map<String, Object> appliedFilters = new java.util.HashMap<>();
+                    appliedFilters.put("sortBy", sortBy);
+                    if (minPrice != null) {
+                        appliedFilters.put("minPrice", minPrice);
+                    }
+                    if (maxPrice != null) {
+                        appliedFilters.put("maxPrice", maxPrice);
+                    }
+                    if (minRating != null) {
+                        appliedFilters.put("minRating", minRating);
+                    }
+                    if (inStockOnly != null) {
+                        appliedFilters.put("inStock", inStockOnly);
+                    }
+                    payload.put("filters", appliedFilters);
+
+                    resp.setStatus(HttpServletResponse.SC_OK);
+                    out.write(gson.toJson(payload));
+                    out.flush();
+                    return;
+                }
             } else if (pathInfo.startsWith("/search/")) {
                 String keyword = pathInfo.substring("/search/".length());
                 books = BookDAO.searchBooks(keyword, limit, offset);
@@ -84,6 +144,28 @@ public class BooksApiServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write("{\"error\":\"" + e.getMessage() + "\"}");
             out.flush();
+        }
+    }
+
+    private int parseInt(String value, int defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ex) {
+            return defaultValue;
+        }
+    }
+
+    private Double parseDouble(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 }

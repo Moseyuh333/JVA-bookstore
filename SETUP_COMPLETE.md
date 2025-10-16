@@ -1,3 +1,6 @@
+> [!NOTE]
+> Tài liệu này được lưu để tham khảo. Hãy xem `README.md` để có hướng dẫn mới nhất.
+
 # 🎉 E-Commerce Implementation - Complete Foundation Setup
 
 ## What You Have Right Now ✨

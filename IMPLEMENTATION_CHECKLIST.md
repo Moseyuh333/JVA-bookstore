@@ -1,20 +1,11 @@
-# JVA Bookstore E-Commerce Implementation Checklist
+> [!NOTE]
+> Checklist này đã được lưu để tham khảo. Kế hoạch chính được cập nhật trong `README.md`.
+
+# ✅ JVA Bookstore E-Commerce Implementation Checklist
 
 ## ✅ FOUNDATION COMPLETE (What I Did For You)
 
 ### Database & Schema
-- [x] Extended schema.sql with 20 new tables
-- [x] Added delivery_addresses table
-- [x] Added shopping_cart & cart_items tables
-- [x] Added wishlist table
-- [x] Added product_views table
-- [x] Added ratings table (1-5 stars)
-- [x] Added comments table (text + media)
-- [x] Added coupons table (discount management)
-- [x] Added payment_transactions table
-- [x] Created proper indexes for performance
-- [x] Set up foreign key relationships
-- [x] Auto-migration support ready
 
 ### Model Classes (Object Mapping)
 - [x] Book.java - Product model
