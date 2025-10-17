@@ -11,7 +11,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
         body { font-family: 'Roboto', sans-serif; }
-        .hero-bg { background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('http://static.photos/books/1200x630/42'); background-size: cover; background-position: center; }
+    .hero-bg { background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://static.photos/books/1200x630/42'); background-size: cover; background-position: center; }
         .book-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
         .title-font { font-family: 'Playfair Display', serif; }
         .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
@@ -128,7 +128,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
                     <div class="flex items-center mb-4">
-                        <img src="http://static.photos/people/100x100/1" alt="Reader" class="w-12 h-12 rounded-full mr-4 object-cover">
+                        <img src="https://static.photos/people/100x100/1" alt="Reader" class="w-12 h-12 rounded-full mr-4 object-cover">
                         <div>
                             <h4 class="font-bold">Sarah Johnson</h4>
                             <div class="flex text-amber-500">
@@ -144,7 +144,7 @@
                 </div>
                 <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
                     <div class="flex items-center mb-4">
-                        <img src="http://static.photos/people/100x100/2" alt="Reader" class="w-12 h-12 rounded-full mr-4 object-cover">
+                        <img src="https://static.photos/people/100x100/2" alt="Reader" class="w-12 h-12 rounded-full mr-4 object-cover">
                         <div>
                             <h4 class="font-bold">Michael Chen</h4>
                             <div class="flex text-amber-500">
@@ -160,7 +160,7 @@
                 </div>
                 <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
                     <div class="flex items-center mb-4">
-                        <img src="http://static.photos/people/100x100/3" alt="Reader" class="w-12 h-12 rounded-full mr-4 object-cover">
+                        <img src="https://static.photos/people/100x100/3" alt="Reader" class="w-12 h-12 rounded-full mr-4 object-cover">
                         <div>
                             <h4 class="font-bold">Emma Rodriguez</h4>
                             <div class="flex text-amber-500">
