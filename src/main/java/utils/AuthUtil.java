@@ -71,6 +71,7 @@ public final class AuthUtil {
         }
         return null;
     }
+
     private static String resolveEmail(String identity) {
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(

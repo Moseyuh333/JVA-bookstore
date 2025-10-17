@@ -63,7 +63,7 @@ public final class CartDAO {
             try {
                 BigDecimal price = findBookPrice(conn, bookId);
                 if (price == null) {
-                    throw new SQLException("Book not found: " + bookId);
+                    price = BigDecimal.ZERO;
                 }
                 String upsertSql = "INSERT INTO cart_items (cart_id, book_id, quantity, unit_price) "
                         + "VALUES (?, ?, ?, ?) "
@@ -324,12 +324,19 @@ public final class CartDAO {
     }
 
     private static BigDecimal findBookPrice(Connection conn, long bookId) throws SQLException {
-        String sql = "SELECT price FROM books WHERE id = ?";
+        String sql = "SELECT price, original_price FROM books WHERE id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, bookId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getBigDecimal(1);
+                    BigDecimal price = rs.getBigDecimal("price");
+                    if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+                        BigDecimal fallback = rs.getBigDecimal("original_price");
+                        if (fallback != null && fallback.compareTo(BigDecimal.ZERO) > 0) {
+                            price = fallback;
+                        }
+                    }
+                    return price;
                 }
                 return null;
             }
