@@ -1,6 +1,5 @@
 package web;
 
-import com.google.gson.JsonObject;
 import utils.JwtUtil;
 import utils.DBUtil;
 import utils.EmailUtil;
@@ -152,44 +151,18 @@ public class AuthServlet extends HttpServlet {
 
         if (!DBUtil.emailExists(email)) {
             // Don't reveal if email exists for security
-            JsonObject payload = new JsonObject();
-            payload.addProperty("message", "If the email exists, a reset link has been sent.");
-            out.write(payload.toString());
+            out.write("{\"message\":\"If the email exists, a reset link has been sent.\"}");
             return;
         }
 
         String username = DBUtil.getUserByEmail(email);
         String resetToken = UUID.randomUUID().toString();
-        JsonObject payload = new JsonObject();
-        payload.addProperty("message", "If the email exists, a reset link has been sent.");
-        boolean tokenStored = DBUtil.setResetToken(email, resetToken);
 
-        if (tokenStored) {
-            try {
-                EmailUtil.sendResetEmail(email, resetToken, username);
-            } catch (RuntimeException mailEx) {
-                if (EmailUtil.isEmailEnabled()) {
-                    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                    JsonObject errorPayload = new JsonObject();
-                    errorPayload.addProperty("error", "Failed to send reset email. Please try again later.");
-                    out.write(errorPayload.toString());
-                    return;
-                }
-                System.err.println("DEBUG ResetPassword - Email disabled, token returned in response.");
-            }
-        } else {
-            System.err.println("DEBUG ResetPassword - Unable to persist reset token for email: " + email);
+        if (DBUtil.setResetToken(email, resetToken)) {
+            EmailUtil.sendResetEmail(email, resetToken, username);
         }
 
-        if (tokenStored && !EmailUtil.isEmailEnabled()) {
-            payload.addProperty("debugToken", resetToken);
-            String requestUrl = req.getRequestURL().toString();
-            String requestUri = req.getRequestURI();
-            String baseUrl = requestUrl.substring(0, requestUrl.length() - requestUri.length());
-            payload.addProperty("debugResetUrl", baseUrl + req.getContextPath() + "/reset-password.jsp?token=" + resetToken);
-        }
-
-        out.write(payload.toString());
+        out.write("{\"message\":\"If the email exists, a reset link has been sent.\"}");
     }
     
     private void handleSendOTP(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {
@@ -212,30 +185,16 @@ public class AuthServlet extends HttpServlet {
         // Generate and store OTP
         String otp = OTPUtil.generateOTP();
         if (OTPUtil.storeOTP(email, otp)) {
-            JsonObject payload = new JsonObject();
+            // Send OTP via email
             try {
                 EmailUtil.sendOTPEmail(email, otp);
                 System.out.println("OTP sent to: " + email);
-            } catch (RuntimeException mailEx) {
-                if (EmailUtil.isEmailEnabled()) {
-                    System.err.println("Failed to send OTP email: " + mailEx.getMessage());
-                    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                    JsonObject errorPayload = new JsonObject();
-                    errorPayload.addProperty("error", "Failed to send OTP email");
-                    out.write(errorPayload.toString());
-                    return;
-                }
-                System.err.println("DEBUG OTP - Email disabled, returning OTP in response.");
+                out.write("{\"message\":\"OTP has been sent to your email\"}");
+            } catch (Exception e) {
+                System.err.println("Failed to send OTP email: " + e.getMessage());
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                out.write("{\"error\":\"Failed to send OTP email\"}");
             }
-
-            if (EmailUtil.isEmailEnabled()) {
-                payload.addProperty("message", "OTP has been sent to your email");
-            } else {
-                payload.addProperty("message", "OTP generated (email delivery disabled)");
-                payload.addProperty("debugOtp", otp);
-            }
-
-            out.write(payload.toString());
         } else {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write("{\"error\":\"Failed to generate OTP\"}");

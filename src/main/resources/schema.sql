@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     full_name VARCHAR(255),
     phone VARCHAR(20),
     birth_date DATE,
@@ -68,32 +68,3 @@ CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_book_id ON order_items(book_id);
-
--- Track favorite (liked) books per user
-CREATE TABLE IF NOT EXISTS book_favorites (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_book_favorites UNIQUE (user_id, book_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_book_favorites_book_id ON book_favorites(book_id);
-
--- Store product reviews and ratings
-CREATE TABLE IF NOT EXISTS book_reviews (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
-    rating INTEGER CHECK (rating BETWEEN 1 AND 5),
-    title VARCHAR(255),
-    content TEXT,
-    media_url VARCHAR(500),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'published'
-);
-
-CREATE INDEX IF NOT EXISTS idx_book_reviews_book_id ON book_reviews(book_id);
-CREATE INDEX IF NOT EXISTS idx_book_reviews_user_id ON book_reviews(user_id);
-CREATE INDEX IF NOT EXISTS idx_book_reviews_status ON book_reviews(status);

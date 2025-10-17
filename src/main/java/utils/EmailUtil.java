@@ -17,81 +17,63 @@ public class EmailUtil {
     private static String smtpUser;
     private static String smtpPass;
     private static String smtpFrom;
-    private static boolean emailEnabled;
-    private static boolean debugMode;
 
     static {
-        props = new Properties();
-        emailEnabled = false;
-        debugMode = Boolean.parseBoolean(System.getenv("EMAIL_DEBUG"));
-        boolean disableRequested = Boolean.parseBoolean(System.getenv("EMAIL_DISABLED"));
-
-        try {
-            String host = System.getenv("SMTP_HOST");
-            if (host != null && !host.isEmpty()) {
-                props.setProperty("mail.smtp.host", host);
-                String port = System.getenv("SMTP_PORT");
-                props.setProperty("mail.smtp.port", port != null ? port : "587");
-                props.setProperty("mail.smtp.auth", "true");
-                props.setProperty("mail.smtp.starttls.enable", "true");
-                props.setProperty("mail.smtp.starttls.required", "true");
-                smtpUser = System.getenv("SMTP_USER");
-                smtpPass = System.getenv("SMTP_PASS");
-                smtpFrom = System.getenv("SMTP_FROM");
-            } else {
-                try (InputStream input = EmailUtil.class.getClassLoader().getResourceAsStream("email.properties")) {
-                    if (input == null) {
-                        throw new IOException("email.properties not found in classpath");
-                    }
-                    Properties tempProps = new Properties();
-                    tempProps.load(input);
-                    disableRequested = disableRequested || Boolean.parseBoolean(tempProps.getProperty("email.disabled", "false"));
-                    debugMode = debugMode || Boolean.parseBoolean(tempProps.getProperty("mail.debug", "false"));
-
-                    props.setProperty("mail.smtp.host", tempProps.getProperty("smtp.host"));
-                    props.setProperty("mail.smtp.port", tempProps.getProperty("smtp.port", "587"));
-                    props.setProperty("mail.smtp.auth", tempProps.getProperty("mail.smtp.auth", "true"));
-                    props.setProperty("mail.smtp.starttls.enable", tempProps.getProperty("mail.smtp.starttls.enable", "true"));
-                    props.setProperty("mail.smtp.starttls.required", "true");
-
-                    smtpUser = tempProps.getProperty("smtp.user");
-                    smtpPass = tempProps.getProperty("smtp.pass");
-                    smtpFrom = tempProps.getProperty("smtp.from");
+    props = new Properties();
+        String host = System.getenv("SMTP_HOST");
+        if (host != null) {
+            // Use environment variables (for Heroku)
+            props.setProperty("mail.smtp.host", host);
+            String port = System.getenv("SMTP_PORT");
+            props.setProperty("mail.smtp.port", port != null ? port : "587");
+            props.setProperty("mail.smtp.auth", "true");
+            props.setProperty("mail.smtp.starttls.enable", "true");
+            props.setProperty("mail.smtp.starttls.required", "true");
+            smtpUser = System.getenv("SMTP_USER");
+            smtpPass = System.getenv("SMTP_PASS");
+            smtpFrom = System.getenv("SMTP_FROM");
+        } else {
+            // Use email.properties file (for local)
+            try (InputStream input = EmailUtil.class.getClassLoader().getResourceAsStream("email.properties")) {
+                if (input == null) {
+                    throw new RuntimeException("email.properties not found in classpath");
                 }
+                Properties tempProps = new Properties();
+                tempProps.load(input);
+                
+                // Convert smtp.* to mail.smtp.* format
+                props.setProperty("mail.smtp.host", tempProps.getProperty("smtp.host"));
+                props.setProperty("mail.smtp.port", tempProps.getProperty("smtp.port", "587"));
+                props.setProperty("mail.smtp.auth", tempProps.getProperty("mail.smtp.auth", "true"));
+                props.setProperty("mail.smtp.starttls.enable", tempProps.getProperty("mail.smtp.starttls.enable", "true"));
+                props.setProperty("mail.smtp.starttls.required", "true");
+                
+                smtpUser = tempProps.getProperty("smtp.user");
+                smtpPass = tempProps.getProperty("smtp.pass");
+                smtpFrom = tempProps.getProperty("smtp.from");
+            } catch (IOException e) {
+                System.err.println("Failed to load email.properties: " + e.getMessage());
+                throw new RuntimeException("Email configuration failed", e);
             }
-
-            if (disableRequested) {
-                System.out.println("EmailUtil - Email delivery disabled by configuration.");
-                emailEnabled = false;
-            } else if (isBlank(smtpUser) || isBlank(smtpPass) || isBlank(smtpFrom)) {
-                System.err.println("EmailUtil - Missing SMTP credentials. Email notifications disabled.");
-                emailEnabled = false;
-            } else {
-                session = Session.getInstance(props, new javax.mail.Authenticator() {
-                    protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(smtpUser, smtpPass);
-                    }
-                });
-                session.setDebug(debugMode);
-                emailEnabled = true;
-
-                System.out.println("=== Email Configuration (SMTP only) ===");
-                System.out.println("SMTP Host: " + props.getProperty("mail.smtp.host"));
-                System.out.println("SMTP Port: " + props.getProperty("mail.smtp.port"));
-                System.out.println("SMTP Username: " + maskValue(smtpUser));
-                System.out.println("SMTP Password: " + maskSecret(smtpPass));
-                System.out.println("SMTP From: " + smtpFrom);
-                System.out.println("Debug Mode: " + debugMode);
-                System.out.println("======================================");
-            }
-        } catch (IOException e) {
-            System.err.println("EmailUtil - Failed to load email configuration: " + e.getMessage());
-            emailEnabled = false;
         }
 
-        if (!emailEnabled) {
-            System.out.println("EmailUtil - Running in DEV mode, emails will be logged to the console only.");
-        }
+        // Debug: print configuration
+        System.out.println("=== Email Configuration (SMTP only) ===");
+        System.out.println("SMTP Host: " + props.getProperty("mail.smtp.host"));
+        System.out.println("SMTP Port: " + props.getProperty("mail.smtp.port"));
+        System.out.println("SMTP Username: " + (smtpUser != null ? smtpUser.substring(0, Math.min(8, smtpUser.length())) + "..." : "NULL"));
+        System.out.println("SMTP Password: " + (smtpPass != null ? "***" + smtpPass.substring(Math.max(0, smtpPass.length()-4)) : "NULL"));
+        System.out.println("SMTP From: " + smtpFrom);
+        System.out.println("======================================");
+
+        session = Session.getInstance(props, new javax.mail.Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(smtpUser, smtpPass);
+            }
+        });
+        
+        // Enable debug mode for JavaMail (will show SMTP conversation)
+        session.setDebug(true);
     }
 
     public static void sendVerificationEmail(String toEmail, String token, String username) {
@@ -176,11 +158,6 @@ public class EmailUtil {
     }
 
     private static void sendEmail(String to, String subject, String body) {
-        if (!emailEnabled) {
-            System.out.println("[Email disabled] " + subject + " -> " + to);
-            System.out.println(body);
-            return;
-        }
         try {
             System.out.println("=== Starting Email Send ===");
             System.out.println("SMTP Host: " + props.getProperty("mail.smtp.host"));
@@ -207,27 +184,5 @@ public class EmailUtil {
             e.printStackTrace();
             throw new RuntimeException("Email sending failed: " + e.getMessage(), e);
         }
-    }
-
-    public static boolean isEmailEnabled() {
-        return emailEnabled;
-    }
-
-    private static boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
-    }
-
-    private static String maskValue(String value) {
-        if (isBlank(value)) {
-            return "NULL";
-        }
-        return value.length() <= 4 ? value : value.substring(0, 2) + "***" + value.substring(value.length() - 2);
-    }
-
-    private static String maskSecret(String value) {
-        if (isBlank(value)) {
-            return "NULL";
-        }
-        return "***" + value.substring(Math.max(0, value.length() - 4));
     }
 }

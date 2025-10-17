@@ -125,7 +125,6 @@
 </div>
 
 <script>
-const baseUrl = '<%= request.getContextPath() %>';
 let currentEmail = '';
 let resendCountdown = 120;
 let countdownInterval = null;
@@ -138,7 +137,7 @@ document.getElementById('emailForm').addEventListener('submit', async (e) => {
     btn.textContent = 'Đang gửi...';
     
     try {
-        const res = await fetch(baseUrl + '/api/auth/send-otp', {
+        const res = await fetch('/api/auth/send-otp', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: new URLSearchParams({ email: email })
@@ -159,11 +158,7 @@ document.getElementById('emailForm').addEventListener('submit', async (e) => {
             document.getElementById('step2').classList.remove('hidden');
             document.getElementById('otp1').focus();
             startResendCountdown();
-            let successMsg = (data && data.message) ? data.message : 'Mã OTP đã được gửi đến email của bạn!';
-            if (data && data.debugOtp) {
-                successMsg += '<br><small class="text-muted">OTP thử nghiệm: <strong>' + data.debugOtp + '</strong></small>';
-            }
-            showMessage('success', successMsg);
+            showMessage('success', 'Mã OTP đã được gửi đến email của bạn!');
         } else {
             if (data.remaining) {
                 showMessage('danger', 'Vui lòng đợi ' + data.remaining + ' giây trước khi gửi lại OTP');
@@ -213,7 +208,7 @@ document.getElementById('otpForm').addEventListener('submit', async (e) => {
     btn.textContent = 'Đang xác nhận...';
     
     try {
-        const res = await fetch(baseUrl + '/api/auth/verify-otp', {
+        const res = await fetch('/api/auth/verify-otp', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: new URLSearchParams({
@@ -247,7 +242,7 @@ document.getElementById('resendBtn').addEventListener('click', async () => {
     btn.disabled = true;
     
     try {
-        const res = await fetch(baseUrl + '/api/auth/send-otp', {
+        const res = await fetch('/api/auth/send-otp', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: new URLSearchParams({ email: currentEmail })
@@ -262,11 +257,7 @@ document.getElementById('resendBtn').addEventListener('click', async () => {
         }
         
         if (res.ok) {
-            let successMsg = (data && data.message) ? data.message : 'Mã OTP mới đã được gửi!';
-            if (data && data.debugOtp) {
-                successMsg += '<br><small class="text-muted">OTP thử nghiệm: <strong>' + data.debugOtp + '</strong></small>';
-            }
-            showMessage('success', successMsg);
+            showMessage('success', 'Mã OTP mới đã được gửi!');
             resendCountdown = 120;
             startResendCountdown();
         } else {
