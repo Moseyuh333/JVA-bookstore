@@ -89,6 +89,20 @@
                     Tham gia cộng đồng
                 </a>
             </div>
+            <div class="mt-6 flex flex-wrap justify-center gap-3 text-sm">
+                <a href="<%=request.getContextPath()%>/login.jsp" class="inline-flex items-center gap-2 bg-white/90 hover:bg-white text-amber-800 font-semibold py-2 px-4 rounded-full transition duration-300">
+                    <i data-feather="log-in" class="w-4 h-4"></i>
+                    Đăng nhập
+                </a>
+                <a href="<%=request.getContextPath()%>/register.jsp" class="inline-flex items-center gap-2 bg-amber-600/90 hover:bg-amber-600 text-white font-semibold py-2 px-4 rounded-full transition duration-300">
+                    <i data-feather="user-plus" class="w-4 h-4"></i>
+                    Đăng ký tài khoản
+                </a>
+                <a href="<%=request.getContextPath()%>/forgot-password.jsp" class="inline-flex items-center gap-2 bg-black/40 hover:bg-black/50 text-white font-semibold py-2 px-4 rounded-full transition duration-300">
+                    <i data-feather="key" class="w-4 h-4"></i>
+                    Quên mật khẩu
+                </a>
+            </div>
         </div>
     </section>
 

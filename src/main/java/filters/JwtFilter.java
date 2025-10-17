@@ -21,19 +21,16 @@ public class JwtFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
-        String path = req.getRequestURI();
-        System.out.println("JwtFilter: Request URI = " + path);
-        // Allow public endpoints without token
-        if (path.equals("/api/auth/register") || 
-            path.equals("/api/auth/login") || 
-            path.equals("/api/login") || 
-            path.equals("/api/auth/send-otp") ||
-            path.equals("/api/auth/verify-otp") ||
-            path.equals("/api/auth/reset-password") || 
-            path.equals("/api/auth/reset") || 
-            path.equals("/api/auth/verify") ||
-            path.equals("/api/admin/clear-users") ||
-            path.equals("/api/test-email")) {
+        String requestUri = req.getRequestURI();
+        String contextPath = req.getContextPath() != null ? req.getContextPath() : "";
+        String path = requestUri.substring(contextPath.length());
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+
+        System.out.println("JwtFilter: Request URI = " + requestUri + " | normalized path = " + path);
+
+        if (isPublicEndpoint(path, req.getMethod())) {
             chain.doFilter(request, response);
             return;
         }
@@ -55,5 +52,41 @@ public class JwtFilter implements Filter {
     @Override
     public void destroy() {
         // Cleanup if needed
+    }
+
+    private boolean isPublicEndpoint(String path, String method) {
+        if (path == null) {
+            return false;
+        }
+
+        // Core auth endpoints remain public
+        switch (path) {
+            case "/api/auth/register":
+            case "/api/auth/login":
+            case "/api/login":
+            case "/api/auth/send-otp":
+            case "/api/auth/verify-otp":
+            case "/api/auth/reset-password":
+            case "/api/auth/reset":
+            case "/api/auth/verify":
+            case "/api/admin/clear-users":
+            case "/api/test-email":
+            case "/api/health":
+                return true;
+            default:
+                break;
+        }
+
+        // Allow anyone to browse catalog and category metadata.
+        if ("GET".equalsIgnoreCase(method)) {
+            if (path.equals("/api/books") || path.startsWith("/api/books/")) {
+                return true;
+            }
+            if (path.equals("/api/catalog") || path.startsWith("/api/catalog/")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
