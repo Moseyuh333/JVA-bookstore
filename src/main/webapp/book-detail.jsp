@@ -250,7 +250,7 @@
 
             </c:if>
           </div>
-
+          </body>
           <%@ include file="/WEB-INF/includes/footer.jsp" %>
 
         </html>
