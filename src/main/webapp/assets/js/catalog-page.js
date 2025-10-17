@@ -191,7 +191,7 @@
                     <button type="button" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded-full text-sm transition" data-book-id="${book.id}">
                         Thêm vào giỏ
                     </button>
-                    <a href="${appShell.contextPath}/catalog.jsp?highlight=${book.id}" class="text-center text-sm text-amber-700 hover:text-amber-900 font-medium">
+                    <a href="${appShell.contextPath}/books/detail?id=${book.id}" class="text-center text-sm text-amber-700 hover:text-amber-900 font-medium">
                         Xem chi tiết
                     </a>
                 </div>
