@@ -150,8 +150,6 @@
               </c:if>
               <!-- ===== REVIEWS ===== -->
               <c:choose>
-
-                <!-- Ưu tiên hiển thị dữ liệu từ bảng reviews -->
                 <c:when test="${not empty reviews}">
                   <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
                     <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
@@ -245,8 +243,6 @@
                     </div>
                   </div>
                 </c:when>
-
-                <!-- Nếu không có bảng reviews thật, fallback sang text trong books.reviews -->
                 <c:when test="${not empty bookReviewsRaw}">
                   <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
                     <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
@@ -257,16 +253,12 @@
                     </div>
                   </div>
                 </c:when>
-
-                <!-- Nếu không có gì luôn -->
                 <c:otherwise>
                   <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg text-gray-400 rounded-md">
                     <i>Chưa có đánh giá nào cho cuốn sách này.</i>
                   </div>
                 </c:otherwise>
               </c:choose>
-
-
             </c:if>
           </div>
           <%@ include file="/WEB-INF/includes/footer.jsp" %>
