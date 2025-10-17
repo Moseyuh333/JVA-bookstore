@@ -89,20 +89,6 @@
                     Tham gia cộng đồng
                 </a>
             </div>
-            <div class="mt-6 flex flex-wrap justify-center gap-3 text-sm">
-                <a href="<%=request.getContextPath()%>/login.jsp" class="inline-flex items-center gap-2 bg-white/90 hover:bg-white text-amber-800 font-semibold py-2 px-4 rounded-full transition duration-300">
-                    <i data-feather="log-in" class="w-4 h-4"></i>
-                    Đăng nhập
-                </a>
-                <a href="<%=request.getContextPath()%>/register.jsp" class="inline-flex items-center gap-2 bg-amber-600/90 hover:bg-amber-600 text-white font-semibold py-2 px-4 rounded-full transition duration-300">
-                    <i data-feather="user-plus" class="w-4 h-4"></i>
-                    Đăng ký tài khoản
-                </a>
-                <a href="<%=request.getContextPath()%>/forgot-password.jsp" class="inline-flex items-center gap-2 bg-black/40 hover:bg-black/50 text-white font-semibold py-2 px-4 rounded-full transition duration-300">
-                    <i data-feather="key" class="w-4 h-4"></i>
-                    Quên mật khẩu
-                </a>
-            </div>
         </div>
     </section>
 
@@ -442,10 +428,11 @@
             const userDropdownBtn = document.getElementById('userDropdownBtn');
             const userDropdown = document.getElementById('userDropdown');
             const token = localStorage.getItem('auth_token');
+            const username = getStoredUsername(token);
             const isLoggedIn = token && token.length > 0;
 
             if (isLoggedIn) {
-                updateDropdownForLoggedInUser();
+                updateDropdownForLoggedInUser(username);
             } else {
                 updateDropdownForGuestUser();
             }
@@ -466,14 +453,15 @@
             }
         }
 
-        function updateDropdownForLoggedInUser() {
+        function updateDropdownForLoggedInUser(username) {
             const userDropdown = document.getElementById('userDropdown');
             if (userDropdown) {
+                const safeUsername = username && username.trim().length > 0 ? escapeHtml(username.trim()) : null;
                 userDropdown.innerHTML = `
                     <div class="py-2">
-                        <div class="px-4 py-2 text-sm text-gray-600 border-b">
-                            <i data-feather="user" class="w-4 h-4 inline mr-2"></i>
-                            Xin chào!
+                        <div class="px-4 py-2 text-sm text-gray-600 border-b flex items-center gap-2">
+                            <i data-feather="user" class="w-4 h-4"></i>
+                            <span>${safeUsername ? `Xin chào, ${safeUsername}!` : 'Xin chào!'}</span>
                         </div>
                         <a href="${contextPath}/profile.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
                             <i data-feather="settings" class="w-4 h-4 mr-2"></i>
@@ -487,7 +475,7 @@
                 `;
                 const lbl = document.getElementById('accountBtnLabel');
                 if (lbl) {
-                    lbl.textContent = 'Hồ sơ';
+                    lbl.textContent = safeUsername || 'Tài khoản';
                 }
                 feather.replace();
             }
@@ -523,9 +511,37 @@
 
         function logout() {
             localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_username');
             updateDropdownForGuestUser();
             alert('Đăng xuất thành công!');
             window.location.reload();
+        }
+
+        function getStoredUsername(token) {
+            const cached = localStorage.getItem('auth_username');
+            if (cached && cached.trim().length > 0) {
+                return cached.trim();
+            }
+            if (!token) {
+                return null;
+            }
+            try {
+                const payloadPart = token.split('.')[1];
+                if (!payloadPart) {
+                    return null;
+                }
+                const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+                const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+                const payload = JSON.parse(atob(padded));
+                const subject = payload && typeof payload.sub === 'string' ? payload.sub.trim() : null;
+                if (subject && subject.length > 0) {
+                    localStorage.setItem('auth_username', subject);
+                    return subject;
+                }
+            } catch (error) {
+                console.warn('Không thể đọc username từ token', error);
+            }
+            return null;
         }
 
         function updateYearBadge() {

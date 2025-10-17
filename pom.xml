@@ -87,6 +87,18 @@
         </dependency>
     </dependencies>
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>books_full_5xx.csv</include>
+                </includes>
+                <targetPath>data</targetPath>
+            </resource>
+        </resources>
     <finalName>ROOT</finalName>
         <plugins>
             <plugin>
