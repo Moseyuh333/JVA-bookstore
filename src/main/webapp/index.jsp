@@ -43,6 +43,10 @@
                         <i data-feather="search" class="w-5 h-5 mr-1"></i>
                         <span class="font-medium">Search</span>
                     </a>
+                    <a href="<%=request.getContextPath()%>/cart.jsp" class="relative inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700" aria-label="Giỏ hàng">
+                        <i data-feather="shopping-cart" class="w-5 h-5"></i>
+                        <span data-cart-count class="hidden absolute -top-1 -right-1 text-xs bg-red-500 text-white rounded-full px-1.5 py-0.5" aria-hidden="true">0</span>
+                    </a>
                     <div class="relative">
                         <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
                             <i data-feather="user" class="w-5 h-5 mr-1"></i>

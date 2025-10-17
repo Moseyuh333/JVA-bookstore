@@ -4,6 +4,7 @@
     const config = window.appConfig || {};
     const contextPath = config.contextPath || '';
     const booksApiBase = contextPath ? contextPath + '/api/books' : '/api/books';
+    const cartApiBase = contextPath ? contextPath + '/api/cart' : '/api/cart';
 
     let dropdownInitialized = false;
 
@@ -80,6 +81,14 @@
         return subject;
     }
 
+    function getAuthToken() {
+        const token = window.localStorage.getItem('auth_token');
+        if (!token || token.trim().length === 0) {
+            return null;
+        }
+        return token.trim();
+    }
+
     function setAccountLabel(text) {
         const label = document.getElementById('accountBtnLabel');
         if (label) {
@@ -120,6 +129,10 @@
                 <a href="${contextPath}/profile.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
                     <i data-feather="settings" class="w-4 h-4 mr-2"></i>
                     Hồ sơ cá nhân
+                </a>
+                <a href="${contextPath}/orders.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                    <i data-feather="package" class="w-4 h-4 mr-2"></i>
+                    Đơn hàng của tôi
                 </a>
                 <button type="button" data-action="logout" class="w-full text-left flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
                     <i data-feather="log-out" class="w-4 h-4 mr-2"></i>
@@ -173,6 +186,7 @@
         window.localStorage.removeItem('auth_username');
         renderGuestDropdown(dropdown);
         dropdown.classList.add('hidden');
+        setCartBadgeCount(0);
         window.location.href = contextPath + '/login.jsp';
     }
 
@@ -183,21 +197,71 @@
         }
     }
 
+    function setCartBadgeCount(count) {
+        const badge = document.querySelector('[data-cart-count]');
+        if (!badge) {
+            return;
+        }
+        const safe = Number.isFinite(count) && count > 0 ? count : 0;
+        if (safe > 0) {
+            badge.textContent = safe;
+            badge.classList.remove('hidden');
+            badge.setAttribute('aria-hidden', 'false');
+        } else {
+            badge.textContent = '0';
+            badge.classList.add('hidden');
+            badge.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    async function refreshCartBadge() {
+        const badge = document.querySelector('[data-cart-count]');
+        if (!badge) {
+            return;
+        }
+        try {
+            const response = await fetch(cartApiBase, { credentials: 'same-origin' });
+            if (!response.ok) {
+                throw new Error('Cart fetch failed');
+            }
+            const payload = await response.json();
+            const count = payload && payload.cart && typeof payload.cart.totalQuantity === 'number'
+                ? payload.cart.totalQuantity
+                : 0;
+            setCartBadgeCount(count);
+        } catch (error) {
+            console.warn('Unable to refresh cart badge', error);
+            setCartBadgeCount(0);
+        }
+    }
+
+    function requestCartRefresh() {
+        window.dispatchEvent(new CustomEvent('cart:invalidate'));
+    }
+
     onReady(function () {
         refreshIcons();
         initUserDropdown();
         updateYearBadge();
+        refreshCartBadge();
     });
+
+    window.addEventListener('cart:invalidate', refreshCartBadge);
 
     window.appShell = {
         contextPath: contextPath,
         booksApiBase: booksApiBase,
+        cartApiBase: cartApiBase,
         escapeHtml: escapeHtml,
         formatCurrency: formatCurrency,
         getStoredUsername: getStoredUsername,
+        getAuthToken: getAuthToken,
         initUserDropdown: initUserDropdown,
         updateYearBadge: updateYearBadge,
         refreshIcons: refreshIcons,
-        onReady: onReady
+        onReady: onReady,
+        setCartBadgeCount: setCartBadgeCount,
+        refreshCartBadge: refreshCartBadge,
+        requestCartRefresh: requestCartRefresh
     };
 })(window, document);

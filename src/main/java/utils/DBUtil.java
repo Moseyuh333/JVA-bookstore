@@ -229,6 +229,65 @@ public class DBUtil {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_book_id ON book_reviews(book_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_user_id ON book_reviews(user_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_status ON book_reviews(status)");
+
+                String createCartsTableSQL = "CREATE TABLE IF NOT EXISTS carts (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "user_id INTEGER REFERENCES users(id) ON DELETE CASCADE," +
+                    "session_id VARCHAR(64)," +
+                    "status VARCHAR(20) DEFAULT 'active'," +
+                    "currency VARCHAR(10) DEFAULT 'VND'," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createCartsTableSQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_carts_user ON carts(user_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_carts_session ON carts(session_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_carts_status ON carts(status)");
+
+                String createCartItemsTableSQL = "CREATE TABLE IF NOT EXISTS cart_items (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "cart_id INTEGER NOT NULL REFERENCES carts(id) ON DELETE CASCADE," +
+                    "book_id INTEGER NOT NULL REFERENCES books(id)," +
+                    "quantity INTEGER NOT NULL," +
+                    "unit_price DECIMAL(10, 2) NOT NULL DEFAULT 0," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createCartItemsTableSQL);
+                stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_cart_items_cart_book ON cart_items(cart_id, book_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart ON cart_items(cart_id)");
+
+                String createPaymentsTableSQL = "CREATE TABLE IF NOT EXISTS payments (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +
+                    "provider VARCHAR(50) NOT NULL," +
+                    "method VARCHAR(20) NOT NULL," +
+                    "status VARCHAR(30) NOT NULL DEFAULT 'pending'," +
+                    "amount DECIMAL(12, 2) NOT NULL DEFAULT 0," +
+                    "currency VARCHAR(10) DEFAULT 'VND'," +
+                    "transaction_code VARCHAR(120)," +
+                    "raw_response TEXT," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createPaymentsTableSQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)");
+                stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_payments_transaction_code ON payments(transaction_code) WHERE transaction_code IS NOT NULL");
+
+                String createOrderStatusHistorySQL = "CREATE TABLE IF NOT EXISTS order_status_history (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +
+                    "status VARCHAR(30) NOT NULL," +
+                    "note TEXT," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "created_by VARCHAR(100)" +
+                    ")";
+                stmt.execute(createOrderStatusHistorySQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_status_history_order ON order_status_history(order_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_status_history_status ON order_status_history(status)");
+
+                ensureOrdersSchema(conn);
             }
 
             ensurePasswordHashColumn(conn);
@@ -299,6 +358,92 @@ public class DBUtil {
             stmt.execute("UPDATE books SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile books schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureOrdersSchema(Connection conn) {
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "orders", "order_number")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN order_number VARCHAR(40)");
+            }
+            stmt.execute("UPDATE orders SET order_number = CONCAT('ORD-', id) WHERE order_number IS NULL");
+
+            if (!columnExists(conn, "orders", "subtotal_amount")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN subtotal_amount DECIMAL(10, 2) DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET subtotal_amount = COALESCE(subtotal_amount, total_amount)");
+
+            if (!columnExists(conn, "orders", "tax_amount")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN tax_amount DECIMAL(10, 2) DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET tax_amount = COALESCE(tax_amount, 0)");
+
+            if (!columnExists(conn, "orders", "shipping_fee")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_fee DECIMAL(10, 2) DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET shipping_fee = COALESCE(shipping_fee, 0)");
+
+            if (!columnExists(conn, "orders", "discount_amount")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN discount_amount DECIMAL(10, 2) DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET discount_amount = COALESCE(discount_amount, 0)");
+
+            if (!columnExists(conn, "orders", "currency")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN currency VARCHAR(10) DEFAULT 'VND'");
+            }
+            stmt.execute("UPDATE orders SET currency = COALESCE(currency, 'VND')");
+
+            if (!columnExists(conn, "orders", "payment_status")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN payment_status VARCHAR(30) DEFAULT 'pending'");
+            }
+            stmt.execute("UPDATE orders SET payment_status = COALESCE(payment_status, status)");
+
+            if (!columnExists(conn, "orders", "payment_reference")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN payment_reference VARCHAR(120)");
+            }
+
+            if (!columnExists(conn, "orders", "payment_method")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50)");
+            }
+
+            if (!columnExists(conn, "orders", "shipping_full_name")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_full_name VARCHAR(120)");
+            }
+            if (!columnExists(conn, "orders", "shipping_phone")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_phone VARCHAR(30)");
+            }
+            if (!columnExists(conn, "orders", "shipping_email")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_email VARCHAR(120)");
+            }
+            if (!columnExists(conn, "orders", "shipping_address")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_address TEXT");
+            }
+            if (!columnExists(conn, "orders", "shipping_city")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_city VARCHAR(120)");
+            }
+            if (!columnExists(conn, "orders", "shipping_postal_code")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_postal_code VARCHAR(20)");
+            }
+            if (!columnExists(conn, "orders", "shipping_country")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_country VARCHAR(120)");
+            }
+            if (!columnExists(conn, "orders", "shipping_notes")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_notes TEXT");
+            }
+
+            if (!columnExists(conn, "orders", "customer_message")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN customer_message TEXT");
+            }
+
+            if (!columnExists(conn, "orders", "cart_snapshot")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN cart_snapshot TEXT");
+            }
+
+            stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_order_number ON orders(order_number)");
+            stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_payment_reference ON orders(payment_reference) WHERE payment_reference IS NOT NULL");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile orders schema: " + ex.getMessage());
         }
     }
 
@@ -466,6 +611,51 @@ public class DBUtil {
                 return null;
             }
         }
+    }
+
+    public static Long getUserIdByUsername(String username) throws SQLException {
+        if (username == null || username.trim().isEmpty()) {
+            return null;
+        }
+        String sql = "SELECT id FROM users WHERE username = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    long id = rs.getLong("id");
+                    return rs.wasNull() ? null : id;
+                }
+                return null;
+            }
+        }
+    }
+
+    public static Long getUserIdByEmail(String email) throws SQLException {
+        if (email == null || email.trim().isEmpty()) {
+            return null;
+        }
+        String sql = "SELECT id FROM users WHERE email = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, email);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    long id = rs.getLong("id");
+                    return rs.wasNull() ? null : id;
+                }
+                return null;
+            }
+        }
+    }
+
+    public static Long resolveUserId(String identifier) throws SQLException {
+        if (identifier == null || identifier.trim().isEmpty()) {
+            return null;
+        }
+        Long userId = getUserIdByUsername(identifier);
+        if (userId != null) {
+            return userId;
+        }
+        return getUserIdByEmail(identifier);
     }
 
     public static boolean verifyUser(String token) throws SQLException {

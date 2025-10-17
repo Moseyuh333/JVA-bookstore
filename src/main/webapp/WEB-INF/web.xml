@@ -81,4 +81,24 @@
         <servlet-name>AdminServlet</servlet-name>
         <url-pattern>/api/admin/clear-users</url-pattern>
     </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CartServlet</servlet-name>
+        <servlet-class>web.CartServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CartServlet</servlet-name>
+        <url-pattern>/api/cart</url-pattern>
+        <url-pattern>/api/cart/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>OrderServlet</servlet-name>
+        <servlet-class>web.OrderServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>OrderServlet</servlet-name>
+        <url-pattern>/api/orders</url-pattern>
+        <url-pattern>/api/orders/*</url-pattern>
+    </servlet-mapping>
 </web-app>
