@@ -457,22 +457,22 @@
             const userDropdown = document.getElementById('userDropdown');
             if (userDropdown) {
                 const safeUsername = username && username.trim().length > 0 ? escapeHtml(username.trim()) : null;
-                userDropdown.innerHTML = `
-                    <div class="py-2">
-                        <div class="px-4 py-2 text-sm text-gray-600 border-b flex items-center gap-2">
-                            <i data-feather="user" class="w-4 h-4"></i>
-                            <span>${safeUsername ? `Xin chào, ${safeUsername}!` : 'Xin chào!'}</span>
-                        </div>
-                        <a href="${contextPath}/profile.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
-                            <i data-feather="settings" class="w-4 h-4 mr-2"></i>
-                            Hồ sơ cá nhân
-                        </a>
-                        <a href="#" onclick="logout(); return false;" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
-                            <i data-feather="log-out" class="w-4 h-4 mr-2"></i>
-                            Đăng xuất
-                        </a>
-                    </div>
-                `;
+                const greeting = safeUsername ? 'Xin chào, ' + safeUsername + '!' : 'Xin chào!';
+                userDropdown.innerHTML =
+                    '<div class="py-2">' +
+                        '<div class="px-4 py-2 text-sm text-gray-600 border-b flex items-center gap-2">' +
+                            '<i data-feather="user" class="w-4 h-4"></i>' +
+                            '<span>' + greeting + '</span>' +
+                        '</div>' +
+                        '<a href="' + contextPath + '/profile.jsp" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">' +
+                            '<i data-feather="settings" class="w-4 h-4 mr-2"></i>' +
+                            'Hồ sơ cá nhân' +
+                        '</a>' +
+                        '<a href="#" onclick="logout(); return false;" class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">' +
+                            '<i data-feather="log-out" class="w-4 h-4 mr-2"></i>' +
+                            'Đăng xuất' +
+                        '</a>' +
+                    '</div>';
                 const lbl = document.getElementById('accountBtnLabel');
                 if (lbl) {
                     lbl.textContent = safeUsername || 'Tài khoản';
