@@ -157,26 +157,29 @@
                       Khách hàng đánh giá
                     </h2>
 
-                    <!-- Tổng điểm trung bình -->
+                    <!-- Tổng điểm & Biểu đồ -->
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-8">
+                      <!-- Tổng điểm trung bình -->
                       <div class="text-center md:text-left md:w-1/4">
                         <div class="text-5xl font-bold text-amber-400">
                           <fmt:formatNumber value="${bookRating}" maxFractionDigits="1" />
                         </div>
-                        <div class="flex justify-center md:justify-start mt-1 mb-2">
+                        <div class="flex justify-center md:justify-start mt-2 mb-1">
                           <c:forEach var="i" begin="1" end="5">
                             <svg xmlns="http://www.w3.org/2000/svg"
                               class="h-6 w-6 ${i <= bookRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
                               viewBox="0 0 20 20" fill="currentColor">
-                              <path
-                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 1.371 1.24.588 1.81l-3.39 2.463 1.287 3.974c.3.922-.755 1.688-1.54 1.118L10 13.347l-3.363 2.92c-.785.57-1.84-.196-1.54-1.118l1.287-3.974-3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 1.371 1.24.588 1.81l-3.39 2.463 
+                1.287 3.974c.3.922-.755 1.688-1.54 1.118L10 13.347l-3.363 2.92
+                c-.785.57-1.84-.196-1.54-1.118l1.287-3.974
+                -3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
                             </svg>
                           </c:forEach>
                         </div>
                         <p class="text-gray-400 text-sm">(${fn:length(reviews)} đánh giá)</p>
                       </div>
 
-                      <!-- Biểu đồ sao -->
+                      <!-- Biểu đồ tỷ lệ sao -->
                       <div class="flex-1">
                         <c:forEach var="s" begin="5" end="1" step="-1">
                           <div class="flex items-center gap-2 mb-1">
@@ -194,6 +197,8 @@
                     <div class="flex flex-wrap gap-3 mb-6">
                       <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Mới
                         nhất</button>
+                      <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Có hình
+                        ảnh</button>
                       <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Đã mua
                         hàng</button>
                       <c:forEach var="s" begin="5" end="1" step="-1">
@@ -205,17 +210,17 @@
                     <!-- Danh sách đánh giá -->
                     <div class="divide-y divide-[#333]">
                       <c:forEach var="r" items="${reviews}">
-                        <div class="py-5 flex flex-col gap-2">
-                          <!-- Header người dùng -->
-                          <div class="flex items-center justify-between">
+                        <div class="py-5">
+                          <!-- Header -->
+                          <div class="flex items-center justify-between mb-2">
                             <div class="flex items-center gap-3">
                               <div
-                                class="bg-[#333] text-gray-400 rounded-full h-8 w-8 flex items-center justify-center font-bold">
-                                ${fn:toUpperCase(fn:substring(r.authorName,0,1))}
+                                class="bg-[#333] text-gray-400 rounded-full h-9 w-9 flex items-center justify-center font-bold uppercase">
+                                ${fn:substring(r.authorName, 0, 1)}
                               </div>
                               <div>
                                 <p class="text-gray-200 font-semibold">${r.authorName}</p>
-                                <p class="text-gray-500 text-xs">Đã mua hàng</p>
+                                <p class="text-green-400 text-xs">Đã mua hàng</p>
                               </div>
                             </div>
                             <div class="text-sm text-gray-500">
@@ -223,21 +228,32 @@
                             </div>
                           </div>
 
-                          <!-- Số sao + nhận xét -->
-                          <div class="flex items-center mb-1">
+                          <!-- Sao + cảm nhận -->
+                          <div class="flex items-center mb-2">
                             <c:forEach var="i" begin="1" end="5">
                               <svg xmlns="http://www.w3.org/2000/svg"
                                 class="h-4 w-4 ${i <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
                                 viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 1.371 1.24.588 1.81l-3.39 2.463 
-                  1.287 3.974c.3.922-.755 1.688-1.54 1.118L10 13.347l-3.363 2.92
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 
+                  1.371 1.24.588 1.81l-3.39 2.463 
+                  1.287 3.974c.3.922-.755 
+                  1.688-1.54 1.118L10 13.347l-3.363 2.92
                   c-.785.57-1.84-.196-1.54-1.118l1.287-3.974
                   -3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
                               </svg>
                             </c:forEach>
-                            <span class="text-sm text-amber-400 ml-2">Cực kì hài lòng</span>
+
+                            <span class="ml-2 text-sm text-amber-400 font-medium">
+                              <c:choose>
+                                <c:when test="${r.rating >= 5}">Cực kì hài lòng</c:when>
+                                <c:when test="${r.rating >= 4}">Hài lòng</c:when>
+                                <c:when test="${r.rating >= 3}">Tạm ổn</c:when>
+                                <c:otherwise>Không hài lòng</c:otherwise>
+                              </c:choose>
+                            </span>
                           </div>
 
+                          <!-- Bình luận -->
                           <p class="text-gray-300 leading-relaxed">${r.comment}</p>
                         </div>
                       </c:forEach>
