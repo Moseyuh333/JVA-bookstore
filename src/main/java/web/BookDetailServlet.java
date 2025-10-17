@@ -26,7 +26,7 @@ public class BookDetailServlet extends HttpServlet {
         }
 
         try (Connection conn = DBUtil.getConnection()) {
-            // Bắt buộc set encoding cho PostgreSQL session
+            // Đảm bảo PostgreSQL dùng UTF-8
             try (Statement st = conn.createStatement()) {
                 st.execute("SET client_encoding TO 'UTF8'");
             }
@@ -48,7 +48,7 @@ public class BookDetailServlet extends HttpServlet {
                 return;
             }
 
-            // --- Set các thuộc tính sách ---
+            // --- Gán thông tin sách ---
             req.setAttribute("bookId", rs.getInt("id"));
             req.setAttribute("bookTitle", rs.getString("title"));
             req.setAttribute("bookAuthor", rs.getString("author"));
@@ -66,11 +66,70 @@ public class BookDetailServlet extends HttpServlet {
             req.setAttribute("bookHighlights", rs.getString("highlights"));
             req.setAttribute("bookSpecifications", rs.getString("specifications"));
             req.setAttribute("bookDescription", rs.getString("description"));
-            req.setAttribute("bookReviewsRaw", rs.getString("reviews"));
 
-            // --- Lấy danh sách sách liên quan ---
+            // --- Parse reviews từ CSV (cột reviews trong bảng books) ---
+            String rawReviews = rs.getString("reviews");
+            List<Map<String, Object>> reviews = new ArrayList<>();
+
+            if (rawReviews != null && !rawReviews.trim().isEmpty()) {
+                String[] parts = rawReviews.split("\\|");
+                for (String part : parts) {
+                    part = part.trim();
+                    if (part.isEmpty()) continue;
+
+                    // Lấy tên, số sao, và bình luận
+                    String name = part.replaceAll("\\s*\\(.*", "").trim();
+                    String ratingStr = part.replaceAll(".*\\((\\d)⭐\\).*", "$1").trim();
+                    String comment = part.replaceAll(".*⭐\\):\\s*", "").trim();
+
+                    int rating = 0;
+                    try {
+                        rating = Integer.parseInt(ratingStr);
+                    } catch (Exception ignored) {}
+
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("authorName", name.isEmpty() ? "Ẩn danh" : name);
+                    r.put("rating", rating);
+                    r.put("comment", comment);
+                    reviews.add(r);
+                }
+            }
+
+            // Nếu có đánh giá trong CSV thì hiển thị ra
+            if (!reviews.isEmpty()) {
+                req.setAttribute("reviews", reviews);
+
+                // Tính điểm trung bình và phần trăm
+                Map<Integer, Integer> ratingCount = new HashMap<>();
+                for (int i = 1; i <= 5; i++) ratingCount.put(i, 0);
+                int total = 0, sum = 0;
+
+                for (Map<String, Object> r : reviews) {
+                    int rating = (int) r.get("rating");
+                    if (rating >= 1 && rating <= 5) {
+                        ratingCount.put(rating, ratingCount.get(rating) + 1);
+                        total++;
+                        sum += rating;
+                    }
+                }
+
+                double avg = total > 0 ? (double) sum / total : rs.getDouble("rating_avg");
+                req.setAttribute("bookRating", avg);
+
+                Map<Integer, Integer> reviewStats = new HashMap<>();
+                for (int i = 1; i <= 5; i++) {
+                    int count = ratingCount.get(i);
+                    int percent = total > 0 ? (int) ((count * 100.0) / total) : 0;
+                    reviewStats.put(i, percent);
+                }
+                req.setAttribute("reviewStats", reviewStats);
+            } else {
+                req.setAttribute("bookReviewsRaw", rawReviews);
+            }
+
+            // --- Lấy sách cùng danh mục (gợi ý) ---
             PreparedStatement psRelated = conn.prepareStatement(
-                "SELECT id, title, price, cover_image " +
+                "SELECT id, title, price, cover_image, category " +
                 "FROM books WHERE category = ? AND id <> ? LIMIT 4"
             );
             psRelated.setString(1, rs.getString("category"));
@@ -83,61 +142,11 @@ public class BookDetailServlet extends HttpServlet {
                 b.put("id", rsRelated.getInt("id"));
                 b.put("title", rsRelated.getString("title"));
                 b.put("price", rsRelated.getBigDecimal("price"));
+                b.put("category", rsRelated.getString("category"));
                 b.put("coverImage", rsRelated.getString("cover_image"));
                 relatedBooks.add(b);
             }
             req.setAttribute("relatedBooks", relatedBooks);
-
-            // --- Lấy danh sách reviews từ bảng riêng ---
-            PreparedStatement psReviews = conn.prepareStatement(
-                "SELECT r.rating, r.content, r.created_at, u.username " +
-                "FROM reviews r LEFT JOIN users u ON r.user_id = u.id " +
-                "WHERE r.book_id = ? ORDER BY r.created_at DESC"
-            );
-            psReviews.setInt(1, Integer.parseInt(id));
-            ResultSet rsReviews = psReviews.executeQuery();
-
-            List<Map<String, Object>> reviews = new ArrayList<>();
-            Map<Integer, Integer> ratingCount = new HashMap<>();
-            for (int i = 1; i <= 5; i++) ratingCount.put(i, 0);
-
-            int total = 0;
-            int sum = 0;
-
-            while (rsReviews.next()) {
-                int rating = rsReviews.getInt("rating");
-                ratingCount.put(rating, ratingCount.get(rating) + 1);
-                total++;
-                sum += rating;
-
-                Map<String, Object> r = new HashMap<>();
-                r.put("authorName", 
-                    rsReviews.getString("username") != null ? rsReviews.getString("username") : "Ẩn danh");
-                r.put("rating", rating);
-                r.put("comment", rsReviews.getString("content"));
-                r.put("createdAt", rsReviews.getTimestamp("created_at"));
-                reviews.add(r);
-            }
-
-            // --- Tính điểm trung bình & phần trăm ---
-            for (Map<String, Object> r : reviews) {
-                int rating = (int) r.get("rating");
-                ratingCount.put(rating, ratingCount.get(rating) + 1);
-                total++;
-                sum += rating;
-            }
-
-            double avg = total > 0 ? (double) sum / total : rs.getDouble("rating_avg");
-            req.setAttribute("bookRating", avg);
-            req.setAttribute("reviews", reviews);
-
-            Map<Integer, Integer> reviewStats = new HashMap<>();
-            for (int i = 1; i <= 5; i++) {
-                int count = ratingCount.get(i);
-                int percent = total > 0 ? (int) ((count * 100.0) / total) : 0;
-                reviewStats.put(i, percent);
-            }
-            req.setAttribute("reviewStats", reviewStats);
 
         } catch (Exception e) {
             e.printStackTrace();
