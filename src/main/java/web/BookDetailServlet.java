@@ -7,6 +7,8 @@ import javax.servlet.annotation.*;
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @WebServlet(name = "BookDetailServlet", urlPatterns = { "/books/detail" })
 public class BookDetailServlet extends HttpServlet {
@@ -33,11 +35,10 @@ public class BookDetailServlet extends HttpServlet {
 
             // --- Lấy chi tiết sách ---
             PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, title, author, price, original_price, discount, " +
-                "rating_avg, review_count, stock, publisher, category, cover_image, " +
-                "shop_name, book_url, highlights, specifications, description, reviews " +
-                "FROM books WHERE id = ?"
-            );
+                    "SELECT id, title, author, price, original_price, discount, " +
+                            "rating_avg, review_count, stock, publisher, category, cover_image, " +
+                            "shop_name, book_url, highlights, specifications, description, reviews " +
+                            "FROM books WHERE id = ?");
             ps.setInt(1, Integer.parseInt(id));
             ResultSet rs = ps.executeQuery();
 
@@ -72,36 +73,63 @@ public class BookDetailServlet extends HttpServlet {
             List<Map<String, Object>> reviews = new ArrayList<>();
 
             if (rawReviews != null && !rawReviews.trim().isEmpty()) {
+                // Tách từng review bằng dấu |
                 String[] parts = rawReviews.split("\\|");
                 for (String part : parts) {
-                    part = part.trim();
-                    if (part.isEmpty()) continue;
+                    if (part == null || part.trim().isEmpty())
+                        continue;
 
-                    // Lấy tên, số sao, và bình luận
-                    String name = part.replaceAll("\\s*\\(.*", "").trim();
-                    String ratingStr = part.replaceAll(".*\\((\\d)⭐\\).*", "$1").trim();
-                    String comment = part.replaceAll(".*⭐\\):\\s*", "").trim();
+                    // Ví dụ: "mi mi (5⭐): Rất thích Tiki..."
+                    String s = part.trim();
 
+                    // Chuẩn hóa để tránh lỗi khoảng trắng hoặc emoji
+                    s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFKC)
+                            .replace('\u00A0', ' ')
+                            .replace("\uFE0F", "")
+                            .trim();
+
+                    int start = s.indexOf('(');
+                    int end = s.indexOf(')');
+                    int colon = s.indexOf(':');
+
+                    String name = "";
                     int rating = 0;
-                    try {
-                        rating = Integer.parseInt(ratingStr);
-                    } catch (Exception ignored) {}
+                    String comment = "";
 
-                    Map<String, Object> r = new HashMap<>();
-                    r.put("authorName", name.isEmpty() ? "Ẩn danh" : name);
-                    r.put("rating", rating);
-                    r.put("comment", comment);
-                    reviews.add(r);
+                    if (start != -1 && end != -1 && end > start && colon > end) {
+                        // Lấy tên
+                        name = s.substring(0, start).trim();
+                        // Lấy rating (chỉ số đầu tiên trong ngoặc)
+                        try {
+                            String ratingPart = s.substring(start + 1, end).replaceAll("[^0-9]", "");
+                            rating = Integer.parseInt(ratingPart);
+                        } catch (Exception ignored) {
+                        }
+                        // Lấy comment
+                        comment = s.substring(colon + 1).trim();
+                    } else {
+                        // fallback nếu không đủ format
+                        name = s;
+                    }
+
+                    if (!name.isEmpty() || !comment.isEmpty()) {
+                        Map<String, Object> r = new HashMap<>();
+                        r.put("authorName", name.isEmpty() ? "Ẩn danh" : name);
+                        r.put("rating", rating);
+                        r.put("comment", comment);
+                        reviews.add(r);
+                    }
                 }
             }
 
-            // Nếu có đánh giá trong CSV thì hiển thị ra
+            // --- Nếu có đánh giá trong CSV thì hiển thị ra ---
             if (!reviews.isEmpty()) {
                 req.setAttribute("reviews", reviews);
 
                 // Tính điểm trung bình và phần trăm
                 Map<Integer, Integer> ratingCount = new HashMap<>();
-                for (int i = 1; i <= 5; i++) ratingCount.put(i, 0);
+                for (int i = 1; i <= 5; i++)
+                    ratingCount.put(i, 0);
                 int total = 0, sum = 0;
 
                 for (Map<String, Object> r : reviews) {
@@ -129,9 +157,8 @@ public class BookDetailServlet extends HttpServlet {
 
             // --- Lấy sách cùng danh mục (gợi ý) ---
             PreparedStatement psRelated = conn.prepareStatement(
-                "SELECT id, title, price, cover_image, category " +
-                "FROM books WHERE category = ? AND id <> ? LIMIT 4"
-            );
+                    "SELECT id, title, price, cover_image, category " +
+                            "FROM books WHERE category = ? AND id <> ? LIMIT 4");
             psRelated.setString(1, rs.getString("category"));
             psRelated.setInt(2, rs.getInt("id"));
             ResultSet rsRelated = psRelated.executeQuery();
