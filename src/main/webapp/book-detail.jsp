@@ -13,7 +13,7 @@
 
             <c:if test="${empty error}">
               <!-- ===== BOOK INFO ===== -->
-              <div class="flex flex-col md:flex-row bg-[#1b1b1b] rounded-lg p-6 gap-8 shadow-lg">
+              <div class="flex flex-col md:flex-row bg-white dark:bg-[#1b1b1b] rounded-lg p-6 gap-8 shadow-lg transition-colors duration-300">
                 <div class="md:w-1/3 flex justify-center items-center">
                   <img src="<c:out value='${bookImage != null && bookImage ne "" ? bookImage : "
                     https://placehold.co/400x550"}' />"
@@ -94,7 +94,7 @@
               </div>
 
               <!-- ===== BOOK DETAILS ===== -->
-              <div class="bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md">
+              <div class="bg-white dark:bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md transition-colors duration-300">
                 <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
                   Thông tin chi tiết
                 </h2>
@@ -115,7 +115,7 @@
               </div>
 
               <!-- ===== DESCRIPTION ===== -->
-              <div class="bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md">
+              <div class="bg-white dark:bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md transition-colors duration-300">
                 <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Mô tả sản phẩm</h2>
                 <div class="text-gray-300 leading-relaxed prose prose-invert max-w-none">
                   ${bookDescription}
@@ -124,7 +124,7 @@
 
               <!-- ===== RELATED BOOKS ===== -->
               <c:if test="${not empty relatedBooks}">
-                <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                <div class="bg-white dark:bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md transition-colors duration-300">
                   <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">Sản phẩm tương tự
                   </h2>
                   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
@@ -150,7 +150,7 @@
               <!-- ===== REVIEWS ===== -->
               <c:choose>
                 <c:when test="${not empty reviews}">
-                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                  <div class="bg-white dark:bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md transition-colors duration-300">
                     <!-- === Tiêu đề & Tổng quan === -->
                     <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
                       Khách hàng đánh giá
@@ -266,7 +266,7 @@
                 </c:when>
 
                 <c:otherwise>
-                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg text-gray-400 rounded-md">
+                  <div class="bg-white dark:bg-[#1b1b1b] mt-8 p-8 rounded-lg shadow-md transition-colors duration-300">
                     <i>Chưa có đánh giá nào cho cuốn sách này.</i>
                   </div>
                 </c:otherwise>
