@@ -57,9 +57,19 @@ public class BooksApiServlet extends HttpServlet {
                 case "/categories":
                     handleCategories(resp);
                     break;
+                case "/top":
+                    handleTopList(req, resp, null);
+                    break;
                 case "/":
-                default:
                     handleCatalogList(req, resp);
+                    break;
+                default:
+                    if (path.startsWith("/top/")) {
+                        String sortSegment = path.substring("/top/".length());
+                        handleTopList(req, resp, sortSegment);
+                    } else {
+                        handleCatalogList(req, resp);
+                    }
                     break;
             }
         } catch (SQLException ex) {
@@ -95,9 +105,33 @@ public class BooksApiServlet extends HttpServlet {
 
     private void handleCategories(HttpServletResponse resp) throws IOException, SQLException {
         List<String> categories = BookDAO.getAllCategories();
-    JsonObject payload = new JsonObject();
-    payload.add("data", toStringJsonArray(categories));
+        JsonObject payload = new JsonObject();
+        payload.add("data", toStringJsonArray(categories));
         payload.addProperty("count", categories.size());
+        writeJson(resp, payload);
+    }
+
+    private void handleTopList(HttpServletRequest req, HttpServletResponse resp, String pathSort) throws IOException, SQLException {
+        String sortParam = trimToNull(req.getParameter("sort"));
+        if ((sortParam == null || sortParam.isEmpty()) && pathSort != null && !pathSort.isEmpty()) {
+            sortParam = pathSort;
+        }
+        if (!BookDAO.isValidSortParam(sortParam)) {
+            sendBadRequest(resp, "Invalid sort parameter");
+            return;
+        }
+
+        SortType sortType = BookDAO.SortType.fromParam(sortParam);
+        int limit = parsePositiveInt(req.getParameter("limit"), 20, 100);
+        List<Book> books = BookDAO.getTopBooks(sortType, limit);
+
+        JsonObject payload = new JsonObject();
+        payload.addProperty("sort", sortType.getParam());
+        payload.addProperty("requestedSort", sortParam != null ? sortParam : sortType.getParam());
+        payload.addProperty("limit", limit);
+        payload.addProperty("count", books.size());
+        payload.add("data", toBookJsonArray(books));
+
         writeJson(resp, payload);
     }
 
@@ -119,7 +153,7 @@ public class BooksApiServlet extends HttpServlet {
         int totalPages = totalItems == 0 ? 0 : (int) Math.ceil((double) totalItems / pageSize);
 
         JsonObject payload = new JsonObject();
-    payload.add("data", toBookJsonArray(books));
+        payload.add("data", toBookJsonArray(books));
         payload.addProperty("page", page);
         payload.addProperty("pageSize", pageSize);
         payload.addProperty("totalItems", totalItems);
