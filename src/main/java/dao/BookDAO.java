@@ -68,11 +68,12 @@ public class BookDAO {
     private static final String BASE_SELECT =
             "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, b.stock_quantity, b.image_url, " +
             "b.created_at, b.updated_at, " +
-            "COALESCE(sales.total_sold, 0) AS total_sold, " +
-            "COALESCE(reviews.avg_rating, 0) AS average_rating, " +
-            "COALESCE(reviews.rating_count, 0) AS rating_count, " +
-            "COALESCE(favorites.favorite_count, 0) AS favorite_count " +
+            "COALESCE(sales.total_sold, metrics.total_sold, 0) AS total_sold, " +
+            "COALESCE(reviews.avg_rating, metrics.avg_rating, 0) AS average_rating, " +
+            "COALESCE(reviews.rating_count, metrics.rating_count, 0) AS rating_count, " +
+            "COALESCE(favorites.favorite_count, metrics.favorite_count, 0) AS favorite_count " +
             "FROM books b " +
+            "LEFT JOIN book_metrics metrics ON metrics.book_id = b.id " +
             "LEFT JOIN (" +
             "    SELECT book_id, SUM(quantity) AS total_sold " +
             "    FROM order_items GROUP BY book_id" +

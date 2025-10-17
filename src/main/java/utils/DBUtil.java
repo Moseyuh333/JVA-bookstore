@@ -6,7 +6,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -142,6 +145,16 @@ public class DBUtil {
 
                 ensureBooksSchema(conn);
 
+                String createBookMetricsTableSQL = "CREATE TABLE IF NOT EXISTS book_metrics (" +
+                    "book_id INTEGER PRIMARY KEY REFERENCES books(id) ON DELETE CASCADE," +
+                    "total_sold INTEGER DEFAULT 0," +
+                    "avg_rating DOUBLE PRECISION DEFAULT 0," +
+                    "rating_count INTEGER DEFAULT 0," +
+                    "favorite_count INTEGER DEFAULT 0" +
+                    ")";
+                stmt.execute(createBookMetricsTableSQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_metrics_popularity ON book_metrics(total_sold DESC, favorite_count DESC)");
+
                 String createOrdersTableSQL = "CREATE TABLE IF NOT EXISTS orders (" +
                     "id SERIAL PRIMARY KEY," +
                     "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
@@ -220,6 +233,7 @@ public class DBUtil {
 
             ensurePasswordHashColumn(conn);
             BookDataLoader.seedBooksIfEmpty(conn);
+            seedBookMetrics(conn);
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
         }
@@ -285,6 +299,74 @@ public class DBUtil {
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile books schema: " + ex.getMessage());
         }
+    }
+
+    private static void seedBookMetrics(Connection conn) {
+        try {
+            List<Long> bookIds = new ArrayList<>();
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT id FROM books ORDER BY id");
+                 ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    bookIds.add(rs.getLong(1));
+                }
+            }
+
+            if (bookIds.isEmpty()) {
+                return;
+            }
+
+            int beforeCount = countRows(conn, "book_metrics");
+        try (PreparedStatement insert = conn.prepareStatement(
+            "INSERT INTO book_metrics (book_id, total_sold, avg_rating, rating_count, favorite_count) " +
+            "VALUES (?, ?, ?, ?, ?) ON CONFLICT (book_id) DO UPDATE SET " +
+            "total_sold = EXCLUDED.total_sold, " +
+            "avg_rating = EXCLUDED.avg_rating, " +
+            "rating_count = EXCLUDED.rating_count, " +
+            "favorite_count = EXCLUDED.favorite_count")) {
+                for (Long bookId : bookIds) {
+                    Random random = new Random(20251017L + (bookId * 1973));
+                    boolean highlight = random.nextDouble() < 0.28;
+                    int totalSold = highlight ? 120 + random.nextInt(220) : random.nextInt(130);
+                    int ratingCount = highlight ? 25 + random.nextInt(70) : random.nextInt(35);
+                    double averageRating;
+                    if (ratingCount == 0) {
+                        averageRating = 0.0;
+                    } else {
+                        double base = highlight ? 4.0 : 3.1;
+                        averageRating = Math.min(5.0, base + random.nextDouble() * 1.2);
+                    }
+                    int favoriteCount = highlight ? 90 + random.nextInt(130) : random.nextInt(80);
+
+                    insert.setLong(1, bookId);
+                    insert.setInt(2, totalSold);
+                    insert.setDouble(3, Math.round(averageRating * 100.0) / 100.0);
+                    insert.setInt(4, ratingCount);
+                    insert.setInt(5, favoriteCount);
+                    insert.addBatch();
+                }
+                insert.executeBatch();
+            }
+
+            int afterCount = countRows(conn, "book_metrics");
+            if (afterCount > beforeCount) {
+                System.out.println("BookDataLoader - Seeded synthetic engagement metrics for " + (afterCount - beforeCount) + " books.");
+            } else if (!bookIds.isEmpty()) {
+                System.out.println("BookDataLoader - Refreshed synthetic engagement metrics for " + bookIds.size() + " books.");
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to seed book metrics: " + ex.getMessage());
+        }
+    }
+
+    private static int countRows(Connection conn, String tableName) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM " + tableName;
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 0;
     }
 
     private static boolean columnExists(Connection conn, String tableName, String columnName) throws SQLException {
