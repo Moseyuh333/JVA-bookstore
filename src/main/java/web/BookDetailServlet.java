@@ -74,7 +74,7 @@ public class BookDetailServlet extends HttpServlet {
 
             if (rawReviews != null && !rawReviews.trim().isEmpty()) {
                 String[] parts = rawReviews.split("\\|");
-                Pattern pattern = Pattern.compile("^\\s*([^\\(]+)\\((\\d+)⭐\\):\\s*(.*)$");
+                Pattern pattern = Pattern.compile("^\\s*([^\\(]+)\\((\\d+)\\s*⭐\\):\\s*(.*)$");
                 // nhóm 1: tên, nhóm 2: số sao, nhóm 3: nội dung sau sao
 
                 for (String part : parts) {
