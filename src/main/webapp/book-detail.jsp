@@ -150,9 +150,10 @@
               </c:if>
               <!-- ===== REVIEWS ===== -->
               <c:choose>
-                <c:when test="${not empty bookReviewsRaw}">
+
+                <!-- Ưu tiên hiển thị dữ liệu từ bảng reviews -->
+                <c:when test="${not empty reviews}">
                   <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
-                    <!-- === Tiêu đề & Tổng quan === -->
                     <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
                       Khách hàng đánh giá
                     </h2>
@@ -170,9 +171,9 @@
                               class="h-6 w-6 ${i <= bookRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
                               viewBox="0 0 20 20" fill="currentColor">
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 1.371 1.24.588 1.81l-3.39 2.463 
-                1.287 3.974c.3.922-.755 1.688-1.54 1.118L10 13.347l-3.363 2.92
-                c-.785.57-1.84-.196-1.54-1.118l1.287-3.974
-                -3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
+              1.287 3.974c.3.922-.755 1.688-1.54 1.118L10 13.347l-3.363 2.92
+              c-.785.57-1.84-.196-1.54-1.118l1.287-3.974
+              -3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
                             </svg>
                           </c:forEach>
                         </div>
@@ -192,132 +193,77 @@
                           </div>
                         </c:forEach>
                       </div>
-
-
-                      <!-- Bộ lọc -->
-                      <div class="flex flex-wrap gap-3 mb-6">
-                        <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Mới
-                          nhất</button>
-                        <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Có
-                          hình ảnh</button>
-                        <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Đã mua
-                          hàng</button>
-
-                        <c:forEach var="s" begin="1" end="5" step="1">
-                          <c:set var="star" value="${6 - s}" />
-                          <button
-                            class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">${star}
-                            sao</button>
-                        </c:forEach>
-                      </div>
-
-
-                      <!-- Danh sách đánh giá -->
-                      <div class="divide-y divide-[#333]">
-                        <c:forEach var="r" items="${reviews}">
-                          <div class="py-5">
-                            <!-- Header -->
-                            <div class="flex items-center justify-between mb-2">
-                              <div class="flex items-center gap-3">
-                                <div
-                                  class="bg-[#333] text-gray-400 rounded-full h-9 w-9 flex items-center justify-center font-bold uppercase">
-                                  ${fn:substring(r.authorName, 0, 1)}
-                                </div>
-                                <div>
-                                  <p class="text-gray-200 font-semibold">${r.authorName}</p>
-                                  <p class="text-green-400 text-xs">Đã mua hàng</p>
-                                </div>
-                              </div>
-                              <div class="text-sm text-gray-500">
-                                <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
-                              </div>
-                            </div>
-
-                            <!-- Sao + cảm nhận -->
-                            <div class="flex items-center mb-2">
-                              <c:forEach var="i" begin="1" end="5">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                  class="h-4 w-4 ${i <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
-                                  viewBox="0 0 20 20" fill="currentColor">
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 
-                  1.371 1.24.588 1.81l-3.39 2.463 
-                  1.287 3.974c.3.922-.755 
-                  1.688-1.54 1.118L10 13.347l-3.363 2.92
-                  c-.785.57-1.84-.196-1.54-1.118l1.287-3.974
-                  -3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
-                                </svg>
-                              </c:forEach>
-
-                              <span class="ml-2 text-sm text-amber-400 font-medium">
-                                <c:choose>
-                                  <c:when test="${r.rating >= 5}">Cực kì hài lòng</c:when>
-                                  <c:when test="${r.rating >= 4}">Hài lòng</c:when>
-                                  <c:when test="${r.rating >= 3}">Tạm ổn</c:when>
-                                  <c:otherwise>Không hài lòng</c:otherwise>
-                                </c:choose>
-                              </span>
-                            </div>
-
-                            <!-- Bình luận -->
-                            <p class="text-gray-300 leading-relaxed">${r.comment}</p>
-                          </div>
-                        </c:forEach>
-                      </div>
                     </div>
-                </c:when>
 
-
-                <c:when test="${not empty reviews}">
-                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
-                    <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
-                      Đánh giá từ độc giả
-                    </h2>
-
-                    <div class="space-y-6">
-                      <%-- Tách từng review bằng dấu '|' --%>
-                        <c:forEach var="rev" items="${fn:split(bookReviewsRaw, '|')}">
-                          <%-- Lấy phần trước/sau các ký tự đặc biệt --%>
-                            <c:set var="name" value="${fn:trim(fn:substringBefore(rev, '('))}" />
-                            <c:set var="afterParen" value="${fn:substringAfter(rev, '(')}" />
-                            <c:set var="starsText" value="${fn:substringBefore(afterParen, ')')}" />
-                            <c:set var="comment" value="${fn:trim(fn:substringAfter(rev, ')'))}" />
-
-                            <%-- Lấy số sao (chuyển '3⭐' → 3) --%>
-                              <c:set var="stars" value="${fn:substring(starsText, 0, 1)}" />
-
-                              <div class="bg-[#222] p-4 rounded-lg">
-                                <div class="flex justify-between items-center mb-2">
-                                  <span class="text-amber-400 font-semibold">${name}</span>
-                                  <div class="flex items-center">
-                                    <c:forEach var="i" begin="1" end="5">
-                                      <svg xmlns="http://www.w3.org/2000/svg"
-                                        class="h-4 w-4 ${i le stars ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
-                                        viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 
-                    1.371 1.24.588 1.81l-3.39 2.463 
-                    1.287 3.974c.3.922-.755 
-                    1.688-1.54 1.118L10 13.347l-3.363 2.92
-                    c-.785.57-1.84-.196-1.54-1.118l1.287-3.974
-                    -3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
-                                      </svg>
-                                    </c:forEach>
-                                  </div>
-                                </div>
-
-                                <p class="text-gray-300 leading-relaxed">${comment}</p>
+                    <!-- Danh sách đánh giá -->
+                    <div class="divide-y divide-[#333]">
+                      <c:forEach var="r" items="${reviews}">
+                        <div class="py-5">
+                          <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-3">
+                              <div
+                                class="bg-[#333] text-gray-400 rounded-full h-9 w-9 flex items-center justify-center font-bold uppercase">
+                                ${fn:substring(r.authorName, 0, 1)}
                               </div>
-                        </c:forEach>
+                              <div>
+                                <p class="text-gray-200 font-semibold">${r.authorName}</p>
+                                <p class="text-green-400 text-xs">Đã mua hàng</p>
+                              </div>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                              <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                            </div>
+                          </div>
+
+                          <div class="flex items-center mb-2">
+                            <c:forEach var="i" begin="1" end="5">
+                              <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4 ${i <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
+                                viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 
+                1.371 1.24.588 1.81l-3.39 2.463 
+                1.287 3.974c.3.922-.755 
+                1.688-1.54 1.118L10 13.347l-3.363 2.92
+                c-.785.57-1.84-.196-1.54-1.118l1.287-3.974
+                -3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
+                              </svg>
+                            </c:forEach>
+
+                            <span class="ml-2 text-sm text-amber-400 font-medium">
+                              <c:choose>
+                                <c:when test="${r.rating >= 5}">Cực kì hài lòng</c:when>
+                                <c:when test="${r.rating >= 4}">Hài lòng</c:when>
+                                <c:when test="${r.rating >= 3}">Tạm ổn</c:when>
+                                <c:otherwise>Không hài lòng</c:otherwise>
+                              </c:choose>
+                            </span>
+                          </div>
+
+                          <p class="text-gray-300 leading-relaxed">${r.comment}</p>
+                        </div>
+                      </c:forEach>
                     </div>
                   </div>
                 </c:when>
 
+                <!-- Nếu không có bảng reviews thật, fallback sang text trong books.reviews -->
+                <c:when test="${not empty bookReviewsRaw}">
+                  <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
+                      Đánh giá (từ CSV)
+                    </h2>
+                    <div class="text-gray-300 leading-relaxed prose prose-invert max-w-none">
+                      <c:out value="${bookReviewsRaw}" escapeXml="false" />
+                    </div>
+                  </div>
+                </c:when>
 
+                <!-- Nếu không có gì luôn -->
                 <c:otherwise>
                   <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg text-gray-400 rounded-md">
                     <i>Chưa có đánh giá nào cho cuốn sách này.</i>
                   </div>
                 </c:otherwise>
-
               </c:choose>
 
 
