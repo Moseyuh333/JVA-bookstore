@@ -84,7 +84,11 @@ public class AuthServlet extends HttpServlet {
         }
         
         if (BCrypt.checkpw(password, hash)) {
-            String token = JwtUtil.generateToken(username);
+            String subject = DBUtil.getEmailByUsername(username);
+            if (subject == null || subject.trim().isEmpty()) {
+                subject = username;
+            }
+            String token = JwtUtil.generateToken(subject);
             System.out.println("DEBUG Login - Token generated: " + (token != null));
             String response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
             System.out.println("DEBUG Login - Response: " + response);

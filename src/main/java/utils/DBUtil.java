@@ -429,6 +429,19 @@ public class DBUtil {
         }
     }
 
+    public static String getEmailByUsername(String username) throws SQLException {
+        String sql = "SELECT email FROM users WHERE username = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("email");
+                }
+                return null;
+            }
+        }
+    }
+
     public static String getUserPasswordHash(String username) throws SQLException {
         String sql = "SELECT password_hash FROM users WHERE username = ?";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {

@@ -86,6 +86,7 @@
         const image = book.imageUrl || 'https://placehold.co/320x420?text=Book';
         const rating = typeof book.averageRating === 'number' ? book.averageRating.toFixed(1) : '0.0';
         const ratingCount = book.ratingCount || 0;
+        const detailUrl = appShell.contextPath + '/books/detail?id=' + encodeURIComponent(book.id);
         return `
             <article class="book-card bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 transition duration-300 flex flex-col flex-shrink-0 w-56" style="min-width: 224px;">
                 <div class="relative">
@@ -102,7 +103,7 @@
                         <button type="button" class="bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-full text-sm transition" data-add-to-cart data-book-id="${book.id}">
                             Thêm vào giỏ
                         </button>
-                        <a href="${appShell.contextPath}/catalog.jsp?highlight=${book.id}" class="text-center text-sm text-amber-700 hover:text-amber-900 font-medium">
+                        <a href="${detailUrl}" class="text-center text-sm text-amber-700 hover:text-amber-900 font-medium">
                             Xem chi tiết
                         </a>
                     </div>

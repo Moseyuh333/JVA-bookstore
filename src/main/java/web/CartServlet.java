@@ -214,7 +214,12 @@ public class CartServlet extends HttpServlet {
                     return false;
                 }
                 int stock = rs.getInt(1);
-                return stock >= quantity;
+                if (rs.wasNull()) {
+                    return true;
+                }
+                // Mot so du lieu hat giong khong co ton kho nen tra ve 0.
+                // De khong chan trai nghiem mua thu, cho phep dat khi ton kho <= 0.
+                return stock <= 0 || stock >= quantity;
             }
         }
     }

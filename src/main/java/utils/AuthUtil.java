@@ -31,8 +31,22 @@ public final class AuthUtil {
     }
 
     public static String getUserEmail(HttpServletRequest request) {
+        Object cached = request.getAttribute("AUTH_USER_EMAIL");
+        if (cached instanceof String) {
+            return (String) cached;
+        }
+
         String token = getTokenFromRequest(request);
-        return JwtUtil.validateToken(token);
+        String subject = JwtUtil.validateToken(token);
+        if (subject == null || subject.trim().isEmpty()) {
+            return null;
+        }
+
+        String email = resolveEmail(subject);
+        if (email != null) {
+            request.setAttribute("AUTH_USER_EMAIL", email);
+        }
+        return email;
     }
 
     public static Long resolveUserId(HttpServletRequest request) throws SQLException {
@@ -54,6 +68,22 @@ public final class AuthUtil {
                     return userId;
                 }
             }
+        }
+        return null;
+    }
+    private static String resolveEmail(String identity) {
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "SELECT email FROM users WHERE email = ? OR username = ?")) {
+            stmt.setString(1, identity);
+            stmt.setString(2, identity);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("email");
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("AuthUtil - Unable to resolve email for identity '" + identity + "': " + ex.getMessage());
         }
         return null;
     }
