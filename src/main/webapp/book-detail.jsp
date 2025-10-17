@@ -259,23 +259,20 @@
         bar.style.width = value + '%';
       });
 
+      var contextPath = (window.appShell ? window.appShell.contextPath : '');
       var buyNowButton = document.querySelector('[data-buy-now]');
       if (buyNowButton) {
         buyNowButton.addEventListener('click', function () {
           var bookId = parseInt(buyNowButton.getAttribute('data-book-id'), 10);
           if (Number.isNaN(bookId) || bookId <= 0 || !window.cartClient) {
-            window.location.href = (window.appShell ? window.appShell.contextPath : '') + '/catalog.jsp#cart';
+            window.location.href = contextPath + '/catalog.jsp#cart';
             return;
           }
           buyNowButton.disabled = true;
           buyNowButton.classList.add('opacity-60');
           window.cartClient.addItem(bookId, 1)
             .then(function () {
-              if (window.cartUI && typeof window.cartUI.open === 'function') {
-                window.cartUI.open();
-              } else {
-                window.location.href = (window.appShell ? window.appShell.contextPath : '') + '/catalog.jsp#cart';
-              }
+              window.location.href = contextPath + '/checkout.jsp';
             })
             .catch(function (error) {
               console.error('Buy now error', error);

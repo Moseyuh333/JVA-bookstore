@@ -19,9 +19,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.Normalizer;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @WebServlet(name = "CartServlet", urlPatterns = {"/api/cart", "/api/cart/*"})
 public class CartServlet extends HttpServlet {
@@ -204,24 +208,98 @@ public class CartServlet extends HttpServlet {
         return summary;
     }
 
+    private static final Pattern DIGIT_PATTERN = Pattern.compile("(\\d+)");
+    private static final Object STOCK_COLUMN_LOCK = new Object();
+    private static volatile Boolean booksHasStockQuantityColumn;
+    private static volatile Boolean booksHasStockTextColumn;
+
     private boolean isAvailable(long bookId, int quantity) throws SQLException {
-        String sql = "SELECT stock_quantity FROM books WHERE id = ?";
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, bookId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (!rs.next()) {
-                    return false;
+        try (Connection conn = DBUtil.getConnection()) {
+            ensureBooksStockMetadata(conn);
+            if (Boolean.TRUE.equals(booksHasStockQuantityColumn)) {
+                String sql = "SELECT stock_quantity FROM books WHERE id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setLong(1, bookId);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (!rs.next()) {
+                            return false;
+                        }
+                        int stock = rs.getInt(1);
+                        if (rs.wasNull()) {
+                            return true;
+                        }
+                        // Một số nguồn dữ liệu để trống hoặc đặt 0. Cho phép đặt khi <= 0 để không chặn trải nghiệm.
+                        return stock <= 0 || stock >= quantity;
+                    }
                 }
-                int stock = rs.getInt(1);
-                if (rs.wasNull()) {
-                    return true;
+            }
+            if (Boolean.TRUE.equals(booksHasStockTextColumn)) {
+                String sql = "SELECT stock FROM books WHERE id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setLong(1, bookId);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (!rs.next()) {
+                            return false;
+                        }
+                        String raw = rs.getString(1);
+                        return textStockAllowsPurchase(raw, quantity);
+                    }
                 }
-                // Mot so du lieu hat giong khong co ton kho nen tra ve 0.
-                // De khong chan trai nghiem mua thu, cho phep dat khi ton kho <= 0.
-                return stock <= 0 || stock >= quantity;
+            }
+            return true;
+        }
+    }
+
+    private static void ensureBooksStockMetadata(Connection conn) throws SQLException {
+        if (booksHasStockQuantityColumn != null && booksHasStockTextColumn != null) {
+            return;
+        }
+        synchronized (STOCK_COLUMN_LOCK) {
+            if (booksHasStockQuantityColumn == null) {
+                booksHasStockQuantityColumn = columnExists(conn, "books", "stock_quantity");
+            }
+            if (booksHasStockTextColumn == null) {
+                booksHasStockTextColumn = columnExists(conn, "books", "stock");
             }
         }
+    }
+
+    private static boolean columnExists(Connection conn, String tableName, String columnName) throws SQLException {
+        String sql = "SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ? AND column_name = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName.toLowerCase(Locale.ROOT));
+            stmt.setString(2, columnName.toLowerCase(Locale.ROOT));
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static boolean textStockAllowsPurchase(String rawValue, int desiredQuantity) {
+        if (rawValue == null) {
+            return true;
+        }
+        String trimmed = rawValue.trim();
+        if (trimmed.isEmpty()) {
+            return true;
+        }
+        String normalized = Normalizer.normalize(trimmed, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
+        normalized = normalized.toLowerCase(Locale.ROOT);
+
+        Matcher digitMatcher = DIGIT_PATTERN.matcher(normalized);
+        if (digitMatcher.find()) {
+            try {
+                int numeric = Integer.parseInt(digitMatcher.group(1));
+                return numeric <= 0 || numeric >= desiredQuantity;
+            } catch (NumberFormatException ignored) {
+                // Ignore parsing issue and continue with text-based heuristics.
+            }
+        }
+
+        if (normalized.contains("out") || normalized.contains("het") || normalized.contains("sold")) {
+            return false;
+        }
+        return true;
     }
 
     private Map<String, Object> readJson(HttpServletRequest request) throws IOException {
