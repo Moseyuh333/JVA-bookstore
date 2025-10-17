@@ -48,7 +48,7 @@ public class BookDetailServlet extends HttpServlet {
                 req.setAttribute("bookHighlights", rs.getString("highlights"));
                 req.setAttribute("bookSpecifications", rs.getString("specifications"));
                 req.setAttribute("bookDescription", rs.getString("description"));
-                req.setAttribute("bookReviews", rs.getString("reviews"));
+                req.setAttribute("bookReviewsRaw", rs.getString("reviews"));
 
                 // --- Gợi ý sách liên quan ---
                 String category = rs.getString("category");
