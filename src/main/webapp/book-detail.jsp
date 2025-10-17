@@ -181,84 +181,89 @@
 
                       <!-- Biểu đồ tỷ lệ sao -->
                       <div class="flex-1">
-                        <c:forEach var="s" begin="5" end="1" step="-1">
+                        <c:forEach var="s" begin="1" end="5" step="1">
+                          <c:set var="star" value="${6 - s}" /> <!-- đảo ngược -->
                           <div class="flex items-center gap-2 mb-1">
-                            <span class="w-10 text-gray-300 text-sm">${s} sao</span>
+                            <span class="w-10 text-gray-300 text-sm">${star} sao</span>
                             <div class="flex-1 bg-[#333] h-2 rounded">
-                              <div class="bg-yellow-400 h-2 rounded" style="width: ${reviewStats[s]}%;"></div>
+                              <div class="bg-yellow-400 h-2 rounded" style="width: ${reviewStats[star]}%;"></div>
                             </div>
-                            <span class="w-10 text-gray-400 text-sm text-right">${reviewStats[s]}%</span>
+                            <span class="w-10 text-gray-400 text-sm text-right">${reviewStats[star]}%</span>
                           </div>
                         </c:forEach>
                       </div>
-                    </div>
 
-                    <!-- Bộ lọc -->
-                    <div class="flex flex-wrap gap-3 mb-6">
-                      <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Mới
-                        nhất</button>
-                      <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Có hình
-                        ảnh</button>
-                      <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Đã mua
-                        hàng</button>
-                      <c:forEach var="s" begin="5" end="1" step="-1">
-                        <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">${s}
-                          sao</button>
-                      </c:forEach>
-                    </div>
 
-                    <!-- Danh sách đánh giá -->
-                    <div class="divide-y divide-[#333]">
-                      <c:forEach var="r" items="${reviews}">
-                        <div class="py-5">
-                          <!-- Header -->
-                          <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-3">
-                              <div
-                                class="bg-[#333] text-gray-400 rounded-full h-9 w-9 flex items-center justify-center font-bold uppercase">
-                                ${fn:substring(r.authorName, 0, 1)}
+                      <!-- Bộ lọc -->
+                      <div class="flex flex-wrap gap-3 mb-6">
+                        <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Mới
+                          nhất</button>
+                        <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Có
+                          hình ảnh</button>
+                        <button class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">Đã mua
+                          hàng</button>
+
+                        <c:forEach var="s" begin="1" end="5" step="1">
+                          <c:set var="star" value="${6 - s}" />
+                          <button
+                            class="bg-[#2a2a2a] text-gray-300 text-sm px-4 py-1 rounded-full hover:bg-[#333]">${star}
+                            sao</button>
+                        </c:forEach>
+                      </div>
+
+
+                      <!-- Danh sách đánh giá -->
+                      <div class="divide-y divide-[#333]">
+                        <c:forEach var="r" items="${reviews}">
+                          <div class="py-5">
+                            <!-- Header -->
+                            <div class="flex items-center justify-between mb-2">
+                              <div class="flex items-center gap-3">
+                                <div
+                                  class="bg-[#333] text-gray-400 rounded-full h-9 w-9 flex items-center justify-center font-bold uppercase">
+                                  ${fn:substring(r.authorName, 0, 1)}
+                                </div>
+                                <div>
+                                  <p class="text-gray-200 font-semibold">${r.authorName}</p>
+                                  <p class="text-green-400 text-xs">Đã mua hàng</p>
+                                </div>
                               </div>
-                              <div>
-                                <p class="text-gray-200 font-semibold">${r.authorName}</p>
-                                <p class="text-green-400 text-xs">Đã mua hàng</p>
+                              <div class="text-sm text-gray-500">
+                                <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
                               </div>
                             </div>
-                            <div class="text-sm text-gray-500">
-                              <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
-                            </div>
-                          </div>
 
-                          <!-- Sao + cảm nhận -->
-                          <div class="flex items-center mb-2">
-                            <c:forEach var="i" begin="1" end="5">
-                              <svg xmlns="http://www.w3.org/2000/svg"
-                                class="h-4 w-4 ${i <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
-                                viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 
+                            <!-- Sao + cảm nhận -->
+                            <div class="flex items-center mb-2">
+                              <c:forEach var="i" begin="1" end="5">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                  class="h-4 w-4 ${i <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
+                                  viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 
                   1.371 1.24.588 1.81l-3.39 2.463 
                   1.287 3.974c.3.922-.755 
                   1.688-1.54 1.118L10 13.347l-3.363 2.92
                   c-.785.57-1.84-.196-1.54-1.118l1.287-3.974
                   -3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
-                              </svg>
-                            </c:forEach>
+                                </svg>
+                              </c:forEach>
 
-                            <span class="ml-2 text-sm text-amber-400 font-medium">
-                              <c:choose>
-                                <c:when test="${r.rating >= 5}">Cực kì hài lòng</c:when>
-                                <c:when test="${r.rating >= 4}">Hài lòng</c:when>
-                                <c:when test="${r.rating >= 3}">Tạm ổn</c:when>
-                                <c:otherwise>Không hài lòng</c:otherwise>
-                              </c:choose>
-                            </span>
+                              <span class="ml-2 text-sm text-amber-400 font-medium">
+                                <c:choose>
+                                  <c:when test="${r.rating >= 5}">Cực kì hài lòng</c:when>
+                                  <c:when test="${r.rating >= 4}">Hài lòng</c:when>
+                                  <c:when test="${r.rating >= 3}">Tạm ổn</c:when>
+                                  <c:otherwise>Không hài lòng</c:otherwise>
+                                </c:choose>
+                              </span>
+                            </div>
+
+                            <!-- Bình luận -->
+                            <p class="text-gray-300 leading-relaxed">${r.comment}</p>
                           </div>
-
-                          <!-- Bình luận -->
-                          <p class="text-gray-300 leading-relaxed">${r.comment}</p>
-                        </div>
-                      </c:forEach>
+                        </c:forEach>
+                      </div>
                     </div>
-                  </div>
                 </c:when>
 
 
