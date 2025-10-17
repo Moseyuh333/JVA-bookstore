@@ -15,7 +15,7 @@
       <!-- ===== BOOK INFO ===== -->
       <div class="flex flex-col md:flex-row bg-white rounded-lg p-6 gap-8 shadow-md text-gray-800">
         <div class="md:w-1/3 flex justify-center items-center">
-          <img src="<c:out value='${bookImage != null && bookImage ne "" ? bookImage : "https://placehold.co/400x550"}' />"
+          <img src="<c:out value='${imageUrl != null && imageUrl ne "" ? imageUrl : "https://placehold.co/400x550"}' />"
             class="rounded-lg shadow-md object-contain max-w-[320px] max-h-[480px]">
         </div>
 
@@ -127,7 +127,7 @@
             <c:forEach var="b" items="${relatedBooks}">
               <div class="bg-gray-50 rounded-lg overflow-hidden hover:shadow-lg transition">
                 <a href="${pageContext.request.contextPath}/books/detail?id=${b.id}">
-                  <img src="<c:out value='${b.coverImage != null && b.coverImage ne "" ? b.coverImage : "https://placehold.co/300x400"}' />"
+                  <img src="<c:out value='${b.imageUrl != null && b.imageUrl ne "" ? b.imageUrl : "https://placehold.co/300x400"}' />"
                     alt="${b.title}" class="w-full h-56 object-cover">
                   <div class="p-4">
                     <h3 class="text-amber-700 font-semibold text-lg truncate">${b.title}</h3>
