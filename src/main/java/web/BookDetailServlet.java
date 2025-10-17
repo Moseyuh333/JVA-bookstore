@@ -7,6 +7,8 @@ import javax.servlet.annotation.*;
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @WebServlet(name = "BookDetailServlet", urlPatterns = { "/books/detail" })
 public class BookDetailServlet extends HttpServlet {
@@ -72,37 +74,44 @@ public class BookDetailServlet extends HttpServlet {
 
             if (rawReviews != null && !rawReviews.trim().isEmpty()) {
                 String[] parts = rawReviews.split("\\|");
+                Pattern pattern = Pattern.compile("^\\s*([^\\(]+)\\((\\d+)⭐\\):\\s*(.*)$");
+                // nhóm 1: tên, nhóm 2: số sao, nhóm 3: nội dung sau sao
+
                 for (String part : parts) {
                     part = part.trim();
                     if (part.isEmpty())
                         continue;
 
-                    // --- Lấy tên, số sao, và bình luận (đã fix regex) ---
-                    String name = part.replaceAll("\\s*\\(\\d+⭐.*", "").trim();
-                    String ratingStr = part.replaceAll(".*\\((\\d+)⭐.*", "$1").trim();
+                    Matcher m = pattern.matcher(part);
+                    String name = "";
+                    String comment = "";
+                    int rating = 0;
 
-                    // Tách phần comment ổn định hơn (có thể có . hoặc ký tự sau sao)
-                    String comment = part.replaceAll(".*⭐\\).*?:\\s*", "").trim();
-
-                    // Fallback nếu comment rỗng (ví dụ không có dấu ":")
-                    if (comment.isEmpty()) {
-                        int idx = part.indexOf("):");
-                        if (idx != -1 && idx + 2 < part.length()) {
-                            comment = part.substring(idx + 2).trim();
+                    if (m.find()) {
+                        name = m.group(1).trim();
+                        try {
+                            rating = Integer.parseInt(m.group(2));
+                        } catch (Exception ignored) {
+                        }
+                        comment = m.group(3).trim();
+                    } else {
+                        // fallback: nếu không match, tách thủ công
+                        int sep = part.indexOf(':');
+                        if (sep != -1) {
+                            name = part.substring(0, sep).replaceAll("\\(.*\\)", "").trim();
+                            comment = part.substring(sep + 1).trim();
+                        } else {
+                            name = part.trim();
                         }
                     }
 
-                    // Xử lý rating (phòng lỗi)
-                    int rating = 0;
-                    try {
-                        rating = Integer.parseInt(ratingStr);
-                    } catch (Exception ignored) {
-                    }
+                    // Dọn text: bỏ bullet đầu dòng, dấu **, khoảng trắng thừa
+                    comment = comment
+                            .replaceAll("^[-•\\s]+", "")
+                            .replaceAll("\\*+", "")
+                            .replaceAll("\\s{2,}", " ")
+                            .trim();
 
-                    // Dọn comment: xóa dấu ** (markdown) nếu có
-                    comment = comment.replaceAll("\\*+", "").trim();
-
-                    // --- Đưa vào danh sách ---
                     Map<String, Object> r = new HashMap<>();
                     r.put("authorName", name.isEmpty() ? "Ẩn danh" : name);
                     r.put("rating", rating);
