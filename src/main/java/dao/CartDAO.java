@@ -373,6 +373,30 @@ public final class CartDAO {
                         "CONSTRAINT chk_carts_status CHECK (status IN ('active','merged','abandoned','checked_out'))" +
                         ")");
 
+                stmt.execute("ALTER TABLE carts ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active'");
+                stmt.execute("ALTER TABLE carts ALTER COLUMN status SET DEFAULT 'active'");
+                stmt.execute("UPDATE carts SET status = 'active' WHERE status IS NULL");
+
+                stmt.execute("ALTER TABLE carts ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'VND'");
+                stmt.execute("ALTER TABLE carts ALTER COLUMN currency SET DEFAULT 'VND'");
+                stmt.execute("UPDATE carts SET currency = 'VND' WHERE currency IS NULL OR currency = ''");
+
+                stmt.execute("ALTER TABLE carts ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("ALTER TABLE carts ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("UPDATE carts SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
+
+                stmt.execute("ALTER TABLE carts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("ALTER TABLE carts ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("UPDATE carts SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
+
+                try {
+                    stmt.execute("ALTER TABLE carts ADD CONSTRAINT chk_carts_status CHECK (status IN ('active','merged','abandoned','checked_out'))");
+                } catch (SQLException ex) {
+                    if (!"42710".equals(ex.getSQLState())) {
+                        throw ex;
+                    }
+                }
+
                 stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_carts_session_active ON carts(session_id) WHERE status = 'active'");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_carts_user ON carts(user_id)");
 
@@ -386,6 +410,18 @@ public final class CartDAO {
                         "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                         "CONSTRAINT uq_cart_items_cart_book UNIQUE (cart_id, book_id)" +
                         ")");
+
+                stmt.execute("ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS unit_price DECIMAL(12,2) DEFAULT 0");
+                stmt.execute("ALTER TABLE cart_items ALTER COLUMN unit_price SET DEFAULT 0");
+                stmt.execute("UPDATE cart_items SET unit_price = 0 WHERE unit_price IS NULL");
+
+                stmt.execute("ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("ALTER TABLE cart_items ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("UPDATE cart_items SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
+
+                stmt.execute("ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("ALTER TABLE cart_items ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("UPDATE cart_items SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
 
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart ON cart_items(cart_id)");
 

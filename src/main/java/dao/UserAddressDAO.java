@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ public final class UserAddressDAO {
     }
 
     public static List<UserAddress> findByUser(long userId) throws SQLException {
+        ensureSchema();
         String sql = "SELECT id, user_id, label, recipient_name, phone, line1, line2, ward, district, city, "
                 + "province, postal_code, country, is_default, note, created_at, updated_at "
                 + "FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, updated_at DESC, id DESC";
@@ -35,6 +37,7 @@ public final class UserAddressDAO {
     }
 
     public static UserAddress findById(long userId, long addressId) throws SQLException {
+        ensureSchema();
         String sql = "SELECT id, user_id, label, recipient_name, phone, line1, line2, ward, district, city, "
                 + "province, postal_code, country, is_default, note, created_at, updated_at "
                 + "FROM user_addresses WHERE user_id = ? AND id = ?";
@@ -52,6 +55,7 @@ public final class UserAddressDAO {
     }
 
     public static UserAddress create(UserAddress address) throws SQLException {
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -98,6 +102,7 @@ public final class UserAddressDAO {
     }
 
     public static UserAddress update(UserAddress address) throws SQLException {
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -145,6 +150,7 @@ public final class UserAddressDAO {
     }
 
     public static void delete(long userId, long addressId) throws SQLException {
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -169,6 +175,7 @@ public final class UserAddressDAO {
     }
 
     public static void setDefault(long userId, long addressId) throws SQLException {
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -180,6 +187,66 @@ public final class UserAddressDAO {
                 throw ex;
             } finally {
                 conn.setAutoCommit(true);
+            }
+        }
+    }
+
+    private static volatile boolean schemaReady = false;
+
+    private static void ensureSchema() throws SQLException {
+        if (schemaReady) {
+            return;
+        }
+        synchronized (UserAddressDAO.class) {
+            if (schemaReady) {
+                return;
+            }
+            try (Connection conn = DBUtil.getConnection();
+                 Statement stmt = conn.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS user_addresses (" +
+                        "id SERIAL PRIMARY KEY," +
+                        "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
+                        "label VARCHAR(50)," +
+                        "recipient_name VARCHAR(255) NOT NULL," +
+                        "phone VARCHAR(20) NOT NULL," +
+                        "line1 VARCHAR(255) NOT NULL," +
+                        "line2 VARCHAR(255)," +
+                        "ward VARCHAR(100)," +
+                        "district VARCHAR(100)," +
+                        "city VARCHAR(100)," +
+                        "province VARCHAR(100)," +
+                        "postal_code VARCHAR(20)," +
+                        "country VARCHAR(100) DEFAULT 'Việt Nam'," +
+                        "is_default BOOLEAN DEFAULT FALSE," +
+                        "note TEXT," +
+                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                        "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                        ")");
+
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS label VARCHAR(50)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS recipient_name VARCHAR(255)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS phone VARCHAR(20)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS line1 VARCHAR(255)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS line2 VARCHAR(255)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS ward VARCHAR(100)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS district VARCHAR(100)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS city VARCHAR(100)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS province VARCHAR(100)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS postal_code VARCHAR(20)");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS country VARCHAR(100) DEFAULT 'Việt Nam'");
+                stmt.execute("ALTER TABLE user_addresses ALTER COLUMN country SET DEFAULT 'Việt Nam'");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT FALSE");
+                stmt.execute("ALTER TABLE user_addresses ALTER COLUMN is_default SET DEFAULT FALSE");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS note TEXT");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("ALTER TABLE user_addresses ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("ALTER TABLE user_addresses ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                stmt.execute("ALTER TABLE user_addresses ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP");
+
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_addresses_user ON user_addresses(user_id)");
+                stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_user_addresses_default_true ON user_addresses(user_id) WHERE is_default");
+
+                schemaReady = true;
             }
         }
     }
