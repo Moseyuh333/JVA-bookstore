@@ -324,22 +324,38 @@ public final class CartDAO {
     }
 
     private static BigDecimal findBookPrice(Connection conn, long bookId) throws SQLException {
-        String sql = "SELECT price, original_price FROM books WHERE id = ?";
+        boolean canUseOriginalPrice = hasOriginalPriceColumn(conn);
+        String sql = "SELECT price" + (canUseOriginalPrice ? ", original_price" : "") + " FROM books WHERE id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, bookId);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    BigDecimal price = rs.getBigDecimal("price");
-                    if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
-                        BigDecimal fallback = rs.getBigDecimal("original_price");
-                        if (fallback != null && fallback.compareTo(BigDecimal.ZERO) > 0) {
-                            price = fallback;
-                        }
-                    }
-                    return price;
+                if (!rs.next()) {
+                    return null;
                 }
-                return null;
+                BigDecimal price = rs.getBigDecimal("price");
+                if ((price == null || price.compareTo(BigDecimal.ZERO) <= 0) && canUseOriginalPrice) {
+                    BigDecimal fallback = rs.getBigDecimal("original_price");
+                    if (fallback != null && fallback.compareTo(BigDecimal.ZERO) > 0) {
+                        price = fallback;
+                    }
+                }
+                return price;
             }
+        }
+    }
+
+    private static volatile Boolean booksHasOriginalPriceColumn;
+
+    private static boolean hasOriginalPriceColumn(Connection conn) throws SQLException {
+        Boolean cached = booksHasOriginalPriceColumn;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (CartDAO.class) {
+            if (booksHasOriginalPriceColumn == null) {
+                booksHasOriginalPriceColumn = columnExists(conn, "books", "original_price");
+            }
+            return booksHasOriginalPriceColumn;
         }
     }
 
@@ -392,13 +408,8 @@ public final class CartDAO {
                     stmt.execute("ALTER TABLE carts ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP");
                     stmt.execute("UPDATE carts SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
 
-                    try {
-                        stmt.execute("ALTER TABLE carts ADD CONSTRAINT chk_carts_status CHECK (status IN ('active','merged','abandoned','checked_out'))");
-                    } catch (SQLException ex) {
-                        if (!"42710".equals(ex.getSQLState())) {
-                            throw ex;
-                        }
-                    }
+                    ensureConstraint(conn, stmt, "carts", "chk_carts_status",
+                            "ALTER TABLE carts ADD CONSTRAINT chk_carts_status CHECK (status IN ('active','merged','abandoned','checked_out'))");
 
                     stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_carts_session_active ON carts(session_id) WHERE status = 'active'");
                     stmt.execute("CREATE INDEX IF NOT EXISTS idx_carts_user ON carts(user_id)");
@@ -451,6 +462,23 @@ public final class CartDAO {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, tableName.toLowerCase());
             stmt.setString(2, columnName.toLowerCase());
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static void ensureConstraint(Connection conn, Statement stmt, String tableName, String constraintName, String alterSql) throws SQLException {
+        if (!constraintExists(conn, tableName, constraintName)) {
+            stmt.execute(alterSql);
+        }
+    }
+
+    private static boolean constraintExists(Connection conn, String tableName, String constraintName) throws SQLException {
+        String sql = "SELECT 1 FROM information_schema.table_constraints WHERE table_schema = current_schema() AND table_name = ? AND constraint_name = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName.toLowerCase());
+            stmt.setString(2, constraintName.toLowerCase());
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
             }
