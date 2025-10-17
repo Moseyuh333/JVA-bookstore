@@ -233,6 +233,7 @@ public class DBUtil {
 
             ensurePasswordHashColumn(conn);
             BookDataLoader.seedBooksIfEmpty(conn);
+            BookDataLoader.refreshBookAssets(conn);
             seedBookMetrics(conn);
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
