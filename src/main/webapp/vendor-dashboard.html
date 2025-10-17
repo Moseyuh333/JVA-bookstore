@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Vendor Dashboard</title>
+  <style>body{font-family:Segoe UI, Arial; padding:20px;} .card{border:1px solid #ddd;padding:16px;margin:8px 0;border-radius:6px}</style>
+</head>
+<body>
+  <h1>Vendor Dashboard (Preview)</h1>
+  <p>Use the seeded account: <strong>vendor</strong> / <strong>123</strong></p>
+  <div class="card">
+    <h3>Login</h3>
+    <form id="loginForm">
+      <input name="username" placeholder="username" value="vendor" />
+      <input name="password" placeholder="password" value="123" />
+      <button type="submit">Login</button>
+    </form>
+    <pre id="loginResult"></pre>
+  </div>
+  <div class="card">
+    <h3>Profile (requires token)</h3>
+    <button id="profileBtn">Get Profile</button>
+    <pre id="profileResult"></pre>
+  </div>
+
+  <script>
+    let token = null;
+    document.getElementById('loginForm').addEventListener('submit', async function(e){
+      e.preventDefault();
+      const u = e.target.username.value; const p = e.target.password.value;
+      const params = new URLSearchParams(); params.append('username', u); params.append('password', p);
+      const res = await fetch('/api/login', {method:'POST', body: params});
+      const txt = await res.text();
+      document.getElementById('loginResult').innerText = txt;
+      try{ const j = JSON.parse(txt); if (j.token) { token = j.token; } }catch(err){}
+    });
+    document.getElementById('profileBtn').addEventListener('click', async ()=>{
+      if (!token) { alert('Login first'); return; }
+      const res = await fetch('/vendor/profile', {headers: { 'Authorization': 'Bearer '+token }});
+      const txt = await res.text(); document.getElementById('profileResult').innerText = txt;
+    });
+  </script>
+</body>
+</html>

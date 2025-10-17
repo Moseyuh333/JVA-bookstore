@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Vendor - Stores</title>
+  <style>body{font-family:Segoe UI, Arial;padding:20px;} .card{border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:6px}</style>
+</head>
+<body>
+  <h1>Quản lý cửa hàng</h1>
+  <p>Đăng nhập bằng tài khoản vendor (vendor / 123) trên trang Dashboard hoặc dùng form ở đây.</p>
+
+  <div class="card">
+    <h3>Đăng nhập</h3>
+    <form id="loginForm">
+      <input name="username" placeholder="username" value="vendor" />
+      <input name="password" placeholder="password" value="123" />
+      <button type="submit">Login</button>
+    </form>
+    <pre id="loginResult"></pre>
+  </div>
+
+  <div class="card">
+    <h3>Tạo cửa hàng mới</h3>
+    <form id="createForm">
+      <input name="name" placeholder="Tên cửa hàng" />
+      <input name="slug" placeholder="slug (unique)" />
+      <input name="avatar_url" placeholder="avatar URL" />
+      <input name="cover_url" placeholder="cover URL" />
+      <textarea name="description" placeholder="Mô tả" rows="3"></textarea>
+      <button type="submit">Tạo</button>
+    </form>
+    <pre id="createResult"></pre>
+  </div>
+
+  <div class="card">
+    <h3>Danh sách cửa hàng</h3>
+    <button id="listBtn">Tải danh sách</button>
+    <pre id="storesResult"></pre>
+  </div>
+
+  <script>
+    let token = null;
+    document.getElementById('loginForm').addEventListener('submit', async function(e){
+      e.preventDefault();
+      const u = e.target.username.value; const p = e.target.password.value;
+      const params = new URLSearchParams(); params.append('username', u); params.append('password', p);
+      const res = await fetch('/api/login', {method:'POST', body: params});
+      const txt = await res.text();
+      document.getElementById('loginResult').innerText = txt;
+      try{ const j = JSON.parse(txt); if (j.token) { token = j.token; } }catch(err){}
+    });
+
+    document.getElementById('createForm').addEventListener('submit', async function(e){
+      e.preventDefault();
+      if (!token) { alert('Đăng nhập trước'); return; }
+      const fd = new FormData(e.target);
+      const params = new URLSearchParams();
+      for (const [k,v] of fd.entries()) params.append(k, v);
+      const res = await fetch('/vendor/stores', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: params });
+      const txt = await res.text(); document.getElementById('createResult').innerText = txt;
+    });
+
+    document.getElementById('listBtn').addEventListener('click', async function(){
+      if (!token) { alert('Đăng nhập trước'); return; }
+      const res = await fetch('/vendor/stores', { headers: { 'Authorization': 'Bearer ' + token } });
+      const txt = await res.text(); document.getElementById('storesResult').innerText = txt;
+    });
+  </script>
+</body>
+</html>

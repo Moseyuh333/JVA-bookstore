@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import org.mindrot.jbcrypt.BCrypt;
 import java.util.Random;
 import java.io.InputStream;
 import java.net.URI;
@@ -66,6 +67,7 @@ public class DBUtil {
                     "email VARCHAR(100) UNIQUE NOT NULL," +
                     "password_hash VARCHAR(255) NOT NULL," +
                     "email_verified BOOLEAN DEFAULT FALSE," +
+                    "role VARCHAR(30) DEFAULT 'user'," +
                     "verification_token VARCHAR(255)," +
                     "reset_token VARCHAR(255)," +
                     "reset_expiry TIMESTAMP," +
@@ -109,6 +111,49 @@ public class DBUtil {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)");
+
+                // Create vendor/store related tables
+                String createStoresSQL = "CREATE TABLE IF NOT EXISTS stores (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
+                    "name VARCHAR(255) NOT NULL," +
+                    "slug VARCHAR(255) UNIQUE NOT NULL," +
+                    "description TEXT," +
+                    "avatar_url VARCHAR(500)," +
+                    "cover_url VARCHAR(500)," +
+                    "is_active BOOLEAN DEFAULT TRUE," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createStoresSQL);
+
+                String createStoreStaffSQL = "CREATE TABLE IF NOT EXISTS store_staff (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE," +
+                    "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
+                    "role VARCHAR(50) DEFAULT 'staff'," +
+                    "added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "UNIQUE (store_id, user_id)" +
+                    ")";
+                stmt.execute(createStoreStaffSQL);
+
+                String createStoreWalletsSQL = "CREATE TABLE IF NOT EXISTS store_wallets (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE," +
+                    "balance DECIMAL(14,2) DEFAULT 0," +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createStoreWalletsSQL);
+
+                String createStoreTransactionsSQL = "CREATE TABLE IF NOT EXISTS store_transactions (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE," +
+                    "amount DECIMAL(14,2) NOT NULL," +
+                    "type VARCHAR(20) NOT NULL," +
+                    "notes TEXT," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createStoreTransactionsSQL);
                 
                 // Create OTP verifications table
                 String createOTPTableSQL = "CREATE TABLE IF NOT EXISTS otp_verifications (" +
@@ -235,8 +280,36 @@ public class DBUtil {
             BookDataLoader.seedBooksIfEmpty(conn);
             BookDataLoader.refreshBookAssets(conn);
             seedBookMetrics(conn);
+            seedDefaultVendor(conn);
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
+        }
+    }
+
+    private static void seedDefaultVendor(Connection conn) {
+        try {
+            // Check if vendor user exists
+            try (PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM users WHERE username = 'vendor'")) {
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        System.out.println("Default vendor account already exists");
+                        return;
+                    }
+                }
+            }
+
+            String passwordHash = BCrypt.hashpw("123", BCrypt.gensalt());
+            try (PreparedStatement insert = conn.prepareStatement(
+                    "INSERT INTO users (username, email, password_hash, email_verified, role) VALUES (?, ?, ?, true, 'vendor')")) {
+                insert.setString(1, "vendor");
+                insert.setString(2, "vendor@example.com");
+                insert.setString(3, passwordHash);
+                insert.executeUpdate();
+            }
+
+            System.out.println("Seeded default vendor account -> username: vendor, password: 123");
+        } catch (SQLException ex) {
+            System.err.println("Unable to seed default vendor: " + ex.getMessage());
         }
     }
 
@@ -409,6 +482,48 @@ public class DBUtil {
         }
     }
 
+    // Stores helpers
+    public static long createStore(long ownerId, String name, String slug, String description, String avatarUrl, String coverUrl) throws SQLException {
+        String sql = "INSERT INTO stores (owner_id, name, slug, description, avatar_url, cover_url) VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, ownerId);
+            pstmt.setString(2, name);
+            pstmt.setString(3, slug);
+            pstmt.setString(4, description);
+            pstmt.setString(5, avatarUrl);
+            pstmt.setString(6, coverUrl);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+            }
+        }
+        return -1;
+    }
+
+    public static List<java.util.Map<String, Object>> listStoresByOwner(long ownerId) throws SQLException {
+        String sql = "SELECT id, name, slug, description, avatar_url, cover_url, is_active, created_at FROM stores WHERE owner_id = ? ORDER BY id DESC";
+        List<java.util.Map<String, Object>> out = new ArrayList<>();
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, ownerId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    java.util.Map<String, Object> m = new java.util.HashMap<>();
+                    m.put("id", rs.getLong("id"));
+                    m.put("name", rs.getString("name"));
+                    m.put("slug", rs.getString("slug"));
+                    m.put("description", rs.getString("description"));
+                    m.put("avatar_url", rs.getString("avatar_url"));
+                    m.put("cover_url", rs.getString("cover_url"));
+                    m.put("is_active", rs.getBoolean("is_active"));
+                    m.put("created_at", rs.getTimestamp("created_at"));
+                    out.add(m);
+                }
+            }
+        }
+        return out;
+    }
+
     public static boolean userExists(String username) throws SQLException {
         String sql = "SELECT 1 FROM users WHERE username = ?";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -440,6 +555,32 @@ public class DBUtil {
                 return null;
             }
         }
+    }
+
+    public static String getUserRole(String username) throws SQLException {
+        String sql = "SELECT role FROM users WHERE username = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("role");
+                }
+                return "user";
+            }
+        }
+    }
+
+    public static Long getUserIdByUsername(String username) throws SQLException {
+        String sql = "SELECT id FROM users WHERE username = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong("id");
+                }
+            }
+        }
+        return null;
     }
 
     public static boolean isUserVerified(String username) throws SQLException {

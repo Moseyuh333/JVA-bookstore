@@ -16,22 +16,41 @@ public class JwtUtil {
     private static final long EXPIRATION_TIME = 86400000L; // 1 day in ms
 
     public static String generateToken(String username) {
+        return generateToken(username, "user");
+    }
+
+    public static String generateToken(String username, String role) {
         return Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setSubject(username)
+                .claim("role", role)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SECRET_KEY)
                 .compact();
     }
 
     public static String validateToken(String token) {
         try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(SECRET_KEY)
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(SECRET_KEY)
                     .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+                    .parseClaimsJws(token)
+                    .getBody();
             return claims.getSubject();
+        } catch (JwtException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public static String getRoleFromToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(SECRET_KEY)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            Object role = claims.get("role");
+            return role != null ? role.toString() : "user";
         } catch (JwtException | IllegalArgumentException e) {
             return null;
         }

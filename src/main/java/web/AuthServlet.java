@@ -84,9 +84,10 @@ public class AuthServlet extends HttpServlet {
         }
         
         if (BCrypt.checkpw(password, hash)) {
-            String token = JwtUtil.generateToken(username);
+            String role = DBUtil.getUserRole(username);
+            String token = JwtUtil.generateToken(username, role != null ? role : "user");
             System.out.println("DEBUG Login - Token generated: " + (token != null));
-            String response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
+            String response = "{\"token\":\"" + token + "\", \"role\":\"" + (role != null ? role : "user") + "\", \"message\":\"Login successful\"}";
             System.out.println("DEBUG Login - Response: " + response);
             out.write(response);
         } else {
