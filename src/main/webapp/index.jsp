@@ -14,6 +14,10 @@
         .hero-bg { background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('http://static.photos/books/1200x630/42'); background-size: cover; background-position: center; }
         .book-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
         .title-font { font-family: 'Playfair Display', serif; }
+        .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .home-scroll-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.92); color: #92400e; padding: 0.6rem; border-radius: 9999px; box-shadow: 0 10px 20px -15px rgba(0, 0, 0, 0.35); transition: background 0.2s ease, color 0.2s ease; z-index: 10; }
+        .home-scroll-btn:hover { background: #d97706; color: #fff; }
     </style>
 </head>
 <body class="bg-gray-50">
