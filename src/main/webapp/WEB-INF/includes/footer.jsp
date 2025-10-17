@@ -1,9 +1,14 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<footer class="bg-gray-900 text-gray-300 mt-20">
-  <div class="container mx-auto px-4 py-12">
+<footer class="bg-gray-900 text-gray-300 py-12 px-4 mt-16">
+  <div class="container mx-auto">
+    <div class="flex justify-center mb-10">
+      <span class="inline-flex items-center gap-2 bg-gray-800 text-amber-200 px-4 py-2 rounded-full text-sm shadow-sm">
+        <i data-feather="shield" class="w-4 h-4"></i>
+        <span>&copy; <span id="year"></span> Bookish Bliss Haven · Mọi quyền được bảo lưu</span>
+      </span>
+    </div>
 
-    <!-- Grid nội dung footer -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
       <div>
         <h3 class="title-font text-white text-xl font-bold mb-4">Bookish Bliss Haven</h3>
         <p class="mb-4">Nguồn sách chất lượng và cảm hứng văn học đáng tin cậy của bạn.</p>
@@ -54,14 +59,6 @@
         </address>
       </div>
     </div>
-
-    <!-- Dòng bản quyền -->
-    <div class="border-t border-gray-700 pt-6 text-center">
-      <span class="inline-flex items-center justify-center gap-2 bg-gray-800 text-amber-300 px-5 py-2 rounded-full text-base font-medium shadow-md">
-        <i data-feather="shield" class="w-5 h-5"></i>
-        <span>&copy; <span id="year"></span> Bookish Bliss Haven · Mọi quyền được bảo lưu</span>
-      </span>
-    </div>
   </div>
 </footer>
 
@@ -70,3 +67,4 @@
   const y = document.getElementById('year');
   if (y) y.textContent = new Date().getFullYear();
 </script>
+</body>
