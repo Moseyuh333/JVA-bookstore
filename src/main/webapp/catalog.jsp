@@ -13,7 +13,7 @@
         body { font-family: 'Roboto', sans-serif; }
         .title-font { font-family: 'Playfair Display', serif; }
         .catalog-hero {
-            background: linear-gradient(135deg, rgba(120, 53, 15, 0.92), rgba(146, 64, 14, 0.85)), url('http://static.photos/books/1200x630/41');
+            background: linear-gradient(135deg, rgba(120, 53, 15, 0.92), rgba(146, 64, 14, 0.85)), url('https://static.photos/books/1200x630/41');
             background-size: cover;
             background-position: center;
         }
