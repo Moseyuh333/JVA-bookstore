@@ -232,8 +232,9 @@
                                 </c:choose>
                               </span>
                             </div>
-
-                            <p class="text-gray-700 leading-relaxed">${r.comment}</p>
+                            <p class="text-gray-700 leading-relaxed whitespace-pre-line break-words">
+                              <c:out value="${r.comment}" />
+                            </p>
                           </div>
                         </c:forEach>
                       </div>
