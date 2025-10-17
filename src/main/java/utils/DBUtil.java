@@ -128,7 +128,7 @@ public class DBUtil {
                     "title VARCHAR(255) NOT NULL," +
                     "author VARCHAR(255)," +
                     "isbn VARCHAR(20)," +
-                    "price DECIMAL(10, 2) NOT NULL," +
+                    "price DECIMAL(10, 2)," +
                     "description TEXT," +
                     "category VARCHAR(100)," +
                     "stock_quantity INTEGER DEFAULT 0," +
@@ -139,6 +139,8 @@ public class DBUtil {
                 stmt.execute(createBooksTableSQL);
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_books_category ON books(category)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_books_title ON books(title)");
+
+                ensureBooksSchema(conn);
 
                 String createOrdersTableSQL = "CREATE TABLE IF NOT EXISTS orders (" +
                     "id SERIAL PRIMARY KEY," +
@@ -240,6 +242,48 @@ public class DBUtil {
             }
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile password column: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureBooksSchema(Connection conn) {
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "books", "isbn")) {
+                stmt.execute("ALTER TABLE books ADD COLUMN isbn VARCHAR(20)");
+            }
+
+            if (!columnExists(conn, "books", "price")) {
+                stmt.execute("ALTER TABLE books ADD COLUMN price DECIMAL(10, 2)");
+            }
+            stmt.execute("UPDATE books SET price = COALESCE(price, 0)");
+
+            if (!columnExists(conn, "books", "description")) {
+                stmt.execute("ALTER TABLE books ADD COLUMN description TEXT");
+            }
+
+            if (!columnExists(conn, "books", "category")) {
+                stmt.execute("ALTER TABLE books ADD COLUMN category VARCHAR(100)");
+            }
+
+            if (!columnExists(conn, "books", "stock_quantity")) {
+                stmt.execute("ALTER TABLE books ADD COLUMN stock_quantity INTEGER DEFAULT 0");
+            }
+            stmt.execute("UPDATE books SET stock_quantity = COALESCE(stock_quantity, 0)");
+
+            if (!columnExists(conn, "books", "image_url")) {
+                stmt.execute("ALTER TABLE books ADD COLUMN image_url VARCHAR(500)");
+            }
+
+            if (!columnExists(conn, "books", "created_at")) {
+                stmt.execute("ALTER TABLE books ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE books SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
+
+            if (!columnExists(conn, "books", "updated_at")) {
+                stmt.execute("ALTER TABLE books ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE books SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile books schema: " + ex.getMessage());
         }
     }
 
