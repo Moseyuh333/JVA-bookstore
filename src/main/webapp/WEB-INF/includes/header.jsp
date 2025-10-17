@@ -15,7 +15,7 @@
             }
 
             .hero-bg {
-                background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('http://static.photos/books/1200x630/42');
+                background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://static.photos/books/1200x630/42');
                 background-size: cover;
                 background-position: center;
             }
