@@ -102,6 +102,8 @@
         const title = appShell.escapeHtml(book.title || 'Sách chưa cập nhật');
         const author = appShell.escapeHtml(book.author || 'Đang cập nhật');
         const price = appShell.formatCurrency(book.price);
+        // Debug: log imageUrl for troubleshooting
+        console.log('Book imageUrl:', book.imageUrl, '| title:', book.title);
         const image = book.imageUrl || 'https://placehold.co/320x420?text=Book';
         const rating = typeof book.averageRating === 'number' ? book.averageRating.toFixed(1) : '0.0';
         const ratingCount = book.ratingCount || 0;
