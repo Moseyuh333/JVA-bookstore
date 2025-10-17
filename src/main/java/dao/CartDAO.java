@@ -437,6 +437,9 @@ public final class CartDAO {
                     stmt.execute("ALTER TABLE cart_items ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP");
                     stmt.execute("UPDATE cart_items SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
 
+                    consolidateCartItemDuplicates(conn);
+                    ensureCartItemsUniqueConstraint(conn, stmt);
+
                     stmt.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart ON cart_items(cart_id)");
 
                     conn.commit();
@@ -481,6 +484,40 @@ public final class CartDAO {
             stmt.setString(2, constraintName.toLowerCase());
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
+            }
+        }
+    }
+
+    private static void consolidateCartItemDuplicates(Connection conn) throws SQLException {
+        String aggregateSql = "WITH ranked AS ( "
+                + "SELECT id, cart_id, book_id, quantity, unit_price, "
+                + "ROW_NUMBER() OVER (PARTITION BY cart_id, book_id ORDER BY id) rn, "
+                + "SUM(quantity) OVER (PARTITION BY cart_id, book_id) total_qty "
+                + "FROM cart_items ) "
+                + "UPDATE cart_items ci SET quantity = ranked.total_qty, updated_at = CURRENT_TIMESTAMP "
+                + "FROM ranked WHERE ci.id = ranked.id AND ranked.rn = 1";
+
+        String deleteSql = "WITH ranked AS ( "
+                + "SELECT id, ROW_NUMBER() OVER (PARTITION BY cart_id, book_id ORDER BY id) rn "
+                + "FROM cart_items ) "
+                + "DELETE FROM cart_items WHERE id IN (SELECT id FROM ranked WHERE rn > 1)";
+
+        try (Statement cleanup = conn.createStatement()) {
+            cleanup.executeUpdate(aggregateSql);
+            cleanup.executeUpdate(deleteSql);
+        }
+    }
+
+    private static void ensureCartItemsUniqueConstraint(Connection conn, Statement stmt) throws SQLException {
+        if (constraintExists(conn, "cart_items", "uq_cart_items_cart_book")) {
+            return;
+        }
+        try {
+            stmt.execute("ALTER TABLE cart_items ADD CONSTRAINT uq_cart_items_cart_book UNIQUE (cart_id, book_id)");
+        } catch (SQLException ex) {
+            String sqlState = ex.getSQLState();
+            if (!"42710".equals(sqlState)) { // duplicate_object
+                throw ex;
             }
         }
     }
