@@ -102,18 +102,13 @@
         const title = appShell.escapeHtml(book.title || 'Sách chưa cập nhật');
         const author = appShell.escapeHtml(book.author || 'Đang cập nhật');
         const price = appShell.formatCurrency(book.price);
-        // Normalize image URL and provide fallback
-        const rawImage = (book.imageUrl || '').trim();
-        let image = rawImage && rawImage.length > 0 ? rawImage : 'https://placehold.co/320x420?text=Book';
-        if (/^http:\/\//i.test(image)) {
-            image = image.replace(/^http:\/\//i, 'https://');
-        }
+        const image = book.imageUrl || 'https://placehold.co/320x420?text=Book';
         const rating = typeof book.averageRating === 'number' ? book.averageRating.toFixed(1) : '0.0';
         const ratingCount = book.ratingCount || 0;
         return `
             <article class="book-card flex-none snap-start bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 transition duration-300 flex flex-col w-64 min-w-[16rem]">
                 <div class="relative">
-                    <img src="${image}" alt="${title}" class="w-full h-56 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/320x420?text=Book';">
+                    <img src="${image}" alt="${title}" class="w-full h-56 object-cover">
                     <span class="absolute top-3 left-3 bg-white/90 text-amber-700 text-xs font-semibold px-2 py-1 rounded-full shadow-sm">
                         ${rating} ★ (${ratingCount})
                     </span>
