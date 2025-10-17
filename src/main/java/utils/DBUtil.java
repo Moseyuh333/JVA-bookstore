@@ -198,8 +198,42 @@ public class DBUtil {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_user_id ON book_reviews(user_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_status ON book_reviews(status)");
             }
+
+            ensurePasswordHashColumn(conn);
+            BookDataLoader.seedBooksIfEmpty(conn);
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
+        }
+    }
+
+    private static void ensurePasswordHashColumn(Connection conn) {
+        try {
+            boolean hasPasswordHash = columnExists(conn, "users", "password_hash");
+            boolean hasLegacyPassword = columnExists(conn, "users", "password");
+
+            try (Statement stmt = conn.createStatement()) {
+                if (!hasPasswordHash) {
+                    stmt.execute("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)");
+                }
+
+                if (hasLegacyPassword) {
+                    stmt.execute("UPDATE users SET password_hash = password WHERE password_hash IS NULL");
+                    stmt.execute("ALTER TABLE users DROP COLUMN password");
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile password column: " + ex.getMessage());
+        }
+    }
+
+    private static boolean columnExists(Connection conn, String tableName, String columnName) throws SQLException {
+        String sql = "SELECT 1 FROM information_schema.columns WHERE table_name = ? AND column_name = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName);
+            stmt.setString(2, columnName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 
