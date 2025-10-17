@@ -26,6 +26,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -246,6 +247,7 @@ public class ProfileServlet extends HttpServlet {
             }
             
             try (Connection conn = DBUtil.getConnection()) {
+                ensureBirthDateColumnExists(conn);
                 String sql = "SELECT id, email, full_name, phone, birth_date, address, created_at FROM users WHERE email = ?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, email);
@@ -314,6 +316,7 @@ public class ProfileServlet extends HttpServlet {
             }
             
             try (Connection conn = DBUtil.getConnection()) {
+                ensureBirthDateColumnExists(conn);
                 String sql = "UPDATE users SET full_name = ?, phone = ?, birth_date = ?, address = ? WHERE email = ?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, fullName.trim());
@@ -352,6 +355,21 @@ public class ProfileServlet extends HttpServlet {
         }
         
         response.getWriter().write(gson.toJson(responseMap));
+    }
+
+    private void ensureBirthDateColumnExists(Connection conn) throws SQLException {
+        String checkSql = "SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'birth_date'";
+        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql);
+             ResultSet rs = checkStmt.executeQuery()) {
+            if (rs.next()) {
+                return;
+            }
+        }
+
+        String alterSql = "ALTER TABLE users ADD COLUMN birth_date DATE";
+        try (Statement alterStmt = conn.createStatement()) {
+            alterStmt.execute(alterSql);
+        }
     }
 
     private void changePassword(HttpServletRequest request, HttpServletResponse response) 
