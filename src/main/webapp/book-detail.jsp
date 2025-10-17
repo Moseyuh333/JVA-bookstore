@@ -251,8 +251,39 @@
                     <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
                       Đánh giá từ độc giả
                     </h2>
-                    <div class="text-gray-300 leading-relaxed prose prose-invert max-w-none">
-                      <c:out value="${bookReviewsRaw}" escapeXml="false" />
+
+                    <div class="space-y-6">
+                      <c:forEach var="rev" items="${fn:split(bookReviewsRaw, '\\|')}">
+                        <!-- Tách tên, sao và nội dung -->
+                        <c:set var="name" value="${fn:substringBefore(rev, '(')}" />
+                        <c:set var="afterParen" value="${fn:substringAfter(rev, '(')}" />
+                        <c:set var="stars" value="${fn:substringBefore(afterParen, ')')}" />
+                        <c:set var="comment" value="${fn:substringAfter(rev, ')')}" />
+
+                        <div class="bg-[#222] p-4 rounded-lg">
+                          <!-- Header -->
+                          <div class="flex justify-between items-center mb-2">
+                            <span class="text-amber-400 font-semibold">${fn:trim(name)}</span>
+                            <div class="flex items-center">
+                              <c:forEach var="i" begin="1" end="5">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                  class="h-4 w-4 ${i <= fn:substringBefore(stars, '⭐') ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
+                                  viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 
+                    1.371 1.24.588 1.81l-3.39 2.463 
+                    1.287 3.974c.3.922-.755 
+                    1.688-1.54 1.118L10 13.347l-3.363 2.92
+                    c-.785.57-1.84-.196-1.54-1.118l1.287-3.974
+                    -3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
+                                </svg>
+                              </c:forEach>
+                            </div>
+                          </div>
+
+                          <!-- Nội dung bình luận -->
+                          <p class="text-gray-300 leading-relaxed">${fn:trim(comment)}</p>
+                        </div>
+                      </c:forEach>
                     </div>
                   </div>
                 </c:when>
