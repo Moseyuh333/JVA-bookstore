@@ -153,6 +153,23 @@ public class DBUtil {
                     "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                     ")";
                 stmt.execute(createOrdersTableSQL);
+
+                if (!columnExists(conn, "orders", "order_date")) {
+                    stmt.execute("ALTER TABLE orders ADD COLUMN order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                }
+                if (!columnExists(conn, "orders", "total_amount")) {
+                    stmt.execute("ALTER TABLE orders ADD COLUMN total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0");
+                }
+                if (!columnExists(conn, "orders", "status")) {
+                    stmt.execute("ALTER TABLE orders ADD COLUMN status VARCHAR(50) DEFAULT 'pending'");
+                }
+                if (!columnExists(conn, "orders", "created_at")) {
+                    stmt.execute("ALTER TABLE orders ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                }
+                if (!columnExists(conn, "orders", "updated_at")) {
+                    stmt.execute("ALTER TABLE orders ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                }
+
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date)");
