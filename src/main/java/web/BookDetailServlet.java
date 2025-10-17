@@ -88,7 +88,7 @@ public class BookDetailServlet extends HttpServlet {
             }
             req.setAttribute("relatedBooks", relatedBooks);
 
-            // --- Lấy danh sách reviews từ bảng riêng (nếu có) ---
+            // --- Lấy danh sách reviews từ bảng riêng ---
             PreparedStatement psReviews = conn.prepareStatement(
                 "SELECT r.rating, r.content, r.created_at, u.username " +
                 "FROM reviews r LEFT JOIN users u ON r.user_id = u.id " +
@@ -117,31 +117,6 @@ public class BookDetailServlet extends HttpServlet {
                 r.put("comment", rsReviews.getString("content"));
                 r.put("createdAt", rsReviews.getTimestamp("created_at"));
                 reviews.add(r);
-            }
-
-            // --- Nếu bảng reviews trống, fallback sang cột reviews trong bảng books ---
-            if (reviews.isEmpty()) {
-                String raw = rs.getString("reviews");
-                if (raw != null && !raw.trim().isEmpty()) {
-                    // Parse chuỗi reviews trong cột books.reviews (dạng “Tên(5⭐) Nội dung|...”)
-                    String[] parts = raw.split("\\|");
-                    for (String part : parts) {
-                        String name = part.contains("(") ? part.substring(0, part.indexOf("(")).trim() : "Ẩn danh";
-                        String stars = part.contains("⭐") ? part.substring(part.indexOf("(") + 1, part.indexOf("⭐")) : "5";
-                        String comment = part.contains(")") ? part.substring(part.indexOf(")") + 1).trim() : "";
-
-                        Map<String, Object> r = new HashMap<>();
-                        r.put("authorName", name);
-                        try {
-                            r.put("rating", Integer.parseInt(stars));
-                        } catch (NumberFormatException e) {
-                            r.put("rating", 5);
-                        }
-                        r.put("comment", comment);
-                        r.put("createdAt", null);
-                        reviews.add(r);
-                    }
-                }
             }
 
             // --- Tính điểm trung bình & phần trăm ---
