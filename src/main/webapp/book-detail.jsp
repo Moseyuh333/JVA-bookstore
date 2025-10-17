@@ -188,10 +188,77 @@
                   </div>
                 </c:when>
               </c:choose>
+
+              <!-- ==== ĐÁNH GIÁ TỪ ĐỘC GIẢ ==== -->
+              <c:if test="${not empty reviews}">
+                <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
+                  <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
+                    Đánh giá từ độc giả
+                  </h2>
+
+                  <!-- Tổng quan sao -->
+                  <div class="flex flex-col md:flex-row gap-8 mb-8">
+                    <div class="flex flex-col items-center justify-center w-full md:w-1/4 border-r border-[#333]">
+                      <h3 class="text-5xl font-bold text-amber-400">
+                        <fmt:formatNumber value="${bookRating}" maxFractionDigits="1" />
+                      </h3>
+                      <div class="flex my-2">
+                        <c:forEach var="i" begin="1" end="5">
+                          <svg xmlns="http://www.w3.org/2000/svg"
+                            class="h-6 w-6 ${i <= bookRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 1.371 1.24.588 1.81l-3.39 2.463 1.287 3.974c.3.922-.755 1.688-1.54 1.118L10 13.347l-3.363 2.92c-.785.57-1.84-.196-1.54-1.118l1.287-3.974-3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
+                          </svg>
+                        </c:forEach>
+                      </div>
+                      <p class="text-gray-400 text-sm">Tổng cộng ${fn:length(reviews)} đánh giá</p>
+                    </div>
+
+                    <div class="flex flex-col gap-2 w-full md:w-3/4">
+                      <c:forEach var="s" begin="5" end="1" step="-1">
+                        <div class="flex items-center gap-2">
+                          <span class="w-8 text-gray-300 text-sm">${s}★</span>
+                          <div class="flex-1 bg-[#333] h-2 rounded">
+                            <div class="bg-yellow-400 h-2 rounded" data-width="${reviewStats[s]}"></div>
+                          </div>
+                          <span class="w-8 text-gray-400 text-sm text-right">${reviewStats[s]}%</span>
+                        </div>
+                      </c:forEach>
+                    </div>
+                  </div>
+
+                  <!-- Danh sách review -->
+                  <div class="divide-y divide-[#333]">
+                    <c:forEach var="r" items="${reviews}">
+                      <div class="py-5">
+                        <div class="flex justify-between items-center mb-1">
+                          <span class="font-semibold text-gray-200">${r.authorName}</span>
+                          <span class="text-sm text-gray-500">
+                            <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                          </span>
+                        </div>
+                        <div class="flex items-center mb-2">
+                          <c:forEach var="i" begin="1" end="5">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                              class="h-4 w-4 ${i <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 fill-gray-600'}"
+                              viewBox="0 0 20 20" fill="currentColor">
+                              <path
+                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.975h4.18c.969 0 1.371 1.24.588 1.81l-3.39 2.463 1.287 3.974c.3.922-.755 1.688-1.54 1.118L10 13.347l-3.363 2.92c-.785.57-1.84-.196-1.54-1.118l1.287-3.974-3.39-2.463c-.783-.57-.381-1.81.588-1.81h4.18l1.287-3.975z" />
+                            </svg>
+                          </c:forEach>
+                        </div>
+                        <p class="text-gray-300 leading-relaxed">${r.comment}</p>
+                      </div>
+                    </c:forEach>
+                  </div>
+                </div>
+              </c:if>
+
             </c:if>
           </div>
-
           <%@ include file="/WEB-INF/includes/footer.jsp" %>
+            <script> document.addEventListener('DOMContentLoaded', function () { document.querySelectorAll('[data-width]').forEach(function (el) { var v = el.getAttribute('data-width'); var n = parseFloat(v); if (!isNaN(n)) { if (n < 0) n = 0; if (n > 100) n = 100; el.style.width = n + '%'; } }); }); </script>
             </body>
 
         </html>
