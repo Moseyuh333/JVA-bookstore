@@ -54,7 +54,7 @@ public class BookDetailServlet extends HttpServlet {
                 String category = rs.getString("category");
                 PreparedStatement psRelated = conn.prepareStatement(
                         "SELECT id, title, price, cover_image " +
-                        "FROM books WHERE category = ? AND id <> ? LIMIT 4");
+                                        "FROM books WHERE category = ? AND id <> ? LIMIT 4");
                 psRelated.setString(1, category);
                 psRelated.setInt(2, rs.getInt("id"));
                 ResultSet rsRelated = psRelated.executeQuery();
@@ -69,6 +69,48 @@ public class BookDetailServlet extends HttpServlet {
                     relatedBooks.add(b);
                 }
                 req.setAttribute("relatedBooks", relatedBooks);
+
+                // ==== Lấy danh sách review ====
+                PreparedStatement psReviews = conn.prepareStatement(
+                    "SELECT r.rating, r.content, r.created_at, u.username " +
+                    "FROM reviews r LEFT JOIN users u ON r.user_id = u.id " +
+                    "WHERE r.book_id = ? ORDER BY r.created_at DESC"
+                );
+                psReviews.setInt(1, Integer.parseInt(id));
+                ResultSet rsReviews = psReviews.executeQuery();
+
+                List<Map<String, Object>> reviews = new ArrayList<>();
+                Map<Integer, Integer> ratingCount = new HashMap<>();
+                for (int i = 1; i <= 5; i++) ratingCount.put(i, 0);
+
+                int total = 0;
+                int sum = 0;
+
+                while (rsReviews.next()) {
+                    int rating = rsReviews.getInt("rating");
+                    ratingCount.put(rating, ratingCount.get(rating) + 1);
+                    total++;
+                    sum += rating;
+
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("authorName", rsReviews.getString("username") != null ? rsReviews.getString("username") : "Ẩn danh");
+                    r.put("rating", rating);
+                    r.put("comment", rsReviews.getString("content"));
+                    r.put("createdAt", rsReviews.getTimestamp("created_at"));
+                    reviews.add(r);
+                }
+
+                double avg = total > 0 ? (double) sum / total : 0;
+                req.setAttribute("bookRating", avg);
+                req.setAttribute("reviews", reviews);
+
+                Map<Integer, Integer> reviewStats = new HashMap<>();
+                for (int i = 1; i <= 5; i++) {
+                    int count = ratingCount.get(i);
+                    int percent = total > 0 ? (int) ((count * 100.0) / total) : 0;
+                    reviewStats.put(i, percent);
+                }
+                req.setAttribute("reviewStats", reviewStats);
 
             } else {
                 req.setAttribute("error", "Không tìm thấy sách!");
