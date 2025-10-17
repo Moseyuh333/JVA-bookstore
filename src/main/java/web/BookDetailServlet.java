@@ -73,50 +73,52 @@ public class BookDetailServlet extends HttpServlet {
             List<Map<String, Object>> reviews = new ArrayList<>();
 
             if (rawReviews != null && !rawReviews.trim().isEmpty()) {
+                // Tách từng review bằng dấu |
                 String[] parts = rawReviews.split("\\|");
-                Pattern pattern = Pattern.compile("^\\s*([^\\(]+)\\((\\d+)\\s*⭐\\):\\s*(.*)$");
-                // nhóm 1: tên, nhóm 2: số sao, nhóm 3: nội dung sau sao
-
                 for (String part : parts) {
-                    part = part.trim();
-                    if (part.isEmpty())
+                    if (part == null || part.trim().isEmpty())
                         continue;
 
-                    Matcher m = pattern.matcher(part);
-                    String name = "";
-                    String comment = "";
-                    int rating = 0;
+                    // Ví dụ: "mi mi (5⭐): Rất thích Tiki..."
+                    String s = part.trim();
 
-                    if (m.find()) {
-                        name = m.group(1).trim();
-                        try {
-                            rating = Integer.parseInt(m.group(2));
-                        } catch (Exception ignored) {
-                        }
-                        comment = m.group(3).trim();
-                    } else {
-                        // fallback: nếu không match, tách thủ công
-                        int sep = part.indexOf(':');
-                        if (sep != -1) {
-                            name = part.substring(0, sep).replaceAll("\\(.*\\)", "").trim();
-                            comment = part.substring(sep + 1).trim();
-                        } else {
-                            name = part.trim();
-                        }
-                    }
-
-                    // Dọn text: bỏ bullet đầu dòng, dấu **, khoảng trắng thừa
-                    comment = comment
-                            .replaceAll("^[-•\\s]+", "")
-                            .replaceAll("\\*+", "")
-                            .replaceAll("\\s{2,}", " ")
+                    // Chuẩn hóa để tránh lỗi khoảng trắng hoặc emoji
+                    s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFKC)
+                            .replace('\u00A0', ' ')
+                            .replace("\uFE0F", "")
                             .trim();
 
-                    Map<String, Object> r = new HashMap<>();
-                    r.put("authorName", name.isEmpty() ? "Ẩn danh" : name);
-                    r.put("rating", rating);
-                    r.put("comment", comment);
-                    reviews.add(r);
+                    int start = s.indexOf('(');
+                    int end = s.indexOf(')');
+                    int colon = s.indexOf(':');
+
+                    String name = "";
+                    int rating = 0;
+                    String comment = "";
+
+                    if (start != -1 && end != -1 && end > start && colon > end) {
+                        // Lấy tên
+                        name = s.substring(0, start).trim();
+                        // Lấy rating (chỉ số đầu tiên trong ngoặc)
+                        try {
+                            String ratingPart = s.substring(start + 1, end).replaceAll("[^0-9]", "");
+                            rating = Integer.parseInt(ratingPart);
+                        } catch (Exception ignored) {
+                        }
+                        // Lấy comment
+                        comment = s.substring(colon + 1).trim();
+                    } else {
+                        // fallback nếu không đủ format
+                        name = s;
+                    }
+
+                    if (!name.isEmpty() || !comment.isEmpty()) {
+                        Map<String, Object> r = new HashMap<>();
+                        r.put("authorName", name.isEmpty() ? "Ẩn danh" : name);
+                        r.put("rating", rating);
+                        r.put("comment", comment);
+                        reviews.add(r);
+                    }
                 }
             }
 
