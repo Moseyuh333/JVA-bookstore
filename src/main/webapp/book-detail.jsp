@@ -221,21 +221,4 @@
           <%@ include file="/WEB-INF/includes/footer.jsp" %>
             </body>
 
-  <script>
-    // Set bar widths for reviewStats (data-width contains numeric percent)
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('[data-width]').forEach(function(el){
-        var v = el.getAttribute('data-width');
-        if (v) {
-          // clamp and add percent sign
-          var n = parseFloat(v);
-          if (!isNaN(n)) {
-            if (n < 0) n = 0; if (n > 100) n = 100;
-            el.style.width = n + '%';
-          }
-        }
-      });
-    });
-  </script>
-
-</html>
+        </html>
