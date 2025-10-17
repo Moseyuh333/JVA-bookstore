@@ -40,7 +40,7 @@
         </style>
     </head>
 
-    <body class="bg-gray-50">
+    <body class="bg-gray-50 text-gray-900 dark:bg-[#111] dark:text-gray-100 transition-colors duration-300">
         <!-- Navigation -->
         <nav class="bg-amber-800 text-white shadow-lg">
             <div class="container mx-auto px-4 py-4">
