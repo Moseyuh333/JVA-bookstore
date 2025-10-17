@@ -33,11 +33,10 @@ public class BookDetailServlet extends HttpServlet {
 
             // --- Lấy chi tiết sách ---
             PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, title, author, price, original_price, discount, " +
-                "rating_avg, review_count, stock, publisher, category, cover_image, " +
-                "shop_name, book_url, highlights, specifications, description, reviews " +
-                "FROM books WHERE id = ?"
-            );
+                    "SELECT id, title, author, price, original_price, discount, " +
+                            "rating_avg, review_count, stock, publisher, category, cover_image, " +
+                            "shop_name, book_url, highlights, specifications, description, reviews " +
+                            "FROM books WHERE id = ?");
             ps.setInt(1, Integer.parseInt(id));
             ResultSet rs = ps.executeQuery();
 
@@ -75,18 +74,35 @@ public class BookDetailServlet extends HttpServlet {
                 String[] parts = rawReviews.split("\\|");
                 for (String part : parts) {
                     part = part.trim();
-                    if (part.isEmpty()) continue;
+                    if (part.isEmpty())
+                        continue;
 
-                    // Lấy tên, số sao, và bình luận
-                    String name = part.replaceAll("\\s*\\(.*", "").trim();
-                    String ratingStr = part.replaceAll(".*\\((\\d)⭐\\).*", "$1").trim();
-                    String comment = part.replaceAll(".*⭐\\):\\s*", "").trim();
+                    // --- Lấy tên, số sao, và bình luận (đã fix regex) ---
+                    String name = part.replaceAll("\\s*\\(\\d+⭐.*", "").trim();
+                    String ratingStr = part.replaceAll(".*\\((\\d+)⭐.*", "$1").trim();
 
+                    // Tách phần comment ổn định hơn (có thể có . hoặc ký tự sau sao)
+                    String comment = part.replaceAll(".*⭐\\).*?:\\s*", "").trim();
+
+                    // Fallback nếu comment rỗng (ví dụ không có dấu ":")
+                    if (comment.isEmpty()) {
+                        int idx = part.indexOf("):");
+                        if (idx != -1 && idx + 2 < part.length()) {
+                            comment = part.substring(idx + 2).trim();
+                        }
+                    }
+
+                    // Xử lý rating (phòng lỗi)
                     int rating = 0;
                     try {
                         rating = Integer.parseInt(ratingStr);
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
 
+                    // Dọn comment: xóa dấu ** (markdown) nếu có
+                    comment = comment.replaceAll("\\*+", "").trim();
+
+                    // --- Đưa vào danh sách ---
                     Map<String, Object> r = new HashMap<>();
                     r.put("authorName", name.isEmpty() ? "Ẩn danh" : name);
                     r.put("rating", rating);
@@ -95,13 +111,14 @@ public class BookDetailServlet extends HttpServlet {
                 }
             }
 
-            // Nếu có đánh giá trong CSV thì hiển thị ra
+            // --- Nếu có đánh giá trong CSV thì hiển thị ra ---
             if (!reviews.isEmpty()) {
                 req.setAttribute("reviews", reviews);
 
                 // Tính điểm trung bình và phần trăm
                 Map<Integer, Integer> ratingCount = new HashMap<>();
-                for (int i = 1; i <= 5; i++) ratingCount.put(i, 0);
+                for (int i = 1; i <= 5; i++)
+                    ratingCount.put(i, 0);
                 int total = 0, sum = 0;
 
                 for (Map<String, Object> r : reviews) {
@@ -129,9 +146,8 @@ public class BookDetailServlet extends HttpServlet {
 
             // --- Lấy sách cùng danh mục (gợi ý) ---
             PreparedStatement psRelated = conn.prepareStatement(
-                "SELECT id, title, price, cover_image, category " +
-                "FROM books WHERE category = ? AND id <> ? LIMIT 4"
-            );
+                    "SELECT id, title, price, cover_image, category " +
+                            "FROM books WHERE category = ? AND id <> ? LIMIT 4");
             psRelated.setString(1, rs.getString("category"));
             psRelated.setInt(2, rs.getInt("id"));
             ResultSet rsRelated = psRelated.executeQuery();
