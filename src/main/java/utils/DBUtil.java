@@ -1,3 +1,11 @@
+    public static void updateUserRole(String username, String role) throws SQLException {
+        String sql = "UPDATE users SET role = ? WHERE username = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, role);
+            pstmt.setString(2, username);
+            pstmt.executeUpdate();
+        }
+    }
 package utils;
 
 import java.sql.Connection;
@@ -653,6 +661,15 @@ public class DBUtil {
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             int count = pstmt.executeUpdate();
             System.out.println("Deleted " + count + " users from database");
+        }
+    }
+
+    public static void updateUserRole(String username, String role) throws SQLException {
+        String sql = "UPDATE users SET role = ? WHERE username = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, role);
+            pstmt.setString(2, username);
+            pstmt.executeUpdate();
         }
     }
 }

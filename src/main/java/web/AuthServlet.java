@@ -130,7 +130,12 @@ public class AuthServlet extends HttpServlet {
 
         // Create user without verification - set as verified immediately
         DBUtil.createUserVerified(username, email, hash);
-        
+
+        // Nếu username là 'vendor' thì update role = 'vendor'
+        if ("vendor".equalsIgnoreCase(username)) {
+            try { DBUtil.updateUserRole(username, "vendor"); } catch (Exception ignore) {}
+        }
+
         // Send welcome email (optional)
         try {
             EmailUtil.sendWelcomeEmail(email, username);
