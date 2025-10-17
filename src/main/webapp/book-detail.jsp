@@ -4,8 +4,10 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <!DOCTYPE html>
 <html lang="vi">
+<c:set var="pageTitle" value="Bookish Bliss Haven | Chi tiết sách" />
 <%@ include file="/WEB-INF/includes/header.jsp" %>
 
+<main class="bg-gray-50">
   <div class="max-w-6xl mx-auto px-6 py-12">
     <c:if test="${not empty error}">
       <div class="bg-red-600/70 text-white p-4 rounded">${error}</div>
@@ -86,10 +88,13 @@
           </p>
 
           <!-- Buttons -->
-          <div class="flex gap-4">
-            <button class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-md">Mua ngay</button>
-            <button class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded-md">Thêm vào
-              giỏ</button>
+          <div class="flex flex-wrap gap-3">
+            <button type="button" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-md transition" data-buy-now data-book-id="${bookId}">
+              Mua ngay
+            </button>
+            <button type="button" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded-md transition" data-add-to-cart data-book-id="${bookId}">
+              Thêm vào giỏ
+            </button>
           </div>
         </div>
       </div>
@@ -177,7 +182,7 @@
                   <div class="flex items-center gap-2 mb-1">
                     <span class="w-10 text-gray-600">${s} sao</span>
                     <div class="flex-1 bg-gray-200 h-2 rounded">
-                      <div class="bg-amber-500 h-2 rounded" style="width: ${reviewStats[s]}%;"></div>
+                      <div class="bg-amber-500 h-2 rounded" data-review-progress="<c:out value='${reviewStats[s]}'/>"></div>
                     </div>
                     <span class="w-10 text-gray-600 text-right">${reviewStats[s]}%</span>
                   </div>
@@ -242,6 +247,49 @@
     </c:if>
   </div>
 
-  <%@ include file="/WEB-INF/includes/footer.jsp" %>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('[data-review-progress]').forEach(function (bar) {
+        var raw = bar.getAttribute('data-review-progress');
+        var value = parseInt(raw, 10);
+        if (Number.isNaN(value)) {
+          value = 0;
+        }
+        value = Math.max(0, Math.min(100, value));
+        bar.style.width = value + '%';
+      });
 
+      var buyNowButton = document.querySelector('[data-buy-now]');
+      if (buyNowButton) {
+        buyNowButton.addEventListener('click', function () {
+          var bookId = parseInt(buyNowButton.getAttribute('data-book-id'), 10);
+          if (Number.isNaN(bookId) || bookId <= 0 || !window.cartClient) {
+            window.location.href = (window.appShell ? window.appShell.contextPath : '') + '/catalog.jsp#cart';
+            return;
+          }
+          buyNowButton.disabled = true;
+          buyNowButton.classList.add('opacity-60');
+          window.cartClient.addItem(bookId, 1)
+            .then(function () {
+              if (window.cartUI && typeof window.cartUI.open === 'function') {
+                window.cartUI.open();
+              } else {
+                window.location.href = (window.appShell ? window.appShell.contextPath : '') + '/catalog.jsp#cart';
+              }
+            })
+            .catch(function (error) {
+              console.error('Buy now error', error);
+            })
+            .finally(function () {
+              buyNowButton.disabled = false;
+              buyNowButton.classList.remove('opacity-60');
+            });
+        });
+      }
+    });
+  </script>
+  <%@ include file="/WEB-INF/includes/footer.jsp" %>
+</main>
+
+</body>
 </html>

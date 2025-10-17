@@ -1,41 +1,14 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" isELIgnored="true" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:set var="pageTitle" value="Hồ sơ của tôi" />
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hồ sơ người dùng - NKBookstore</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .profile-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-        }
-        .nav-pills .nav-link.active {
-            background-color: #667eea;
-        }
-        .nav-pills .nav-link {
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border: 1px solid rgba(0, 0, 0, 0.125);
-        }
-        .btn-danger-outline {
-            color: #dc3545;
-            border-color: #dc3545;
-        }
-        .btn-danger-outline:hover {
-            background-color: #dc3545;
-            color: white;
-        }
-    </style>
-</head>
-<body>
+<%@ include file="/WEB-INF/includes/header.jsp" %>
+
+<!-- Load Bootstrap CSS locally for this page (kept for existing layout) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
     <div class="profile-header">
         <div class="container">
             <div class="row align-items-center">
@@ -459,5 +432,5 @@
             }, 5000);
         }
     </script>
-</body>
-</html>
+    <%@ include file="/WEB-INF/includes/footer.jsp" %>
+    </html>

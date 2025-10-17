@@ -59,6 +59,11 @@ public class JwtFilter implements Filter {
             return false;
         }
 
+        // Allow cart API for khách vãng lai (dựa vào session để nhận diện)
+        if (path.equals("/api/cart") || path.startsWith("/api/cart/")) {
+            return true;
+        }
+
         // Core auth endpoints remain public
         switch (path) {
             case "/api/auth/register":
@@ -85,6 +90,12 @@ public class JwtFilter implements Filter {
             if (path.equals("/api/catalog") || path.startsWith("/api/catalog/")) {
                 return true;
             }
+                if (path.equals("/api/reviews") || (path.startsWith("/api/reviews/") && !path.equals("/api/reviews/me"))) {
+                    return true;
+                }
+                if (path.equals("/api/comments") || (path.startsWith("/api/comments/") && !path.matches("/api/comments/.*\\d+"))) {
+                    return true;
+                }
         }
 
         return false;

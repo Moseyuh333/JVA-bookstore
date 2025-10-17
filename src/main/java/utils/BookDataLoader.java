@@ -17,9 +17,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * Utility responsible for seeding the {@code books} table with demo data the first time the
@@ -147,66 +144,6 @@ public final class BookDataLoader {
         }
     }
 
-    public static void refreshBookAssets(Connection connection) {
-        if (connection == null) {
-            return;
-        }
-
-        try (InputStream csvStream = locateCsvStream()) {
-            if (csvStream == null) {
-                System.out.println("BookDataLoader - CSV source not found, skipping asset refresh.");
-                return;
-            }
-
-            Map<String, String> imageLookup = new HashMap<>();
-            try (CSVReader reader = new CSVReaderBuilder(new InputStreamReader(csvStream, StandardCharsets.UTF_8))
-                    .withCSVParser(new CSVParserBuilder().withSeparator(',').withQuoteChar('"').build())
-                    .build()) {
-                try {
-                    reader.readNext();
-
-                    String[] row;
-                    while ((row = reader.readNext()) != null) {
-                        String title = sanitizeText(getValue(row, 1), 255);
-                        String imageUrl = sanitizeText(getValue(row, 11), 500);
-                        if (title == null || imageUrl == null) {
-                            continue;
-                        }
-                        imageLookup.put(title.toLowerCase(Locale.ROOT), imageUrl);
-                    }
-                } catch (Exception parseEx) {
-                    System.err.println("BookDataLoader - Unable to parse CSV for asset refresh: " + parseEx.getMessage());
-                }
-            }
-
-            if (imageLookup.isEmpty()) {
-                return;
-            }
-
-            int updated = 0;
-            try (PreparedStatement update = connection.prepareStatement(
-                    "UPDATE books SET image_url = ? WHERE LOWER(title) = ? AND (image_url IS NULL OR TRIM(image_url) = '' OR image_url LIKE 'https://placehold.co/%')")) {
-                for (Map.Entry<String, String> entry : imageLookup.entrySet()) {
-                    update.setString(1, entry.getValue());
-                    update.setString(2, entry.getKey());
-                    update.addBatch();
-                }
-                int[] results = update.executeBatch();
-                for (int count : results) {
-                    if (count > 0) {
-                        updated += count;
-                    }
-                }
-            }
-
-            if (updated > 0) {
-                System.out.println("BookDataLoader - Refreshed image URLs for " + updated + " books.");
-            }
-        } catch (SQLException | IOException ex) {
-            System.err.println("BookDataLoader - Unable to refresh book assets: " + ex.getMessage());
-        }
-    }
-
     private static boolean hasExistingBooks(Connection connection) throws SQLException {
         try (Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT COUNT(1) FROM books")) {
@@ -280,6 +217,27 @@ public final class BookDataLoader {
             return Math.max(parsed, 0);
         } catch (NumberFormatException ex) {
             return 0;
+        }
+    }
+
+    /**
+     * Ensure every book record points to a valid storefront asset so the UI can render fallback
+     * imagery even when the dataset does not provide explicit image URLs.
+     */
+    public static void refreshBookAssets(Connection connection) {
+        if (connection == null) {
+            return;
+        }
+        String placeholder = "/assets/img/nkbookstore-logo.png";
+        String sql = "UPDATE books SET image_url = ? WHERE image_url IS NULL OR image_url = ''";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, placeholder);
+            int updated = stmt.executeUpdate();
+            if (updated > 0) {
+                System.out.println("BookDataLoader - Applied placeholder image to " + updated + " book(s).");
+            }
+        } catch (SQLException ex) {
+            System.err.println("BookDataLoader - Unable to refresh book assets: " + ex.getMessage());
         }
     }
 }
