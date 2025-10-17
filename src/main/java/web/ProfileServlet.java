@@ -247,7 +247,7 @@ public class ProfileServlet extends HttpServlet {
             }
             
             try (Connection conn = DBUtil.getConnection()) {
-                ensureBirthDateColumnExists(conn);
+                ensureUserProfileColumns(conn);
                 String sql = "SELECT id, email, full_name, phone, birth_date, address, created_at FROM users WHERE email = ?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, email);
@@ -316,7 +316,7 @@ public class ProfileServlet extends HttpServlet {
             }
             
             try (Connection conn = DBUtil.getConnection()) {
-                ensureBirthDateColumnExists(conn);
+                ensureUserProfileColumns(conn);
                 String sql = "UPDATE users SET full_name = ?, phone = ?, birth_date = ?, address = ? WHERE email = ?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, fullName.trim());
@@ -357,16 +357,23 @@ public class ProfileServlet extends HttpServlet {
         response.getWriter().write(gson.toJson(responseMap));
     }
 
-    private void ensureBirthDateColumnExists(Connection conn) throws SQLException {
-        String checkSql = "SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'birth_date'";
-        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql);
-             ResultSet rs = checkStmt.executeQuery()) {
-            if (rs.next()) {
-                return;
+    private void ensureUserProfileColumns(Connection conn) throws SQLException {
+        ensureUserColumnExists(conn, "birth_date", "DATE");
+        ensureUserColumnExists(conn, "address", "TEXT");
+    }
+
+    private void ensureUserColumnExists(Connection conn, String columnName, String columnDefinition) throws SQLException {
+        String checkSql = "SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = ?";
+        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+            checkStmt.setString(1, columnName);
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (rs.next()) {
+                    return;
+                }
             }
         }
 
-        String alterSql = "ALTER TABLE users ADD COLUMN birth_date DATE";
+        String alterSql = "ALTER TABLE users ADD COLUMN " + columnName + " " + columnDefinition;
         try (Statement alterStmt = conn.createStatement()) {
             alterStmt.execute(alterSql);
         }

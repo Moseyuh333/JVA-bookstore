@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public final class CartDAO {
     }
 
     public static Cart ensureActiveCart(Long userId, String sessionId) throws SQLException {
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -55,6 +57,7 @@ public final class CartDAO {
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than zero");
         }
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -85,6 +88,7 @@ public final class CartDAO {
     }
 
     public static void updateQuantity(long cartId, long bookId, int quantity) throws SQLException {
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -111,6 +115,7 @@ public final class CartDAO {
     }
 
     public static void removeItem(long cartId, long bookId) throws SQLException {
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -127,6 +132,7 @@ public final class CartDAO {
     }
 
     public static void clearCart(long cartId) throws SQLException {
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -147,6 +153,7 @@ public final class CartDAO {
     }
 
     public static Cart loadCart(long cartId) throws SQLException {
+        ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             return loadCart(conn, cartId);
         }
@@ -334,5 +341,49 @@ public final class CartDAO {
             return null;
         }
         return timestamp.toLocalDateTime();
+    }
+
+    private static volatile boolean schemaReady = false;
+
+    private static void ensureSchema() throws SQLException {
+        if (schemaReady) {
+            return;
+        }
+        synchronized (CartDAO.class) {
+            if (schemaReady) {
+                return;
+            }
+            try (Connection conn = DBUtil.getConnection();
+                 Statement stmt = conn.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS carts (" +
+                        "id SERIAL PRIMARY KEY," +
+                        "user_id INTEGER REFERENCES users(id) ON DELETE CASCADE," +
+                        "session_id VARCHAR(64)," +
+                        "status VARCHAR(20) DEFAULT 'active'," +
+                        "currency VARCHAR(10) DEFAULT 'VND'," +
+                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                        "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                        "CONSTRAINT chk_carts_status CHECK (status IN ('active','merged','abandoned','checked_out'))" +
+                        ")");
+
+                stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_carts_session_active ON carts(session_id) WHERE status = 'active'");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_carts_user ON carts(user_id)");
+
+                stmt.execute("CREATE TABLE IF NOT EXISTS cart_items (" +
+                        "id SERIAL PRIMARY KEY," +
+                        "cart_id INTEGER NOT NULL REFERENCES carts(id) ON DELETE CASCADE," +
+                        "book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE," +
+                        "quantity INTEGER NOT NULL CHECK (quantity > 0)," +
+                        "unit_price DECIMAL(12,2) NOT NULL DEFAULT 0," +
+                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                        "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                        "CONSTRAINT uq_cart_items_cart_book UNIQUE (cart_id, book_id)" +
+                        ")");
+
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart ON cart_items(cart_id)");
+
+                schemaReady = true;
+            }
+        }
     }
 }
