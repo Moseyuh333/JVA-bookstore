@@ -109,8 +109,9 @@ public class BookDAO {
         params.add(limit);
         params.add(offset);
 
+        String finalSql = sql.toString();
         try (Connection connection = DBUtil.getConnection();
-             PreparedStatement statement = prepare(connection, sql.toString(), params)) {
+             PreparedStatement statement = prepare(connection, finalSql, params)) {
             try (ResultSet rs = statement.executeQuery()) {
                 List<Book> books = new ArrayList<>();
                 while (rs.next()) {
@@ -118,6 +119,9 @@ public class BookDAO {
                 }
                 return books;
             }
+        } catch (SQLException ex) {
+            System.err.println("BookDAO - Query failed: " + finalSql + " | params=" + params + " | msg=" + ex.getMessage());
+            throw ex;
         }
     }
 
@@ -135,6 +139,9 @@ public class BookDAO {
                 return rs.getInt(1);
             }
             return 0;
+        } catch (SQLException ex) {
+            System.err.println("BookDAO - Count query failed: " + sql + " | params=" + params + " | msg=" + ex.getMessage());
+            throw ex;
         }
     }
 
@@ -148,6 +155,9 @@ public class BookDAO {
                 categories.add(rs.getString(1));
             }
             return categories;
+        } catch (SQLException ex) {
+            System.err.println("BookDAO - Category query failed: " + sql + " | msg=" + ex.getMessage());
+            throw ex;
         }
     }
 

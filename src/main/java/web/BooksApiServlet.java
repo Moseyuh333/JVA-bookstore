@@ -63,6 +63,10 @@ public class BooksApiServlet extends HttpServlet {
                     break;
             }
         } catch (SQLException ex) {
+            log("BooksApiServlet - SQL error while handling path " + path + withQueryString(req), ex);
+            sendServerError(resp, ex);
+        } catch (Exception ex) {
+            log("BooksApiServlet - Unexpected error while handling path " + path + withQueryString(req), ex);
             sendServerError(resp, ex);
         }
     }
@@ -189,6 +193,14 @@ public class BooksApiServlet extends HttpServlet {
         obj.addProperty("error", "SERVER_ERROR");
         obj.addProperty("message", ex.getMessage());
         writeJson(resp, obj);
+    }
+
+    private String withQueryString(HttpServletRequest req) {
+        String query = req.getQueryString();
+        if (query == null || query.isEmpty()) {
+            return "";
+        }
+        return "?" + query;
     }
 
     private void sendBadRequest(HttpServletResponse resp, String message) throws IOException {
