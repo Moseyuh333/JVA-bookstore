@@ -362,70 +362,97 @@ public final class CartDAO {
             }
             try (Connection conn = DBUtil.getConnection();
                  Statement stmt = conn.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS carts (" +
-                        "id SERIAL PRIMARY KEY," +
-                        "user_id INTEGER REFERENCES users(id) ON DELETE CASCADE," +
-                        "session_id VARCHAR(64)," +
-                        "status VARCHAR(20) DEFAULT 'active'," +
-                        "currency VARCHAR(10) DEFAULT 'VND'," +
-                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                        "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                        "CONSTRAINT chk_carts_status CHECK (status IN ('active','merged','abandoned','checked_out'))" +
-                        ")");
-
-                stmt.execute("ALTER TABLE carts ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active'");
-                stmt.execute("ALTER TABLE carts ALTER COLUMN status SET DEFAULT 'active'");
-                stmt.execute("UPDATE carts SET status = 'active' WHERE status IS NULL");
-
-                stmt.execute("ALTER TABLE carts ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'VND'");
-                stmt.execute("ALTER TABLE carts ALTER COLUMN currency SET DEFAULT 'VND'");
-                stmt.execute("UPDATE carts SET currency = 'VND' WHERE currency IS NULL OR currency = ''");
-
-                stmt.execute("ALTER TABLE carts ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                stmt.execute("ALTER TABLE carts ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP");
-                stmt.execute("UPDATE carts SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
-
-                stmt.execute("ALTER TABLE carts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                stmt.execute("ALTER TABLE carts ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP");
-                stmt.execute("UPDATE carts SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
-
+                conn.setAutoCommit(false);
                 try {
-                    stmt.execute("ALTER TABLE carts ADD CONSTRAINT chk_carts_status CHECK (status IN ('active','merged','abandoned','checked_out'))");
-                } catch (SQLException ex) {
-                    if (!"42710".equals(ex.getSQLState())) {
-                        throw ex;
+                    stmt.execute("CREATE TABLE IF NOT EXISTS carts (" +
+                            "id SERIAL PRIMARY KEY," +
+                            "user_id INTEGER REFERENCES users(id) ON DELETE CASCADE," +
+                            "session_id VARCHAR(64)," +
+                            "status VARCHAR(20) DEFAULT 'active'," +
+                            "currency VARCHAR(10) DEFAULT 'VND'," +
+                            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                            "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                            "CONSTRAINT chk_carts_status CHECK (status IN ('active','merged','abandoned','checked_out'))" +
+                            ")");
+
+                    ensureColumn(conn, stmt, "carts", "session_id", "ALTER TABLE carts ADD COLUMN session_id VARCHAR(64)");
+                    ensureColumn(conn, stmt, "carts", "status", "ALTER TABLE carts ADD COLUMN status VARCHAR(20) DEFAULT 'active'");
+                    stmt.execute("ALTER TABLE carts ALTER COLUMN status SET DEFAULT 'active'");
+                    stmt.execute("UPDATE carts SET status = 'active' WHERE status IS NULL");
+
+                    ensureColumn(conn, stmt, "carts", "currency", "ALTER TABLE carts ADD COLUMN currency VARCHAR(10) DEFAULT 'VND'");
+                    stmt.execute("ALTER TABLE carts ALTER COLUMN currency SET DEFAULT 'VND'");
+                    stmt.execute("UPDATE carts SET currency = 'VND' WHERE currency IS NULL OR currency = ''");
+
+                    ensureColumn(conn, stmt, "carts", "created_at", "ALTER TABLE carts ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                    stmt.execute("ALTER TABLE carts ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP");
+                    stmt.execute("UPDATE carts SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
+
+                    ensureColumn(conn, stmt, "carts", "updated_at", "ALTER TABLE carts ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                    stmt.execute("ALTER TABLE carts ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP");
+                    stmt.execute("UPDATE carts SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
+
+                    try {
+                        stmt.execute("ALTER TABLE carts ADD CONSTRAINT chk_carts_status CHECK (status IN ('active','merged','abandoned','checked_out'))");
+                    } catch (SQLException ex) {
+                        if (!"42710".equals(ex.getSQLState())) {
+                            throw ex;
+                        }
                     }
+
+                    stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_carts_session_active ON carts(session_id) WHERE status = 'active'");
+                    stmt.execute("CREATE INDEX IF NOT EXISTS idx_carts_user ON carts(user_id)");
+
+                    stmt.execute("CREATE TABLE IF NOT EXISTS cart_items (" +
+                            "id SERIAL PRIMARY KEY," +
+                            "cart_id INTEGER NOT NULL REFERENCES carts(id) ON DELETE CASCADE," +
+                            "book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE," +
+                            "quantity INTEGER NOT NULL CHECK (quantity > 0)," +
+                            "unit_price DECIMAL(12,2) NOT NULL DEFAULT 0," +
+                            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                            "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                            "CONSTRAINT uq_cart_items_cart_book UNIQUE (cart_id, book_id)" +
+                            ")");
+
+                    ensureColumn(conn, stmt, "cart_items", "unit_price", "ALTER TABLE cart_items ADD COLUMN unit_price DECIMAL(12,2) DEFAULT 0");
+                    stmt.execute("ALTER TABLE cart_items ALTER COLUMN unit_price SET DEFAULT 0");
+                    stmt.execute("UPDATE cart_items SET unit_price = 0 WHERE unit_price IS NULL");
+
+                    ensureColumn(conn, stmt, "cart_items", "created_at", "ALTER TABLE cart_items ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                    stmt.execute("ALTER TABLE cart_items ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP");
+                    stmt.execute("UPDATE cart_items SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
+
+                    ensureColumn(conn, stmt, "cart_items", "updated_at", "ALTER TABLE cart_items ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                    stmt.execute("ALTER TABLE cart_items ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP");
+                    stmt.execute("UPDATE cart_items SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
+
+                    stmt.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart ON cart_items(cart_id)");
+
+                    conn.commit();
+                    schemaReady = true;
+                } catch (SQLException ex) {
+                    conn.rollback();
+                    throw ex;
+                } finally {
+                    conn.setAutoCommit(true);
                 }
+            }
+        }
+    }
 
-                stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_carts_session_active ON carts(session_id) WHERE status = 'active'");
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_carts_user ON carts(user_id)");
+    private static void ensureColumn(Connection conn, Statement stmt, String tableName, String columnName, String alterSql) throws SQLException {
+        if (!columnExists(conn, tableName, columnName)) {
+            stmt.execute(alterSql);
+        }
+    }
 
-                stmt.execute("CREATE TABLE IF NOT EXISTS cart_items (" +
-                        "id SERIAL PRIMARY KEY," +
-                        "cart_id INTEGER NOT NULL REFERENCES carts(id) ON DELETE CASCADE," +
-                        "book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE," +
-                        "quantity INTEGER NOT NULL CHECK (quantity > 0)," +
-                        "unit_price DECIMAL(12,2) NOT NULL DEFAULT 0," +
-                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                        "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                        "CONSTRAINT uq_cart_items_cart_book UNIQUE (cart_id, book_id)" +
-                        ")");
-
-                stmt.execute("ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS unit_price DECIMAL(12,2) DEFAULT 0");
-                stmt.execute("ALTER TABLE cart_items ALTER COLUMN unit_price SET DEFAULT 0");
-                stmt.execute("UPDATE cart_items SET unit_price = 0 WHERE unit_price IS NULL");
-
-                stmt.execute("ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                stmt.execute("ALTER TABLE cart_items ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP");
-                stmt.execute("UPDATE cart_items SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
-
-                stmt.execute("ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                stmt.execute("ALTER TABLE cart_items ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP");
-                stmt.execute("UPDATE cart_items SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
-
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart ON cart_items(cart_id)");
-
-                schemaReady = true;
+    private static boolean columnExists(Connection conn, String tableName, String columnName) throws SQLException {
+        String sql = "SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ? AND column_name = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName.toLowerCase());
+            stmt.setString(2, columnName.toLowerCase());
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
             }
         }
     }
