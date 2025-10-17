@@ -79,8 +79,26 @@
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
         </dependency>
+        <!-- CSV parsing for data seeding -->
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>5.9</version>
+        </dependency>
     </dependencies>
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>books_full_5xx.csv</include>
+                </includes>
+                <targetPath>data</targetPath>
+            </resource>
+        </resources>
     <finalName>ROOT</finalName>
         <plugins>
             <plugin>

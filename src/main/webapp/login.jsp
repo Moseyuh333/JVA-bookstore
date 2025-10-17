@@ -86,10 +86,16 @@
       
       if(res.ok){
         const json = await res.json();
-        
-        // Save token to localStorage
+        const enteredUsername = (form.elements['username']?.value || '').trim();
+
+        // Save token and username to localStorage for dropdown rendering
         localStorage.setItem('auth_token', json.token);
-        
+        if (enteredUsername.length > 0) {
+          localStorage.setItem('auth_username', enteredUsername);
+        } else {
+          localStorage.removeItem('auth_username');
+        }
+
         // Show success message
         document.getElementById('result').innerHTML = '<div class="alert alert-success">✅ Đăng nhập thành công! Đang chuyển hướng...</div>';
         
@@ -107,9 +113,13 @@
         } catch(e){ 
           errorMessage = text; 
         }
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_username');
         document.getElementById('result').innerHTML = '<div class="alert alert-danger">❌ Đăng nhập thất bại: ' + errorMessage + '</div>';
       }
     } catch (error) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_username');
       document.getElementById('result').innerHTML = '<div class="alert alert-danger">❌ Lỗi kết nối. Vui lòng thử lại.</div>';
     }
   });
