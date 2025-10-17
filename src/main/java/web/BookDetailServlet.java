@@ -34,11 +34,11 @@ public class BookDetailServlet extends HttpServlet {
             }
 
             // --- Lấy chi tiết sách ---
-            PreparedStatement ps = conn.prepareStatement(
-                    "SELECT id, title, author, price, original_price, discount, " +
-                            "rating_avg, review_count, stock, publisher, category, cover_image, " +
-                            "shop_name, book_url, highlights, specifications, description, reviews " +
-                            "FROM books WHERE id = ?");
+        PreparedStatement ps = conn.prepareStatement(
+            "SELECT id, title, author, price, original_price, discount, " +
+                "rating_avg, review_count, stock, publisher, category, image_url, " +
+                "shop_name, book_url, highlights, specifications, description, reviews " +
+                "FROM books WHERE id = ?");
             ps.setInt(1, Integer.parseInt(id));
             ResultSet rs = ps.executeQuery();
 
@@ -61,7 +61,7 @@ public class BookDetailServlet extends HttpServlet {
             req.setAttribute("bookStock", rs.getString("stock"));
             req.setAttribute("bookPublisher", rs.getString("publisher"));
             req.setAttribute("bookCategory", rs.getString("category"));
-            req.setAttribute("bookImage", rs.getString("cover_image"));
+            req.setAttribute("imageUrl", rs.getString("image_url"));
             req.setAttribute("bookShop", rs.getString("shop_name"));
             req.setAttribute("bookUrl", rs.getString("book_url"));
             req.setAttribute("bookHighlights", rs.getString("highlights"));
@@ -157,7 +157,7 @@ public class BookDetailServlet extends HttpServlet {
 
             // --- Lấy sách cùng danh mục (gợi ý) ---
             PreparedStatement psRelated = conn.prepareStatement(
-                    "SELECT id, title, price, cover_image, category " +
+                    "SELECT id, title, price, image_url, category " +
                             "FROM books WHERE category = ? AND id <> ? LIMIT 4");
             psRelated.setString(1, rs.getString("category"));
             psRelated.setInt(2, rs.getInt("id"));
@@ -170,7 +170,7 @@ public class BookDetailServlet extends HttpServlet {
                 b.put("title", rsRelated.getString("title"));
                 b.put("price", rsRelated.getBigDecimal("price"));
                 b.put("category", rsRelated.getString("category"));
-                b.put("coverImage", rsRelated.getString("cover_image"));
+                b.put("imageUrl", rsRelated.getString("image_url"));
                 relatedBooks.add(b);
             }
             req.setAttribute("relatedBooks", relatedBooks);
