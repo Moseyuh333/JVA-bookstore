@@ -150,7 +150,7 @@
               </c:if>
               <!-- ===== REVIEWS ===== -->
               <c:choose>
-                <c:when test="${not empty reviews}">
+                <c:when test="${not empty bookReviewsRaw}">
                   <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
                     <!-- === Tiêu đề & Tổng quan === -->
                     <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
@@ -262,7 +262,7 @@
                 </c:when>
 
 
-                <c:when test="${not empty bookReviewsRaw}">
+                <c:when test="${not empty reviews}">
                   <div class="bg-[#1b1b1b] mt-10 p-8 rounded-lg shadow-md">
                     <h2 class="text-xl font-semibold text-amber-400 mb-4 border-b border-[#333] pb-2">
                       Đánh giá từ độc giả
