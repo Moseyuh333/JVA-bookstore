@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet(name = "CheckoutServlet", urlPatterns = {"/api/checkout"})
+@WebServlet(name = "CheckoutServlet", urlPatterns = {"/api/checkout", "/checkout"})
 public class CheckoutServlet extends HttpServlet {
 
     private final Gson gson = new Gson();
