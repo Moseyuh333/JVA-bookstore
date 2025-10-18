@@ -5,16 +5,16 @@
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 
 <footer class="bg-gray-900 text-gray-300 py-8 px-6 mt-16">
-    <div class="container mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-sm">
         
         <!-- Left: Copyright -->
-        <div class="flex items-center gap-2 bg-gray-800 text-amber-300 px-4 py-2 rounded-full text-sm shadow-md">
+        <div class="flex items-center gap-2 bg-gray-800 text-amber-300 px-4 py-2 rounded-full shadow-md whitespace-nowrap">
             <i data-feather="shield" class="w-4 h-4"></i>
             <span>&copy; <span id="year"></span> Bookish Bliss Haven · Mọi quyền được bảo lưu</span>
         </div>
 
-        <!-- Center: Nav Links -->
-        <div class="flex flex-wrap justify-center gap-6 text-sm text-gray-300">
+        <!-- Center: Navigation Links -->
+        <div class="flex flex-wrap justify-center gap-6 text-gray-300 text-center">
             <a href="<%=request.getContextPath()%>/admin/dashboard" class="hover:text-amber-400 transition">Dashboard</a>
             <a href="<%=request.getContextPath()%>/admin/products" class="hover:text-amber-400 transition">Sản phẩm</a>
             <a href="<%=request.getContextPath()%>/admin/accounts" class="hover:text-amber-400 transition">Tài khoản</a>
@@ -22,20 +22,20 @@
         </div>
 
         <!-- Right: Contact Info -->
-        <div class="flex flex-col md:flex-row md:items-center md:gap-6 text-sm text-gray-400">
+        <div class="flex items-center flex-wrap justify-center gap-x-6 gap-y-2 text-gray-400 text-center">
             <div class="flex items-center gap-2">
-                <i data-feather="map-pin" class="w-4 h-4 mr-2 mt-0.5"></i>
+                <i data-feather="map-pin" class="w-4 h-4 text-amber-400"></i>
                 <span>123 Đường Văn Học, Quận Sách, TP.HCM</span>
             </div>
             <div class="hidden md:block w-px h-4 bg-gray-600"></div>
             <div class="flex items-center gap-2">
-                <i data-feather="mail" class="w-4 h-4 mr-2"></i>
-                <a href="mailto:info@bookishhaven.com" class="hover:text-white">info@bookishhaven.com</a>
+                <i data-feather="mail" class="w-4 h-4 text-amber-400"></i>
+                <a href="mailto:info@bookishhaven.com" class="hover:text-amber-300 transition">info@bookishhaven.com</a>
             </div>
             <div class="hidden md:block w-px h-4 bg-gray-600"></div>
             <div class="flex items-center gap-2">
-                <i data-feather="phone" class="w-4 h-4 mr-2"></i>
-                <a href="tel:+84901234567" class="hover:text-white">0901 234 567</a>
+                <i data-feather="phone" class="w-4 h-4 text-amber-400"></i>
+                <a href="tel:+84901234567" class="hover:text-amber-300 transition">0901 234 567</a>
             </div>
         </div>
 
