@@ -552,7 +552,7 @@
             </div>
         </div>
         <!-- ===== FOOTER ===== -->
-        <include file="/WEB-INF/includes/admin/footer.jsp" />
+        <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
 <script src ="${pageContext.request.contextPath}/assets/js/admin/AdDashboard.js"></script>
