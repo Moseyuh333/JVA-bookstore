@@ -24,7 +24,7 @@
     <nav class="bg-amber-800 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
-                <a href="<%=request.getContextPath()%>/index.jsp" class="flex items-center space-x-2">
+                <a href="${pageContext.request.contextPath}/admin/AdDashboard.jsp" class="flex items-center space-x-2">
                     <i data-feather="book-open" class="w-6 h-6"></i>
                     <span class="title-font text-xl font-bold">Bookish Bliss Haven 
                         <br>
