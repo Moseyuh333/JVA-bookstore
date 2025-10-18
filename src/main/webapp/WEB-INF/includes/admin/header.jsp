@@ -1,8 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -10,81 +6,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bookish Bliss Haven - Admin Panel</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
-
-        body {
-            font-family: 'Roboto', sans-serif;
-        }
-
-        .hero-bg {
-            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://static.photos/books/1200x630/42');
-            background-size: cover;
-            background-position: center;
-        }
-
-        .book-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        .title-font {
-            font-family: 'Playfair Display', serif;
-        }
-
-        nav a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        nav a:hover, nav a:focus {
-            color: inherit;
-            text-decoration: none;
-        }
+        body { font-family: 'Roboto', sans-serif; }
+    .hero-bg { background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://static.photos/books/1200x630/42'); background-size: cover; background-position: center; }
+        .book-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .title-font { font-family: 'Playfair Display', serif; }
+        .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .home-scroll-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.92); color: #92400e; padding: 0.6rem; border-radius: 9999px; box-shadow: 0 10px 20px -15px rgba(0, 0, 0, 0.35); transition: background 0.2s ease, color 0.2s ease; z-index: 10; }
+        .home-scroll-btn:hover { background: #d97706; color: #fff; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-    <!-- Navigation -->
-    <nav class="bg-amber-800 text-white shadow-lg relative z-50">
+<body class="bg-gray-50">
+    <nav class="bg-amber-800 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <a href="<%=request.getContextPath()%>/index.jsp" class="flex items-center space-x-2">
                     <i data-feather="book-open" class="w-6 h-6"></i>
-                    <span class="title-font text-xl font-bold">Bookish Bliss Haven 
-                        <br>
-                        <span class="text-sm font-normal">Admin Panel</span>
-                    </span>
+                    <span class="title-font text-xl font-bold">Bookish Bliss Haven</span>
                 </a>
+                <div class="hidden md:flex space-x-8">
+                    <a href="<%=request.getContextPath()%>/index.jsp" class="hover:text-amber-200 font-medium">Trang chủ</a>
+                    <a href="<%=request.getContextPath()%>/catalog.jsp" class="hover:text-amber-200 font-medium">Danh mục</a>
+                    <a href="<%=request.getContextPath()%>/catalog.jsp?sort=best" class="hover:text-amber-200 font-medium">Bán chạy</a>
+                    <a href="<%=request.getContextPath()%>/catalog.jsp?sort=rated" class="hover:text-amber-200 font-medium">Đánh giá cao</a>
+                </div>
                 <div class="flex items-center space-x-4">
-                    <!-- Admin Dropdown -->
                     <div class="relative">
                         <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
                             <i data-feather="user" class="w-5 h-5 mr-1"></i>
-                            <span id="accountBtnLabel" class="font-medium">Tài khoản</span>
+                            <span id="accountBtnLabel" class="font-medium">Admin</span>
                         </button>
-                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                            <div class="py-2">
-                                <a href="<%=request.getContextPath()%>/admin/profile.jsp"
-                                    class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
-                                    <i class="fas fa-user-circle w-4 h-4 mr-2"></i>
-                                    Thông tin cá nhân
-                                </a>
-                                <a href="<%=request.getContextPath()%>/admin/change-password.jsp"
-                                    class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
-                                    <i class="fas fa-key w-4 h-4 mr-2"></i>
-                                    Đổi mật khẩu
-                                </a>
-                                <hr class="my-1">
-                                <a href="<%=request.getContextPath()%>/logout"
-                                    class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
-                                    <i class="fas fa-sign-out-alt w-4 h-4 mr-2"></i>
-                                    Đăng xuất
-                                </a>
-                            </div>
-                        </div>
+                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50"></div>
                     </div>
                     <button class="md:hidden p-2 rounded-full hover:bg-amber-700" aria-label="Menu">
                         <i data-feather="menu" class="w-5 h-5"></i>
@@ -93,5 +49,3 @@
             </div>
         </div>
     </nav>
-
-    
