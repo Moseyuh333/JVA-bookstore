@@ -33,16 +33,18 @@
         /* Layout */
         #wrapper {
             display: flex;
+            flex-direction: column;
             min-height: 100vh;
         }
 
         #content-wrapper {
             flex: 1;
-            margin-left: 0;
-            transition: margin-left 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
 
         #content {
+            flex: 1;
             margin-top: 70px;
             padding: 24px;
         }
@@ -51,6 +53,7 @@
         .container-fluid {
             max-width: 1400px;
             margin: 0 auto;
+            width: 100%;
         }
 
         /* Page Title */
@@ -89,6 +92,7 @@
             gap: 16px;
             transition: all 0.3s ease;
             position: relative;
+            z-index: 1;
         }
 
         .stat-card:hover {
@@ -154,6 +158,7 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             overflow: hidden;
             position: relative;
+            z-index: 1;
         }
 
         .chart-header {
@@ -176,6 +181,7 @@
             padding: 24px;
             position: relative;
             height: 350px;
+            z-index: 1;
         }
 
         .chart-body-small {
@@ -190,6 +196,7 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             overflow: hidden;
             position: relative;
+            z-index: 1;
         }
 
         .table-header {
@@ -212,6 +219,7 @@
             padding: 0;
             overflow-x: auto;
             position: relative;
+            z-index: 1;
         }
 
         .table-custom {
@@ -279,9 +287,9 @@
             padding: 24px;
             text-align: center;
             font-size: 13px;
-            margin-top: auto;
             border-top: 1px solid #374151;
             position: relative;
+            z-index: 1;
         }
 
         .footer-content {
@@ -346,11 +354,11 @@
                 display: none;
             }
 
-            .main-content {
+            #content {
                 padding: 16px;
             }
 
-            .page-header h1 {
+            .page-title h1 {
                 font-size: 24px;
             }
 
@@ -378,12 +386,12 @@
 </head>
 <body>
 <div id="wrapper">
-    <!-- Include Sidebar -->
-    <%@ include file="/WEB-INF/includes/admin/AdSideBar.jsp" %>
+    <!-- Include Header -->
+    <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
 
     <div id="content-wrapper">
-        <!-- Include Header -->
-        <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
+        <!-- Include Sidebar -->
+        <%@ include file="/WEB-INF/includes/admin/AdSideBar.jsp" %>
 
         <div id="content">
             <div class="container-fluid">
@@ -542,7 +550,7 @@
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 
     <!-- ===== FOOTER ===== -->
@@ -564,6 +572,7 @@
             </div>
         </div>
     </footer>
+</div>
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
