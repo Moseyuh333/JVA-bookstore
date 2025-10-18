@@ -1015,6 +1015,11 @@ public class ProfileServlet extends HttpServlet {
                 json.append(line);
             }
         }
-        return gson.fromJson(json.toString(), new TypeToken<Map<String, Object>>(){}.getType());
+        String raw = json.toString().trim();
+        if (raw.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<String, Object> data = gson.fromJson(raw, new TypeToken<Map<String, Object>>(){}.getType());
+        return data != null ? data : new HashMap<>();
     }
 }
