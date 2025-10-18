@@ -48,7 +48,7 @@
     </head>
     <!-- Navigation -->
     <body class="bg-gray-100 text-gray-800">
-    <nav class="admin-header bg-amber-800 text-white shadow-lg fixed-top">
+    <nav class="bg-amber-800 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <a href="<%=request.getContextPath()%>/index.jsp" class="flex items-center space-x-2">
