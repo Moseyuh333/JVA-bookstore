@@ -34,11 +34,11 @@
                 <div class="flex items-center space-x-4">
                     <!-- Admin Dropdown -->
                     <div class="relative">
-                        <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
-                            <i data-feather="user" class="w-5 h-5 mr-1"></i>
+                        <button id="adminDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
+                            <i data-feather="admin" class="w-5 h-5 mr-1"></i>
                             <span id="accountBtnLabel" class="font-medium">Admin</span>
                         </button>
-                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                        <div id="adminDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                             <div class="py-2">
                                 <a href="<%=request.getContextPath()%>/admin/change-password.jsp"
                                     class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
