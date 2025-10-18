@@ -58,5 +58,28 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // Admin Dropdown Toggle
+    const userDropdownBtn = document.getElementById('userDropdownBtn');
+    const userDropdown = document.getElementById('userDropdown');
+
+    userDropdownBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!userDropdownBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+
+    // Close dropdown when pressing Escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            userDropdown.classList.add('hidden');
+        }
+    });
+
     console.log("Admin panel ready.");
 });
