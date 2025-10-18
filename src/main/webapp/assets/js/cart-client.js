@@ -159,7 +159,21 @@
             couponCode: payload.couponCode || null,
             notes: payload.notes || null
         };
+        if (Array.isArray(payload.items) && payload.items.length > 0) {
+            requestBody.items = payload.items;
+        }
+        if (payload.mode) {
+            requestBody.mode = String(payload.mode);
+        }
         return apiClient.post('/checkout', requestBody);
+    }
+
+    async function startBuyNow(bookId, quantity) {
+        if (!bookId || quantity <= 0) {
+            throw new Error('Thông tin sản phẩm không hợp lệ');
+        }
+        var body = { bookId: bookId, quantity: quantity };
+        return apiClient.post('/checkout/buy-now', body);
     }
 
     function initAddToCartButtons() {
@@ -231,6 +245,8 @@
         clearCart: clearCart,
         checkout: checkout,
         onChange: onChange,
+        startBuyNow: startBuyNow,
+        showToast: showToast,
         lastCart: function () { return lastCart; }
     };
 

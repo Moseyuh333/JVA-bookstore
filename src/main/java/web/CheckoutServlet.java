@@ -14,13 +14,18 @@ import javax.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @WebServlet(name = "CheckoutServlet", urlPatterns = {"/api/checkout"})
 public class CheckoutServlet extends HttpServlet {
 
     private final Gson gson = new Gson();
+    private static final BigDecimal SHIPPING_FEE = BigDecimal.valueOf(26000);
+    private static final String MODE_BUY_NOW = "buy-now";
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -46,9 +51,25 @@ public class CheckoutServlet extends HttpServlet {
             }
             String couponCode = stringValue(payload.get("couponCode"));
             String notes = stringValue(payload.get("notes"));
+            String mode = stringValue(payload.get("mode"));
+            if (mode == null || mode.isEmpty()) {
+                mode = "cart";
+            }
+            List<OrderDAO.ItemSelection> selections = parseItems(payload.get("items"));
+            if (selections.isEmpty()) {
+                sendBadRequest(response, "Không có sản phẩm nào được chọn để thanh toán");
+                return;
+            }
             HttpSession session = request.getSession(true);
             String sessionId = session.getId();
-            Order order = OrderDAO.checkout(userId, addressId, paymentMethod, couponCode, notes, sessionId);
+            BigDecimal shipping = SHIPPING_FEE;
+            if (shipping == null || shipping.compareTo(BigDecimal.ZERO) < 0 || selections.isEmpty()) {
+                shipping = BigDecimal.ZERO;
+            }
+            Order order = OrderDAO.checkout(userId, addressId, paymentMethod, couponCode, notes, sessionId, selections, mode, shipping);
+            if (MODE_BUY_NOW.equals(mode)) {
+                session.removeAttribute(BuyNowServlet.SESSION_KEY);
+            }
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("success", true);
             responseBody.put("order", order);
@@ -94,6 +115,44 @@ public class CheckoutServlet extends HttpServlet {
         }
         String str = String.valueOf(value).trim();
         return str.isEmpty() ? null : str;
+    }
+
+    private List<OrderDAO.ItemSelection> parseItems(Object raw) {
+        List<OrderDAO.ItemSelection> items = new ArrayList<>();
+        if (!(raw instanceof List)) {
+            return items;
+        }
+        @SuppressWarnings("unchecked")
+        List<Object> nodes = (List<Object>) raw;
+        for (Object node : nodes) {
+            if (!(node instanceof Map)) {
+                continue;
+            }
+            Map<String, Object> map = (Map<String, Object>) node;
+            Long bookId = parseId(map.get("bookId"));
+            Integer quantity = parseQuantity(map.get("quantity"));
+            if (bookId == null || quantity == null || quantity <= 0) {
+                continue;
+            }
+            items.add(new OrderDAO.ItemSelection(bookId, quantity));
+        }
+        return items;
+    }
+
+    private Integer parseQuantity(Object raw) {
+        if (raw instanceof Number) {
+            int value = ((Number) raw).intValue();
+            return value > 0 ? value : null;
+        }
+        if (raw instanceof String) {
+            try {
+                int value = Integer.parseInt(((String) raw).trim());
+                return value > 0 ? value : null;
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private void sendUnauthorized(HttpServletResponse response) throws IOException {

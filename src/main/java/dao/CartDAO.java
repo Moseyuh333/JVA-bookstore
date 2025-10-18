@@ -323,6 +323,61 @@ public final class CartDAO {
         }
     }
 
+    public static CartItem createStandaloneItem(long bookId, int quantity) throws SQLException {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero");
+        }
+        ensureSchema();
+        try (Connection conn = DBUtil.getConnection()) {
+            return createStandaloneItem(conn, bookId, quantity);
+        }
+    }
+
+    private static CartItem createStandaloneItem(Connection conn, long bookId, int quantity) throws SQLException {
+        boolean canUseOriginalPrice = hasOriginalPriceColumn(conn);
+        boolean hasStockQuantity = columnExists(conn, "books", "stock_quantity");
+        boolean hasStockText = columnExists(conn, "books", "stock");
+
+        StringBuilder sql = new StringBuilder("SELECT id, title, author, image_url, price");
+        if (canUseOriginalPrice) {
+            sql.append(", original_price");
+        }
+        if (hasStockQuantity) {
+            sql.append(", stock_quantity");
+        }
+        if (hasStockText) {
+            sql.append(", stock");
+        }
+        sql.append(" FROM books WHERE id = ?");
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            stmt.setLong(1, bookId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new SQLException("Không tìm thấy sách với mã " + bookId);
+                }
+                CartItem item = new CartItem();
+                item.setBookId(bookId);
+                item.setTitle(rs.getString("title"));
+                item.setAuthor(rs.getString("author"));
+                item.setImageUrl(rs.getString("image_url"));
+                item.setQuantity(quantity);
+                BigDecimal price = rs.getBigDecimal("price");
+                if ((price == null || price.compareTo(BigDecimal.ZERO) <= 0) && canUseOriginalPrice) {
+                    BigDecimal fallback = rs.getBigDecimal("original_price");
+                    if (fallback != null && fallback.compareTo(BigDecimal.ZERO) > 0) {
+                        price = fallback;
+                    }
+                }
+                if (price == null) {
+                    price = BigDecimal.ZERO;
+                }
+                item.setUnitPrice(price);
+                return item;
+            }
+        }
+    }
+
     private static BigDecimal findBookPrice(Connection conn, long bookId) throws SQLException {
         boolean canUseOriginalPrice = hasOriginalPriceColumn(conn);
         String sql = "SELECT price" + (canUseOriginalPrice ? ", original_price" : "") + " FROM books WHERE id = ?";

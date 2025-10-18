@@ -8,6 +8,10 @@
         return;
     }
 
+    var SHIPPING_FEE = 26000;
+    var MODE_BUY_NOW = 'buy-now';
+    var MODE_CART = 'cart';
+
     var addressListEl;
     var orderItemsEl;
     var itemsCountEl;
@@ -18,6 +22,12 @@
     var feedbackEl;
     var placeOrderBtn;
     var notesEl;
+
+    var mode = MODE_CART;
+    var cartState = {
+        items: [],
+        selected: new Set()
+    };
 
     appShell.onReady(function () {
         addressListEl = document.querySelector('[data-checkout-address-list]');
@@ -31,24 +41,52 @@
         placeOrderBtn = document.getElementById('placeOrderBtn');
         notesEl = document.getElementById('checkoutNotes');
 
+        mode = getQueryParam('mode') === MODE_BUY_NOW ? MODE_BUY_NOW : MODE_CART;
+
+        bindSelectionEvents();
         bindPlaceOrder();
         bootstrap();
     });
 
     function bootstrap() {
-        Promise.all([loadCart(), loadAddresses()])
-            .catch(function (error) {
-                console.error('Checkout init error', error);
-                showFeedback('error', extractErrorMessage(error) || 'Không thể tải dữ liệu thanh toán.');
-            });
+        showFeedback();
+        var loaders = [loadAddresses()];
+        if (mode === MODE_BUY_NOW) {
+            loaders.push(loadBuyNowDraft());
+        } else {
+            loaders.push(loadCart());
+        }
+        Promise.all(loaders).catch(function (error) {
+            console.error('Checkout init error', error);
+            showFeedback('error', extractErrorMessage(error) || 'Không thể tải dữ liệu thanh toán.');
+        });
     }
 
     async function loadCart() {
         try {
             var cart = await cartClient.fetchCart();
-            renderCart(cart);
+            renderCartMode(cart);
         } catch (error) {
-            renderCart();
+            renderCartMode(null);
+            throw error;
+        }
+    }
+
+    async function loadBuyNowDraft() {
+        try {
+            var response = await apiClient.get('/checkout/buy-now');
+            if (!response || response.success !== true || !Array.isArray(response.items) || response.items.length === 0) {
+                renderBuyNowMode(null);
+                if (placeOrderBtn) {
+                    placeOrderBtn.disabled = true;
+                    placeOrderBtn.classList.add('opacity-60');
+                }
+                showFeedback('error', 'Không tìm thấy sản phẩm mua ngay. Vui lòng chọn lại sản phẩm.');
+                return;
+            }
+            renderBuyNowMode(response);
+        } catch (error) {
+            renderBuyNowMode(null);
             throw error;
         }
     }
@@ -73,52 +111,160 @@
         }
     }
 
-    function renderCart(cart) {
+    function renderCartMode(cart) {
+        cartState.items = [];
+        cartState.selected = new Set();
+
         if (!cart || !Array.isArray(cart.items) || cart.items.length === 0) {
             if (orderItemsEl) {
                 orderItemsEl.innerHTML = '<p class="text-sm text-gray-500">Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi thanh toán.</p>';
             }
-            updateOrderTotals({ subtotal: 0, discount: 0, shipping: 0 });
-            if (placeOrderBtn) {
-                placeOrderBtn.disabled = true;
-                placeOrderBtn.classList.add('opacity-60');
-            }
+            updateOrderTotals(0, 0);
+            itemsCountEl && (itemsCountEl.textContent = '0 sản phẩm');
+            disablePlaceOrder();
             return;
         }
 
-        if (placeOrderBtn) {
-            placeOrderBtn.disabled = false;
-            placeOrderBtn.classList.remove('opacity-60');
+        cart.items.forEach(function (item) {
+            var entry = {
+                bookId: item.bookId,
+                title: item.title || 'Sách chưa cập nhật',
+                quantity: item.quantity || 0,
+                unitPrice: toNumber(item.unitPrice),
+                author: item.author || '',
+                imageUrl: item.imageUrl || ''
+            };
+            cartState.items.push(entry);
+            cartState.selected.add(entry.bookId);
+        });
+
+        renderCartItemsWithCheckboxes();
+        enablePlaceOrder();
+        updateCartSummaryLabel();
+        updateTotalsFromSelection();
+    }
+
+    function renderBuyNowMode(payload) {
+        cartState.items = [];
+        cartState.selected = new Set();
+
+        if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) {
+            if (orderItemsEl) {
+                orderItemsEl.innerHTML = '<p class="text-sm text-gray-500">Không tìm thấy sản phẩm mua ngay.</p>';
+            }
+            updateOrderTotals(0, 0);
+            itemsCountEl && (itemsCountEl.textContent = '0 sản phẩm');
+            disablePlaceOrder();
+            return;
         }
 
-        var fragment = document.createDocumentFragment();
-        var subtotal = 0;
-        cart.items.forEach(function (item) {
-            var price = toNumber(item.unitPrice);
-            var qty = item.quantity || 0;
-            var total = price * qty;
-            subtotal += total;
-            var titleHtml = appShell.escapeHtml(item.title || 'Sách chưa cập nhật');
-            var totalLabel = appShell.formatCurrency(total);
-
-            var row = document.createElement('div');
-            row.className = 'flex items-start justify-between gap-3 text-sm text-gray-600';
-            row.innerHTML = `
-                <div class="flex-1">
-                    <p class="font-medium text-gray-800">${titleHtml}</p>
-                    <p class="text-xs text-gray-400">Số lượng: ${qty}</p>
-                </div>
-                <div class="text-right font-semibold text-gray-700">${totalLabel}</div>`;
-            fragment.appendChild(row);
+        payload.items.forEach(function (item) {
+            var entry = {
+                bookId: parseInt(item.bookId, 10),
+                title: item.title || 'Sách chưa cập nhật',
+                quantity: parseInt(item.quantity, 10) || 1,
+                unitPrice: toNumber(item.unitPrice),
+                author: item.author || '',
+                imageUrl: item.imageUrl || ''
+            };
+            cartState.items.push(entry);
+            cartState.selected.add(entry.bookId);
         });
 
         if (orderItemsEl) {
+            var fragment = document.createDocumentFragment();
+            cartState.items.forEach(function (item) {
+                var total = item.unitPrice * item.quantity;
+                var row = document.createElement('div');
+                row.className = 'flex items-start justify-between gap-3 text-sm text-gray-600';
+                row.innerHTML = '\n                <div class="flex-1">\n                    <p class="font-medium text-gray-800">' + appShell.escapeHtml(item.title) + '</p>\n                    <p class="text-xs text-gray-400">Số lượng: ' + item.quantity + '</p>\n                </div>\n                <div class="text-right font-semibold text-gray-700">' + appShell.formatCurrency(total) + '</div>';
+                fragment.appendChild(row);
+            });
             orderItemsEl.innerHTML = '';
             orderItemsEl.appendChild(fragment);
         }
-        updateOrderTotals({ subtotal: subtotal, discount: 0, shipping: 0 });
-        if (itemsCountEl) {
-            itemsCountEl.textContent = cart.items.length + ' sản phẩm';
+
+        itemsCountEl && (itemsCountEl.textContent = cartState.items.length + ' sản phẩm (Mua ngay)');
+        enablePlaceOrder();
+        updateTotalsFromSelection();
+    }
+
+    function renderCartItemsWithCheckboxes() {
+        if (!orderItemsEl) {
+            return;
+        }
+        var fragment = document.createDocumentFragment();
+        cartState.items.forEach(function (item) {
+            var total = item.unitPrice * item.quantity;
+            var row = document.createElement('label');
+            row.className = 'flex items-start justify-between gap-3 text-sm text-gray-600 border border-gray-200 rounded-xl px-3 py-3 mb-2 hover:border-amber-400 transition';
+            row.innerHTML = '\n                <div class="flex items-start gap-3">\n                    <input type="checkbox" class="mt-1 accent-amber-600" data-checkout-item value="' + item.bookId + '" checked>\n                    <div>\n                        <p class="font-medium text-gray-800">' + appShell.escapeHtml(item.title) + '</p>\n                        <p class="text-xs text-gray-400">Số lượng: ' + item.quantity + '</p>\n                    </div>\n                </div>\n                <div class="text-right font-semibold text-gray-700">' + appShell.formatCurrency(total) + '</div>';
+            fragment.appendChild(row);
+        });
+        orderItemsEl.innerHTML = '';
+        orderItemsEl.appendChild(fragment);
+    }
+
+    function bindSelectionEvents() {
+        if (!orderItemsEl) {
+            return;
+        }
+        orderItemsEl.addEventListener('change', function (event) {
+            if (mode !== MODE_CART) {
+                return;
+            }
+            var checkbox = event.target.closest('[data-checkout-item]');
+            if (!checkbox) {
+                return;
+            }
+            var bookId = parseInt(checkbox.value, 10);
+            if (Number.isNaN(bookId)) {
+                return;
+            }
+            if (checkbox.checked) {
+                cartState.selected.add(bookId);
+            } else {
+                cartState.selected.delete(bookId);
+            }
+            updateCartSummaryLabel();
+            updateTotalsFromSelection();
+        });
+    }
+
+    function updateCartSummaryLabel() {
+        if (!itemsCountEl) {
+            return;
+        }
+        var selectedCount = cartState.selected.size;
+        var totalCount = cartState.items.length;
+        itemsCountEl.textContent = selectedCount + ' / ' + totalCount + ' sản phẩm';
+    }
+
+    function updateTotalsFromSelection() {
+        var subtotal = 0;
+        cartState.items.forEach(function (item) {
+            if (mode === MODE_BUY_NOW || cartState.selected.has(item.bookId)) {
+                subtotal += item.unitPrice * item.quantity;
+            }
+        });
+        var shipping = subtotal > 0 ? SHIPPING_FEE : 0;
+        updateOrderTotals(subtotal, shipping);
+    }
+
+    function updateOrderTotals(subtotal, shipping) {
+        var discount = 0;
+        var total = Math.max(0, subtotal - discount + shipping);
+        if (subtotalEl) {
+            subtotalEl.textContent = appShell.formatCurrency(subtotal);
+        }
+        if (discountEl) {
+            discountEl.textContent = appShell.formatCurrency(discount);
+        }
+        if (shippingEl) {
+            shippingEl.textContent = appShell.formatCurrency(shipping);
+        }
+        if (totalEl) {
+            totalEl.textContent = appShell.formatCurrency(total);
         }
     }
 
@@ -127,14 +273,8 @@
             return;
         }
         if (!Array.isArray(addresses) || addresses.length === 0) {
-            addressListEl.innerHTML = `
-                <div class="bg-amber-50 border border-dashed border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-                    Chưa có địa chỉ giao hàng. <a href="${(appShell.contextPath || '')}/profile.jsp#addresses" class="font-semibold underline">Thêm địa chỉ ngay</a> để tiếp tục.
-                </div>`;
-            if (placeOrderBtn) {
-                placeOrderBtn.disabled = true;
-                placeOrderBtn.classList.add('opacity-60');
-            }
+            addressListEl.innerHTML = '\n                <div class="bg-amber-50 border border-dashed border-amber-200 rounded-xl p-4 text-sm text-amber-800">\n                    Chưa có địa chỉ giao hàng. <a href="' + (appShell.contextPath || '') + '/profile.jsp#addresses" class="font-semibold underline">Thêm địa chỉ ngay</a> để tiếp tục.\n                </div>';
+            disablePlaceOrder();
             return;
         }
 
@@ -150,13 +290,7 @@
             var phoneHtml = appShell.escapeHtml(address.phone || 'Chưa có số điện thoại');
             var option = document.createElement('label');
             option.className = 'border rounded-2xl p-4 flex gap-3 cursor-pointer hover:border-amber-500 transition';
-            option.innerHTML = `
-                <input type="radio" class="mt-1 accent-amber-600" name="checkoutAddress" value="${addressId}" ${index === 0 ? 'checked' : ''}>
-                <div class="flex-1">
-                    <p class="font-semibold text-gray-800">${recipientNameHtml}</p>
-                    <p class="text-xs text-gray-500 mb-1">${phoneHtml}</p>
-                    <p class="text-sm text-gray-600 leading-6">${labelText}</p>
-                </div>`;
+            option.innerHTML = '\n                <input type="radio" class="mt-1 accent-amber-600" name="checkoutAddress" value="' + addressId + '" ' + (index === 0 ? 'checked' : '') + '>\n                <div class="flex-1">\n                    <p class="font-semibold text-gray-800">' + recipientNameHtml + '</p>\n                    <p class="text-xs text-gray-500 mb-1">' + phoneHtml + '</p>\n                    <p class="text-sm text-gray-600 leading-6">' + labelText + '</p>\n                </div>';
             fragment.appendChild(option);
         });
         addressListEl.innerHTML = '';
@@ -169,29 +303,7 @@
             }
         }
 
-        if (placeOrderBtn) {
-            placeOrderBtn.disabled = false;
-            placeOrderBtn.classList.remove('opacity-60');
-        }
-    }
-
-    function updateOrderTotals(summary) {
-        var subtotal = toNumber(summary && summary.subtotal);
-        var discount = toNumber(summary && summary.discount);
-        var shipping = toNumber(summary && summary.shipping);
-        var total = subtotal - discount + shipping;
-        if (subtotalEl) {
-            subtotalEl.textContent = appShell.formatCurrency(subtotal);
-        }
-        if (discountEl) {
-            discountEl.textContent = appShell.formatCurrency(discount);
-        }
-        if (shippingEl) {
-            shippingEl.textContent = appShell.formatCurrency(shipping);
-        }
-        if (totalEl) {
-            totalEl.textContent = appShell.formatCurrency(total);
-        }
+        enablePlaceOrder();
     }
 
     function bindPlaceOrder() {
@@ -204,6 +316,11 @@
                 showFeedback('error', 'Vui lòng chọn địa chỉ giao hàng.');
                 return;
             }
+            var payloadItems = buildSelectedItems();
+            if (payloadItems.length === 0) {
+                showFeedback('error', 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+                return;
+            }
             var paymentMethod = getSelectedPaymentMethod();
             var notes = notesEl ? notesEl.value.trim() : '';
             placeOrderBtn.disabled = true;
@@ -214,9 +331,14 @@
                 var result = await cartClient.checkout({
                     addressId: selectedAddress,
                     paymentMethod: paymentMethod,
-                    notes: notes || null
+                    notes: notes || null,
+                    items: payloadItems,
+                    mode: mode
                 });
                 if (result && result.success) {
+                    if (mode === MODE_BUY_NOW) {
+                        await apiClient.del('/checkout/buy-now');
+                    }
                     showFeedback('success', 'Đặt hàng thành công! Chuyển đến lịch sử đơn hàng...');
                     setTimeout(function () {
                         window.location.href = (appShell.contextPath || '') + '/profile.jsp#orders';
@@ -233,6 +355,36 @@
                 placeOrderBtn.textContent = 'Đặt hàng';
             }
         });
+    }
+
+    function buildSelectedItems() {
+        var items = [];
+        if (mode === MODE_BUY_NOW) {
+            cartState.items.forEach(function (item) {
+                items.push({ bookId: item.bookId, quantity: item.quantity });
+            });
+            return items;
+        }
+        cartState.items.forEach(function (item) {
+            if (cartState.selected.has(item.bookId)) {
+                items.push({ bookId: item.bookId, quantity: item.quantity });
+            }
+        });
+        return items;
+    }
+
+    function disablePlaceOrder() {
+        if (placeOrderBtn) {
+            placeOrderBtn.disabled = true;
+            placeOrderBtn.classList.add('opacity-60');
+        }
+    }
+
+    function enablePlaceOrder() {
+        if (placeOrderBtn) {
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.classList.remove('opacity-60');
+        }
     }
 
     function getSelectedAddressId() {
@@ -306,4 +458,10 @@
         }
         return 0;
     }
+
+    function getQueryParam(name) {
+        var params = new URLSearchParams(window.location.search);
+        return params.get(name);
+    }
+
 })(window, document);

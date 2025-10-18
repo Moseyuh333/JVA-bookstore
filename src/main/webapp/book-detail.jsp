@@ -270,12 +270,18 @@
           }
           buyNowButton.disabled = true;
           buyNowButton.classList.add('opacity-60');
-          window.cartClient.addItem(bookId, 1)
-            .then(function () {
-              window.location.href = contextPath + '/checkout.jsp';
+          window.cartClient.startBuyNow(bookId, 1)
+            .then(function (result) {
+              if (!result || result.success !== true) {
+                throw new Error('Không thể tạo đơn mua ngay');
+              }
+              window.location.href = contextPath + '/checkout.jsp?mode=buy-now';
             })
             .catch(function (error) {
               console.error('Buy now error', error);
+              if (window.cartClient && typeof window.cartClient.showToast === 'function') {
+                window.cartClient.showToast('Không thể mua ngay sản phẩm. Vui lòng thử lại.', true);
+              }
             })
             .finally(function () {
               buyNowButton.disabled = false;

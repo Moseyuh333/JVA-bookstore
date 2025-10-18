@@ -17,8 +17,10 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 public final class OrderDAO {
@@ -28,27 +30,35 @@ public final class OrderDAO {
     private OrderDAO() {
     }
 
-    public static Order checkout(long userId, long addressId, String paymentMethod, String couponCode, String notes, String sessionId) throws SQLException {
+    public static Order checkout(long userId, long addressId, String paymentMethod, String couponCode, String notes,
+                                 String sessionId, List<ItemSelection> selections, String modeRaw, BigDecimal shippingFee) throws SQLException {
+        if (selections == null || selections.isEmpty()) {
+            throw new SQLException("Không có sản phẩm để thanh toán");
+        }
         String normalizedMethod = normalizePaymentMethod(paymentMethod);
+        CheckoutMode mode = CheckoutMode.from(modeRaw);
+        BigDecimal effectiveShipping = shippingFee != null && shippingFee.compareTo(BigDecimal.ZERO) > 0 ? shippingFee : BigDecimal.ZERO;
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                CartData cartData = loadCartForCheckout(conn, userId, sessionId);
+                CartData cartData = mode == CheckoutMode.BUY_NOW
+                        ? buildBuyNowCartData(conn, selections)
+                        : loadCartForCheckout(conn, userId, sessionId, selections);
                 if (cartData.items.isEmpty()) {
-                    throw new SQLException("Cart is empty");
+                    throw new SQLException("Không có sản phẩm hợp lệ để thanh toán");
                 }
                 AddressSnapshot address = loadAddress(conn, userId, addressId);
                 CouponResult couponResult = CouponResult.empty();
                 if (couponCode != null && !couponCode.trim().isEmpty()) {
                     couponResult = applyCoupon(conn, userId, couponCode.trim(), cartData.subtotal);
                 }
-                BigDecimal shippingFee = BigDecimal.ZERO;
-                BigDecimal total = cartData.subtotal.add(shippingFee).subtract(couponResult.discount);
+                BigDecimal shipping = cartData.items.isEmpty() ? BigDecimal.ZERO : effectiveShipping;
+                BigDecimal total = cartData.subtotal.add(shipping).subtract(couponResult.discount);
                 if (total.compareTo(BigDecimal.ZERO) < 0) {
                     total = BigDecimal.ZERO;
                 }
                 String orderCode = generateOrderCode();
-                long orderId = insertOrder(conn, userId, normalizedMethod, notes, address, cartData, shippingFee, total, couponResult, orderCode);
+                long orderId = insertOrder(conn, userId, normalizedMethod, notes, address, cartData, shipping, total, couponResult, orderCode);
                 insertOrderItems(conn, orderId, cartData);
                 updateInventory(conn, cartData);
                 recordStatus(conn, orderId, "new", "Đặt hàng thành công", String.valueOf(userId));
@@ -56,7 +66,9 @@ public final class OrderDAO {
                 if (couponResult.couponId != null) {
                     recordCouponUsage(conn, orderId, couponResult);
                 }
-                clearCartAfterCheckout(conn, cartData.cartId);
+                if (mode == CheckoutMode.CART) {
+                    clearCartAfterCheckout(conn, cartData, selections);
+                }
                 Order order = fetchOrderById(conn, orderId, userId);
                 conn.commit();
                 return order;
@@ -300,41 +312,157 @@ public final class OrderDAO {
         }
     }
 
-    private static void clearCartAfterCheckout(Connection conn, long cartId) throws SQLException {
-        String deleteItems = "DELETE FROM cart_items WHERE cart_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(deleteItems)) {
-            stmt.setLong(1, cartId);
+    private static void clearCartAfterCheckout(Connection conn, CartData cartData, List<ItemSelection> selections) throws SQLException {
+        if (cartData.cartId == null) {
+            return;
+        }
+        if (selections == null || selections.isEmpty()) {
+            String deleteItems = "DELETE FROM cart_items WHERE cart_id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(deleteItems)) {
+                stmt.setLong(1, cartData.cartId);
+                stmt.executeUpdate();
+            }
+            String updateCart = "UPDATE carts SET status = 'checked_out', updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(updateCart)) {
+                stmt.setLong(1, cartData.cartId);
+                stmt.executeUpdate();
+            }
+            return;
+        }
+
+        String deleteSql = "DELETE FROM cart_items WHERE cart_id = ? AND book_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(deleteSql)) {
+            for (ItemSelection selection : selections) {
+                stmt.setLong(1, cartData.cartId);
+                stmt.setLong(2, selection.getBookId());
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        }
+
+        try (PreparedStatement stmt = conn.prepareStatement("UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
+            stmt.setLong(1, cartData.cartId);
             stmt.executeUpdate();
         }
-        String updateCart = "UPDATE carts SET status = 'checked_out', updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(updateCart)) {
-            stmt.setLong(1, cartId);
-            stmt.executeUpdate();
+
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM cart_items WHERE cart_id = ?")) {
+            stmt.setLong(1, cartData.cartId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next() && rs.getInt(1) == 0) {
+                    try (PreparedStatement update = conn.prepareStatement("UPDATE carts SET status = 'checked_out', updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
+                        update.setLong(1, cartData.cartId);
+                        update.executeUpdate();
+                    }
+                }
+            }
         }
     }
 
-    private static CartData loadCartForCheckout(Connection conn, long userId, String sessionId) throws SQLException {
+    private static CartData buildBuyNowCartData(Connection conn, List<ItemSelection> selections) throws SQLException {
         CartData cartData = new CartData();
-        String sql = "SELECT c.id AS cart_id, ci.book_id, ci.quantity, ci.unit_price, b.title, b.author, b.image_url, b.stock_quantity "
+        boolean hasOriginalPrice = columnExists(conn, "books", "original_price");
+        boolean hasStockQuantity = columnExists(conn, "books", "stock_quantity");
+        StringBuilder sql = new StringBuilder("SELECT id, title, author, image_url, price");
+        if (hasOriginalPrice) {
+            sql.append(", original_price");
+        }
+        if (hasStockQuantity) {
+            sql.append(", stock_quantity");
+        }
+        sql.append(" FROM books WHERE id = ?");
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            for (ItemSelection selection : selections) {
+                stmt.setLong(1, selection.getBookId());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new SQLException("Không tìm thấy sách với mã " + selection.getBookId());
+                    }
+                    CartLine item = new CartLine();
+                    item.bookId = rs.getLong("id");
+                    item.quantity = selection.getQuantity();
+                    item.unitPrice = rs.getBigDecimal("price");
+                    if ((item.unitPrice == null || item.unitPrice.compareTo(BigDecimal.ZERO) <= 0) && hasOriginalPrice) {
+                        BigDecimal fallback = rs.getBigDecimal("original_price");
+                        if (fallback != null && fallback.compareTo(BigDecimal.ZERO) > 0) {
+                            item.unitPrice = fallback;
+                        }
+                    }
+                    if (item.unitPrice == null) {
+                        item.unitPrice = BigDecimal.ZERO;
+                    }
+                    item.title = rs.getString("title");
+                    item.author = rs.getString("author");
+                    item.imageUrl = rs.getString("image_url");
+                    if (hasStockQuantity) {
+                        item.stockQuantity = rs.getInt("stock_quantity");
+                        if (!rs.wasNull() && item.quantity > item.stockQuantity) {
+                            throw new SQLException("Số lượng sách \"" + item.title + "\" vượt quá tồn kho");
+                        }
+                    }
+                    cartData.items.add(item);
+                    cartData.subtotal = cartData.subtotal.add(item.unitPrice.multiply(BigDecimal.valueOf(item.quantity)));
+                }
+                stmt.clearParameters();
+            }
+        }
+        cartData.snapshotJson = buildCartSnapshot(cartData);
+        return cartData;
+    }
+
+    private static CartData loadCartForCheckout(Connection conn, long userId, String sessionId, List<ItemSelection> selections) throws SQLException {
+        if (selections == null || selections.isEmpty()) {
+            throw new SQLException("Không có sản phẩm trong giỏ để thanh toán");
+        }
+        CartData cartData = new CartData();
+        Map<Long, ItemSelection> selectionMap = new HashMap<>();
+        for (ItemSelection selection : selections) {
+            selectionMap.put(selection.getBookId(), selection);
+        }
+        StringBuilder sql = new StringBuilder("SELECT c.id AS cart_id, ci.book_id, ci.quantity, ci.unit_price, b.title, b.author, b.image_url, b.stock_quantity "
                 + "FROM carts c "
                 + "INNER JOIN cart_items ci ON ci.cart_id = c.id "
                 + "INNER JOIN books b ON b.id = ci.book_id "
-                + "WHERE c.status = 'active' AND (c.user_id = ? OR (c.user_id IS NULL AND c.session_id = ?))";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, userId);
-            stmt.setString(2, sessionId);
+                + "WHERE c.status = 'active' AND (c.user_id = ? OR (c.user_id IS NULL AND c.session_id = ?)) "
+                + "AND ci.book_id IN (");
+        for (int i = 0; i < selections.size(); i++) {
+            if (i > 0) {
+                sql.append(',');
+            }
+            sql.append('?');
+        }
+        sql.append(')');
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int index = 1;
+            stmt.setLong(index++, userId);
+            stmt.setString(index++, sessionId);
+            for (ItemSelection selection : selections) {
+                stmt.setLong(index++, selection.getBookId());
+            }
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     cartData.cartId = rs.getLong("cart_id");
                     CartLine item = new CartLine();
                     item.bookId = rs.getLong("book_id");
-                    item.quantity = rs.getInt("quantity");
+                    ItemSelection requested = selectionMap.get(item.bookId);
+                    if (requested == null) {
+                        continue;
+                    }
+                    int storedQuantity = rs.getInt("quantity");
+                    item.quantity = requested.getQuantity();
+                    if (item.quantity > storedQuantity) {
+                        throw new SQLException("Số lượng sách \"" + rs.getString("title") + "\" vượt quá số lượng trong giỏ hàng");
+                    }
                     item.unitPrice = rs.getBigDecimal("unit_price");
+                    if (item.unitPrice == null) {
+                        item.unitPrice = BigDecimal.ZERO;
+                    }
                     item.title = rs.getString("title");
                     item.author = rs.getString("author");
                     item.imageUrl = rs.getString("image_url");
                     item.stockQuantity = rs.getInt("stock_quantity");
-                    if (item.quantity > item.stockQuantity) {
+                    if (!rs.wasNull() && item.quantity > item.stockQuantity) {
                         throw new SQLException("Số lượng sách \"" + item.title + "\" vượt quá tồn kho");
                     }
                     cartData.items.add(item);
@@ -343,10 +471,24 @@ public final class OrderDAO {
             }
         }
         if (cartData.cartId == null) {
-            throw new SQLException("Cart not found for checkout");
+            throw new SQLException("Không tìm thấy giỏ hàng để thanh toán");
+        }
+        if (cartData.items.size() != selectionMap.size()) {
+            throw new SQLException("Một số sản phẩm đã bị xoá khỏi giỏ hàng, vui lòng tải lại trang");
         }
         cartData.snapshotJson = buildCartSnapshot(cartData);
         return cartData;
+    }
+
+    private static boolean columnExists(Connection conn, String table, String column) throws SQLException {
+        try (ResultSet rs = conn.getMetaData().getColumns(null, null, table, column)) {
+            if (rs.next()) {
+                return true;
+            }
+        }
+        try (ResultSet rs = conn.getMetaData().getColumns(null, null, table.toUpperCase(Locale.ROOT), column.toUpperCase(Locale.ROOT))) {
+            return rs.next();
+        }
     }
 
     private static AddressSnapshot loadAddress(Connection conn, long userId, long addressId) throws SQLException {
@@ -530,6 +672,36 @@ public final class OrderDAO {
             return null;
         }
         return timestamp.toLocalDateTime();
+    }
+
+    private enum CheckoutMode {
+        CART,
+        BUY_NOW;
+
+        static CheckoutMode from(String raw) {
+            if (raw == null) {
+                return CART;
+            }
+            return "buy-now".equalsIgnoreCase(raw) ? BUY_NOW : CART;
+        }
+    }
+
+    public static final class ItemSelection {
+        private final long bookId;
+        private final int quantity;
+
+        public ItemSelection(long bookId, int quantity) {
+            this.bookId = bookId;
+            this.quantity = quantity;
+        }
+
+        public long getBookId() {
+            return bookId;
+        }
+
+        public int getQuantity() {
+            return quantity;
+        }
     }
 
     private static class CartData {
