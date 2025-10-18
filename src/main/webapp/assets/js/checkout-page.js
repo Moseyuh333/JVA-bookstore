@@ -65,8 +65,20 @@
     async function loadCart() {
         try {
             var cart = await cartClient.fetchCart();
+            if (!cart || !Array.isArray(cart.items) || cart.items.length === 0) {
+                var cached = typeof cartClient.lastCart === 'function' ? cartClient.lastCart() : null;
+                if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
+                    renderCartMode(cached);
+                    return;
+                }
+            }
             renderCartMode(cart);
         } catch (error) {
+            var cached = typeof cartClient.lastCart === 'function' ? cartClient.lastCart() : null;
+            if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
+                renderCartMode(cached);
+                return;
+            }
             renderCartMode(null);
             throw error;
         }
