@@ -141,8 +141,12 @@
         }
 
         cart.items.forEach(function (item) {
+            var normalizedId = normalizeBookId(item.bookId);
+            if (normalizedId === null) {
+                return;
+            }
             var entry = {
-                bookId: item.bookId,
+                bookId: normalizedId,
                 title: item.title || 'Sách chưa cập nhật',
                 quantity: item.quantity || 0,
                 unitPrice: toNumber(item.unitPrice),
@@ -175,8 +179,12 @@
         }
 
         payload.items.forEach(function (item) {
+            var normalizedId = normalizeBookId(item.bookId);
+            if (normalizedId === null) {
+                return;
+            }
             var entry = {
-                bookId: parseInt(item.bookId, 10),
+                bookId: normalizedId,
                 title: item.title || 'Sách chưa cập nhật',
                 quantity: parseInt(item.quantity, 10) || 1,
                 unitPrice: toNumber(item.unitPrice),
@@ -234,8 +242,8 @@
             if (!checkbox) {
                 return;
             }
-            var bookId = parseInt(checkbox.value, 10);
-            if (Number.isNaN(bookId)) {
+            var bookId = normalizeBookId(checkbox.value);
+            if (bookId === null) {
                 return;
             }
             if (checkbox.checked) {
@@ -395,6 +403,14 @@
             }
         });
         return items;
+    }
+
+    function normalizeBookId(raw) {
+        var parsed = parseInt(raw, 10);
+        if (Number.isFinite(parsed) && parsed > 0) {
+            return parsed;
+        }
+        return null;
     }
 
     function disablePlaceOrder() {
