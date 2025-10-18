@@ -88,20 +88,36 @@
         const json = await res.json();
         const enteredUsername = (form.elements['username']?.value || '').trim();
 
+        // Check if admin login (username starts with 'admin' or is 'admin')
+        const isAdmin = enteredUsername.toLowerCase().startsWith('admin') || enteredUsername.toLowerCase() === 'admin';
+
         // Save token and username to localStorage for dropdown rendering
         localStorage.setItem('auth_token', json.token);
+        if (isAdmin) {
+          localStorage.setItem('admin_token', json.token);
+        }
         if (enteredUsername.length > 0) {
           localStorage.setItem('auth_username', enteredUsername);
+          if (isAdmin) {
+            localStorage.setItem('admin_username', enteredUsername);
+          }
         } else {
           localStorage.removeItem('auth_username');
+          if (isAdmin) {
+            localStorage.removeItem('admin_username');
+          }
         }
 
         // Show success message
         document.getElementById('result').innerHTML = '<div class="alert alert-success">✅ Đăng nhập thành công! Đang chuyển hướng...</div>';
-        
-        // Redirect to homepage after a short delay
+
+        // Redirect to admin dashboard if admin, otherwise homepage
         setTimeout(() => {
-          window.location.href = '<%= request.getContextPath() %>/';
+          if (isAdmin) {
+            window.location.href = '<%= request.getContextPath() %>/admin-dashboard';
+          } else {
+            window.location.href = '<%= request.getContextPath() %>/';
+          }
         }, 1500);
         
       } else {
