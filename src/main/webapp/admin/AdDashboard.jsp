@@ -44,14 +44,9 @@
             margin-top: 70px;
         }
 
-        .main-sidebar {
-            width: 260px;
-        }
-
         .main-content {
-            flex: 1;
-            padding: 30px;
-            overflow: visible;
+            margin-top: 70px;
+            padding: 24px;
         }
 
         .container-dashboard {
