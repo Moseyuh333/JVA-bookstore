@@ -27,13 +27,9 @@
                 <a href="<%=request.getContextPath()%>/index.jsp" class="flex items-center space-x-2">
                     <i data-feather="book-open" class="w-6 h-6"></i>
                     <span class="title-font text-xl font-bold">Bookish Bliss Haven</span>
+                    <br>
+                    <span class="ml-2 text-sm font-normal">Admin Panel</span>
                 </a>
-                <div class="hidden md:flex space-x-8">
-                    <a href="<%=request.getContextPath()%>/index.jsp" class="hover:text-amber-200 font-medium">Trang chủ</a>
-                    <a href="<%=request.getContextPath()%>/catalog.jsp" class="hover:text-amber-200 font-medium">Danh mục</a>
-                    <a href="<%=request.getContextPath()%>/catalog.jsp?sort=best" class="hover:text-amber-200 font-medium">Bán chạy</a>
-                    <a href="<%=request.getContextPath()%>/catalog.jsp?sort=rated" class="hover:text-amber-200 font-medium">Đánh giá cao</a>
-                </div>
                 <div class="flex items-center space-x-4">
                     <div class="relative">
                         <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
