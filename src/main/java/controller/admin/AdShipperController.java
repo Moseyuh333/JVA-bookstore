@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Servlet implementation class AdShipperController
  */
-@WebServlet("/admin-shipper")
+@WebServlet("/admin-shippers")
 public class AdShipperController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
