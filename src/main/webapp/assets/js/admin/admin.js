@@ -189,5 +189,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     initAdminDropdown();
+
+    // Initialize Feather Icons
+    feather.replace();
+
+    // Admin Dropdown Toggle
+    document.addEventListener('DOMContentLoaded', function () {
+        const adminDropdownBtn = document.getElementById('adminDropdownBtn');
+        const adminDropdown = document.getElementById('adminDropdown');
+
+        if (adminDropdownBtn && adminDropdown) {
+            adminDropdownBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                adminDropdown.classList.toggle('hidden');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!adminDropdownBtn.contains(e.target) && !adminDropdown.contains(e.target)) {
+                    adminDropdown.classList.add('hidden');
+                }
+            });
+
+            // Close dropdown when pressing Escape
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    adminDropdown.classList.add('hidden');
+                }
+            });
+        }
+    });
     console.log("⚙️ Admin dropdown initialized");
 });
