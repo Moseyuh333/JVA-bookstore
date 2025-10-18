@@ -97,3 +97,15 @@ CREATE TABLE IF NOT EXISTS book_reviews (
 CREATE INDEX IF NOT EXISTS idx_book_reviews_book_id ON book_reviews(book_id);
 CREATE INDEX IF NOT EXISTS idx_book_reviews_user_id ON book_reviews(user_id);
 CREATE INDEX IF NOT EXISTS idx_book_reviews_status ON book_reviews(status);
+
+CREATE TABLE IF NOT EXISTS store_discounts (
+    id BIGSERIAL PRIMARY KEY,
+    shop_id BIGINT REFERENCES shops(id) ON DELETE CASCADE,
+    discount_rate NUMERIC(5,2) NOT NULL CHECK (discount_rate >= 0 AND discount_rate <= 100),
+    start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_date TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE,
+    description TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_store_discounts_shop_id ON store_discounts(shop_id);
+CREATE INDEX IF NOT EXISTS idx_store_discounts_active ON store_discounts(active);
