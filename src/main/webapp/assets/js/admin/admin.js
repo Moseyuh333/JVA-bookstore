@@ -58,30 +58,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Guest dropdown (chưa đăng nhập)
-        function renderGuestDropdown() {
-            adminDropdown.innerHTML = `
-                <div class="py-2">
-                    <a href="${contextPath}/login.jsp"
-                        class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800 transition">
-                        <i data-feather="log-in" class="w-4 h-4 mr-2"></i>
-                        <span class="text-sm">Đăng nhập</span>
-                    </a>
-                    <a href="${contextPath}/register.jsp"
-                        class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800 transition">
-                        <i data-feather="user-plus" class="w-4 h-4 mr-2"></i>
-                        <span class="text-sm">Đăng ký</span>
-                    </a>
-                    <hr class="my-1 border-gray-200">
-                    <a href="${contextPath}/forgot-password.jsp"
-                        class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800 transition">
-                        <i data-feather="key" class="w-4 h-4 mr-2"></i>
-                        <span class="text-sm">Quên mật khẩu</span>
-                    </a>
-                </div>`;
-            refreshIcons();
-        }
-
         // Admin dropdown (đã đăng nhập)
         function renderAdminDropdown(username) {
             const safeName = username ? escapeHtml(username.trim()) : "Admin";
