@@ -89,11 +89,6 @@
                         <div id="adminDropdown"
                             class="hidden absolute right-0 mt-2 admin-dropdown-menu bg-white rounded-lg border border-gray-200 z-50">
                             <div class="py-2">
-                                <!-- Admin Info -->
-                                <div class="px-4 py-3 border-b border-gray-200">
-                                    <p class="text-sm font-semibold text-gray-900">Tài khoản Admin</p>
-                                    <p class="text-xs text-gray-500 mt-1">admin@bookishhaven.com</p>
-                                </div>
 
                                 <!-- Menu Items -->
                                 <a href="<%=request.getContextPath()%>/admin/profile.jsp"
@@ -101,17 +96,6 @@
                                     <i class="fas fa-user-circle w-4 h-4 mr-3"></i>
                                     <span class="text-sm">Thông tin cá nhân</span>
                                 </a>
-                                <a href="<%=request.getContextPath()%>/admin/settings.jsp"
-                                    class="dropdown-item flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
-                                    <i class="fas fa-cog w-4 h-4 mr-3"></i>
-                                    <span class="text-sm">Cài đặt hệ thống</span>
-                                </a>
-                                <a href="<%=request.getContextPath()%>/admin/activity-log.jsp"
-                                    class="dropdown-item flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
-                                    <i class="fas fa-history w-4 h-4 mr-3"></i>
-                                    <span class="text-sm">Lịch sử hoạt động</span>
-                                </a>
-
                                 <div class="dropdown-divider mx-2"></div>
 
                                 <a href="<%=request.getContextPath()%>/admin/change-password.jsp"
