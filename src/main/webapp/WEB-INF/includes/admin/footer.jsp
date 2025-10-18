@@ -1,8 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
-<!-- Add required CSS/JS libraries -->
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
 <footer class="bg-gray-900 text-gray-300 py-6 px-8 mt-16">
   <div class="container mx-auto flex flex-col lg:flex-row items-center justify-between gap-4 text-sm text-gray-300">
     
@@ -42,6 +39,7 @@
 </footer>
 
 <!-- ====== JS Framework ====== -->
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/feather-icons"></script>
