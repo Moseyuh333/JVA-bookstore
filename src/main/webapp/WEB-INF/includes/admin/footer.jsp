@@ -2,7 +2,6 @@
 
 <!-- Add required CSS/JS libraries -->
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 
 <footer class="bg-gray-900 text-gray-300 py-6 px-8 mt-16">
   <div class="container mx-auto flex flex-col lg:flex-row items-center justify-between gap-4 text-sm text-gray-300">
@@ -46,18 +45,10 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/feather-icons"></script>
-<!-- Core JS -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Feather Icons -->
-<script src="https://unpkg.com/feather-icons"></script>
-
 <!-- ====== JS Chung cho Admin ====== -->
-<script src="${pageContext.request.contextPath}/assets/js/app-shell.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/admin/admin.js"></script>
-
-</body>
+<script src="$%=request.getContextPath()%>/assets/js/app-shell.js"></script>
+<script src="$%=request.getContextPath()%>/assets/js/admin/admin.js"></script>
