@@ -516,13 +516,7 @@
         <main class="main-content">
             <div class="container-dashboard">
                 <!-- Page Header -->
-                <div class="page-header">
-                    <h1>
-                        <i class="fas fa-chart-line" style="color: #f59e0b;"></i>
-                        Dashboard tổng quan
-                    </h1>
-                    <p>Tổng hợp thông tin kinh doanh từ hệ thống</p>
-                </div>
+                <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
 
                 <!-- Stats Grid -->
                 <div class="stats-grid">
