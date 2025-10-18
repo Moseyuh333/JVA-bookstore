@@ -248,48 +248,81 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      document.querySelectorAll('[data-review-progress]').forEach(function (bar) {
-        var raw = bar.getAttribute('data-review-progress');
-        var value = parseInt(raw, 10);
-        if (Number.isNaN(value)) {
-          value = 0;
-        }
-        value = Math.max(0, Math.min(100, value));
-        bar.style.width = value + '%';
-      });
+    (function (window, document) {
+      'use strict';
 
-      var contextPath = (window.appShell ? window.appShell.contextPath : '');
-      var buyNowButton = document.querySelector('[data-buy-now]');
-      if (buyNowButton) {
-        buyNowButton.addEventListener('click', function () {
-          var bookId = parseInt(buyNowButton.getAttribute('data-book-id'), 10);
-          if (Number.isNaN(bookId) || bookId <= 0 || !window.cartClient) {
-            window.location.href = contextPath + '/catalog.jsp#cart';
-            return;
+      function formatReviewBars() {
+        document.querySelectorAll('[data-review-progress]').forEach(function (bar) {
+          var raw = bar.getAttribute('data-review-progress');
+          var value = parseInt(raw, 10);
+          if (Number.isNaN(value)) {
+            value = 0;
           }
-          buyNowButton.disabled = true;
-          buyNowButton.classList.add('opacity-60');
-          window.cartClient.startBuyNow(bookId, 1)
-            .then(function (result) {
-              if (!result || result.success !== true) {
-                throw new Error('Không thể tạo đơn mua ngay');
-              }
-              window.location.href = contextPath + '/checkout.jsp?mode=buy-now';
-            })
-            .catch(function (error) {
-              console.error('Buy now error', error);
-              if (window.cartClient && typeof window.cartClient.showToast === 'function') {
-                window.cartClient.showToast('Không thể mua ngay sản phẩm. Vui lòng thử lại.', true);
-              }
-            })
-            .finally(function () {
-              buyNowButton.disabled = false;
-              buyNowButton.classList.remove('opacity-60');
-            });
+          value = Math.max(0, Math.min(100, value));
+          bar.style.width = value + '%';
         });
       }
-    });
+
+      function handleBuyNowClick(event) {
+        event.preventDefault();
+        var button = event.currentTarget;
+        var contextPath = (window.appShell ? window.appShell.contextPath : '');
+        var bookId = parseInt(button.getAttribute('data-book-id'), 10);
+        if (Number.isNaN(bookId) || bookId <= 0) {
+          window.location.href = contextPath + '/catalog.jsp#cart';
+          return;
+        }
+
+        var cartClient = window.cartClient;
+        var apiClient = window.apiClient;
+        if (!apiClient) {
+          window.location.href = contextPath + '/catalog.jsp#cart';
+          return;
+        }
+
+        button.disabled = true;
+        button.classList.add('opacity-60');
+
+        var promise;
+        if (cartClient && typeof cartClient.startBuyNow === 'function') {
+          promise = cartClient.startBuyNow(bookId, 1);
+        } else {
+          promise = apiClient.post('/checkout/buy-now', { bookId: bookId, quantity: 1 });
+        }
+
+        promise
+          .then(function (result) {
+            if (!result || result.success !== true) {
+              throw new Error('Không thể tạo đơn mua ngay');
+            }
+            window.location.href = contextPath + '/checkout.jsp?mode=buy-now';
+          })
+          .catch(function (error) {
+            console.error('Buy now error', error);
+            if (cartClient && typeof cartClient.showToast === 'function') {
+              cartClient.showToast('Không thể mua ngay sản phẩm. Vui lòng thử lại.', true);
+            }
+          })
+          .finally(function () {
+            button.disabled = false;
+            button.classList.remove('opacity-60');
+          });
+      }
+
+      function setup() {
+        formatReviewBars();
+        var buyNowButton = document.querySelector('[data-buy-now]');
+        if (buyNowButton) {
+          buyNowButton.addEventListener('click', handleBuyNowClick);
+        }
+      }
+
+      if (window.appShell && typeof window.appShell.onReady === 'function') {
+        window.appShell.onReady(setup);
+      } else {
+        document.addEventListener('DOMContentLoaded', setup);
+      }
+    })(window, document);
   </script>
   <%@ include file="/WEB-INF/includes/footer.jsp" %>
 </main>
