@@ -51,7 +51,7 @@
         .main-content {
             flex: 1;
             padding: 30px;
-            overflow-y: auto;
+            overflow: visible;
         }
 
         .container-dashboard {
@@ -387,27 +387,6 @@
             }
         }
 
-        /* Scrollbar */
-        .main-content::-webkit-scrollbar,
-        .admin-sidebar::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .main-content::-webkit-scrollbar-track,
-        .admin-sidebar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-
-        .main-content::-webkit-scrollbar-thumb,
-        .admin-sidebar::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
-            border-radius: 4px;
-        }
-
-        .main-content::-webkit-scrollbar-thumb:hover,
-        .admin-sidebar::-webkit-scrollbar-thumb:hover {
-            background: #a0aec0;
-        }
     </style>
 </head>
 <body>
