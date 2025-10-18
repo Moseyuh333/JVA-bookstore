@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Servlet implementation class AdCategoryController
  */
-@WebServlet("/admin-category")
+@WebServlet("/admin-categories")
 public class AdCategoryController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
