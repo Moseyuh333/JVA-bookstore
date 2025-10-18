@@ -496,16 +496,7 @@
 <body>
 
     <!-- ===== HEADER ===== -->
-    <header class="admin-header">
-        <div class="header-brand">
-            <i class="fas fa-book"></i>
-            <span>Bookish Bliss Haven</span>
-        </div>
-        <div class="header-user">
-            <span>Admin Panel</span>
-            <i class="fas fa-user-circle"></i>
-        </div>
-    </header>
+    <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
 
     <!-- ===== MAIN WRAPPER ===== -->
     <div class="main-wrapper">
@@ -516,7 +507,13 @@
         <main class="main-content">
             <div class="container-dashboard">
                 <!-- Page Header -->
-                <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
+                <div class="page-header">
+                    <h1>
+                        <i class="fas fa-chart-line" style="color: #f59e0b;"></i>
+                        Dashboard tổng quan
+                    </h1>
+                    <p>Tổng hợp thông tin kinh doanh từ hệ thống</p>
+                </div>
 
                 <!-- Stats Grid -->
                 <div class="stats-grid">
