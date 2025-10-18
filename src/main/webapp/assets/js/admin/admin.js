@@ -67,22 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         <i data-feather="user" class="w-4 h-4"></i>
                         <span>Xin chào, ${safeName}!</span>
                     </div>
-                    <a href="${contextPath}/admin/profile.jsp"
-                        class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800 transition">
-                        <i data-feather="user-circle" class="w-4 h-4 mr-2"></i>
-                        <span class="text-sm">Thông tin cá nhân</span>
-                    </a>
-                    <a href="${contextPath}/admin/settings.jsp"
-                        class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800 transition">
-                        <i data-feather="settings" class="w-4 h-4 mr-2"></i>
-                        <span class="text-sm">Cài đặt</span>
-                    </a>
-                    <hr class="my-1 border-gray-200">
-                    <a href="${contextPath}/admin/change-password.jsp"
-                        class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800 transition">
-                        <i data-feather="lock" class="w-4 h-4 mr-2"></i>
-                        <span class="text-sm">Đổi mật khẩu</span>
-                    </a>
                     <hr class="my-1 border-gray-200">
                     <button type="button" data-action="logout"
                         class="w-full text-left flex items-center px-4 py-2 text-red-600 hover:bg-red-50 transition">
