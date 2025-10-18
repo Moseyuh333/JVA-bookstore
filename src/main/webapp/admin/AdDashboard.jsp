@@ -551,13 +551,11 @@
                 </div>
             </div>
         </div>
+        <!-- ===== FOOTER ===== -->
+        <include file="/WEB-INF/includes/admin/footer.jsp" />
     </div>
-
-    <!-- ===== FOOTER ===== -->
-    <include file="/WEB-INF/includes/admin/footer.jsp" />
 </div>
 <script src ="${pageContext.request.contextPath}/assets/js/admin/AdDashboard.js"></script>
-<script src ="${pageContext.request.contextPath}/assets/js/admin/admin.js"></script>
 
 </body>
 </html>
