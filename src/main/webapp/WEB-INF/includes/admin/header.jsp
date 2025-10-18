@@ -18,13 +18,14 @@
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .home-scroll-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.92); color: #92400e; padding: 0.6rem; border-radius: 9999px; box-shadow: 0 10px 20px -15px rgba(0, 0, 0, 0.35); transition: background 0.2s ease, color 0.2s ease; z-index: 10; }
         .home-scroll-btn:hover { background: #d97706; color: #fff; }
+        nav a, nav a:visited, nav a:hover, nav a:active { text-decoration: none ; color: inherit;}
     </style>
 </head>
 <body class="bg-gray-50">
     <nav class="bg-amber-800 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
-                <a href="<%=request.getContextPath()%>/admin-dashboard" class="flex items-center space-x-2 text-white hover:text-yellow-300 no-underline">
+                <a href="<%=request.getContextPath()%>/admin-dashboard" class="flex items-center space-x-2">
                     <i data-feather="book-open" class="w-6 h-6"></i>
                     <div>
                         <span class="title-font text-xl font-bold block">Bookish Bliss Haven</span>
