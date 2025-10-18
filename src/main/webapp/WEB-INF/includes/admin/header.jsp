@@ -44,25 +44,6 @@
             color: inherit;
             text-decoration: none;
         }
-
-        .admin-dropdown {
-            position: relative;
-        }
-
-        .admin-dropdown-menu {
-            min-width: 220px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .dropdown-item {
-            transition: all 0.2s ease;
-        }
-
-        .dropdown-divider {
-            height: 1px;
-            background: #e5e7eb;
-            margin: 4px 0;
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -79,72 +60,38 @@
                 </a>
                 <div class="flex items-center space-x-4">
                     <!-- Admin Dropdown -->
-                    <div class="admin-dropdown">
-                        <button id="adminDropdownBtn"
-                            class="flex items-center space-x-2 p-2 rounded-lg hover:bg-amber-700 focus:bg-amber-700 focus:outline-none transition">
-                            <i data-feather="user" class="w-5 h-5"></i>
-                            <span class="text-sm font-medium">Admin</span>
-                            <i data-feather="chevron-down" class="w-4 h-4"></i>
+                    <div class="relative">
+                        <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
+                            <i data-feather="user" class="w-5 h-5 mr-1"></i>
+                            <span id="accountBtnLabel" class="font-medium">Tài khoản</span>
                         </button>
-                        <div id="adminDropdown"
-                            class="hidden absolute right-0 mt-2 admin-dropdown-menu bg-white rounded-lg border border-gray-200 z-50">
+                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                             <div class="py-2">
-
-                                <!-- Menu Items -->
                                 <a href="<%=request.getContextPath()%>/admin/profile.jsp"
-                                    class="dropdown-item flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
-                                    <i class="fas fa-user-circle w-4 h-4 mr-3"></i>
-                                    <span class="text-sm">Thông tin cá nhân</span>
+                                    class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                                    <i class="fas fa-user-circle w-4 h-4 mr-2"></i>
+                                    Thông tin cá nhân
                                 </a>
-                                <div class="dropdown-divider mx-2"></div>
-
                                 <a href="<%=request.getContextPath()%>/admin/change-password.jsp"
-                                    class="dropdown-item flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
-                                    <i class="fas fa-key w-4 h-4 mr-3"></i>
-                                    <span class="text-sm">Đổi mật khẩu</span>
+                                    class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                                    <i class="fas fa-key w-4 h-4 mr-2"></i>
+                                    Đổi mật khẩu
                                 </a>
-
-                                <div class="dropdown-divider mx-2"></div>
-
+                                <hr class="my-1">
                                 <a href="<%=request.getContextPath()%>/logout"
-                                    class="dropdown-item flex items-center px-4 py-2 text-red-600 hover:bg-red-50">
-                                    <i class="fas fa-sign-out-alt w-4 h-4 mr-3"></i>
-                                    <span class="text-sm font-medium">Đăng xuất</span>
+                                    class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                                    <i class="fas fa-sign-out-alt w-4 h-4 mr-2"></i>
+                                    Đăng xuất
                                 </a>
                             </div>
                         </div>
                     </div>
+                    <button class="md:hidden p-2 rounded-full hover:bg-amber-700" aria-label="Menu">
+                        <i data-feather="menu" class="w-5 h-5"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <script>
-        // Initialize Feather Icons
-        feather.replace();
-
-        // Admin Dropdown Toggle
-        const adminDropdownBtn = document.getElementById('adminDropdownBtn');
-        const adminDropdown = document.getElementById('adminDropdown');
-
-        adminDropdownBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            adminDropdown.classList.toggle('hidden');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!adminDropdownBtn.contains(e.target) && !adminDropdown.contains(e.target)) {
-                adminDropdown.classList.add('hidden');
-            }
-        });
-
-        // Close dropdown when pressing Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                adminDropdown.classList.add('hidden');
-            }
-        });
-    </script>
-</body>
-</html>
+    
