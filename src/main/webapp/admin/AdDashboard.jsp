@@ -25,26 +25,119 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
         body {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             font-family: 'Roboto', sans-serif;
-            min-height: 100vh;
-        }
-
-        #wrapper {
             display: flex;
-            min-height: 100vh;
+            flex-direction: column;
         }
 
-        #content-wrapper {
+        /* ===== HEADER ===== */
+        .admin-header {
+            background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
+            color: white;
+            padding: 16px 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .header-brand i {
+            font-size: 24px;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .header-user i {
+            font-size: 20px;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .admin-sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            bottom: 0;
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+            z-index: 999;
+            padding: 20px 0;
+        }
+
+        .sidebar-item {
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: #4b5563;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item a:hover {
+            background: #fafafa;
+            color: #92400e;
+            border-left-color: #92400e;
+        }
+
+        .sidebar-item a i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-wrapper {
+            display: flex;
             flex: 1;
-            margin-left: 0;
-            margin-top: 0;
-            padding: 30px;
-            transition: margin-left 0.3s ease;
+            margin-top: 70px;
         }
 
-        .container-fluid {
+        .main-sidebar {
+            width: 260px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .container-dashboard {
             max-width: 1400px;
             margin: 0 auto;
         }
@@ -69,7 +162,7 @@
             margin: 0;
         }
 
-        /* Stat Cards */
+        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -146,7 +239,7 @@
         .stat-card.orders .stat-icon { background: #d1fae5; color: #10b981; }
         .stat-card.revenue .stat-icon { background: #fee2e2; color: #ef4444; }
 
-        /* Charts Section */
+        /* Charts */
         .charts-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -188,7 +281,7 @@
             height: auto;
         }
 
-        /* Table Section */
+        /* Table */
         .table-card {
             background: white;
             border-radius: 16px;
@@ -276,6 +369,62 @@
             font-weight: 600;
         }
 
+        /* ===== FOOTER ===== */
+        .admin-footer {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            color: #9ca3af;
+            padding: 24px;
+            text-align: center;
+            font-size: 13px;
+            margin-top: auto;
+            border-top: 1px solid #374151;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-brand {
+            font-weight: 600;
+            color: #f3f4f6;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a {
+            color: #9ca3af;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: #f59e0b;
+        }
+
+        .footer-info {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-info a {
+            color: #9ca3af;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-info a:hover {
+            color: #f59e0b;
+        }
+
         /* Responsive */
         @media (max-width: 1200px) {
             .charts-grid {
@@ -284,9 +433,21 @@
         }
 
         @media (max-width: 768px) {
-            #content-wrapper {
+            .admin-sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+
+            .main-sidebar {
+                display: none;
+            }
+
+            .main-content {
                 padding: 16px;
-                margin-top: 60px;
+            }
+
+            .page-header h1 {
+                font-size: 24px;
             }
 
             .stats-grid {
@@ -294,194 +455,370 @@
                 gap: 16px;
             }
 
-            .page-header h1 {
-                font-size: 24px;
-            }
-
             .chart-body {
                 height: 250px;
             }
 
-            .table-body {
-                font-size: 12px;
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
             }
 
-            .table-custom td {
-                padding: 10px;
+            .footer-links {
+                flex-direction: column;
+                gap: 12px;
             }
+        }
+
+        /* Scrollbar */
+        .main-content::-webkit-scrollbar,
+        .admin-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .main-content::-webkit-scrollbar-track,
+        .admin-sidebar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .main-content::-webkit-scrollbar-thumb,
+        .admin-sidebar::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .main-content::-webkit-scrollbar-thumb:hover,
+        .admin-sidebar::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
         }
     </style>
 </head>
 <body>
 
-<div id="wrapper">
-    <%@ include file="/WEB-INF/includes/admin/AdSideBar.jsp" %>
+    <!-- ===== HEADER ===== -->
+    <header class="admin-header">
+        <div class="header-brand">
+            <i class="fas fa-book"></i>
+            <span>Bookish Bliss Haven</span>
+        </div>
+        <div class="header-user">
+            <span>Admin Panel</span>
+            <i class="fas fa-user-circle"></i>
+        </div>
+    </header>
 
-    <div id="content-wrapper">
-        <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
-
-        <div class="container-fluid">
-            <!-- Page Header -->
-            <div class="page-header">
-                <h1>
-                    <i class="fas fa-chart-line" style="color: #f59e0b;"></i>
-                    Dashboard tổng quan
-                </h1>
-                <p>Tổng hợp thông tin kinh doanh từ hệ thống</p>
+    <!-- ===== MAIN WRAPPER ===== -->
+    <div class="main-wrapper">
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-item">
+                <a href="#dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
             </div>
-
-            <!-- Stats Grid -->
-            <div class="stats-grid">
-                <div class="stat-card users">
-                    <div class="stat-content">
-                        <div class="stat-info">
-                            <h6>Người dùng</h6>
-                            <div class="stat-number" id="userCount">1,254</div>
-                        </div>
-                        <div class="stat-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stat-card products">
-                    <div class="stat-content">
-                        <div class="stat-info">
-                            <h6>Sản phẩm</h6>
-                            <div class="stat-number" id="productCount">3,640</div>
-                        </div>
-                        <div class="stat-icon">
-                            <i class="fas fa-book"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stat-card orders">
-                    <div class="stat-content">
-                        <div class="stat-info">
-                            <h6>Đơn hàng</h6>
-                            <div class="stat-number" id="orderCount">879</div>
-                        </div>
-                        <div class="stat-icon">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stat-card revenue">
-                    <div class="stat-content">
-                        <div class="stat-info">
-                            <h6>Doanh thu (VNĐ)</h6>
-                            <div class="stat-number" id="revenueCount">356M</div>
-                        </div>
-                        <div class="stat-icon">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="sidebar-item">
+                <a href="#users">
+                    <i class="fas fa-users"></i>
+                    <span>Quản lý tài khoản</span>
+                </a>
             </div>
+            <div class="sidebar-item">
+                <a href="#products">
+                    <i class="fas fa-book"></i>
+                    <span>Quản lý sản phẩm</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="#category">
+                    <i class="fas fa-list"></i>
+                    <span>Quản lý danh mục</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="#commission">
+                    <i class="fas fa-percent"></i>
+                    <span>Quản lý chiết khấu</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="#promotion">
+                    <i class="fas fa-tag"></i>
+                    <span>Quản lý khuyến mãi</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="#shipper">
+                    <i class="fas fa-truck"></i>
+                    <span>Quản lý vận chuyển</span>
+                </a>
+            </div>
+        </aside>
 
-            <!-- Charts Grid -->
-            <div class="charts-grid">
-                <!-- Revenue Chart -->
-                <div class="chart-card">
-                    <div class="chart-header">
+        <!-- ===== CONTENT ===== -->
+        <main class="main-content">
+            <div class="container-dashboard">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1>
+                        <i class="fas fa-chart-line" style="color: #f59e0b;"></i>
+                        Dashboard tổng quan
+                    </h1>
+                    <p>Tổng hợp thông tin kinh doanh từ hệ thống</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card users">
+                        <div class="stat-content">
+                            <div class="stat-info">
+                                <h6>Người dùng</h6>
+                                <div class="stat-number">1,254</div>
+                            </div>
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card products">
+                        <div class="stat-content">
+                            <div class="stat-info">
+                                <h6>Sản phẩm</h6>
+                                <div class="stat-number">3,640</div>
+                            </div>
+                            <div class="stat-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card orders">
+                        <div class="stat-content">
+                            <div class="stat-info">
+                                <h6>Đơn hàng</h6>
+                                <div class="stat-number">879</div>
+                            </div>
+                            <div class="stat-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card revenue">
+                        <div class="stat-content">
+                            <div class="stat-info">
+                                <h6>Doanh thu (VNĐ)</h6>
+                                <div class="stat-number">356M</div>
+                            </div>
+                            <div class="stat-icon">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="charts-grid">
+                    <!-- Revenue Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h6>
+                                <i class="fas fa-chart-bar"></i>
+                                Doanh thu 6 tháng gần nhất
+                            </h6>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Order Status -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h6>
+                                <i class="fas fa-chart-pie"></i>
+                                Trạng thái đơn hàng
+                            </h6>
+                        </div>
+                        <div class="chart-body chart-body-small">
+                            <canvas id="statusChart" height="180"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Sellers Table -->
+                <div class="table-card">
+                    <div class="table-header">
                         <h6>
-                            <i class="fas fa-chart-bar"></i>
-                            Doanh thu 6 tháng gần nhất
+                            <i class="fas fa-store"></i>
+                            Top cửa hàng bán chạy
                         </h6>
                     </div>
-                    <div class="chart-body">
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Order Status -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h6>
-                            <i class="fas fa-chart-pie"></i>
-                            Trạng thái đơn hàng
-                        </h6>
-                    </div>
-                    <div class="chart-body chart-body-small">
-                        <canvas id="statusChart" height="180"></canvas>
+                    <div class="table-body">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Xếp hạng</th>
+                                    <th>Tên cửa hàng</th>
+                                    <th>Tổng đơn hàng</th>
+                                    <th>Doanh thu</th>
+                                    <th>Chiết khấu</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="rank-badge rank-1">1</span></td>
+                                    <td><strong>BookHaven</strong></td>
+                                    <td>254</td>
+                                    <td><strong>92,000,000₫</strong></td>
+                                    <td><span class="badge-percentage">10%</span></td>
+                                    <td><span class="badge-percentage">Hoạt động</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rank-badge rank-2">2</span></td>
+                                    <td><strong>MangaWorld</strong></td>
+                                    <td>187</td>
+                                    <td><strong>68,500,000₫</strong></td>
+                                    <td><span class="badge-percentage">15%</span></td>
+                                    <td><span class="badge-percentage">Hoạt động</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rank-badge rank-3">3</span></td>
+                                    <td><strong>LightNovelVN</strong></td>
+                                    <td>143</td>
+                                    <td><strong>54,000,000₫</strong></td>
+                                    <td><span class="badge-percentage">12%</span></td>
+                                    <td><span class="badge-percentage">Hoạt động</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rank-badge" style="background: linear-gradient(135deg, #d1d5db, #6b7280);">4</span></td>
+                                    <td><strong>NovelCorner</strong></td>
+                                    <td>98</td>
+                                    <td><strong>32,100,000₫</strong></td>
+                                    <td><span class="badge-percentage">8%</span></td>
+                                    <td><span class="badge-percentage">Hoạt động</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rank-badge" style="background: linear-gradient(135deg, #d1d5db, #6b7280);">5</span></td>
+                                    <td><strong>StorybookHub</strong></td>
+                                    <td>76</td>
+                                    <td><strong>24,200,000₫</strong></td>
+                                    <td><span class="badge-percentage">10%</span></td>
+                                    <td><span class="badge-percentage">Hoạt động</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+        </main>
+    </div>
 
-            <!-- Top Sellers Table -->
-            <div class="table-card">
-                <div class="table-header">
-                    <h6>
-                        <i class="fas fa-store"></i>
-                        Top cửa hàng bán chạy
-                    </h6>
-                </div>
-                <div class="table-body">
-                    <table class="table-custom">
-                        <thead>
-                            <tr>
-                                <th>Xếp hạng</th>
-                                <th>Tên cửa hàng</th>
-                                <th>Tổng đơn hàng</th>
-                                <th>Doanh thu</th>
-                                <th>Chiết khấu</th>
-                                <th>Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="rank-badge rank-1">1</span></td>
-                                <td><strong>BookHaven</strong></td>
-                                <td>254</td>
-                                <td><strong>92,000,000₫</strong></td>
-                                <td><span class="badge-percentage">10%</span></td>
-                                <td><span class="badge-percentage">Hoạt động</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="rank-badge rank-2">2</span></td>
-                                <td><strong>MangaWorld</strong></td>
-                                <td>187</td>
-                                <td><strong>68,500,000₫</strong></td>
-                                <td><span class="badge-percentage">15%</span></td>
-                                <td><span class="badge-percentage">Hoạt động</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="rank-badge rank-3">3</span></td>
-                                <td><strong>LightNovelVN</strong></td>
-                                <td>143</td>
-                                <td><strong>54,000,000₫</strong></td>
-                                <td><span class="badge-percentage">12%</span></td>
-                                <td><span class="badge-percentage">Hoạt động</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="rank-badge" style="background: linear-gradient(135deg, #d1d5db, #6b7280);">4</span></td>
-                                <td><strong>NovelCorner</strong></td>
-                                <td>98</td>
-                                <td><strong>32,100,000₫</strong></td>
-                                <td><span class="badge-percentage">8%</span></td>
-                                <td><span class="badge-percentage">Hoạt động</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="rank-badge" style="background: linear-gradient(135deg, #d1d5db, #6b7280);">5</span></td>
-                                <td><strong>StorybookHub</strong></td>
-                                <td>76</td>
-                                <td><strong>24,200,000₫</strong></td>
-                                <td><span class="badge-percentage">10%</span></td>
-                                <td><span class="badge-percentage">Hoạt động</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <!-- ===== FOOTER ===== -->
+    <footer class="admin-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                © Bookish Bliss Haven • Mọi quyền được bảo lưu
+            </div>
+            <div class="footer-links">
+                <a href="#dashboard">Dashboard</a>
+                <a href="#products">Sản phẩm</a>
+                <a href="#users">Tài khoản</a>
+                <a href="#shipper">Vận chuyển</a>
+            </div>
+            <div class="footer-info">
+                <span>📍 123 Đường Văn Học, Quận Sách, TP.HCM</span>
+                <span>✉️ info@bookishhaven.com</span>
+                <span>📞 0901 234 567</span>
             </div>
         </div>
+    </footer>
 
-        <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
-    </div>
-</div>
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="${pageContext.request.contextPath}/assets/js/admin/AdDashboard.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Revenue Bar Chart
+        const ctxRevenue = document.getElementById("revenueChart");
+        if (ctxRevenue) {
+            new Chart(ctxRevenue, {
+                type: "bar",
+                data: {
+                    labels: ["Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10"],
+                    datasets: [{
+                        label: "Doanh thu (Triệu VNĐ)",
+                        data: [45, 52, 60, 70, 85, 90],
+                        backgroundColor: [
+                            "rgba(245, 158, 11, 0.8)",
+                            "rgba(245, 158, 11, 0.7)",
+                            "rgba(245, 158, 11, 0.8)",
+                            "rgba(245, 158, 11, 0.7)",
+                            "rgba(245, 158, 11, 0.8)",
+                            "rgba(245, 158, 11, 0.9)"
+                        ],
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(v) { return v + "M"; }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Order Status Doughnut Chart
+        const ctxStatus = document.getElementById("statusChart");
+        if (ctxStatus) {
+            new Chart(ctxStatus, {
+                type: "doughnut",
+                data: {
+                    labels: ["Hoàn thành", "Đang xử lý", "Hủy"],
+                    datasets: [{
+                        data: [320, 450, 109],
+                        backgroundColor: [
+                            "#10b981",
+                            "#f59e0b",
+                            "#ef4444"
+                        ],
+                        borderColor: "white",
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                            labels: {
+                                padding: 15,
+                                font: { size: 13, weight: 600 },
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+    </script>
 
 </body>
 </html>
