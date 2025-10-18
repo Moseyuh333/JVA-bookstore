@@ -8,6 +8,18 @@
 <!-- Load Bootstrap CSS locally for this page (kept for existing layout) -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    #addressModal .modal-body {
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+    }
+
+    @media (max-width: 991.98px) {
+        #addressModal .modal-dialog {
+            margin: 1.5rem auto;
+        }
+    }
+</style>
 
     <div class="profile-header">
         <div class="container">
