@@ -41,14 +41,12 @@
             margin-left: 0;
             transition: margin-left 0.3s ease;
             position: relative;
-            z-index: 1;
         }
 
         .main-content {
             margin-top: 70px;
             padding: 24px;
             position: relative;
-            z-index: 1;
         }
 
         .container-dashboard {
@@ -91,7 +89,6 @@
             gap: 16px;
             transition: all 0.3s ease;
             position: relative;
-            z-index: 1;
         }
 
         .stat-card:hover {
@@ -157,7 +154,6 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             overflow: hidden;
             position: relative;
-            z-index: 1;
         }
 
         .chart-header {
@@ -180,7 +176,6 @@
             padding: 24px;
             position: relative;
             height: 350px;
-            z-index: 1;
         }
 
         .chart-body-small {
@@ -195,7 +190,6 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             overflow: hidden;
             position: relative;
-            z-index: 1;
         }
 
         .table-header {
@@ -218,7 +212,6 @@
             padding: 0;
             overflow-x: auto;
             position: relative;
-            z-index: 1;
         }
 
         .table-custom {
@@ -289,7 +282,6 @@
             margin-top: auto;
             border-top: 1px solid #374151;
             position: relative;
-            z-index: 1;
         }
 
         .footer-content {
