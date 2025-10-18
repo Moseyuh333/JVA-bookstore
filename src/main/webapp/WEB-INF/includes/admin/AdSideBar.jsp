@@ -273,71 +273,114 @@
 
     <!-- Navigation -->
     <div class="sidebar-nav">
-        <!-- Section: Quản lý hệ thống -->
+
+        <!-- ======= Tổng quan ======= -->
         <div class="nav-section">
-            <div class="nav-section-title">Quản lý hệ thống</div>
-            
-            <div class="nav-item">
-                <a class="nav-link" href="admin-account">
-                    <i class="fas fa-users-cog"></i>
-                    <span>Quản lý tài khoản</span>
-                </a>
-            </div>
-            
-            <div class="nav-item">
-                <a class="nav-link" href="admin-product">
-                    <i class="fas fa-book"></i>
-                    <span>Quản lý sản phẩm</span>
-                </a>
-            </div>
+            <div class="nav-section-title">Tổng quan</div>
 
-            <div class="nav-item">
-                <a class="nav-link" href="admin-orders">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Quản lý đơn hàng</span>
-                    <span class="nav-badge">5</span>
-                </a>
-            </div>
-
-            <div class="nav-item">
-                <a class="nav-link" href="admin-categories">
-                    <i class="fas fa-tags"></i>
-                    <span>Danh mục</span>
-                </a>
-            </div>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- Section: Báo cáo & Thống kê -->
-        <div class="nav-section">
-            <div class="nav-section-title">Báo cáo & Thống kê</div>
-            
             <div class="nav-item">
                 <a class="nav-link" href="admin-dashboard">
                     <i class="fas fa-chart-line"></i>
                     <span>Dashboard</span>
                 </a>
             </div>
-            
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- ======= Quản lý hệ thống ======= -->
+        <div class="nav-section">
+            <div class="nav-section-title">Quản lý hệ thống</div>
+
             <div class="nav-item">
-                <a class="nav-link" href="admin-reports">
-                    <i class="fas fa-file-chart"></i>
-                    <span>Báo cáo</span>
+                <a class="nav-link" href="admin-account">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Tài khoản người dùng</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="admin-product">
+                    <i class="fas fa-book"></i>
+                    <span>Sản phẩm</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="admin-categories">
+                    <i class="fas fa-tags"></i>
+                    <span>Danh mục sản phẩm</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="admin-commission">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <span>Chiết khấu cửa hàng</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="admin-promotion">
+                    <i class="fas fa-percentage"></i>
+                    <span>Chương trình khuyến mãi</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="admin-shippers">
+                    <i class="fas fa-truck"></i>
+                    <span>Nhà vận chuyển</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="admin-orders">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Đơn hàng</span>
+                    <span class="nav-badge">5</span>
                 </a>
             </div>
         </div>
 
         <div class="sidebar-divider"></div>
 
-        <!-- Section: Cài đặt -->
+        <!-- ======= Báo cáo & thống kê ======= -->
+        <div class="nav-section">
+            <div class="nav-section-title">Báo cáo & thống kê</div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="admin-reports">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Báo cáo doanh thu</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="admin-analytics">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Phân tích dữ liệu</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- ======= Cài đặt ======= -->
         <div class="nav-section">
             <div class="nav-section-title">Cài đặt</div>
-            
+
             <div class="nav-item">
                 <a class="nav-link" href="admin-settings">
                     <i class="fas fa-cog"></i>
-                    <span>Cài đặt hệ thống</span>
+                    <span>Cấu hình hệ thống</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link" href="logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
                 </a>
             </div>
         </div>
@@ -354,34 +397,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const overlay = document.getElementById('sidebarOverlay');
     
     // Toggle sidebar
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            sidebar.classList.toggle('show');
-        });
-    }
-    
-    // Close sidebar when clicking overlay
-    if (overlay) {
-        overlay.addEventListener('click', function() {
-            sidebar.classList.remove('show');
-        });
-    }
-    
-    // Close sidebar when pressing Escape
-    document.addEventListener('keydown', function(e) {
+    sidebarToggle?.addEventListener('click', e => {
+        e.preventDefault();
+        sidebar.classList.toggle('show');
+    });
+
+    // Overlay click -> close sidebar
+    overlay?.addEventListener('click', () => sidebar.classList.remove('show'));
+
+    // ESC key -> close
+    document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && sidebar.classList.contains('show')) {
             sidebar.classList.remove('show');
         }
     });
-    
-    // Set active menu based on current URL
+
+    // Active highlight
     const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.nav-link');
-    
-    navLinks.forEach(link => {
+    document.querySelectorAll('.nav-link').forEach(link => {
         const href = link.getAttribute('href');
-        if (currentPath.includes(href)) {
+        if (href && currentPath.includes(href)) {
             link.closest('.nav-item').classList.add('active');
         }
     });
