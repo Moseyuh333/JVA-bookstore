@@ -25,23 +25,21 @@
             box-sizing: border-box;
         }
 
-        html, body {
-            height: 100%;
-            width: 100%;
-        }
-
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: #f5f5f5;
             font-family: 'Roboto', sans-serif;
-            display: flex;
-            flex-direction: column;
         }
 
-        /* ===== MAIN CONTENT ===== */
-        .main-wrapper {
+        /* Layout */
+        #wrapper {
             display: flex;
+            min-height: 100vh;
+        }
+
+        #content-wrapper {
             flex: 1;
-            margin-top: 70px;
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
         }
 
         .main-content {
@@ -55,17 +53,14 @@
         }
 
         .page-header {
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
 
         .page-header h1 {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
             color: #1a202c;
             margin: 0 0 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
         }
 
         .page-header p {
@@ -77,30 +72,20 @@
         /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 24px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
         }
 
         .stat-card {
             background: white;
-            border-radius: 16px;
+            border-radius: 12px;
             padding: 24px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 16px;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #f59e0b, #fbbf24);
         }
 
         .stat-card:hover {
