@@ -39,7 +39,7 @@
                             <i data-feather="user" class="w-5 h-5 mr-1"></i>
                             <span id="accountBtnLabel" class="font-medium">Admin</span>
                         </button>
-                        <div id="adminDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">            
+                        <div id="adminDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50"></div>            
                     </div>
                     <button class="md:hidden p-2 rounded-full hover:bg-amber-700" aria-label="Menu">
                         <i data-feather="menu" class="w-5 h-5"></i>
