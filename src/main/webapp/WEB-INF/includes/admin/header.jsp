@@ -32,12 +32,32 @@
                     </span>
                 </a>
                 <div class="flex items-center space-x-4">
+                    <!-- Admin Dropdown -->
                     <div class="relative">
                         <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
                             <i data-feather="user" class="w-5 h-5 mr-1"></i>
-                            <span id="accountBtnLabel" class="font-medium">Admin</span>
+                            <span id="accountBtnLabel" class="font-medium">Tài khoản</span>
                         </button>
-                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50"></div>
+                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                            <div class="py-2">
+                                <a href="<%=request.getContextPath()%>/admin/profile.jsp"
+                                    class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                                    <i class="fas fa-user-circle w-4 h-4 mr-2"></i>
+                                    Thông tin cá nhân
+                                </a>
+                                <a href="<%=request.getContextPath()%>/admin/change-password.jsp"
+                                    class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                                    <i class="fas fa-key w-4 h-4 mr-2"></i>
+                                    Đổi mật khẩu
+                                </a>
+                                <hr class="my-1">
+                                <a href="<%=request.getContextPath()%>/logout"
+                                    class="flex items-center px-4 py-2 text-gray-800 hover:bg-amber-50 hover:text-amber-800">
+                                    <i class="fas fa-sign-out-alt w-4 h-4 mr-2"></i>
+                                    Đăng xuất
+                                </a>
+                            </div>
+                        </div>
                     </div>
                     <button class="md:hidden p-2 rounded-full hover:bg-amber-700" aria-label="Menu">
                         <i data-feather="menu" class="w-5 h-5"></i>
@@ -46,3 +66,4 @@
             </div>
         </div>
     </nav>
+    
