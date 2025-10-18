@@ -40,11 +40,15 @@
             flex: 1;
             margin-left: 0;
             transition: margin-left 0.3s ease;
+            position: relative;
+            z-index: 1;
         }
 
         .main-content {
             margin-top: 70px;
             padding: 24px;
+            position: relative;
+            z-index: 1;
         }
 
         .container-dashboard {
@@ -86,6 +90,8 @@
             align-items: center;
             gap: 16px;
             transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
         }
 
         .stat-card:hover {
@@ -150,6 +156,8 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             border: 1px solid rgba(0, 0, 0, 0.05);
             overflow: hidden;
+            position: relative;
+            z-index: 1;
         }
 
         .chart-header {
@@ -172,6 +180,7 @@
             padding: 24px;
             position: relative;
             height: 350px;
+            z-index: 1;
         }
 
         .chart-body-small {
@@ -185,6 +194,8 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             border: 1px solid rgba(0, 0, 0, 0.05);
             overflow: hidden;
+            position: relative;
+            z-index: 1;
         }
 
         .table-header {
@@ -206,6 +217,8 @@
         .table-body {
             padding: 0;
             overflow-x: auto;
+            position: relative;
+            z-index: 1;
         }
 
         .table-custom {
@@ -275,6 +288,8 @@
             font-size: 13px;
             margin-top: auto;
             border-top: 1px solid #374151;
+            position: relative;
+            z-index: 1;
         }
 
         .footer-content {
