@@ -73,6 +73,7 @@
 <script src="https://unpkg.com/feather-icons"></script>
 
 <!-- ====== JS Chung cho Admin ====== -->
+<script src="${pageContext.request.contextPath}/assets/js/app-shell.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/admin/admin.js"></script>
 
 </body>
