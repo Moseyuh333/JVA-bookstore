@@ -510,50 +510,7 @@
     <!-- ===== MAIN WRAPPER ===== -->
     <div class="main-wrapper">
         <!-- ===== SIDEBAR ===== -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-item">
-                <a href="#dashboard">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Dashboard</span>
-                </a>
-            </div>
-            <div class="sidebar-item">
-                <a href="#users">
-                    <i class="fas fa-users"></i>
-                    <span>Quản lý tài khoản</span>
-                </a>
-            </div>
-            <div class="sidebar-item">
-                <a href="#products">
-                    <i class="fas fa-book"></i>
-                    <span>Quản lý sản phẩm</span>
-                </a>
-            </div>
-            <div class="sidebar-item">
-                <a href="#category">
-                    <i class="fas fa-list"></i>
-                    <span>Quản lý danh mục</span>
-                </a>
-            </div>
-            <div class="sidebar-item">
-                <a href="#commission">
-                    <i class="fas fa-percent"></i>
-                    <span>Quản lý chiết khấu</span>
-                </a>
-            </div>
-            <div class="sidebar-item">
-                <a href="#promotion">
-                    <i class="fas fa-tag"></i>
-                    <span>Quản lý khuyến mãi</span>
-                </a>
-            </div>
-            <div class="sidebar-item">
-                <a href="#shipper">
-                    <i class="fas fa-truck"></i>
-                    <span>Quản lý vận chuyển</span>
-                </a>
-            </div>
-        </aside>
+        <include file="/WEB-INF/includes/admin/AdSideBar.jsp" />
 
         <!-- ===== CONTENT ===== -->
         <main class="main-content">
