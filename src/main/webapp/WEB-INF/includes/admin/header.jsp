@@ -26,10 +26,10 @@
             <div class="flex justify-between items-center">
                 <a href="<%=request.getContextPath()%>/admin-dashboard" class="flex items-center space-x-2 text-white hover:text-yellow-300 no-underline">
                     <i data-feather="book-open" class="w-6 h-6"></i>
-                    <span class="title-font text-xl font-bold">Bookish Bliss Haven 
-                        <br>
-                        <span class="text-sm font-normal">Admin Panel</span>
-                    </span>
+                    <div>
+                        <span class="title-font text-xl font-bold block">Bookish Bliss Haven</span>
+                        <span class="text-sm font-normal block">Admin Panel</span>
+                    </div>
                 </a>
                 <div class="flex items-center space-x-4">
                     <!-- Admin Dropdown -->
