@@ -24,18 +24,18 @@
         <!-- Right: Contact Info -->
         <div class="flex flex-col md:flex-row md:items-center md:gap-6 text-sm text-gray-400">
             <div class="flex items-center gap-2">
-                <i data-feather="map-pin" class="w-4 h-4 text-amber-400"></i>
+                <i data-feather="map-pin" class="w-4 h-4 mr-2 mt-0.5"></i>
                 <span>123 Đường Văn Học, Quận Sách, TP.HCM</span>
             </div>
             <div class="hidden md:block w-px h-4 bg-gray-600"></div>
             <div class="flex items-center gap-2">
-                <i data-feather="mail" class="w-4 h-4 text-amber-400"></i>
-                <a href="mailto:info@bookishhaven.com" class="hover:text-amber-300 transition">info@bookishhaven.com</a>
+                <i data-feather="mail" class="w-4 h-4 mr-2"></i>
+                <a href="mailto:info@bookishhaven.com" class="hover:text-white">info@bookishhaven.com</a>
             </div>
             <div class="hidden md:block w-px h-4 bg-gray-600"></div>
             <div class="flex items-center gap-2">
-                <i data-feather="phone" class="w-4 h-4 text-amber-400"></i>
-                <a href="tel:+84901234567" class="hover:text-amber-300 transition">0901 234 567</a>
+                <i data-feather="phone" class="w-4 h-4 mr-2"></i>
+                <a href="tel:+84901234567" class="hover:text-white">0901 234 567</a>
             </div>
         </div>
 
