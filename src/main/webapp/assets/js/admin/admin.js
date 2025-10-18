@@ -80,7 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
         function handleLogout() {
             localStorage.removeItem("admin_token");
             localStorage.removeItem("admin_username");
-            renderGuestDropdown();
             adminDropdown.classList.add("hidden");
             setTimeout(() => {
                 window.location.href = contextPath + "/login.jsp";
@@ -98,8 +97,9 @@ document.addEventListener("DOMContentLoaded", () => {
             renderAdminDropdown(username);
             console.log("✓ Rendered admin dropdown");
         } else {
-            renderGuestDropdown();
-            console.log("✓ Rendered guest dropdown");
+            // Admin panel requires login, redirect to login page
+            console.log("✗ No admin token, redirecting to login");
+            window.location.href = contextPath + "/login.jsp";
         }
 
         // Toggle dropdown on button click
