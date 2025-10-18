@@ -345,27 +345,6 @@
 
         <div class="sidebar-divider"></div>
 
-        <!-- ======= Báo cáo & thống kê ======= -->
-        <div class="nav-section">
-            <div class="nav-section-title">Báo cáo & thống kê</div>
-
-            <div class="nav-item">
-                <a class="nav-link" href="admin-reports">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Báo cáo doanh thu</span>
-                </a>
-            </div>
-
-            <div class="nav-item">
-                <a class="nav-link" href="admin-analytics">
-                    <i class="fas fa-chart-pie"></i>
-                    <span>Phân tích dữ liệu</span>
-                </a>
-            </div>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
         <!-- ======= Cài đặt ======= -->
         <div class="nav-section">
             <div class="nav-section-title">Cài đặt</div>
