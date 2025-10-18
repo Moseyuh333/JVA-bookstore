@@ -39,7 +39,7 @@
         #content-wrapper {
             flex: 1;
             margin-left: 0;
-            margin-top: 70px;
+            margin-top: 0;
             padding: 30px;
             transition: margin-left 0.3s ease;
         }
