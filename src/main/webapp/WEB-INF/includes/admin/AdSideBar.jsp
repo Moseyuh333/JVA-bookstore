@@ -347,15 +347,6 @@
 
         <!-- ======= Cài đặt ======= -->
         <div class="nav-section">
-            <div class="nav-section-title">Cài đặt</div>
-
-            <div class="nav-item">
-                <a class="nav-link" href="admin-settings">
-                    <i class="fas fa-cog"></i>
-                    <span>Cấu hình hệ thống</span>
-                </a>
-            </div>
-
             <div class="nav-item">
                 <a class="nav-link" href="logout">
                     <i class="fas fa-sign-out-alt"></i>
