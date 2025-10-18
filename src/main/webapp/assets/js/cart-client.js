@@ -9,7 +9,7 @@
 
     var listeners = [];
     var lastCart = null;
-    var fetching = false;
+    var pendingFetch = null;
 
     function notify() {
         listeners.forEach(function (listener) {
@@ -63,23 +63,25 @@
     }
 
     async function fetchCart() {
-        if (fetching) {
-            return lastCart;
+        if (pendingFetch) {
+            return pendingFetch;
         }
-        fetching = true;
-        try {
-            var data = await apiClient.get('/cart');
-            if (data && data.success) {
-                lastCart = data.cart;
-                notify();
+        pendingFetch = (async function () {
+            try {
+                var data = await apiClient.get('/cart');
+                if (data && data.success) {
+                    lastCart = data.cart;
+                    notify();
+                }
+                return lastCart;
+            } catch (error) {
+                console.error('cartClient fetchCart error', error);
+                throw error;
+            } finally {
+                pendingFetch = null;
             }
-            return lastCart;
-        } catch (error) {
-            console.error('cartClient fetchCart error', error);
-            throw error;
-        } finally {
-            fetching = false;
-        }
+        })();
+        return pendingFetch;
     }
 
     async function addItem(bookId, quantity) {

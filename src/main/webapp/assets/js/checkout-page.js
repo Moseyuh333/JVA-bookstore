@@ -45,6 +45,16 @@
 
         bindSelectionEvents();
         bindPlaceOrder();
+
+        if (mode === MODE_CART && cartClient && typeof cartClient.onChange === 'function') {
+            cartClient.onChange(function (cart) {
+                if (mode !== MODE_CART) {
+                    return;
+                }
+                renderCartMode(cart);
+            });
+        }
+
         bootstrap();
     });
 
@@ -65,20 +75,11 @@
     async function loadCart() {
         try {
             var cart = await cartClient.fetchCart();
-            if (!cart || !Array.isArray(cart.items) || cart.items.length === 0) {
-                var cached = typeof cartClient.lastCart === 'function' ? cartClient.lastCart() : null;
-                if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
-                    renderCartMode(cached);
-                    return;
-                }
+            if (!cart && typeof cartClient.lastCart === 'function') {
+                cart = cartClient.lastCart();
             }
             renderCartMode(cart);
         } catch (error) {
-            var cached = typeof cartClient.lastCart === 'function' ? cartClient.lastCart() : null;
-            if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
-                renderCartMode(cached);
-                return;
-            }
             renderCartMode(null);
             throw error;
         }
@@ -124,6 +125,8 @@
     }
 
     function renderCartMode(cart) {
+        var previousSelection = new Set(cartState.selected);
+        var shouldSelectAll = previousSelection.size === 0;
         cartState.items = [];
         cartState.selected = new Set();
 
@@ -147,11 +150,12 @@
                 imageUrl: item.imageUrl || ''
             };
             cartState.items.push(entry);
-            cartState.selected.add(entry.bookId);
+            if (shouldSelectAll || previousSelection.has(entry.bookId)) {
+                cartState.selected.add(entry.bookId);
+            }
         });
 
         renderCartItemsWithCheckboxes();
-        enablePlaceOrder();
         updateCartSummaryLabel();
         updateTotalsFromSelection();
     }
@@ -210,7 +214,8 @@
             var total = item.unitPrice * item.quantity;
             var row = document.createElement('label');
             row.className = 'flex items-start justify-between gap-3 text-sm text-gray-600 border border-gray-200 rounded-xl px-3 py-3 mb-2 hover:border-amber-400 transition';
-            row.innerHTML = '\n                <div class="flex items-start gap-3">\n                    <input type="checkbox" class="mt-1 accent-amber-600" data-checkout-item value="' + item.bookId + '" checked>\n                    <div>\n                        <p class="font-medium text-gray-800">' + appShell.escapeHtml(item.title) + '</p>\n                        <p class="text-xs text-gray-400">Số lượng: ' + item.quantity + '</p>\n                    </div>\n                </div>\n                <div class="text-right font-semibold text-gray-700">' + appShell.formatCurrency(total) + '</div>';
+            var isChecked = cartState.selected.has(item.bookId) ? 'checked' : '';
+            row.innerHTML = '\n                <div class="flex items-start gap-3">\n                    <input type="checkbox" class="mt-1 accent-amber-600" data-checkout-item value="' + item.bookId + '" ' + isChecked + '>\n                    <div>\n                        <p class="font-medium text-gray-800">' + appShell.escapeHtml(item.title) + '</p>\n                        <p class="text-xs text-gray-400">Số lượng: ' + item.quantity + '</p>\n                    </div>\n                </div>\n                <div class="text-right font-semibold text-gray-700">' + appShell.formatCurrency(total) + '</div>';
             fragment.appendChild(row);
         });
         orderItemsEl.innerHTML = '';
@@ -261,6 +266,13 @@
         });
         var shipping = subtotal > 0 ? SHIPPING_FEE : 0;
         updateOrderTotals(subtotal, shipping);
+        if (mode === MODE_CART) {
+            if (subtotal > 0 && cartState.selected.size > 0) {
+                enablePlaceOrder();
+            } else {
+                disablePlaceOrder();
+            }
+        }
     }
 
     function updateOrderTotals(subtotal, shipping) {
