@@ -23,20 +23,22 @@
 
     <!-- Right -->
     <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-gray-400 text-center">
-      <div class="flex items-center gap-2 whitespace-nowrap">
-        <i data-feather="map-pin" class="w-4 h-4 text-amber-400"></i>
-        <span>123 Đường Văn Học, Quận Sách, TP.HCM</span>
-      </div>
-      <div class="hidden lg:block w-px h-4 bg-gray-600"></div>
-      <div class="flex items-center gap-2 whitespace-nowrap">
-        <i data-feather="mail" class="w-4 h-4 text-amber-400"></i>
-        <a href="mailto:info@bookishhaven.com" class="hover:text-amber-300 transition">info@bookishhaven.com</a>
-      </div>
-      <div class="hidden lg:block w-px h-4 bg-gray-600"></div>
-      <div class="flex items-center gap-2 whitespace-nowrap">
-        <i data-feather="phone" class="w-4 h-4 text-amber-400"></i>
-        <a href="tel:+84901234567" class="hover:text-amber-300 transition">0901 234 567</a>
-      </div>
+        <address class="not-italic space-y-2">
+        <div class="flex items-center gap-2 whitespace-nowrap">
+            <i data-feather="map-pin" class="w-4 h-4 mr-2 mt-0.5"></i>
+            <span>123 Đường Văn Học, Quận Sách, TP.HCM</span>
+        </div>
+        <div class="hidden lg:block w-px h-4 bg-gray-600"></div>
+        <div class="flex items-center gap-2 whitespace-nowrap">
+            <i data-feather="mail" class="w-4 h-4 mr-2"></i>
+            <a href="mailto:info@bookishhaven.com" class="hover:text-white">info@bookishhaven.com</a>
+        </div>
+        <div class="hidden lg:block w-px h-4 bg-gray-600"></div>
+        <div class="flex items-center gap-2 whitespace-nowrap">
+            <i data-feather="phone" class="w-4 h-4 mr-2"></i>
+            <a href="tel:+84901234567" class="hover:text-white">0901 234 567</a>
+        </div>
+        </address>
     </div>
 
   </div>
