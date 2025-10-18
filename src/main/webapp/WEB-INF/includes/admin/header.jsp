@@ -21,7 +21,7 @@
     </style>
 </head>
 <body class="bg-gray-50">
-    <nav class="bg-amber-800 text-white shadow-lg fixed w-full top-0 z-50">
+    <nav class="bg-amber-800 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <a href="<%=request.getContextPath()%>/index.jsp" class="flex items-center space-x-2">
