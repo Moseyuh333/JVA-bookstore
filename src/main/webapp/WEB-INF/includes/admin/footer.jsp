@@ -24,17 +24,17 @@
     <!-- Right -->
     <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-gray-400 text-center">
       <div class="flex items-center gap-2 whitespace-nowrap">
-        <i data-feather="map-pin" class="w-4 h-4 text-amber-400"></i>
+        <i data-feather="map-pin" class="w-4 h-4 text-white"></i>
         <span>123 Đường Văn Học, Quận Sách, TP.HCM</span>
       </div>
       <div class="hidden lg:block w-px h-4 bg-gray-600"></div>
       <div class="flex items-center gap-2 whitespace-nowrap">
-        <i data-feather="mail" class="w-4 h-4 text-amber-400"></i>
+        <i data-feather="mail" class="w-4 h-4 text-white"></i>
         <a href="mailto:info@bookishhaven.com" class="hover:text-white">info@bookishhaven.com</a>
       </div>
       <div class="hidden lg:block w-px h-4 bg-gray-600"></div>
       <div class="flex items-center gap-2 whitespace-nowrap">
-        <i data-feather="phone" class="w-4 h-4 text-amber-400"></i>
+        <i data-feather="phone" class="w-4 h-4 text-white"></i>
         <a href="tel:+84901234567" class="hover:text-white">0901 234 567</a>
       </div>
     </div>
