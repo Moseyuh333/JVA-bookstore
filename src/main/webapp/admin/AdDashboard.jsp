@@ -657,6 +657,8 @@
         }
     });
     </script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src ="${pageContext.request.contextPath}/assets/js/admin/admin.js"></script>
 
 </body>
 </html>
