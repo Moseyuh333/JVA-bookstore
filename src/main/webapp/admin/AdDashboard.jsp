@@ -510,7 +510,7 @@
     <!-- ===== MAIN WRAPPER ===== -->
     <div class="main-wrapper">
         <!-- ===== SIDEBAR ===== -->
-        <include file="/WEB-INF/includes/admin/AdSideBar.jsp" />
+        <%@ include file="/WEB-INF/includes/admin/AdSideBar.jsp" %>
 
         <!-- ===== CONTENT ===== -->
         <main class="main-content">
