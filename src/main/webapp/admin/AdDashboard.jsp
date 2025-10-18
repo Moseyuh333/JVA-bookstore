@@ -40,32 +40,32 @@
             flex: 1;
             margin-left: 0;
             transition: margin-left 0.3s ease;
-            position: relative;
         }
 
-        .main-content {
+        #content {
             margin-top: 70px;
             padding: 24px;
-            position: relative;
         }
 
-        .container-dashboard {
+        /* Container */
+        .container-fluid {
             max-width: 1400px;
             margin: 0 auto;
         }
 
-        .page-header {
+        /* Page Title */
+        .page-title {
             margin-bottom: 24px;
         }
 
-        .page-header h1 {
+        .page-title h1 {
             font-size: 28px;
             font-weight: 700;
             color: #1a202c;
             margin: 0 0 8px 0;
         }
 
-        .page-header p {
+        .page-title p {
             font-size: 14px;
             color: #718096;
             margin: 0;
@@ -377,20 +377,18 @@
     </style>
 </head>
 <body>
+<div id="wrapper">
+    <!-- Include Sidebar -->
+    <%@ include file="/WEB-INF/includes/admin/AdSideBar.jsp" %>
 
-    <!-- ===== HEADER ===== -->
-    <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
+    <div id="content-wrapper">
+        <!-- Include Header -->
+        <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
 
-    <!-- ===== MAIN WRAPPER ===== -->
-    <div class="main-wrapper">
-        <!-- ===== SIDEBAR ===== -->
-        <%@ include file="/WEB-INF/includes/admin/AdSideBar.jsp" %>
-
-        <!-- ===== CONTENT ===== -->
-        <main class="main-content">
-            <div class="container-dashboard">
-                <!-- Page Header -->
-                <div class="page-header">
+        <div id="content">
+            <div class="container-fluid">
+                <!-- Page Title -->
+                <div class="page-title">
                     <h1>
                         <i class="fas fa-chart-line" style="color: #f59e0b;"></i>
                         Dashboard tổng quan
