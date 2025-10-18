@@ -35,7 +35,7 @@
                     <!-- Admin Dropdown -->
                     <div class="relative">
                         <button id="adminDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
-                            <i data-feather="admin" class="w-5 h-5 mr-1"></i>
+                            <i data-feather="user" class="w-5 h-5 mr-1"></i>
                             <span id="accountBtnLabel" class="font-medium">Admin</span>
                         </button>
                         <div id="adminDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
