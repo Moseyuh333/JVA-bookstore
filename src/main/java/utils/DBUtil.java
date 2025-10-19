@@ -189,6 +189,19 @@ public class DBUtil {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_items_book_id ON order_items(book_id)");
                 ensureOrderItemsSchema(conn);
 
+                String createOrderStatusHistoryTableSQL = "CREATE TABLE IF NOT EXISTS order_status_history (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +
+                    "status VARCHAR(20) NOT NULL," +
+                    "note TEXT," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "created_by VARCHAR(100)" +
+                    ")";
+                stmt.execute(createOrderStatusHistoryTableSQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_status_history_order ON order_status_history(order_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_status_history_status ON order_status_history(status)");
+                ensureOrderStatusHistorySchema(conn);
+
                 // Engagement tables that power catalog ranking
                 String createBookFavoritesTableSQL = "CREATE TABLE IF NOT EXISTS book_favorites (" +
                     "id SERIAL PRIMARY KEY," +
@@ -388,6 +401,24 @@ public class DBUtil {
             stmt.execute("UPDATE order_items SET total_price = COALESCE(total_price, quantity * unit_price)");
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile order_items schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureOrderStatusHistorySchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "order_status_history", "created_by")) {
+                stmt.execute("ALTER TABLE order_status_history ADD COLUMN created_by VARCHAR(100)");
+            }
+            if (!columnExists(conn, "order_status_history", "created_at")) {
+                stmt.execute("ALTER TABLE order_status_history ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE order_status_history SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
+            stmt.execute("UPDATE order_status_history SET status = COALESCE(status, 'new')");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile order_status_history schema: " + ex.getMessage());
         }
     }
 
