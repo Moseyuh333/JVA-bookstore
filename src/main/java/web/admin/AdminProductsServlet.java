@@ -92,7 +92,7 @@ public class AdminProductsServlet extends HttpServlet {
         int offset = (page - 1) * limit;
 
         StringBuilder sql = new StringBuilder(
-            "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock_quantity, b.category, " +
+            "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, " +
             "b.description, b.image_url, b.created_at, b.updated_at, " +
             "COALESCE(s.name, 'Unknown Shop') AS shop_name, s.commission_rate " +
             "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
@@ -176,7 +176,7 @@ public class AdminProductsServlet extends HttpServlet {
                             .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
                             .append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",")
                             .append("\"price\":").append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : 0).append(",")
-                            .append("\"stock_quantity\":").append(rs.getInt("stock_quantity")).append(",")
+                            .append("\"stock\":").append(rs.getInt("stock")).append(",")
                             .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
                             .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
                             .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
@@ -232,7 +232,7 @@ public class AdminProductsServlet extends HttpServlet {
 
         int id = Integer.parseInt(idStr);
         String sql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, " +
-                "b.stock_quantity, b.image_url, b.created_at, b.updated_at, " +
+                "b.stock, b.image_url, b.created_at, b.updated_at, " +
                 "COALESCE(s.name, 'Unknown Shop') as shop_name " +
                 "FROM books b " +
                 "LEFT JOIN shops s ON b.shop_id = s.id " +
@@ -255,7 +255,7 @@ public class AdminProductsServlet extends HttpServlet {
                             + "\"price\":" + rs.getBigDecimal("price") + ","
                             + "\"description\":\"" + escapeJson(rs.getString("description")) + "\","
                             + "\"category\":\"" + escapeJson(rs.getString("category")) + "\","
-                            + "\"stock_quantity\":" + rs.getInt("stock_quantity") + ","
+                            + "\"stock\":" + rs.getInt("stock") + ","
                             + "\"image_url\":\"" + escapeJson(rs.getString("image_url")) + "\","
                             + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
                             + "\"created_at\":\""
@@ -314,7 +314,7 @@ public class AdminProductsServlet extends HttpServlet {
         String priceStr = req.getParameter("price");
         String description = req.getParameter("description");
         String category = req.getParameter("category");
-        String stockStr = req.getParameter("stock_quantity");
+        String stockStr = req.getParameter("stock");
         String imageUrl = req.getParameter("image_url");
         String shopIdStr = req.getParameter("shop_id");
 
@@ -327,7 +327,7 @@ public class AdminProductsServlet extends HttpServlet {
         int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
         int shopId = Integer.parseInt(shopIdStr);
 
-        String sql = "INSERT INTO books (title, author, isbn, price, description, category, stock_quantity, image_url, shop_id) "
+        String sql = "INSERT INTO books (title, author, isbn, price, description, category, stock, image_url, shop_id) "
                 +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -361,7 +361,7 @@ public class AdminProductsServlet extends HttpServlet {
         String priceStr = req.getParameter("price");
         String description = req.getParameter("description");
         String category = req.getParameter("category");
-        String stockStr = req.getParameter("stock_quantity");
+        String stockStr = req.getParameter("stock");
         String imageUrl = req.getParameter("image_url");
 
         if (idStr == null || title == null || title.trim().isEmpty() || priceStr == null) {
@@ -374,7 +374,7 @@ public class AdminProductsServlet extends HttpServlet {
         int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
 
         String sql = "UPDATE books SET title = ?, author = ?, isbn = ?, price = ?, description = ?, " +
-                "category = ?, stock_quantity = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP " +
+                "category = ?, stock = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP " +
                 "WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
