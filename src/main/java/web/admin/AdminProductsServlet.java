@@ -15,7 +15,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-@WebServlet(name = "AdminProductsServlet", urlPatterns = {"/api/admin/products"})
+@WebServlet(name = "AdminProductsServlet", urlPatterns = { "/api/admin/products" })
 public class AdminProductsServlet extends HttpServlet {
 
     @Override
@@ -80,13 +80,12 @@ public class AdminProductsServlet extends HttpServlet {
         int offset = (page - 1) * limit;
 
         StringBuilder sql = new StringBuilder(
-            "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, " +
-            "b.stock_quantity, b.image_url, b.created_at, b.updated_at, " +
-            "COALESCE(s.name, 'Unknown Shop') as shop_name " +
-            "FROM books b " +
-            "LEFT JOIN shops s ON b.shop_id = s.id " +
-            "WHERE 1=1"
-        );
+                "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, " +
+                        "b.stock_quantity, b.image_url, b.created_at, b.updated_at, " +
+                        "COALESCE(s.name, 'Unknown Shop') as shop_name " +
+                        "FROM books b " +
+                        "LEFT JOIN shops s ON b.shop_id = s.id " +
+                        "WHERE 1=1");
 
         if (shopId != null && !shopId.trim().isEmpty()) {
             sql.append(" AND b.shop_id = ?");
@@ -101,8 +100,7 @@ public class AdminProductsServlet extends HttpServlet {
         sql.append(" ORDER BY b.created_at DESC LIMIT ? OFFSET ?");
 
         StringBuilder countSql = new StringBuilder(
-            "SELECT COUNT(*) FROM books b WHERE 1=1"
-        );
+                "SELECT COUNT(*) FROM books b WHERE 1=1");
 
         if (shopId != null && !shopId.trim().isEmpty()) {
             countSql.append(" AND b.shop_id = ?");
@@ -163,28 +161,31 @@ public class AdminProductsServlet extends HttpServlet {
                 try (ResultSet rs = pstmt.executeQuery()) {
                     boolean first = true;
                     while (rs.next()) {
-                        if (!first) json.append(",");
+                        if (!first)
+                            json.append(",");
                         first = false;
 
                         json.append("{")
-                            .append("\"id\":").append(rs.getInt("id")).append(",")
-                            .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
-                            .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
-                            .append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",")
-                            .append("\"price\":").append(rs.getBigDecimal("price")).append(",")
-                            .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
-                            .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
-                            .append("\"stock_quantity\":").append(rs.getInt("stock_quantity")).append(",")
-                            .append("\"image_url\":\"").append(escapeJson(rs.getString("image_url"))).append("\",")
-                            .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
-                            .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                            .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
-                            .append("}");
+                                .append("\"id\":").append(rs.getInt("id")).append(",")
+                                .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
+                                .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
+                                .append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",")
+                                .append("\"price\":").append(rs.getBigDecimal("price")).append(",")
+                                .append("\"description\":\"").append(escapeJson(rs.getString("description")))
+                                .append("\",")
+                                .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
+                                .append("\"stock_quantity\":").append(rs.getInt("stock_quantity")).append(",")
+                                .append("\"image_url\":\"").append(escapeJson(rs.getString("image_url"))).append("\",")
+                                .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
+                                .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
+                                .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                                .append("}");
                     }
                 }
             }
 
-            json.append("],\"total\":").append(total).append(",\"page\":").append(page).append(",\"limit\":").append(limit).append("}");
+            json.append("],\"total\":").append(total).append(",\"page\":").append(page).append(",\"limit\":")
+                    .append(limit).append("}");
             out.write(json.toString());
         }
     }
@@ -199,33 +200,33 @@ public class AdminProductsServlet extends HttpServlet {
 
         int id = Integer.parseInt(idStr);
         String sql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, " +
-                     "b.stock_quantity, b.image_url, b.created_at, b.updated_at, " +
-                     "COALESCE(s.name, 'Unknown Shop') as shop_name " +
-                     "FROM books b " +
-                     "LEFT JOIN shops s ON b.shop_id = s.id " +
-                     "WHERE b.id = ?";
+                "b.stock_quantity, b.image_url, b.created_at, b.updated_at, " +
+                "COALESCE(s.name, 'Unknown Shop') as shop_name " +
+                "FROM books b " +
+                "LEFT JOIN shops s ON b.shop_id = s.id " +
+                "WHERE b.id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     String json = "{"
-                        + "\"id\":" + rs.getInt("id") + ","
-                        + "\"title\":\"" + escapeJson(rs.getString("title")) + "\","
-                        + "\"author\":\"" + escapeJson(rs.getString("author")) + "\","
-                        + "\"isbn\":\"" + escapeJson(rs.getString("isbn")) + "\","
-                        + "\"price\":" + rs.getBigDecimal("price") + ","
-                        + "\"description\":\"" + escapeJson(rs.getString("description")) + "\","
-                        + "\"category\":\"" + escapeJson(rs.getString("category")) + "\","
-                        + "\"stock_quantity\":" + rs.getInt("stock_quantity") + ","
-                        + "\"image_url\":\"" + escapeJson(rs.getString("image_url")) + "\","
-                        + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
-                        + "\"created_at\":\"" + rs.getTimestamp("created_at") + "\","
-                        + "\"updated_at\":\"" + rs.getTimestamp("updated_at") + "\""
-                        + "}";
+                            + "\"id\":" + rs.getInt("id") + ","
+                            + "\"title\":\"" + escapeJson(rs.getString("title")) + "\","
+                            + "\"author\":\"" + escapeJson(rs.getString("author")) + "\","
+                            + "\"isbn\":\"" + escapeJson(rs.getString("isbn")) + "\","
+                            + "\"price\":" + rs.getBigDecimal("price") + ","
+                            + "\"description\":\"" + escapeJson(rs.getString("description")) + "\","
+                            + "\"category\":\"" + escapeJson(rs.getString("category")) + "\","
+                            + "\"stock_quantity\":" + rs.getInt("stock_quantity") + ","
+                            + "\"image_url\":\"" + escapeJson(rs.getString("image_url")) + "\","
+                            + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
+                            + "\"created_at\":\"" + rs.getTimestamp("created_at") + "\","
+                            + "\"updated_at\":\"" + rs.getTimestamp("updated_at") + "\""
+                            + "}";
                     out.write(json);
                 } else {
                     out.write("{\"error\":\"Product not found\"}");
@@ -254,11 +255,12 @@ public class AdminProductsServlet extends HttpServlet {
         int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
         int shopId = Integer.parseInt(shopIdStr);
 
-        String sql = "INSERT INTO books (title, author, isbn, price, description, category, stock_quantity, image_url, shop_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO books (title, author, isbn, price, description, category, stock_quantity, image_url, shop_id) "
+                +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, title.trim());
             pstmt.setString(2, author != null ? author.trim() : null);
@@ -300,11 +302,11 @@ public class AdminProductsServlet extends HttpServlet {
         int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
 
         String sql = "UPDATE books SET title = ?, author = ?, isbn = ?, price = ?, description = ?, " +
-                     "category = ?, stock_quantity = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP " +
-                     "WHERE id = ?";
+                "category = ?, stock_quantity = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP " +
+                "WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, title.trim());
             pstmt.setString(2, author != null ? author.trim() : null);
@@ -337,7 +339,7 @@ public class AdminProductsServlet extends HttpServlet {
         String sql = "DELETE FROM books WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
 
@@ -351,10 +353,42 @@ public class AdminProductsServlet extends HttpServlet {
     }
 
     private String escapeJson(String str) {
-        if (str == null) return "";
-        return str.replace("\\", "\\\\")
-                  .replace("\"", "\\\"")
-                  .replace("\n", "\\n")
-                  .replace("\r", "\\r");
+        if (str == null)
+            return "";
+        StringBuilder sb = new StringBuilder();
+        for (char c : str.toCharArray()) {
+            switch (c) {
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
+                default:
+                    if (c < 0x20) {
+                        // escape all control chars as unicode
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+            }
+        }
+        return sb.toString();
     }
+
 }
