@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 
 @WebServlet(name = "AdminProductsServlet", urlPatterns = { "/api/admin/products" })
 public class AdminProductsServlet extends HttpServlet {
@@ -165,6 +166,11 @@ public class AdminProductsServlet extends HttpServlet {
                             json.append(",");
                         first = false;
 
+                        java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                        java.sql.Timestamp updatedAt = rs.getTimestamp("updated_at");
+
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
                         json.append("{")
                                 .append("\"id\":").append(rs.getInt("id")).append(",")
                                 .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
@@ -177,8 +183,8 @@ public class AdminProductsServlet extends HttpServlet {
                                 .append("\"stock_quantity\":").append(rs.getInt("stock_quantity")).append(",")
                                 .append("\"image_url\":\"").append(escapeJson(rs.getString("image_url"))).append("\",")
                                 .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
-                                .append("\"created_at\":\"").append(escapeJson(rs.getTimestamp("created_at").toString())).append("\",")
-                                .append("\"updated_at\":\"").append(escapeJson(rs.getTimestamp("updated_at").toString())).append("\"")
+                                .append("\"created_at\":\"").append(createdAt != null ? sdf.format(createdAt) : "").append("\",")
+                                .append("\"updated_at\":\"").append(updatedAt != null ? sdf.format(updatedAt) : "").append("\"")
                                 .append("}");
                     }
                 }
@@ -213,6 +219,8 @@ public class AdminProductsServlet extends HttpServlet {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
                     String json = "{"
                             + "\"id\":" + rs.getInt("id") + ","
                             + "\"title\":\"" + escapeJson(rs.getString("title")) + "\","
@@ -224,8 +232,8 @@ public class AdminProductsServlet extends HttpServlet {
                             + "\"stock_quantity\":" + rs.getInt("stock_quantity") + ","
                             + "\"image_url\":\"" + escapeJson(rs.getString("image_url")) + "\","
                             + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
-                            + "\"created_at\":\"" + escapeJson(rs.getTimestamp("created_at").toString()) + "\","
-                            + "\"updated_at\":\"" + escapeJson(rs.getTimestamp("updated_at").toString()) + "\""
+                            + "\"created_at\":\"" + (rs.getTimestamp("created_at") != null ? sdf.format(rs.getTimestamp("created_at")) : "") + "\","
+                            + "\"updated_at\":\"" + (rs.getTimestamp("updated_at") != null ? sdf.format(rs.getTimestamp("updated_at")) : "") + "\""
                             + "}";
                     out.write(json);
                 } else {
