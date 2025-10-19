@@ -292,8 +292,6 @@ public class DBUtil {
 
     private static void ensureOrdersSchema(Connection conn) {
         try (Statement stmt = conn.createStatement()) {
-            ensureOrderRelatedEnums(conn);
-
             if (!columnExists(conn, "orders", "order_date")) {
                 stmt.execute("ALTER TABLE orders ADD COLUMN order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
             }
@@ -361,6 +359,9 @@ public class DBUtil {
             }
             stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_code ON orders(code)");
             stmt.execute("UPDATE orders SET code = CONCAT('ORD', LPAD(CAST(id AS TEXT), 6, '0')) WHERE code IS NULL OR code = ''");
+            normalizeOrderColumnTypes(conn);
+            ensureOrderRelatedEnums(conn);
+            ensureOrderConstraints(conn);
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile orders schema: " + ex.getMessage());
         }
@@ -551,6 +552,91 @@ public class DBUtil {
             }
         }
         return 0;
+    }
+
+    private static void normalizeOrderColumnTypes(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        coerceColumnToVarchar(conn, "orders", "status", 20, "'new'");
+        coerceColumnToVarchar(conn, "orders", "payment_status", 20, "'unpaid'");
+        coerceColumnToVarchar(conn, "orders", "payment_method", 20, "'cod'");
+        coerceColumnToVarchar(conn, "order_status_history", "status", 20, null);
+        coerceColumnToVarchar(conn, "order_payments", "method", 20, "'cod'");
+        coerceColumnToVarchar(conn, "order_payments", "status", 20, "'pending'");
+    }
+
+    private static void ensureOrderConstraints(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            addCheckConstraint(conn, "orders", "chk_orders_status_text", "status IN ('new', 'confirmed', 'shipping', 'delivered', 'cancelled', 'returned')");
+            addCheckConstraint(conn, "orders", "chk_orders_payment_status_text", "payment_status IN ('unpaid', 'processing', 'paid', 'failed', 'refunded')");
+            addCheckConstraint(conn, "orders", "chk_orders_payment_method_text", "payment_method IN ('cod', 'vnpay', 'momo')");
+            addCheckConstraint(conn, "order_payments", "chk_order_payments_method_text", "method IN ('cod', 'vnpay', 'momo')");
+            addCheckConstraint(conn, "order_payments", "chk_order_payments_status_text", "status IN ('pending', 'processing', 'paid', 'failed', 'refunded')");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to ensure order constraints: " + ex.getMessage());
+        }
+    }
+
+    private static void coerceColumnToVarchar(Connection conn, String table, String column, int length, String defaultValue) {
+        try {
+            if (!columnExists(conn, table, column)) {
+                return;
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to inspect column " + table + "." + column + ": " + ex.getMessage());
+            return;
+        }
+        String typeSql = "ALTER TABLE " + table + " ALTER COLUMN " + column + " TYPE VARCHAR(" + length + ") USING " + column + "::text";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(typeSql);
+        } catch (SQLException ex) {
+            if (!isRedundantAlterError(ex)) {
+                System.err.println("DBUtil - Unable to alter column type for " + table + "." + column + ": " + ex.getMessage());
+            }
+        }
+        if (defaultValue != null) {
+            String defaultSql = "ALTER TABLE " + table + " ALTER COLUMN " + column + " SET DEFAULT " + defaultValue;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(defaultSql);
+            } catch (SQLException ex) {
+                if (!isRedundantAlterError(ex)) {
+                    System.err.println("DBUtil - Unable to set default for " + table + "." + column + ": " + ex.getMessage());
+                }
+            }
+        }
+    }
+
+    private static void addCheckConstraint(Connection conn, String table, String constraintName, String expression) throws SQLException {
+        if (constraintExists(conn, table, constraintName)) {
+            return;
+        }
+        String sql = "ALTER TABLE " + table + " ADD CONSTRAINT " + constraintName + " CHECK (" + expression + ")";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        }
+    }
+
+    private static boolean constraintExists(Connection conn, String table, String constraintName) throws SQLException {
+        String sql = "SELECT 1 FROM information_schema.table_constraints WHERE table_name = ? AND constraint_name = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, table);
+            stmt.setString(2, constraintName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static boolean isRedundantAlterError(SQLException ex) {
+        String message = ex.getMessage();
+        if (message == null) {
+            return false;
+        }
+        return message.contains("already") || message.contains("is of type");
     }
 
     private static boolean tableExists(Connection conn, String tableName) throws SQLException {
