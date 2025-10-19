@@ -312,11 +312,11 @@
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên sách, tác giả, ISBN, tên shop...">
                             </div>
-                            <button class="btn-custom btn-search" onclick="applyFilter()">
+                            <button class="btn-custom btn-search" id="searchBtn">
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>
                             </button>
-                            <button class="btn-custom btn-reset" onclick="resetFilter()">
+                            <button class="btn-custom btn-reset" id="btnReset">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
                             </button>
