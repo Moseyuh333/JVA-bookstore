@@ -66,6 +66,7 @@ public class DBUtil {
                     "username VARCHAR(50) UNIQUE NOT NULL," +
                     "email VARCHAR(100) UNIQUE NOT NULL," +
                     "password_hash VARCHAR(255) NOT NULL," +
+                    "role VARCHAR(20) DEFAULT 'user'," +
                     "email_verified BOOLEAN DEFAULT FALSE," +
                     "verification_token VARCHAR(255)," +
                     "reset_token VARCHAR(255)," +
@@ -1086,6 +1087,19 @@ public class DBUtil {
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             int count = pstmt.executeUpdate();
             System.out.println("Deleted " + count + " users from database");
+        }
+    }
+
+    public static String getUserRole(String username) throws SQLException {
+        String sql = "SELECT role FROM users WHERE username = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("role");
+                }
+                return null;
+            }
         }
     }
 }
