@@ -20,30 +20,64 @@ public final class CartDAO {
     private CartDAO() {
     }
 
+    private static final class CartPointer {
+        final long id;
+        final Long userId;
+
+        CartPointer(long id, Long userId) {
+            this.id = id;
+            this.userId = userId;
+        }
+    }
+
     public static Cart ensureActiveCart(Long userId, String sessionId) throws SQLException {
         ensureSchema();
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Long cartId = null;
+                Long activeCartId = null;
                 if (userId != null) {
-                    cartId = findActiveCartIdByUser(conn, userId);
+                    activeCartId = findActiveCartIdByUser(conn, userId);
                 }
-                Long sessionCartId = null;
-                if (cartId == null && sessionId != null) {
-                    sessionCartId = findActiveCartIdBySession(conn, sessionId);
-                    cartId = sessionCartId;
+
+                CartPointer sessionCart = (sessionId != null) ? findActiveCartBySession(conn, sessionId) : null;
+
+                if (sessionCart != null && sessionCart.userId != null && (userId == null || !sessionCart.userId.equals(userId))) {
+                    clearCartSession(conn, sessionCart.id, sessionId);
+                    sessionCart = null;
                 }
-                if (userId != null && sessionCartId != null && !sessionCartId.equals(cartId)) {
-                    assignCartToUser(conn, sessionCartId, userId, sessionId);
-                    cartId = sessionCartId;
-                } else if (cartId == null) {
-                    cartId = createCart(conn, userId, sessionId);
-                } else if (userId != null) {
-                    updateCartOwnership(conn, cartId, userId, sessionId);
+
+                if (userId != null && sessionCart != null) {
+                    if (activeCartId == null) {
+                        assignCartToUser(conn, sessionCart.id, userId, sessionId);
+                        activeCartId = sessionCart.id;
+                    } else if (sessionCart.id != activeCartId) {
+                        mergeCarts(conn, activeCartId, sessionCart.id);
+                        markCartStatus(conn, sessionCart.id, "merged");
+                        clearCartSession(conn, sessionCart.id, null);
+                        touchCart(conn, activeCartId);
+                    }
                 }
+
+                if (activeCartId == null) {
+                    if (sessionCart != null) {
+                        activeCartId = sessionCart.id;
+                        if (sessionId != null) {
+                            updateCartSession(conn, activeCartId, sessionId);
+                        }
+                    } else {
+                        activeCartId = createCart(conn, userId, sessionId);
+                    }
+                } else {
+                    if (userId != null) {
+                        updateCartOwnership(conn, activeCartId, userId, sessionId);
+                    } else if (sessionId != null) {
+                        updateCartSession(conn, activeCartId, sessionId);
+                    }
+                }
+
                 conn.commit();
-                return loadCart(conn, cartId);
+                return loadCart(conn, activeCartId);
             } catch (SQLException ex) {
                 conn.rollback();
                 throw ex;
@@ -233,17 +267,20 @@ public final class CartDAO {
         }
     }
 
-    private static Long findActiveCartIdBySession(Connection conn, String sessionId) throws SQLException {
-        String sql = "SELECT id FROM carts WHERE session_id = ? AND status = 'active' ORDER BY updated_at DESC LIMIT 1";
+    private static CartPointer findActiveCartBySession(Connection conn, String sessionId) throws SQLException {
+        String sql = "SELECT id, user_id FROM carts WHERE session_id = ? AND status = 'active' ORDER BY updated_at DESC LIMIT 1";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, sessionId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getLong(1);
+                    long id = rs.getLong("id");
+                    long owner = rs.getLong("user_id");
+                    Long resolvedOwner = rs.wasNull() ? null : owner;
+                    return new CartPointer(id, resolvedOwner);
                 }
-                return null;
             }
         }
+        return null;
     }
 
     private static long createCart(Connection conn, Long userId, String sessionId) throws SQLException {
@@ -270,6 +307,31 @@ public final class CartDAO {
             stmt.setLong(1, userId);
             stmt.setString(2, sessionId);
             stmt.setLong(3, cartId);
+            stmt.executeUpdate();
+        }
+    }
+
+    private static void updateCartSession(Connection conn, long cartId, String sessionId) throws SQLException {
+        String sql = "UPDATE carts SET session_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, sessionId);
+            stmt.setLong(2, cartId);
+            stmt.executeUpdate();
+        }
+    }
+
+    private static void clearCartSession(Connection conn, long cartId, String expectedSessionId) throws SQLException {
+        String sql;
+        if (expectedSessionId == null) {
+            sql = "UPDATE carts SET session_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        } else {
+            sql = "UPDATE carts SET session_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND session_id = ?";
+        }
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, cartId);
+            if (expectedSessionId != null) {
+                stmt.setString(2, expectedSessionId);
+            }
             stmt.executeUpdate();
         }
     }
