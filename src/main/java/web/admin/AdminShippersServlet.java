@@ -31,7 +31,7 @@ public class AdminShippersServlet extends HttpServlet {
 
         try {
             if ("list".equals(action)) {
-                listShippers(out);
+                listShippers(req, out);
             } else if ("get".equals(action)) {
                 getShipper(req, out);
             } else {
@@ -76,37 +76,75 @@ public class AdminShippersServlet extends HttpServlet {
         }
     }
 
-    private void listShippers(PrintWriter out) throws SQLException {
-        String sql = "SELECT id, name, phone, email, base_fee, service_area, estimated_time, status, created_at, updated_at "
-                +
-                "FROM shippers ORDER BY name";
+    private void listShippers(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String search = req.getParameter("search");
+        String searchType = req.getParameter("searchType");
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT id, name, phone, email, base_fee, service_area, estimated_time, status, created_at, updated_at "
+            + "FROM shippers WHERE 1=1"
+        );
+
+        // Add search conditions
+        if (search != null && !search.trim().isEmpty()) {
+            if ("name".equals(searchType)) {
+                sql.append(" AND name ILIKE ?");
+            } else if ("phone".equals(searchType)) {
+                sql.append(" AND phone ILIKE ?");
+            } else if ("email".equals(searchType)) {
+                sql.append(" AND email ILIKE ?");
+            } else if ("service_area".equals(searchType)) {
+                sql.append(" AND service_area ILIKE ?");
+            } else {
+                // Default "all"
+                sql.append(" AND (name ILIKE ? OR phone ILIKE ? OR email ILIKE ? OR service_area ILIKE ?)");
+            }
+        }
+
+        sql.append(" ORDER BY name");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"shippers\":[");
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery()) {
+                PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            boolean first = true;
-            while (rs.next()) {
-                if (!first)
-                    json.append(",");
-                first = false;
+            // Set search parameters
+            int paramIndex = 1;
+            if (search != null && !search.trim().isEmpty()) {
+                String pattern = "%" + search.trim() + "%";
+                if ("name".equals(searchType) || "phone".equals(searchType) || "email".equals(searchType) || "service_area".equals(searchType)) {
+                    pstmt.setString(paramIndex++, pattern);
+                } else {
+                    // "all" search
+                    pstmt.setString(paramIndex++, pattern);
+                    pstmt.setString(paramIndex++, pattern);
+                    pstmt.setString(paramIndex++, pattern);
+                    pstmt.setString(paramIndex++, pattern);
+                }
+            }
 
-                json.append("{")
-                        .append("\"id\":").append(rs.getInt("id")).append(",")
-                        .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
-                        .append("\"phone\":\"").append(escapeJson(rs.getString("phone"))).append("\",")
-                        .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
-                        .append("\"base_fee\":").append(rs.getBigDecimal("base_fee")).append(",")
-                        .append("\"service_area\":\"").append(escapeJson(rs.getString("service_area"))).append("\",")
-                        .append("\"estimated_time\":\"").append(escapeJson(rs.getString("estimated_time")))
-                        .append("\",")
-                        .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
-                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                        .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
-                        .append("}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first)
+                        json.append(",");
+                    first = false;
+
+                    json.append("{")
+                            .append("\"id\":").append(rs.getInt("id")).append(",")
+                            .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
+                            .append("\"phone\":\"").append(escapeJson(rs.getString("phone"))).append("\",")
+                            .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
+                            .append("\"base_fee\":").append(rs.getBigDecimal("base_fee")).append(",")
+                            .append("\"service_area\":\"").append(escapeJson(rs.getString("service_area"))).append("\",")
+                            .append("\"estimated_time\":\"").append(escapeJson(rs.getString("estimated_time")))
+                            .append("\",")
+                            .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
+                            .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
+                            .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                            .append("}");
+                }
             }
         }
 

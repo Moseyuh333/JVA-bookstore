@@ -4,7 +4,7 @@
 // ========================
 // 📥 LOAD SHIPPERS FROM API
 // ========================
-async function loadShippers() {
+async function loadShippers(search = "", searchType = "all") {
     const tbody = document.querySelector('#ShipperTable');
     const empty = document.querySelector('#emptyState');
     const loading = document.querySelector('#loadingState');
@@ -20,7 +20,12 @@ async function loadShippers() {
         empty.style.display = 'none';
         tbody.innerHTML = '';
 
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/shippers?action=list`, {
+        let url = `${window.appConfig?.contextPath || ''}/api/admin/shippers?action=list`;
+        if (search && search.trim()) {
+            url += `&search=${encodeURIComponent(search)}&searchType=${encodeURIComponent(searchType)}`;
+        }
+
+        const res = await fetch(url, {
             headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
@@ -96,17 +101,15 @@ function updateStats(total) {
 // 🧹 RESET / SEARCH
 // ========================
 function applyFilter() {
-    const search = document.getElementById('searchInput').value.toLowerCase().trim();
-    const rows = document.querySelectorAll('#ShipperTable tr');
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(search) ? '' : 'none';
-    });
+    const search = document.getElementById('searchInput').value.trim();
+    const searchType = document.getElementById('searchType') ? document.getElementById('searchType').value : "all";
+    loadShippers(search, searchType);
 }
 
 function resetFilter() {
     document.getElementById('searchInput').value = '';
-    document.querySelectorAll('#ShipperTable tr').forEach(r => r.style.display = '');
+    if (document.getElementById('searchType')) document.getElementById('searchType').value = 'all';
+    loadShippers();
 }
 
 // ========================
