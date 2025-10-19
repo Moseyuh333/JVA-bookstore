@@ -509,7 +509,7 @@
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody id="commissionList"></tbody>
+                                <tbody id="commissionTable"></tbody>
                             </table>
 
                             <div id="emptyState" class="empty-state" style="display: none;">
