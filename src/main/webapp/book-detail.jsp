@@ -46,7 +46,9 @@
                   l1.287-3.975-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.179l1.286-3.975z" />
               </svg>
             </c:forEach>
-            <span class="text-gray-500 text-sm ml-1">(${bookRating}/5)</span>
+            <span class="text-gray-500 text-sm ml-1">
+              (<fmt:formatNumber value="${bookRating}" maxFractionDigits="1" /> / 5 · ${reviewCount} đánh giá)
+            </span>
           </div>
 
           <!-- Price -->
@@ -87,6 +89,13 @@
             </c:choose>
           </p>
 
+          <p class="text-sm mb-4 text-gray-700">
+            <span class="text-gray-600">Đã bán:</span>
+            <span class="text-amber-700 font-medium">
+              <fmt:formatNumber value="${soldCount}" type="number" />
+            </span>
+          </p>
+
           <!-- Buttons -->
           <div class="flex flex-wrap gap-3">
             <button type="button" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-md transition" data-buy-now data-book-id="${bookId}">
@@ -94,6 +103,9 @@
             </button>
             <button type="button" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded-md transition" data-add-to-cart data-book-id="${bookId}">
               Thêm vào giỏ
+            </button>
+            <button type="button" class="border border-amber-600 text-amber-600 bg-white hover:bg-amber-50 font-semibold px-6 py-3 rounded-md transition" data-toggle-favorite data-book-id="${bookId}" aria-pressed="false">
+              Thêm vào yêu thích
             </button>
           </div>
         </div>
@@ -152,7 +164,18 @@
       <c:choose>
         <c:when test="${not empty reviews}">
           <div class="bg-white mt-10 p-8 rounded-lg text-gray-700 border border-gray-200 mb-20">
-            <h2 class="text-xl font-semibold text-amber-700 mb-4 border-b border-gray-300 pb-2">Khách hàng đánh giá</h2>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 border-b border-gray-300 pb-2">
+              <h2 class="text-xl font-semibold text-amber-700">Khách hàng đánh giá</h2>
+              <c:if test="${userHasReview}">
+                <button type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-amber-500 text-amber-600 hover:bg-amber-50 transition" data-scroll-own-review="${userReviewDomId}">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Xem đánh giá của tôi
+                </button>
+              </c:if>
+            </div>
 
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
               <!-- Cột điểm trung bình -->
@@ -190,9 +213,10 @@
               </div>
 
               <!-- Danh sách đánh giá -->
-              <div class="mt-8 divide-y divide-gray-200">
+              <div class="mt-8 divide-y divide-gray-200 w-full">
                 <c:forEach var="r" items="${reviews}">
-                  <div class="py-5">
+                  <c:set var="ownerClasses" value="${r.isOwner ? 'bg-amber-50 border-l-4 border-amber-500 rounded-md pl-4' : ''}" />
+                  <div id="${r.domId}" class="py-5 transition-colors duration-300 ${ownerClasses}">
                     <div class="flex items-center justify-between mb-2">
                       <div class="flex items-center gap-3">
                         <div
@@ -202,6 +226,12 @@
                         <div>
                           <p class="text-gray-800 font-semibold">${r.authorName}</p>
                           <p class="text-green-600 text-xs">Đã mua hàng</p>
+                          <c:if test="${r.isOwner}">
+                            <span class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Đánh giá của bạn</span>
+                          </c:if>
+                          <c:if test="${not empty r.createdAt}">
+                            <p class="text-gray-500 text-xs">${r.createdAt}</p>
+                          </c:if>
                         </div>
                       </div>
                     </div>
@@ -299,13 +329,149 @@
           })
           .catch(function (error) {
             console.error('Buy now error', error);
-            if (cartClient && typeof cartClient.showToast === 'function') {
-              cartClient.showToast('Không thể mua ngay sản phẩm. Vui lòng thử lại.', true);
-            }
+            showToast('Không thể mua ngay sản phẩm. Vui lòng thử lại.', true);
           })
           .finally(function () {
             button.disabled = false;
             button.classList.remove('opacity-60');
+          });
+      }
+
+      function showToast(message, isError) {
+        var cartClient = window.cartClient;
+        if (cartClient && typeof cartClient.showToast === 'function') {
+          cartClient.showToast(message, isError);
+          return;
+        }
+        var safeMessage = message || '';
+        if (window.appShell && typeof window.appShell.escapeHtml === 'function') {
+          safeMessage = window.appShell.escapeHtml(safeMessage);
+        }
+        if (isError) {
+          window.alert(safeMessage);
+        } else {
+          console.log(safeMessage);
+        }
+      }
+
+      function initFavoriteButton(bookId) {
+        var button = document.querySelector('[data-toggle-favorite]');
+        var apiClient = window.apiClient;
+        if (!button || !apiClient || Number.isNaN(bookId) || bookId <= 0) {
+          return;
+        }
+
+        var state = {
+          isFavorite: false,
+          loading: false,
+          initialized: false
+        };
+
+        function setLoading(isLoading) {
+          state.loading = isLoading;
+          button.disabled = isLoading;
+          button.classList.toggle('opacity-60', isLoading);
+          button.classList.toggle('cursor-not-allowed', isLoading);
+        }
+
+        function renderButton() {
+          var label = state.isFavorite ? 'Bỏ khỏi yêu thích' : 'Thêm vào yêu thích';
+          button.textContent = label;
+          button.setAttribute('aria-pressed', state.isFavorite ? 'true' : 'false');
+          button.classList.toggle('bg-amber-600', state.isFavorite);
+          button.classList.toggle('text-white', state.isFavorite);
+          button.classList.toggle('border-amber-600', true);
+          button.classList.toggle('text-amber-600', !state.isFavorite);
+          button.classList.toggle('bg-white', !state.isFavorite);
+        }
+
+        function ensureLoggedIn() {
+          var token = window.localStorage.getItem('auth_token');
+          if (!token) {
+            var contextPath = (window.appShell ? window.appShell.contextPath : '');
+            window.location.href = contextPath + '/login.jsp';
+            return false;
+          }
+          return true;
+        }
+
+        function toggleFavorite() {
+          if (state.loading) {
+            return;
+          }
+          if (!ensureLoggedIn()) {
+            return;
+          }
+          setLoading(true);
+          var path = '/profile/favorites/' + bookId;
+          var requestPromise = state.isFavorite ? apiClient.del(path) : apiClient.post(path, {});
+          requestPromise
+            .then(function (result) {
+              if (!result || result.success !== true) {
+                throw new Error('Thao tác không thành công');
+              }
+              state.isFavorite = !state.isFavorite;
+              renderButton();
+              showToast(result.message || (state.isFavorite ? 'Đã thêm vào yêu thích' : 'Đã bỏ khỏi yêu thích'), false);
+            })
+            .catch(function (error) {
+              console.error('Favorite toggle failed', error);
+              showToast('Không thể cập nhật danh sách yêu thích. Vui lòng thử lại.', true);
+            })
+            .finally(function () {
+              setLoading(false);
+            });
+        }
+
+        function loadInitialState() {
+          var token = window.localStorage.getItem('auth_token');
+          if (!token) {
+            renderButton();
+            return;
+          }
+          setLoading(true);
+          apiClient.get('/profile/favorites')
+            .then(function (response) {
+              if (response && response.success && Array.isArray(response.favorites)) {
+                state.isFavorite = response.favorites.some(function (item) {
+                  return Number(item.bookId) === bookId;
+                });
+              }
+            })
+            .catch(function (error) {
+              if (error && error.status === 401) {
+                state.isFavorite = false;
+              } else {
+                console.warn('Unable to load favorite state', error);
+              }
+            })
+            .finally(function () {
+              renderButton();
+              setLoading(false);
+              state.initialized = true;
+            });
+        }
+
+        button.addEventListener('click', toggleFavorite);
+        renderButton();
+        loadInitialState();
+      }
+
+      function recordRecentView(bookId) {
+        var apiClient = window.apiClient;
+        if (!apiClient || Number.isNaN(bookId) || bookId <= 0) {
+          return;
+        }
+        var token = window.localStorage.getItem('auth_token');
+        if (!token) {
+          return;
+        }
+        apiClient.post('/profile/recent-views', { bookId: bookId })
+          .catch(function (error) {
+            if (error && error.status === 404) {
+              return;
+            }
+            console.debug('Unable to record recent view', error);
           });
       }
 
@@ -314,6 +480,35 @@
         var buyNowButton = document.querySelector('[data-buy-now]');
         if (buyNowButton) {
           buyNowButton.addEventListener('click', handleBuyNowClick);
+        }
+
+        var anchor = buyNowButton || document.querySelector('[data-add-to-cart]') || document.querySelector('[data-toggle-favorite]');
+        var bookId = anchor ? parseInt(anchor.getAttribute('data-book-id'), 10) : NaN;
+        if (!Number.isNaN(bookId) && bookId > 0) {
+          initFavoriteButton(bookId);
+          recordRecentView(bookId);
+        }
+
+        var ownReviewButton = document.querySelector('[data-scroll-own-review]');
+        if (ownReviewButton) {
+          ownReviewButton.addEventListener('click', function () {
+            var targetId = ownReviewButton.getAttribute('data-scroll-own-review');
+            if (!targetId) {
+              return;
+            }
+            var target = document.getElementById(targetId);
+            if (!target) {
+              console.warn('Không tìm thấy review với id', targetId);
+              return;
+            }
+            if (typeof target.scrollIntoView === 'function') {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            target.classList.add('ring-2', 'ring-amber-400', 'ring-offset-2');
+            setTimeout(function () {
+              target.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-2');
+            }, 2400);
+          });
         }
       }
 

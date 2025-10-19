@@ -20,6 +20,8 @@ public class Order {
     private BigDecimal totalAmount;
     private String currency;
     private String couponCode;
+    private String customerName;
+    private String customerEmail;
     private String notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -135,6 +137,22 @@ public class Order {
 
     public void setCouponCode(String couponCode) {
         this.couponCode = couponCode;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerEmail() {
+        return customerEmail;
+    }
+
+    public void setCustomerEmail(String customerEmail) {
+        this.customerEmail = customerEmail;
     }
 
     public String getNotes() {

@@ -17,15 +17,26 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class OrderDAO {
 
     private static final Gson GSON = new Gson();
+    private static final Set<String> ALLOWED_STATUSES = new HashSet<>(Arrays.asList(
+        "new",
+        "confirmed",
+        "shipping",
+        "delivered",
+        "cancelled",
+        "returned"
+    ));
 
     private OrderDAO() {
     }
@@ -69,7 +80,7 @@ public final class OrderDAO {
                 if (mode == CheckoutMode.CART) {
                     clearCartAfterCheckout(conn, cartData, selections);
                 }
-                Order order = fetchOrderById(conn, orderId, userId);
+                Order order = fetchOrderByIdInternal(conn, orderId, userId);
                 conn.commit();
                 return order;
             } catch (SQLException ex) {
@@ -109,14 +120,58 @@ public final class OrderDAO {
 
     public static Order fetchOrderById(long orderId, long userId) throws SQLException {
         try (Connection conn = DBUtil.getConnection()) {
-            return fetchOrderById(conn, orderId, userId);
+            return fetchOrderByIdInternal(conn, orderId, userId);
+        }
+    }
+
+    public static Order fetchOrderForAdmin(long orderId) throws SQLException {
+        try (Connection conn = DBUtil.getConnection()) {
+            return fetchOrderByIdInternal(conn, orderId, null);
         }
     }
 
     public static List<OrderStatusHistory> findStatusTimeline(long orderId, long userId) throws SQLException {
+        try (Connection conn = DBUtil.getConnection()) {
+            fetchOrderByIdInternal(conn, orderId, userId);
+            return loadStatusTimeline(conn, orderId);
+        }
+    }
+
+    public static List<OrderStatusHistory> findStatusTimelineForAdmin(long orderId) throws SQLException {
+        try (Connection conn = DBUtil.getConnection()) {
+            fetchOrderByIdInternal(conn, orderId, null);
+            return loadStatusTimeline(conn, orderId);
+        }
+    }
+
+    private static Order fetchOrderByIdInternal(Connection conn, long orderId, Long userId) throws SQLException {
+        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
+                + "u.email AS customer_email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name "
+                + "FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?");
+        if (userId != null) {
+            sql.append(" AND o.user_id = ?");
+        }
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            stmt.setLong(1, orderId);
+            if (userId != null) {
+                stmt.setLong(2, userId);
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new SQLException("Order not found: " + orderId);
+                }
+                Order order = mapOrder(rs);
+                order.setCustomerEmail(rs.getString("customer_email"));
+                order.setCustomerName(rs.getString("customer_name"));
+                order.setItems(findOrderItems(conn, orderId));
+                return order;
+            }
+        }
+    }
+
+    private static List<OrderStatusHistory> loadStatusTimeline(Connection conn, long orderId) throws SQLException {
         String sql = "SELECT id, order_id, status, note, created_at, created_by FROM order_status_history WHERE order_id = ? ORDER BY created_at";
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, orderId);
             try (ResultSet rs = stmt.executeQuery()) {
                 List<OrderStatusHistory> timeline = new ArrayList<>();
@@ -135,20 +190,119 @@ public final class OrderDAO {
         }
     }
 
-    private static Order fetchOrderById(Connection conn, long orderId, long userId) throws SQLException {
-        String sql = "SELECT id, code, user_id, order_date, status, payment_status, payment_method, payment_provider, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
-                + "FROM orders WHERE id = ? AND user_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, orderId);
-            stmt.setLong(2, userId);
+    public static List<AdminOrderSummary> listOrdersForAdmin(String statusFilter, String keyword, int limit) throws SQLException {
+        String normalizedStatus = normalizeStatusValue(statusFilter);
+        int safeLimit = limit <= 0 ? 50 : Math.min(limit, 200);
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT o.id, o.code, o.status, o.payment_status, o.payment_method, o.total_amount, o.shipping_fee, o.order_date, o.updated_at, ")
+                .append("u.email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name ")
+                .append("FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+        if (normalizedStatus != null && !"all".equals(normalizedStatus)) {
+            sql.append(" AND LOWER(o.status) = ?");
+            params.add(normalizedStatus);
+        }
+        if (keyword != null) {
+            String trimmed = keyword.trim();
+            if (!trimmed.isEmpty()) {
+                String pattern = "%" + trimmed.toLowerCase(Locale.US) + "%";
+                sql.append(" AND (LOWER(o.code) LIKE ? OR LOWER(COALESCE(u.email, '')) LIKE ? OR LOWER(COALESCE(u.full_name, '')) LIKE ?)");
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
+            }
+        }
+        sql.append(" ORDER BY o.order_date DESC NULLS LAST, o.id DESC LIMIT ?");
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int index = 1;
+            for (Object param : params) {
+                stmt.setObject(index++, param);
+            }
+            stmt.setInt(index, safeLimit);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (!rs.next()) {
+                List<AdminOrderSummary> orders = new ArrayList<>();
+                while (rs.next()) {
+                    AdminOrderSummary summary = new AdminOrderSummary();
+                    summary.id = rs.getLong("id");
+                    summary.code = rs.getString("code");
+                    summary.status = rs.getString("status");
+                    summary.paymentStatus = rs.getString("payment_status");
+                    summary.paymentMethod = rs.getString("payment_method");
+                    summary.totalAmount = rs.getBigDecimal("total_amount");
+                    summary.shippingFee = rs.getBigDecimal("shipping_fee");
+                    summary.orderDate = toLocalDateTime(rs.getTimestamp("order_date"));
+                    summary.updatedAt = toLocalDateTime(rs.getTimestamp("updated_at"));
+                    summary.customerEmail = rs.getString("email");
+                    summary.customerName = rs.getString("customer_name");
+                    orders.add(summary);
+                }
+                return orders;
+            }
+        }
+    }
+
+    public static void updateOrderStatus(long orderId, String newStatus, String note, String actor) throws SQLException {
+        String normalizedStatus = normalizeStatusValue(newStatus);
+        if (normalizedStatus == null || !ALLOWED_STATUSES.contains(normalizedStatus)) {
+            throw new SQLException("Trạng thái đơn hàng không hợp lệ");
+        }
+        String effectiveNote = note != null && !note.trim().isEmpty() ? note.trim() : defaultNoteForStatus(normalizedStatus);
+        String createdBy = actor != null && !actor.trim().isEmpty() ? actor.trim() : "admin";
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                int updated;
+                try (PreparedStatement stmt = conn.prepareStatement("UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
+                    stmt.setString(1, normalizedStatus);
+                    stmt.setLong(2, orderId);
+                    updated = stmt.executeUpdate();
+                }
+                if (updated == 0) {
                     throw new SQLException("Order not found: " + orderId);
                 }
-                Order order = mapOrder(rs);
-                order.setItems(findOrderItems(conn, orderId));
-                return order;
+                recordStatus(conn, orderId, normalizedStatus, effectiveNote, createdBy);
+                conn.commit();
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
+            } finally {
+                conn.setAutoCommit(true);
             }
+        }
+    }
+
+    private static String normalizeStatusValue(String status) {
+        if (status == null) {
+            return null;
+        }
+        String normalized = status.trim().toLowerCase(Locale.US);
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        return normalized;
+    }
+
+    private static String defaultNoteForStatus(String status) {
+        switch (status) {
+            case "confirmed":
+                return "Đơn hàng đã được xác nhận";
+            case "shipping":
+                return "Đơn hàng đang được giao đến bạn";
+            case "delivered":
+            case "completed":
+                return "Đơn hàng đã giao thành công";
+            case "cancelled":
+                return "Đơn hàng đã bị hủy";
+            case "returned":
+                return "Đơn hàng đã được hoàn trả";
+            case "processing":
+            case "pending":
+                return "Đơn hàng đang được xử lý";
+            case "failed":
+                return "Đơn hàng gặp sự cố trong quá trình xử lý";
+            default:
+                return "Cập nhật trạng thái đơn hàng";
         }
     }
 
@@ -672,6 +826,20 @@ public final class OrderDAO {
             return null;
         }
         return timestamp.toLocalDateTime();
+    }
+
+    public static class AdminOrderSummary {
+        public long id;
+        public String code;
+        public String status;
+        public String paymentStatus;
+        public String paymentMethod;
+        public BigDecimal totalAmount;
+        public BigDecimal shippingFee;
+        public LocalDateTime orderDate;
+        public LocalDateTime updatedAt;
+        public String customerName;
+        public String customerEmail;
     }
 
     private enum CheckoutMode {

@@ -66,6 +66,20 @@
                     <div class="border-t border-dashed pt-4 space-y-3" data-checkout-order-items>
                         <p class="text-sm text-gray-400">Đang tải giỏ hàng...</p>
                     </div>
+                    <div class="border border-dashed border-amber-200 rounded-2xl p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold text-gray-700">Mã giảm giá</span>
+                        </div>
+                        <div class="flex gap-3">
+                            <select id="checkoutCouponSelect" class="flex-1 min-w-0 w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                <option value="">Chọn mã giảm giá</option>
+                            </select>
+                            <button type="button" id="applyCouponBtn" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition">
+                                Áp dụng
+                            </button>
+                        </div>
+                        <p id="couponFeedback" class="text-xs text-gray-500">Bạn có thể chọn mã giảm giá để tiết kiệm hơn.</p>
+                    </div>
                     <div class="border-t border-gray-200 pt-4 space-y-3 text-sm text-gray-600">
                         <div class="flex justify-between">
                             <span>Tạm tính</span>

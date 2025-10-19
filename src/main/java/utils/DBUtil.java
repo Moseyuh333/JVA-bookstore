@@ -1,5 +1,6 @@
 package utils;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -168,22 +169,7 @@ public class DBUtil {
                     "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                     ")";
                 stmt.execute(createOrdersTableSQL);
-
-                if (!columnExists(conn, "orders", "order_date")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                }
-                if (!columnExists(conn, "orders", "total_amount")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0");
-                }
-                if (!columnExists(conn, "orders", "status")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN status VARCHAR(50) DEFAULT 'pending'");
-                }
-                if (!columnExists(conn, "orders", "created_at")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                }
-                if (!columnExists(conn, "orders", "updated_at")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                }
+                ensureOrdersSchema(conn);
 
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)");
@@ -201,6 +187,39 @@ public class DBUtil {
                 stmt.execute(createOrderItemsTableSQL);
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_items_book_id ON order_items(book_id)");
+                ensureOrderItemsSchema(conn);
+
+                String createOrderStatusHistoryTableSQL = "CREATE TABLE IF NOT EXISTS order_status_history (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +
+                    "status VARCHAR(20) NOT NULL," +
+                    "note TEXT," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "created_by VARCHAR(100)" +
+                    ")";
+                stmt.execute(createOrderStatusHistoryTableSQL);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_status_history_order ON order_status_history(order_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_status_history_status ON order_status_history(status)");
+                ensureOrderStatusHistorySchema(conn);
+
+                String createOrderPaymentsTableSQL = "CREATE TABLE IF NOT EXISTS order_payments (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +
+                    "method VARCHAR(20) NOT NULL," +
+                    "provider VARCHAR(50)," +
+                    "status VARCHAR(20) NOT NULL DEFAULT 'pending'," +
+                    "amount DECIMAL(12, 2) NOT NULL," +
+                    "currency VARCHAR(10) DEFAULT 'VND'," +
+                    "transaction_code VARCHAR(120)," +
+                    "paid_at TIMESTAMP," +
+                    "metadata JSONB," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createOrderPaymentsTableSQL);
+                stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_order_payments_transaction ON order_payments(transaction_code) WHERE transaction_code IS NOT NULL");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_payments_order ON order_payments(order_id)");
+                ensureOrderPaymentsSchema(conn);
 
                 // Engagement tables that power catalog ranking
                 String createBookFavoritesTableSQL = "CREATE TABLE IF NOT EXISTS book_favorites (" +
@@ -212,6 +231,7 @@ public class DBUtil {
                 stmt.execute(createBookFavoritesTableSQL);
                 stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_book_favorites_user_book ON book_favorites(user_id, book_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_favorites_book_id ON book_favorites(book_id)");
+                ensureBookFavoritesSchema(conn);
 
                 String createBookReviewsTableSQL = "CREATE TABLE IF NOT EXISTS book_reviews (" +
                     "id SERIAL PRIMARY KEY," +
@@ -229,11 +249,27 @@ public class DBUtil {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_book_id ON book_reviews(book_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_user_id ON book_reviews(user_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_status ON book_reviews(status)");
+                ensureBookReviewsSchema(conn);
+
+                String createRecentViewsSql = "CREATE TABLE IF NOT EXISTS user_recent_views (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
+                    "book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE," +
+                    "viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "CONSTRAINT uq_user_recent_views UNIQUE (user_id, book_id)" +
+                    ")";
+                stmt.execute(createRecentViewsSql);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_recent_views_user ON user_recent_views(user_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_recent_views_book ON user_recent_views(book_id)");
+                ensureRecentViewsSchema(conn);
             }
 
             ensurePasswordHashColumn(conn);
             BookDataLoader.seedBooksIfEmpty(conn);
             BookDataLoader.refreshBookAssets(conn);
+            ensureMinimumStockLevels(conn);
+            ensureCouponSchema(conn);
+            ensureSampleCoupons(conn);
             seedBookMetrics(conn);
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
@@ -299,6 +335,398 @@ public class DBUtil {
             stmt.execute("UPDATE books SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile books schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureOrdersSchema(Connection conn) {
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "orders", "order_date")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "orders", "total_amount")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN total_amount DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            if (!columnExists(conn, "orders", "status")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN status VARCHAR(20) DEFAULT 'new'");
+            }
+            if (!columnExists(conn, "orders", "payment_status")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid'");
+            }
+            stmt.execute("UPDATE orders SET payment_status = COALESCE(payment_status, 'unpaid')");
+
+            if (!columnExists(conn, "orders", "payment_provider")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN payment_provider VARCHAR(30)");
+            }
+            if (!columnExists(conn, "orders", "shipping_address_id")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_address_id INTEGER REFERENCES user_addresses(id) ON DELETE SET NULL");
+            }
+            if (!columnExists(conn, "orders", "shipping_snapshot")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_snapshot JSONB");
+            }
+            if (!columnExists(conn, "orders", "cart_snapshot")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN cart_snapshot JSONB");
+            }
+            if (!columnExists(conn, "orders", "items_subtotal")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN items_subtotal DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET items_subtotal = COALESCE(items_subtotal, total_amount)");
+
+            if (!columnExists(conn, "orders", "discount_amount")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET discount_amount = COALESCE(discount_amount, 0)");
+
+            if (!columnExists(conn, "orders", "shipping_fee")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_fee DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET shipping_fee = COALESCE(shipping_fee, 0)");
+
+            if (!columnExists(conn, "orders", "currency")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN currency VARCHAR(10) DEFAULT 'VND'");
+            }
+            stmt.execute("UPDATE orders SET currency = COALESCE(currency, 'VND')");
+
+            if (!columnExists(conn, "orders", "coupon_code")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN coupon_code VARCHAR(50)");
+            }
+            if (!columnExists(conn, "orders", "coupon_snapshot")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN coupon_snapshot JSONB");
+            }
+
+            if (!columnExists(conn, "orders", "notes")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN notes TEXT");
+            }
+            if (!columnExists(conn, "orders", "created_at")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "orders", "updated_at")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "orders", "code")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN code VARCHAR(40)");
+            }
+            stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_code ON orders(code)");
+            stmt.execute("UPDATE orders SET code = CONCAT('ORD', LPAD(CAST(id AS TEXT), 6, '0')) WHERE code IS NULL OR code = ''");
+            normalizeOrderColumnTypes(conn);
+            ensureOrderRelatedEnums(conn);
+            ensureOrderConstraints(conn);
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile orders schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureOrderItemsSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "order_items", "created_at")) {
+                stmt.execute("ALTER TABLE order_items ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "order_items", "unit_price")) {
+                stmt.execute("ALTER TABLE order_items ADD COLUMN unit_price DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            if (!columnExists(conn, "order_items", "total_price")) {
+                stmt.execute("ALTER TABLE order_items ADD COLUMN total_price DECIMAL(12, 2) NOT NULL DEFAULT 0");
+                stmt.execute("UPDATE order_items SET total_price = COALESCE(total_price, quantity * unit_price)");
+            }
+            stmt.execute("UPDATE order_items SET unit_price = COALESCE(unit_price, 0)");
+            stmt.execute("UPDATE order_items SET total_price = COALESCE(total_price, quantity * unit_price)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile order_items schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureOrderStatusHistorySchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "order_status_history", "created_by")) {
+                stmt.execute("ALTER TABLE order_status_history ADD COLUMN created_by VARCHAR(100)");
+            }
+            if (!columnExists(conn, "order_status_history", "created_at")) {
+                stmt.execute("ALTER TABLE order_status_history ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE order_status_history SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
+            stmt.execute("UPDATE order_status_history SET status = COALESCE(status, 'new')");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile order_status_history schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureCouponSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            String createCouponsSql = "CREATE TABLE IF NOT EXISTS coupon_codes (" +
+                "id SERIAL PRIMARY KEY," +
+                "code VARCHAR(50) UNIQUE NOT NULL," +
+                "description TEXT," +
+                "coupon_type VARCHAR(20) NOT NULL," +
+                "value DECIMAL(10, 2) NOT NULL," +
+                "max_discount DECIMAL(10, 2)," +
+                "minimum_order DECIMAL(10, 2) DEFAULT 0," +
+                "usage_limit INTEGER," +
+                "per_user_limit INTEGER," +
+                "start_date TIMESTAMP," +
+                "end_date TIMESTAMP," +
+                "status VARCHAR(20) DEFAULT 'active'," +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                ")";
+            stmt.execute(createCouponsSql);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_coupon_codes_status ON coupon_codes(status)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_coupon_codes_date ON coupon_codes(start_date, end_date)");
+
+            String createUserCouponsSql = "CREATE TABLE IF NOT EXISTS user_coupons (" +
+                "id SERIAL PRIMARY KEY," +
+                "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
+                "coupon_id INTEGER NOT NULL REFERENCES coupon_codes(id) ON DELETE CASCADE," +
+                "assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                "redeemed_at TIMESTAMP," +
+                "usage_count INTEGER DEFAULT 0," +
+                "status VARCHAR(20) DEFAULT 'available'," +
+                "CONSTRAINT uq_user_coupons UNIQUE (user_id, coupon_id)" +
+                ")";
+            stmt.execute(createUserCouponsSql);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_coupons_user ON user_coupons(user_id)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_coupons_status ON user_coupons(status)");
+
+            String createOrderCouponsSql = "CREATE TABLE IF NOT EXISTS order_coupons (" +
+                "id SERIAL PRIMARY KEY," +
+                "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +
+                "coupon_id INTEGER REFERENCES coupon_codes(id) ON DELETE SET NULL," +
+                "code VARCHAR(50) NOT NULL," +
+                "discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0," +
+                "snapshot JSONB," +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                ")";
+            stmt.execute(createOrderCouponsSql);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_coupons_order ON order_coupons(order_id)");
+
+            ensureCouponColumns(conn);
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to ensure coupon schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureOrderPaymentsSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "order_payments", "provider")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN provider VARCHAR(50)");
+            }
+            if (!columnExists(conn, "order_payments", "currency")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN currency VARCHAR(10) DEFAULT 'VND'");
+                stmt.execute("UPDATE order_payments SET currency = 'VND' WHERE currency IS NULL");
+            }
+            if (!columnExists(conn, "order_payments", "transaction_code")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN transaction_code VARCHAR(120)");
+            }
+            if (!columnExists(conn, "order_payments", "paid_at")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN paid_at TIMESTAMP");
+            }
+            if (!columnExists(conn, "order_payments", "metadata")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN metadata JSONB");
+            }
+            if (!columnExists(conn, "order_payments", "created_at")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "order_payments", "updated_at")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE order_payments SET method = COALESCE(method, 'cod')");
+            stmt.execute("UPDATE order_payments SET status = COALESCE(status, 'pending')");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile order_payments schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureRecentViewsSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "user_recent_views", "viewed_at")) {
+                stmt.execute("ALTER TABLE user_recent_views ADD COLUMN viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE user_recent_views SET viewed_at = COALESCE(viewed_at, CURRENT_TIMESTAMP)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile user_recent_views schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureBookFavoritesSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "book_favorites", "created_at")) {
+                stmt.execute("ALTER TABLE book_favorites ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE book_favorites SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile book_favorites schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureBookReviewsSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "book_reviews", "updated_at")) {
+                stmt.execute("ALTER TABLE book_reviews ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "book_reviews", "status")) {
+                stmt.execute("ALTER TABLE book_reviews ADD COLUMN status VARCHAR(20) DEFAULT 'published'");
+            }
+            stmt.execute("UPDATE book_reviews SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile book_reviews schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureCouponColumns(Connection conn) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "coupon_codes", "coupon_type")) {
+                stmt.execute("ALTER TABLE coupon_codes ADD COLUMN coupon_type VARCHAR(20) NOT NULL DEFAULT 'fixed'");
+            }
+            if (!columnExists(conn, "coupon_codes", "status")) {
+                stmt.execute("ALTER TABLE coupon_codes ADD COLUMN status VARCHAR(20) DEFAULT 'active'");
+            }
+            if (!columnExists(conn, "coupon_codes", "updated_at")) {
+                stmt.execute("ALTER TABLE coupon_codes ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "user_coupons", "status")) {
+                stmt.execute("ALTER TABLE user_coupons ADD COLUMN status VARCHAR(20) DEFAULT 'available'");
+            }
+            if (!columnExists(conn, "user_coupons", "usage_count")) {
+                stmt.execute("ALTER TABLE user_coupons ADD COLUMN usage_count INTEGER DEFAULT 0");
+            }
+        }
+    }
+
+    private static void ensureOrderRelatedEnums(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            ensureEnumValue(conn, "order_status", "new");
+            ensureEnumValue(conn, "order_status", "confirmed");
+            ensureEnumValue(conn, "order_status", "shipping");
+            ensureEnumValue(conn, "order_status", "delivered");
+            ensureEnumValue(conn, "order_status", "cancelled");
+            ensureEnumValue(conn, "order_status", "returned");
+
+            ensureEnumValue(conn, "payment_status", "unpaid");
+            ensureEnumValue(conn, "payment_status", "processing");
+            ensureEnumValue(conn, "payment_status", "paid");
+            ensureEnumValue(conn, "payment_status", "failed");
+            ensureEnumValue(conn, "payment_status", "refunded");
+
+            ensureEnumValue(conn, "payment_method", "cod");
+            ensureEnumValue(conn, "payment_method", "vnpay");
+            ensureEnumValue(conn, "payment_method", "momo");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile order enums: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureMinimumStockLevels(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        String sql = "UPDATE books SET stock_quantity = ? WHERE stock_quantity IS NULL OR stock_quantity <= ?";
+        try {
+            if (!columnExists(conn, "books", "stock_quantity")) {
+                return;
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to inspect book stock column: " + ex.getMessage());
+            return;
+        }
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, 100);
+            stmt.setInt(2, 0);
+            int updated = stmt.executeUpdate();
+            if (updated > 0) {
+                System.out.println("DBUtil - Refilled stock for " + updated + " book(s).");
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to ensure minimum stock levels: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureSampleCoupons(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            if (!columnExists(conn, "coupon_codes", "code")) {
+                return;
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to inspect coupon schema: " + ex.getMessage());
+            return;
+        }
+
+        String freeShipSql = "INSERT INTO coupon_codes (code, description, coupon_type, value, max_discount, minimum_order, usage_limit, per_user_limit, start_date, end_date, status) "
+            + "VALUES (?, ?, 'fixed', ?, NULL, 0, NULL, 1, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP + INTERVAL '30 days', 'active') "
+            + "ON CONFLICT (code) DO UPDATE SET description = EXCLUDED.description, coupon_type = EXCLUDED.coupon_type, value = EXCLUDED.value, max_discount = EXCLUDED.max_discount, minimum_order = EXCLUDED.minimum_order, status = 'active', updated_at = CURRENT_TIMESTAMP";
+        try (PreparedStatement stmt = conn.prepareStatement(freeShipSql)) {
+            stmt.setString(1, "FREESHIP");
+            stmt.setString(2, "Miễn phí vận chuyển cho đơn hàng bất kỳ (tối đa 26.000đ).");
+            stmt.setBigDecimal(3, BigDecimal.valueOf(26000));
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to seed FREESHIP coupon: " + ex.getMessage());
+            return;
+        }
+
+        Long couponId = null;
+        String couponIdSql = "SELECT id FROM coupon_codes WHERE code = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(couponIdSql)) {
+            stmt.setString(1, "FREESHIP");
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    couponId = rs.getLong(1);
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to fetch FREESHIP coupon id: " + ex.getMessage());
+            return;
+        }
+
+        if (couponId == null) {
+            return;
+        }
+
+        try {
+            if (!tableExists(conn, "user_coupons")) {
+                return;
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to inspect user_coupons table: " + ex.getMessage());
+            return;
+        }
+
+        String assignSql = "INSERT INTO user_coupons (user_id, coupon_id, status) "
+            + "SELECT u.id, ?, 'available' FROM users u "
+            + "WHERE NOT EXISTS (SELECT 1 FROM user_coupons uc WHERE uc.user_id = u.id AND uc.coupon_id = ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(assignSql)) {
+            stmt.setLong(1, couponId);
+            stmt.setLong(2, couponId);
+            int assigned = stmt.executeUpdate();
+            if (assigned > 0) {
+                System.out.println("DBUtil - Assigned FREESHIP coupon to " + assigned + " user(s).");
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to assign FREESHIP coupon: " + ex.getMessage());
         }
     }
 
@@ -368,6 +796,144 @@ public class DBUtil {
             }
         }
         return 0;
+    }
+
+    private static void normalizeOrderColumnTypes(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        coerceColumnToVarchar(conn, "orders", "status", 20, "'new'");
+        coerceColumnToVarchar(conn, "orders", "payment_status", 20, "'unpaid'");
+        coerceColumnToVarchar(conn, "orders", "payment_method", 20, "'cod'");
+        coerceColumnToVarchar(conn, "order_status_history", "status", 20, null);
+        coerceColumnToVarchar(conn, "order_payments", "method", 20, "'cod'");
+        coerceColumnToVarchar(conn, "order_payments", "status", 20, "'pending'");
+    }
+
+    private static void ensureOrderConstraints(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            addCheckConstraint(conn, "orders", "chk_orders_status_text", "status IN ('new', 'confirmed', 'shipping', 'delivered', 'cancelled', 'returned')");
+            addCheckConstraint(conn, "orders", "chk_orders_payment_status_text", "payment_status IN ('unpaid', 'processing', 'paid', 'failed', 'refunded')");
+            addCheckConstraint(conn, "orders", "chk_orders_payment_method_text", "payment_method IN ('cod', 'vnpay', 'momo')");
+            addCheckConstraint(conn, "order_payments", "chk_order_payments_method_text", "method IN ('cod', 'vnpay', 'momo')");
+            addCheckConstraint(conn, "order_payments", "chk_order_payments_status_text", "status IN ('pending', 'processing', 'paid', 'failed', 'refunded')");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to ensure order constraints: " + ex.getMessage());
+        }
+    }
+
+    private static void coerceColumnToVarchar(Connection conn, String table, String column, int length, String defaultValue) {
+        try {
+            if (!columnExists(conn, table, column)) {
+                return;
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to inspect column " + table + "." + column + ": " + ex.getMessage());
+            return;
+        }
+        String typeSql = "ALTER TABLE " + table + " ALTER COLUMN " + column + " TYPE VARCHAR(" + length + ") USING " + column + "::text";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(typeSql);
+        } catch (SQLException ex) {
+            if (!isRedundantAlterError(ex)) {
+                System.err.println("DBUtil - Unable to alter column type for " + table + "." + column + ": " + ex.getMessage());
+            }
+        }
+        if (defaultValue != null) {
+            String defaultSql = "ALTER TABLE " + table + " ALTER COLUMN " + column + " SET DEFAULT " + defaultValue;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(defaultSql);
+            } catch (SQLException ex) {
+                if (!isRedundantAlterError(ex)) {
+                    System.err.println("DBUtil - Unable to set default for " + table + "." + column + ": " + ex.getMessage());
+                }
+            }
+        }
+    }
+
+    private static void addCheckConstraint(Connection conn, String table, String constraintName, String expression) throws SQLException {
+        if (constraintExists(conn, table, constraintName)) {
+            return;
+        }
+        String sql = "ALTER TABLE " + table + " ADD CONSTRAINT " + constraintName + " CHECK (" + expression + ")";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        }
+    }
+
+    private static boolean constraintExists(Connection conn, String table, String constraintName) throws SQLException {
+        String sql = "SELECT 1 FROM information_schema.table_constraints WHERE table_name = ? AND constraint_name = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, table);
+            stmt.setString(2, constraintName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static boolean isRedundantAlterError(SQLException ex) {
+        String message = ex.getMessage();
+        if (message == null) {
+            return false;
+        }
+        return message.contains("already") || message.contains("is of type");
+    }
+
+    private static boolean tableExists(Connection conn, String tableName) throws SQLException {
+        if (conn == null) {
+            return false;
+        }
+        String sql = "SELECT 1 FROM information_schema.tables WHERE table_name = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static boolean enumTypeExists(Connection conn, String typeName) throws SQLException {
+        if (conn == null) {
+            return false;
+        }
+        String sql = "SELECT 1 FROM pg_type WHERE typname = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, typeName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static void ensureEnumValue(Connection conn, String typeName, String value) throws SQLException {
+        if (!enumTypeExists(conn, typeName)) {
+            return;
+        }
+        String existsSql = "SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = ? AND e.enumlabel = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(existsSql)) {
+            stmt.setString(1, typeName);
+            stmt.setString(2, value);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return;
+                }
+            }
+        }
+
+        if (!typeName.matches("[a-zA-Z0-9_]+")) {
+            throw new SQLException("Invalid enum type name: " + typeName);
+        }
+        String sanitizedValue = value.replace("'", "''");
+        String alterSql = "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid "
+            + "WHERE t.typname = '" + typeName + "' AND e.enumlabel = '" + sanitizedValue + "') THEN "
+            + "ALTER TYPE " + typeName + " ADD VALUE '" + sanitizedValue + "'; END IF; END $$;";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(alterSql);
+        }
     }
 
     private static boolean columnExists(Connection conn, String tableName, String columnName) throws SQLException {

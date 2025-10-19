@@ -55,6 +55,15 @@
                             <a class="nav-link" id="order-history-tab" data-bs-toggle="pill" href="#order-history" role="tab">
                                 <i class="fas fa-shopping-bag me-2"></i>Lịch sử đơn hàng
                             </a>
+                            <a class="nav-link" id="favorites-tab" data-bs-toggle="pill" href="#favorites" role="tab">
+                                <i class="fas fa-heart me-2"></i>Sản phẩm yêu thích
+                            </a>
+                            <a class="nav-link" id="recent-views-tab" data-bs-toggle="pill" href="#recent-views" role="tab">
+                                <i class="fas fa-eye me-2"></i>Đã xem gần đây
+                            </a>
+                            <a class="nav-link" id="coupons-tab" data-bs-toggle="pill" href="#coupons" role="tab">
+                                <i class="fas fa-ticket-alt me-2"></i>Mã giảm giá
+                            </a>
                             <a class="nav-link" id="delete-account-tab" data-bs-toggle="pill" href="#delete-account" role="tab">
                                 <i class="fas fa-trash me-2"></i>Xóa tài khoản
                             </a>
@@ -171,6 +180,7 @@
                                 <h5 class="mb-0"><i class="fas fa-shopping-bag me-2"></i>Lịch sử đơn hàng</h5>
                             </div>
                             <div class="card-body">
+                                <div class="d-flex flex-wrap gap-2 mb-3" id="orderStatusFilters"></div>
                                 <div id="orderHistoryContent">
                                     <div class="text-center py-4">
                                         <div class="spinner-border text-primary" role="status">
@@ -179,6 +189,42 @@
                                         <p class="mt-2">Đang tải lịch sử đơn hàng...</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Favorites Tab -->
+                    <div class="tab-pane fade" id="favorites" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-heart me-2"></i>Sản phẩm yêu thích</h5>
+                            </div>
+                            <div class="card-body" id="favoritesContent">
+                                <div class="text-center py-4 text-muted">Đang tải danh sách yêu thích...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Views Tab -->
+                    <div class="tab-pane fade" id="recent-views" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-eye me-2"></i>Sản phẩm đã xem gần đây</h5>
+                            </div>
+                            <div class="card-body" id="recentViewsContent">
+                                <div class="text-center py-4 text-muted">Đang tải dữ liệu...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coupons Tab -->
+                    <div class="tab-pane fade" id="coupons" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Mã giảm giá của tôi</h5>
+                            </div>
+                            <div class="card-body" id="couponsContent">
+                                <div class="text-center py-4 text-muted">Đang tải mã giảm giá...</div>
                             </div>
                         </div>
                     </div>
@@ -220,6 +266,63 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-receipt me-2"></i>Chi tiết đơn hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="orderDetailContent">
+                    <div class="text-center py-4 text-muted">Đang tải thông tin đơn hàng...</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="reviewForm" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reviewModalTitle">Viết bình luận sản phẩm</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="reviewFormAlert" class="alert alert-danger d-none" role="alert"></div>
+                        <p id="reviewModalSubtitle" class="text-muted small mb-3"></p>
+                        <div id="reviewExistingInfo" class="alert alert-info d-none" role="alert"></div>
+                        <input type="hidden" id="reviewBookId" name="bookId">
+                        <div class="mb-3">
+                            <label for="reviewRating" class="form-label">Chấm điểm sản phẩm</label>
+                            <select id="reviewRating" name="rating" class="form-select" required>
+                                <option value="5">5 - Cực kỳ hài lòng</option>
+                                <option value="4">4 - Hài lòng</option>
+                                <option value="3">3 - Tạm ổn</option>
+                                <option value="2">2 - Chưa hài lòng</option>
+                                <option value="1">1 - Rất tệ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reviewContent" class="form-label">Nội dung bình luận *</label>
+                            <textarea id="reviewContent" name="content" class="form-control" rows="6" minlength="50" required placeholder="Chia sẻ trải nghiệm của bạn (tối thiểu 50 ký tự)"></textarea>
+                            <div class="form-text">Chỉ khách đã nhận hàng mới có thể bình luận. Nội dung tối thiểu 50 ký tự.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="reviewSubmitBtn"><i class="fas fa-paper-plane me-1"></i>Gửi bình luận</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -320,6 +423,41 @@
             loadingMessageEl: null,
             errorMessageEl: null
         };
+        const ORDER_STATUS_FILTERS = [
+            { key: 'all', label: 'Tất cả', badge: 'secondary' },
+            { key: 'new', label: 'Đơn hàng mới', badge: 'info' },
+            { key: 'confirmed', label: 'Đã xác nhận', badge: 'primary' },
+            { key: 'shipping', label: 'Đang giao', badge: 'warning' },
+            { key: 'delivered', label: 'Đã giao', badge: 'success' },
+            { key: 'cancelled', label: 'Đã hủy', badge: 'danger' },
+            { key: 'returned', label: 'Hoàn trả / Hoàn tiền', badge: 'dark' }
+        ];
+        const orderHistoryState = {
+            status: 'all',
+            orders: []
+        };
+        const favoritesState = {
+            data: [],
+            loading: false
+        };
+        const recentViewsState = {
+            data: [],
+            loading: false
+        };
+        const couponsState = {
+            data: [],
+            loading: false
+        };
+        let orderDetailModal = null;
+        let reviewModal = null;
+        const reviewState = {
+            bookId: null,
+            orderId: null,
+            orderItemId: null,
+            orderCode: '',
+            bookTitle: '',
+            loading: false
+        };
 
         // Check authentication on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -331,9 +469,31 @@
                 return;
             }
             
+            const modalEl = document.getElementById('orderDetailModal');
+            if (modalEl) {
+                orderDetailModal = new bootstrap.Modal(modalEl);
+            }
+
+            const reviewModalEl = document.getElementById('reviewModal');
+            if (reviewModalEl) {
+                reviewModal = new bootstrap.Modal(reviewModalEl);
+                reviewModalEl.addEventListener('hidden.bs.modal', () => {
+                    resetReviewForm();
+                    reviewState.bookId = null;
+                    reviewState.orderId = null;
+                    reviewState.orderItemId = null;
+                    reviewState.orderCode = '';
+                    reviewState.bookTitle = '';
+                });
+            }
+
             loadUserProfile();
             initAddressManager();
+            initOrderHistoryFilters();
             loadOrderHistory();
+            loadFavorites();
+            loadRecentViews();
+            loadUserCoupons();
         });
 
         // Profile form submission
@@ -352,6 +512,11 @@
         document.getElementById('deleteAccountForm').addEventListener('submit', function(e) {
             e.preventDefault();
             deleteAccount();
+        });
+
+        document.getElementById('reviewForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            submitReview();
         });
 
         function loadUserProfile() {
@@ -446,9 +611,75 @@
             });
         }
 
-        function loadOrderHistory() {
+        function initOrderHistoryFilters() {
+            const container = document.getElementById('orderStatusFilters');
+            if (!container) {
+                return;
+            }
+            container.innerHTML = '';
+            ORDER_STATUS_FILTERS.forEach(filter => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm btn-outline-secondary';
+                btn.setAttribute('data-status-filter', filter.key);
+                btn.textContent = filter.label;
+                container.appendChild(btn);
+            });
+            container.addEventListener('click', event => {
+                const target = event.target.closest('[data-status-filter]');
+                if (!target) {
+                    return;
+                }
+                const statusKey = target.getAttribute('data-status-filter');
+                if (!statusKey || statusKey === orderHistoryState.status) {
+                    return;
+                }
+                orderHistoryState.status = statusKey;
+                updateOrderFilterActive();
+                loadOrderHistory();
+            });
+            updateOrderFilterActive();
+        }
+
+        function updateOrderFilterActive() {
+            const container = document.getElementById('orderStatusFilters');
+            if (!container) {
+                return;
+            }
+            container.querySelectorAll('[data-status-filter]').forEach(btn => {
+                const statusKey = btn.getAttribute('data-status-filter');
+                if (statusKey === orderHistoryState.status) {
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-primary');
+                } else {
+                    btn.classList.add('btn-outline-secondary');
+                    btn.classList.remove('btn-primary');
+                }
+            });
+        }
+
+        function loadOrderHistory(statusKey) {
+            if (statusKey && statusKey !== orderHistoryState.status) {
+                orderHistoryState.status = statusKey;
+                updateOrderFilterActive();
+            }
+            const container = document.getElementById('orderHistoryContent');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2">Đang tải lịch sử đơn hàng...</p>
+                    </div>
+                `;
+            }
             const token = localStorage.getItem('auth_token');
-            fetch(`${contextPath}/api/profile/orders`, {
+            let url = `${contextPath}/api/profile/orders`;
+            if (orderHistoryState.status && orderHistoryState.status !== 'all') {
+                url += `?status=${encodeURIComponent(orderHistoryState.status)}`;
+            }
+            fetch(url, {
                 headers: {
                     'Authorization': 'Bearer ' + token
                 }
@@ -456,23 +687,29 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        displayOrderHistory(data.orders);
+                        orderHistoryState.orders = Array.isArray(data.orders) ? data.orders : [];
+                        displayOrderHistory(orderHistoryState.orders);
+                        updateOrderFilterActive();
                     } else {
-                        document.getElementById('orderHistoryContent').innerHTML = 
-                            '<div class="text-center py-4"><p>Không thể tải lịch sử đơn hàng</p></div>';
+                        if (container) {
+                            container.innerHTML = '<div class="text-center py-4"><p>Không thể tải lịch sử đơn hàng</p></div>';
+                        }
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('orderHistoryContent').innerHTML = 
-                        '<div class="text-center py-4"><p>Lỗi kết nối</p></div>';
+                    if (container) {
+                        container.innerHTML = '<div class="text-center py-4"><p>Lỗi kết nối</p></div>';
+                    }
                 });
         }
 
         function displayOrderHistory(orders) {
             const container = document.getElementById('orderHistoryContent');
-            
-            if (orders.length === 0) {
+            if (!container) {
+                return;
+            }
+            if (!Array.isArray(orders) || orders.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-4">
                         <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
@@ -483,22 +720,240 @@
                 return;
             }
 
-            let html = '<div class="table-responsive"><table class="table table-striped">';
-            html += '<thead><tr><th>Mã đơn hàng</th><th>Ngày đặt</th><th>Tổng tiền</th><th>Trạng thái</th><th>Chi tiết</th></tr></thead><tbody>';
-            
+            let html = '<div class="table-responsive"><table class="table table-striped align-middle">';
+            html += '<thead><tr><th>Mã đơn</th><th>Ngày đặt</th><th>Tổng tiền</th><th>Trạng thái</th><th></th></tr></thead><tbody>';
+
             orders.forEach(order => {
+                const orderCode = order.code && order.code.trim() ? order.code.trim() : `#${order.id}`;
+                const statusMeta = getStatusMeta(order.status);
+                const badgeClass = statusMeta.badge ? `bg-${statusMeta.badge}` : 'bg-secondary';
                 html += `
                     <tr>
-                        <td>#${order.id}</td>
-                        <td>${new Date(order.orderDate).toLocaleDateString('vi-VN')}</td>
-                        <td>${order.totalAmount.toLocaleString('vi-VN')}đ</td>
-                        <td><span class="badge bg-${getStatusColor(order.status)}">${order.status}</span></td>
-                        <td><button class="btn btn-sm btn-outline-primary" onclick="viewOrderDetails(${order.id})">Xem</button></td>
+                        <td class="fw-semibold">${escapeHtml(orderCode)}</td>
+                        <td>${formatDate(order.orderDate)}</td>
+                        <td class="fw-semibold text-primary">${formatCurrency(order.totalAmount)}</td>
+                        <td><span class="badge ${badgeClass}">${escapeHtml(getStatusLabel(order.status))}</span></td>
+                        <td class="text-end"><button class="btn btn-sm btn-outline-primary" onclick="viewOrderDetails(${order.id})"><i class="fas fa-eye me-1"></i>Xem</button></td>
                     </tr>
                 `;
             });
-            
+
             html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        async function loadFavorites() {
+            const container = document.getElementById('favoritesContent');
+            if (!container) {
+                return;
+            }
+            container.innerHTML = '<div class="text-center py-4 text-muted">Đang tải danh sách yêu thích...</div>';
+            const token = localStorage.getItem('auth_token');
+            try {
+                const response = await fetch(`${contextPath}/api/profile/favorites`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Không thể tải danh sách yêu thích.');
+                }
+                favoritesState.data = Array.isArray(data.favorites) ? data.favorites : [];
+                renderFavorites(favoritesState.data);
+            } catch (error) {
+                console.error('loadFavorites error', error);
+                container.innerHTML = `<div class="alert alert-danger">${escapeHtml(error.message || 'Không thể tải danh sách yêu thích.')}</div>`;
+            }
+        }
+
+        function renderFavorites(favorites) {
+            const container = document.getElementById('favoritesContent');
+            if (!container) {
+                return;
+            }
+            if (!Array.isArray(favorites) || favorites.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-heart fa-2x mb-3"></i>
+                        <p>Bạn chưa thêm sản phẩm yêu thích nào.</p>
+                    </div>
+                `;
+                return;
+            }
+            let html = '<div class="row g-3">';
+            favorites.forEach(item => {
+                const image = item.imageUrl && item.imageUrl.trim() ? item.imageUrl.trim() : 'https://placehold.co/300x400';
+                html += `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm">
+                            <img src="${escapeHtml(image)}" class="card-img-top" alt="${escapeHtml(item.title || 'Sách')}" style="object-fit: cover; height: 200px;">
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title">${escapeHtml(item.title || 'Sách')}</h6>
+                                ${item.author ? `<p class="text-muted small mb-2">${escapeHtml(item.author)}</p>` : ''}
+                                <div class="mt-auto d-flex justify-content-between align-items-center">
+                                    <span class="fw-semibold text-primary">${formatCurrency(item.price)}</span>
+                                    <a class="btn btn-sm btn-outline-primary" href="${contextPath}/books/detail?id=${item.bookId}">Xem sách</a>
+                                </div>
+                            </div>
+                            <div class="card-footer text-muted small">Đã lưu: ${formatDateTime(item.markedAt)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function loadRecentViews() {
+            const container = document.getElementById('recentViewsContent');
+            if (!container) {
+                return;
+            }
+            container.innerHTML = '<div class="text-center py-4 text-muted">Đang tải sản phẩm đã xem...</div>';
+            const token = localStorage.getItem('auth_token');
+            try {
+                const response = await fetch(`${contextPath}/api/profile/recent-views?limit=12`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Không thể tải sản phẩm đã xem.');
+                }
+                recentViewsState.data = Array.isArray(data.data) ? data.data : [];
+                renderRecentViews(recentViewsState.data);
+            } catch (error) {
+                console.error('loadRecentViews error', error);
+                container.innerHTML = `<div class="alert alert-danger">${escapeHtml(error.message || 'Không thể tải sản phẩm đã xem.')}</div>`;
+            }
+        }
+
+        function renderRecentViews(list) {
+            const container = document.getElementById('recentViewsContent');
+            if (!container) {
+                return;
+            }
+            if (!Array.isArray(list) || list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-eye fa-2x mb-3"></i>
+                        <p>Chưa có sản phẩm nào trong lịch sử xem gần đây.</p>
+                    </div>
+                `;
+                return;
+            }
+            let html = '<div class="row g-3">';
+            list.forEach(item => {
+                const image = item.imageUrl && item.imageUrl.trim() ? item.imageUrl.trim() : 'https://placehold.co/300x400';
+                html += `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100">
+                            <div class="row g-0 h-100">
+                                <div class="col-4">
+                                    <img src="${escapeHtml(image)}" class="img-fluid rounded-start" alt="${escapeHtml(item.title || 'Sản phẩm')}">
+                                </div>
+                                <div class="col-8">
+                                    <div class="card-body p-3 d-flex flex-column h-100">
+                                        <h6 class="card-title mb-1">${escapeHtml(item.title || 'Sản phẩm')}</h6>
+                                        ${item.author ? `<p class="text-muted small mb-2">${escapeHtml(item.author)}</p>` : ''}
+                                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                                            <span class="fw-semibold text-primary">${formatCurrency(item.price)}</span>
+                                            <a class="btn btn-sm btn-outline-secondary" href="${contextPath}/books/detail?id=${item.bookId}"><i class="fas fa-book-open"></i></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-muted small">Xem lúc: ${formatDateTime(item.viewedAt)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function loadUserCoupons() {
+            const container = document.getElementById('couponsContent');
+            if (!container) {
+                return;
+            }
+            container.innerHTML = '<div class="text-center py-4 text-muted">Đang tải mã giảm giá...</div>';
+            const token = localStorage.getItem('auth_token');
+            try {
+                const response = await fetch(`${contextPath}/api/profile/coupons`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Không thể tải mã giảm giá.');
+                }
+                couponsState.data = Array.isArray(data.coupons) ? data.coupons : [];
+                renderCoupons(couponsState.data);
+            } catch (error) {
+                console.error('loadUserCoupons error', error);
+                container.innerHTML = `<div class="alert alert-danger">${escapeHtml(error.message || 'Không thể tải mã giảm giá.')}</div>`;
+            }
+        }
+
+        function renderCoupons(list) {
+            const container = document.getElementById('couponsContent');
+            if (!container) {
+                return;
+            }
+            if (!Array.isArray(list) || list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-ticket-alt fa-2x mb-3"></i>
+                        <p>Bạn chưa có mã giảm giá nào.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const now = new Date();
+            const html = list.map(coupon => {
+                const rawValue = Number(coupon.value);
+                const percentValue = Number.isFinite(rawValue) ? rawValue : 0;
+                const rawMaxDiscount = Number(coupon.maxDiscount);
+                const hasMaxDiscount = Number.isFinite(rawMaxDiscount) && rawMaxDiscount > 0;
+                const discountLine = coupon.type === 'percentage'
+                    ? `Giảm ${percentValue.toLocaleString('vi-VN')}%${hasMaxDiscount ? ` (tối đa ${formatCurrency(coupon.maxDiscount)})` : ''}`
+                    : `Giảm ${formatCurrency(coupon.value)}`;
+                const minimumOrderLine = coupon.minimumOrder && Number(coupon.minimumOrder) > 0
+                    ? `<div class="text-muted small">Đơn tối thiểu: ${formatCurrency(coupon.minimumOrder)}</div>`
+                    : '';
+                let validityLine = '';
+                if (coupon.startDate || coupon.endDate) {
+                    const start = coupon.startDate ? formatDate(coupon.startDate) : 'Bất kỳ';
+                    const end = coupon.endDate ? formatDate(coupon.endDate) : 'Không giới hạn';
+                    validityLine = `<div class="text-muted small">Hiệu lực: ${start} - ${end}</div>`;
+                }
+                const userStatus = (coupon.userStatus || '').toLowerCase();
+                let statusBadge = '<span class="badge bg-success">Sẵn sàng sử dụng</span>';
+                if (userStatus === 'used') {
+                    statusBadge = '<span class="badge bg-secondary">Đã sử dụng</span>';
+                } else if (userStatus === 'expired') {
+                    statusBadge = '<span class="badge bg-danger">Hết hạn</span>';
+                } else if (coupon.endDate) {
+                    const endDate = new Date(coupon.endDate);
+                    if (!Number.isNaN(endDate.getTime()) && endDate < now) {
+                        statusBadge = '<span class="badge bg-danger">Hết hạn</span>';
+                    }
+                }
+                return `
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                            <div>
+                                <h5 class="card-title mb-1">${escapeHtml(coupon.code)}</h5>
+                                ${coupon.description ? `<p class="mb-2 text-muted">${escapeHtml(coupon.description)}</p>` : ''}
+                                <div class="small text-muted">${discountLine}</div>
+                                ${minimumOrderLine}
+                                ${validityLine}
+                            </div>
+                            <div class="ms-md-auto">${statusBadge}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
             container.innerHTML = html;
         }
 
@@ -937,18 +1392,466 @@
                 .replace(/'/g, '&#39;');
         }
 
-        function getStatusColor(status) {
-            switch(status) {
-                case 'completed': return 'success';
-                case 'pending': return 'warning';
-                case 'cancelled': return 'danger';
-                default: return 'secondary';
+        function getStatusMeta(status) {
+            if (!status) {
+                return { key: 'unknown', label: 'Không xác định', badge: 'secondary' };
+            }
+            const normalized = String(status).toLowerCase();
+            const predefined = ORDER_STATUS_FILTERS.find(item => item.key === normalized);
+            if (predefined) {
+                return { key: predefined.key, label: predefined.label, badge: predefined.badge };
+            }
+            switch (normalized) {
+                case 'completed':
+                    return { key: 'completed', label: 'Hoàn tất', badge: 'success' };
+                case 'pending':
+                    return { key: 'pending', label: 'Đang xử lý', badge: 'warning' };
+                case 'cancelled':
+                    return { key: 'cancelled', label: 'Đã hủy', badge: 'danger' };
+                default:
+                    return { key: normalized, label: normalized.charAt(0).toUpperCase() + normalized.slice(1), badge: 'secondary' };
             }
         }
 
-        function viewOrderDetails(orderId) {
-            // TODO: Implement order details modal
-            showAlert('Chức năng xem chi tiết đơn hàng sẽ được triển khai sau', 'info');
+        function getStatusLabel(status) {
+            return getStatusMeta(status).label;
+        }
+
+        function getStatusColor(status) {
+            return getStatusMeta(status).badge || 'secondary';
+        }
+
+        function formatCurrency(value) {
+            const number = Number(value);
+            if (!Number.isFinite(number)) {
+                return '0đ';
+            }
+            return number.toLocaleString('vi-VN') + 'đ';
+        }
+
+        function normalizeToDate(value) {
+            if (!value) {
+                return null;
+            }
+            if (value instanceof Date) {
+                return Number.isNaN(value.getTime()) ? null : value;
+            }
+            if (typeof value === 'string' || typeof value === 'number') {
+                const fromPrimitive = new Date(value);
+                if (!Number.isNaN(fromPrimitive.getTime())) {
+                    return fromPrimitive;
+                }
+            }
+            if (Array.isArray(value)) {
+                const [year, month, day, hour = 0, minute = 0, second = 0, nano = 0] = value;
+                if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+                    const fromArray = new Date(year, month - 1, day, hour, minute, second, Math.floor(nano / 1e6));
+                    if (!Number.isNaN(fromArray.getTime())) {
+                        return fromArray;
+                    }
+                }
+            }
+            if (typeof value === 'object') {
+                const dateSource = value.date && typeof value.date === 'object' ? value.date : value;
+                const timeSource = value.time && typeof value.time === 'object' ? value.time : value;
+                const resolveMonth = input => {
+                    if (Number.isFinite(input)) {
+                        return input;
+                    }
+                    if (typeof input === 'string') {
+                        const monthNames = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+                        const normalized = input.toUpperCase();
+                        const index = monthNames.indexOf(normalized);
+                        if (index !== -1) {
+                            return index + 1;
+                        }
+                        const parsed = parseInt(normalized, 10);
+                        if (Number.isFinite(parsed)) {
+                            return parsed;
+                        }
+                    }
+                    return null;
+                };
+                const toNumber = input => (Number.isFinite(input) ? input : parseInt(input, 10));
+                const year = toNumber(dateSource.year);
+                const month = resolveMonth(dateSource.monthValue ?? dateSource.month);
+                const day = toNumber(dateSource.day ?? dateSource.dayOfMonth);
+                if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+                    const hour = toNumber(timeSource.hour) || 0;
+                    const minute = toNumber(timeSource.minute) || 0;
+                    const second = toNumber(timeSource.second) || 0;
+                    const nano = toNumber(timeSource.nano) || 0;
+                    const fromObject = new Date(year, month - 1, day, hour, minute, second, Math.floor(nano / 1e6));
+                    if (!Number.isNaN(fromObject.getTime())) {
+                        return fromObject;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function formatDate(value) {
+            const date = normalizeToDate(value);
+            return date ? date.toLocaleDateString('vi-VN') : '';
+        }
+
+        function formatDateTime(value) {
+            const date = normalizeToDate(value);
+            return date ? date.toLocaleString('vi-VN') : '';
+        }
+
+        async function viewOrderDetails(orderId) {
+            if (!orderId) {
+                return;
+            }
+            const token = localStorage.getItem('auth_token');
+            const container = document.getElementById('orderDetailContent');
+            if (container) {
+                container.innerHTML = '<div class="text-center py-4 text-muted">Đang tải thông tin đơn hàng...</div>';
+            }
+            if (orderDetailModal) {
+                orderDetailModal.show();
+            }
+            try {
+                const [orderResponse, timelineResponse] = await Promise.all([
+                    fetch(`${contextPath}/api/profile/orders/${orderId}`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    }),
+                    fetch(`${contextPath}/api/profile/orders/${orderId}/timeline`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    })
+                ]);
+                const orderPayload = await orderResponse.json();
+                const timelinePayload = await timelineResponse.json();
+                if (!orderResponse.ok || !orderPayload.success) {
+                    throw new Error(orderPayload.message || 'Không thể tải chi tiết đơn hàng.');
+                }
+                if (!timelineResponse.ok || !timelinePayload.success) {
+                    throw new Error(timelinePayload.message || 'Không thể tải tiến trình đơn hàng.');
+                }
+                renderOrderDetail(orderPayload.order, Array.isArray(timelinePayload.timeline) ? timelinePayload.timeline : []);
+            } catch (error) {
+                console.error('viewOrderDetails error', error);
+                if (container) {
+                    container.innerHTML = `<div class="alert alert-danger">${escapeHtml(error.message || 'Không thể tải chi tiết đơn hàng')}</div>`;
+                }
+            }
+        }
+
+        function resetReviewForm() {
+            const form = document.getElementById('reviewForm');
+            if (form) {
+                form.reset();
+            }
+            const ratingEl = document.getElementById('reviewRating');
+            if (ratingEl) {
+                ratingEl.value = '5';
+            }
+            const contentEl = document.getElementById('reviewContent');
+            if (contentEl) {
+                contentEl.value = '';
+            }
+            const alertEl = document.getElementById('reviewFormAlert');
+            if (alertEl) {
+                alertEl.textContent = '';
+                alertEl.classList.add('d-none');
+            }
+            const existingInfoEl = document.getElementById('reviewExistingInfo');
+            if (existingInfoEl) {
+                existingInfoEl.textContent = '';
+                existingInfoEl.classList.add('d-none');
+            }
+        }
+
+        function setReviewFormLoading(loading) {
+            reviewState.loading = loading;
+            const submitBtn = document.getElementById('reviewSubmitBtn');
+            if (submitBtn) {
+                if (loading) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Gửi bình luận';
+                }
+            }
+            const ratingEl = document.getElementById('reviewRating');
+            const contentEl = document.getElementById('reviewContent');
+            if (ratingEl) {
+                ratingEl.disabled = loading;
+            }
+            if (contentEl) {
+                contentEl.disabled = loading;
+            }
+        }
+
+        async function openReviewModal(order, item, orderCodeDisplay) {
+            if (!item || !item.bookId) {
+                return;
+            }
+            resetReviewForm();
+            reviewState.bookId = item.bookId;
+            reviewState.orderId = order ? order.id : null;
+            reviewState.orderItemId = item.id || null;
+            reviewState.bookTitle = item.title || 'Sản phẩm';
+            reviewState.orderCode = orderCodeDisplay || (order && order.code ? order.code : '#');
+
+            const titleEl = document.getElementById('reviewModalTitle');
+            const subtitleEl = document.getElementById('reviewModalSubtitle');
+            if (titleEl) {
+                titleEl.textContent = 'Viết bình luận sản phẩm';
+            }
+            if (subtitleEl) {
+                subtitleEl.textContent = `Đơn ${orderCodeDisplay} · ${reviewState.bookTitle}`;
+            }
+            const bookIdEl = document.getElementById('reviewBookId');
+            if (bookIdEl) {
+                bookIdEl.value = reviewState.bookId;
+            }
+
+            if (reviewModal) {
+                reviewModal.show();
+            }
+
+            const alertEl = document.getElementById('reviewFormAlert');
+            if (alertEl) {
+                alertEl.classList.add('d-none');
+            }
+
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                if (alertEl) {
+                    alertEl.textContent = 'Bạn cần đăng nhập để bình luận sản phẩm.';
+                    alertEl.classList.remove('d-none');
+                }
+                return;
+            }
+
+            setReviewFormLoading(true);
+            try {
+                const response = await fetch(`${contextPath}/api/reviews/me?bookId=${reviewState.bookId}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        if (alertEl) {
+                            alertEl.textContent = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            alertEl.classList.remove('d-none');
+                        }
+                        return;
+                    }
+                    const payload = await response.json().catch(() => ({ message: 'Không thể tải đánh giá của bạn.' }));
+                    if (alertEl) {
+                        alertEl.textContent = payload.message || 'Không thể tải đánh giá của bạn.';
+                        alertEl.classList.remove('d-none');
+                    }
+                    return;
+                }
+                const payload = await response.json();
+                if (payload && payload.success && payload.review) {
+                    if (document.getElementById('reviewRating')) {
+                        document.getElementById('reviewRating').value = payload.review.rating || '5';
+                    }
+                    if (document.getElementById('reviewContent')) {
+                        document.getElementById('reviewContent').value = payload.review.content || '';
+                    }
+                    const existingInfoEl = document.getElementById('reviewExistingInfo');
+                    if (existingInfoEl) {
+                        existingInfoEl.textContent = 'Bạn đã từng bình luận sản phẩm này. Bạn có thể chỉnh sửa nội dung và gửi lại.';
+                        existingInfoEl.classList.remove('d-none');
+                    }
+                }
+            } catch (error) {
+                console.error('openReviewModal error', error);
+                if (alertEl) {
+                    alertEl.textContent = 'Không thể tải đánh giá của bạn. Vui lòng thử lại sau.';
+                    alertEl.classList.remove('d-none');
+                }
+            } finally {
+                setReviewFormLoading(false);
+            }
+        }
+
+        async function submitReview() {
+            if (!reviewState.bookId || reviewState.loading) {
+                return;
+            }
+            const ratingEl = document.getElementById('reviewRating');
+            const contentEl = document.getElementById('reviewContent');
+            const alertEl = document.getElementById('reviewFormAlert');
+            const rating = ratingEl ? parseInt(ratingEl.value, 10) : 0;
+            const content = contentEl ? contentEl.value.trim() : '';
+
+            if (!rating || rating < 1 || rating > 5) {
+                if (alertEl) {
+                    alertEl.textContent = 'Vui lòng chọn số sao hợp lệ.';
+                    alertEl.classList.remove('d-none');
+                }
+                return;
+            }
+            if (!content || content.length < 50) {
+                if (alertEl) {
+                    alertEl.textContent = 'Nội dung bình luận phải có ít nhất 50 ký tự.';
+                    alertEl.classList.remove('d-none');
+                }
+                return;
+            }
+            if (alertEl) {
+                alertEl.classList.add('d-none');
+            }
+
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                if (alertEl) {
+                    alertEl.textContent = 'Bạn cần đăng nhập để bình luận sản phẩm.';
+                    alertEl.classList.remove('d-none');
+                }
+                return;
+            }
+
+            setReviewFormLoading(true);
+            try {
+                const response = await fetch(`${contextPath}/api/reviews`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        bookId: reviewState.bookId,
+                        rating,
+                        content
+                    })
+                });
+                const payload = await response.json().catch(() => ({ success: false }));
+                if (!response.ok || !payload.success) {
+                    const message = payload && payload.message ? payload.message : 'Không thể lưu bình luận. Vui lòng thử lại.';
+                    if (alertEl) {
+                        alertEl.textContent = message;
+                        alertEl.classList.remove('d-none');
+                    }
+                    return;
+                }
+                showAlert('Đã lưu bình luận cho sản phẩm.', 'success');
+                if (reviewModal) {
+                    reviewModal.hide();
+                }
+            } catch (error) {
+                console.error('submitReview error', error);
+                if (alertEl) {
+                    alertEl.textContent = 'Không thể lưu bình luận. Vui lòng thử lại sau.';
+                    alertEl.classList.remove('d-none');
+                }
+            } finally {
+                setReviewFormLoading(false);
+            }
+        }
+
+        function renderOrderDetail(order, timeline) {
+            const container = document.getElementById('orderDetailContent');
+            if (!container) {
+                return;
+            }
+            if (!order) {
+                container.innerHTML = '<div class="text-center py-4 text-muted">Không tìm thấy thông tin đơn hàng.</div>';
+                return;
+            }
+            const orderCode = order.code && order.code.trim() ? order.code.trim() : `#${order.id}`;
+            const statusMeta = getStatusMeta(order.status);
+            const badgeClass = statusMeta.badge ? `bg-${statusMeta.badge}` : 'bg-secondary';
+            const allowReview = statusMeta.key === 'delivered';
+
+            let itemsHtml = '<p class="text-muted mb-0">Danh sách sản phẩm trống.</p>';
+            if (Array.isArray(order.items) && order.items.length > 0) {
+                const rows = order.items.map((item, idx) => `
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">${escapeHtml(item.title || 'Sản phẩm')}</div>
+                            ${item.author ? `<div class="text-muted small">${escapeHtml(item.author)}</div>` : ''}
+                        </td>
+                        <td class="text-center">${item.quantity}</td>
+                        <td class="text-end">${formatCurrency(item.unitPrice)}</td>
+                        <td class="text-end">${formatCurrency(item.totalPrice)}</td>
+                        ${allowReview ? `<td class="text-end" style="width: 160px;">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-review-trigger data-item-index="${idx}">
+                                <i class="fas fa-pen me-1"></i>Bình luận
+                            </button>
+                        </td>` : ''}
+                    </tr>
+                `).join('');
+                itemsHtml = `
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th class="text-center" style="width: 80px;">SL</th>
+                                    <th class="text-end">Đơn giá</th>
+                                    <th class="text-end">Thành tiền</th>
+                                    ${allowReview ? '<th class="text-end" style="width: 160px;">Bình luận</th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            let timelineHtml = '<p class="text-muted mb-0">Chưa có tiến trình trạng thái.</p>';
+            if (Array.isArray(timeline) && timeline.length > 0) {
+                timelineHtml = '<div class="list-group list-group-flush">' + timeline.map(entry => {
+                    const meta = getStatusMeta(entry.status);
+                    const noteLine = entry.note ? `<div class="text-muted small">${escapeHtml(entry.note)}</div>` : '';
+                    const createdByLine = entry.createdBy ? `<div class="text-muted small">${escapeHtml(entry.createdBy)}</div>` : '';
+                    return `
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between gap-3">
+                                <div>
+                                    <div class="fw-semibold">${escapeHtml(meta.label)}</div>
+                                    ${noteLine}
+                                    ${createdByLine}
+                                </div>
+                                <div class="text-muted small text-end" style="min-width: 140px;">${formatDateTime(entry.createdAt)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('') + '</div>';
+            }
+
+            container.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                    <div>
+                        <h5 class="mb-1">Đơn hàng ${escapeHtml(orderCode)}</h5>
+                        <div class="text-muted small">Ngày đặt: ${formatDateTime(order.orderDate)}</div>
+                        ${order.paymentMethod ? `<div class="text-muted small">Thanh toán: ${escapeHtml(order.paymentMethod.toUpperCase())}</div>` : ''}
+                        ${order.couponCode ? `<div class="text-muted small">Mã giảm giá: ${escapeHtml(order.couponCode)}</div>` : ''}
+                    </div>
+                    <span class="badge ${badgeClass} fs-6">${escapeHtml(statusMeta.label)}</span>
+                </div>
+                <div class="border rounded-3 p-3 bg-light mb-4">
+                    <div class="d-flex justify-content-between mb-1"><span>Tạm tính</span><span>${formatCurrency(order.itemsSubtotal)}</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span>Giảm giá</span><span>- ${formatCurrency(order.discountAmount)}</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span>Phí vận chuyển</span><span>${formatCurrency(order.shippingFee)}</span></div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between fw-semibold"><span>Tổng thanh toán</span><span>${formatCurrency(order.totalAmount)}</span></div>
+                </div>
+                <h6 class="mb-2">Sản phẩm</h6>
+                ${itemsHtml}
+                <h6 class="mt-4 mb-2">Tiến trình đơn hàng</h6>
+                ${timelineHtml}
+                ${order.notes ? `<div class="mt-4"><strong>Ghi chú:</strong> ${escapeHtml(order.notes)}</div>` : ''}
+            `;
+
+            if (allowReview && Array.isArray(order.items) && order.items.length > 0) {
+                const buttons = container.querySelectorAll('[data-review-trigger]');
+                buttons.forEach(btn => {
+                    const index = parseInt(btn.getAttribute('data-item-index'), 10);
+                    if (!Number.isInteger(index) || !order.items[index]) {
+                        return;
+                    }
+                    btn.addEventListener('click', () => openReviewModal(order, order.items[index], orderCode));
+                });
+            }
         }
 
         function deleteAccount() {
