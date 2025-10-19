@@ -188,7 +188,7 @@
                 <p class="text-sm text-gray-500 mb-3">Đã bán: <span class="font-medium text-gray-700">${sold}</span> · Yêu thích: <span class="font-medium text-gray-700">${favoriteCount}</span></p>
                 <p class="text-amber-700 font-bold text-lg mb-4">${price}</p>
                 <div class="mt-auto flex flex-col sm:flex-row gap-3">
-                    <button type="button" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded-full text-sm transition" data-book-id="${book.id}">
+                    <button type="button" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded-full text-sm transition" data-add-to-cart data-book-id="${book.id}">
                         Thêm vào giỏ
                     </button>
                     <a href="${appShell.contextPath}/books/detail?id=${book.id}" class="text-center text-sm text-amber-700 hover:text-amber-900 font-medium">

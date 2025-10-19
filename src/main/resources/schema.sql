@@ -40,17 +40,54 @@ CREATE TABLE IF NOT EXISTS books (
 );
 
 -- Create orders table
+CREATE TABLE IF NOT EXISTS user_addresses (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    label VARCHAR(50),
+    recipient_name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    line1 VARCHAR(255) NOT NULL,
+    line2 VARCHAR(255),
+    ward VARCHAR(100),
+    district VARCHAR(100),
+    city VARCHAR(100),
+    province VARCHAR(100),
+    postal_code VARCHAR(20),
+    country VARCHAR(100) DEFAULT 'Việt Nam',
+    is_default BOOLEAN DEFAULT FALSE,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_addresses_user ON user_addresses(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_user_addresses_default_true ON user_addresses(user_id) WHERE is_default;
+
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    code VARCHAR(40) UNIQUE,
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(10, 2) NOT NULL,
-    status VARCHAR(50) DEFAULT 'pending',
-    shipping_address TEXT,
-    payment_method VARCHAR(50),
+    status VARCHAR(20) NOT NULL DEFAULT 'new',
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid',
+    payment_method VARCHAR(20) NOT NULL DEFAULT 'cod',
+    payment_provider VARCHAR(30),
+    shipping_address_id INTEGER REFERENCES user_addresses(id) ON DELETE SET NULL,
+    shipping_snapshot JSONB,
+    cart_snapshot JSONB,
+    items_subtotal DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    shipping_fee DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    total_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    currency VARCHAR(10) DEFAULT 'VND',
+    coupon_code VARCHAR(50),
+    coupon_snapshot JSONB,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_orders_status CHECK (status IN ('new', 'confirmed', 'shipping', 'delivered', 'cancelled', 'returned')),
+    CONSTRAINT chk_orders_payment_status CHECK (payment_status IN ('unpaid', 'processing', 'paid', 'failed', 'refunded')),
+    CONSTRAINT chk_orders_payment_method CHECK (payment_method IN ('cod', 'vnpay', 'momo'))
 );
 
 -- Create order_items table
@@ -93,85 +130,13 @@ CREATE TABLE IF NOT EXISTS book_reviews (
     title VARCHAR(255),
     content TEXT,
     media_url VARCHAR(500),
+    media_type VARCHAR(30),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'published'
+    status VARCHAR(20) DEFAULT 'published',
+    CONSTRAINT chk_book_reviews_length CHECK (content IS NULL OR char_length(content) >= 50)
 );
 
 CREATE INDEX IF NOT EXISTS idx_book_reviews_book_id ON book_reviews(book_id);
 CREATE INDEX IF NOT EXISTS idx_book_reviews_user_id ON book_reviews(user_id);
 CREATE INDEX IF NOT EXISTS idx_book_reviews_status ON book_reviews(status);
-
-CREATE TABLE IF NOT EXISTS store_discounts (
-    id BIGSERIAL PRIMARY KEY,
-    shop_id BIGINT REFERENCES shops(id) ON DELETE CASCADE,
-    discount_rate NUMERIC(5,2) NOT NULL CHECK (discount_rate >= 0 AND discount_rate <= 100),
-    start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    end_date TIMESTAMP,
-    active BOOLEAN DEFAULT TRUE,
-    description TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_store_discounts_shop_id ON store_discounts(shop_id);
-CREATE INDEX IF NOT EXISTS idx_store_discounts_active ON store_discounts(active);
-
--- Admin-specific tables
-CREATE TABLE IF NOT EXISTS categories (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    slug VARCHAR(255) NOT NULL UNIQUE,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS shops (
-    id SERIAL PRIMARY KEY,
-    owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    logo_url VARCHAR(500),
-    status VARCHAR(50) DEFAULT 'active',
-    commission_rate DECIMAL(5,2) DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS coupons (
-    id SERIAL PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    description TEXT,
-    type VARCHAR(20) NOT NULL CHECK (type IN ('percentage', 'fixed', 'shipping')),
-    discount_value DECIMAL(10,2) NOT NULL,
-    max_discount DECIMAL(10,2),
-    min_order DECIMAL(10,2),
-    usage_limit INTEGER,
-    used_count INTEGER DEFAULT 0,
-    start_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    end_at TIMESTAMP,
-    active BOOLEAN DEFAULT TRUE,
-    apply_to VARCHAR(20) DEFAULT 'product' CHECK (apply_to IN ('product', 'shipping')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS shippers (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20),
-    email VARCHAR(100),
-    base_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
-    service_area TEXT,
-    estimated_time VARCHAR(100),
-    status VARCHAR(50) DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes for admin tables
-CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
-CREATE INDEX IF NOT EXISTS idx_shops_owner_id ON shops(owner_id);
-CREATE INDEX IF NOT EXISTS idx_shops_status ON shops(status);
-CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code);
-CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons(active);
-CREATE INDEX IF NOT EXISTS idx_coupons_start_end ON coupons(start_at, end_at);
-CREATE INDEX IF NOT EXISTS idx_shippers_status ON shippers(status);

@@ -1,92 +1,41 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:set var="pageTitle" value="Bookish Bliss Haven | Danh mục sách" />
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bookish Bliss Haven | Danh mục sách</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/feather-icons"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
-        body { font-family: 'Roboto', sans-serif; }
-        .title-font { font-family: 'Playfair Display', serif; }
-        .catalog-hero {
-            background: linear-gradient(135deg, rgba(120, 53, 15, 0.92), rgba(146, 64, 14, 0.85)), url('https://static.photos/books/1200x630/41');
-            background-size: cover;
-            background-position: center;
-        }
-        .catalog-card {
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-        }
-        .catalog-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 25px 35px -20px rgba(120, 53, 15, 0.5);
-        }
-        .highlight-card {
-            border-color: #d97706;
-            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.4);
-        }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <nav class="bg-amber-800 text-white shadow-lg">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex justify-between items-center">
-                <a href="<%=request.getContextPath()%>/index.jsp" class="flex items-center space-x-2">
-                    <i data-feather="book-open" class="w-6 h-6"></i>
-                    <span class="title-font text-xl font-bold">Bookish Bliss Haven</span>
-                </a>
-                <div class="hidden md:flex space-x-8">
-                    <a href="<%=request.getContextPath()%>/index.jsp" class="hover:text-amber-200 font-medium">Trang chủ</a>
-                    <a href="<%=request.getContextPath()%>/catalog.jsp" class="hover:text-amber-200 font-medium">Danh mục</a>
-                    <a href="<%=request.getContextPath()%>/catalog.jsp?sort=best" class="hover:text-amber-200 font-medium">Bán chạy</a>
-                    <a href="<%=request.getContextPath()%>/catalog.jsp?sort=rated" class="hover:text-amber-200 font-medium">Đánh giá cao</a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="<%=request.getContextPath()%>/catalog.jsp" class="hidden sm:inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700">
-                        <i data-feather="search" class="w-5 h-5 mr-1"></i>
-                        <span class="font-medium">Tìm sách</span>
-                    </a>
-                    <div class="relative">
-                        <button id="userDropdownBtn" class="inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus:bg-amber-700 focus:outline-none">
-                            <i data-feather="user" class="w-5 h-5 mr-1"></i>
-                            <span id="accountBtnLabel" class="font-medium">Tài khoản</span>
-                        </button>
-                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50"></div>
-                    </div>
-                    <button class="md:hidden p-2 rounded-full hover:bg-amber-700" aria-label="Menu">
-                        <i data-feather="menu" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
+<%@ include file="/WEB-INF/includes/header.jsp" %>
 
-    <header class="catalog-hero text-white py-16 px-4">
-        <div class="container mx-auto">
-            <div class="max-w-3xl">
-                <span class="uppercase tracking-wide text-amber-200 text-xs font-semibold">Bookish Bliss Haven</span>
-                <h1 class="title-font text-4xl md:text-5xl font-bold mt-3 mb-5">Tất cả những cuốn sách bạn yêu thích</h1>
-                <p class="text-amber-100 text-lg">Lọc theo danh mục, sắp xếp theo nhu cầu và khám phá top 20 tựa sách mới nhất, bán chạy nhất, được đánh giá cao và yêu thích nhất trong kho của chúng tôi.</p>
-            </div>
+<main class="bg-gray-50 text-gray-800">
+    <section class="catalog-hero text-white py-20 px-4">
+        <div class="container mx-auto text-center space-y-4">
+            <span class="uppercase tracking-wide text-amber-200 text-xs font-semibold">Bookish Bliss Haven</span>
+            <h1 class="title-font text-4xl md:text-5xl font-bold">Khám phá kho sách phong phú</h1>
+            <p class="max-w-2xl mx-auto text-amber-100 text-lg">Tìm kiếm, lọc và khám phá những tựa sách được độc giả yêu thích nhất tại cửa hàng của chúng tôi.</p>
         </div>
-    </header>
+    </section>
 
-    <main class="py-10 px-4">
+    <section class="py-12 px-4">
         <div class="container mx-auto space-y-8">
-            <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div class="flex flex-col md:flex-row md:items-center gap-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-amber-100/60 p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-700">
+                            <i data-feather="filter" class="w-5 h-5"></i>
+                        </span>
                         <div>
-                            <label for="categoryFilter" class="block text-sm font-medium text-gray-600 mb-1">Danh mục</label>
+                            <h2 class="title-font text-2xl font-semibold">Bộ lọc danh mục</h2>
+                            <p class="text-gray-500 text-sm">Tùy chỉnh danh sách sách theo nhu cầu đọc của bạn.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-gray-600">
+                        <div class="flex flex-col gap-2">
+                            <label class="font-medium" for="categoryFilter">Danh mục</label>
                             <select id="categoryFilter" class="min-w-[220px] px-4 py-2.5 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white text-sm">
                                 <option value="">Tất cả</option>
                             </select>
                         </div>
-                        <div>
-                            <label for="sortSelect" class="block text-sm font-medium text-gray-600 mb-1">Sắp xếp theo</label>
+                        <div class="flex flex-col gap-2">
+                            <label class="font-medium" for="sortSelect">Sắp xếp theo</label>
                             <select id="sortSelect" class="min-w-[220px] px-4 py-2.5 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white text-sm">
                                 <option value="new">Sản phẩm mới</option>
                                 <option value="best">Bán chạy nhất</option>
@@ -95,11 +44,16 @@
                             </select>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 text-sm text-gray-500">
-                        <span id="resultSummary">Đang tải dữ liệu...</span>
-                    </div>
                 </div>
-            </section>
+
+                <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <p id="resultSummary" class="text-sm text-gray-600">Đang tải danh sách sách...</p>
+                    <a href="<%=request.getContextPath()%>/index.jsp" class="inline-flex items-center text-amber-700 hover:text-amber-900 font-medium text-sm">
+                        Về trang chủ
+                        <i data-feather="arrow-up-right" class="w-4 h-4 ml-1"></i>
+                    </a>
+                </div>
+            </div>
 
             <section class="space-y-6">
                 <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6"></div>
@@ -114,28 +68,10 @@
                 </div>
             </section>
         </div>
-    </main>
+    </section>
+</main>
 
-    <footer class="bg-gray-900 text-gray-300 py-12 px-4">
-        <div class="container mx-auto">
-            <div class="flex justify-center mb-10">
-                <span class="inline-flex items-center gap-2 bg-gray-800 text-amber-200 px-4 py-2 rounded-full text-sm shadow-sm">
-                    <i data-feather="shield" class="w-4 h-4"></i>
-                    <span>&copy; <span id="year"></span> Bookish Bliss Haven · Mọi quyền được bảo lưu</span>
-                </span>
-            </div>
-            <div class="text-center text-sm text-gray-500">
-                Khám phá, đọc và chia sẻ niềm đam mê sách của bạn cùng chúng tôi.
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        window.appConfig = {
-            contextPath: '<%=request.getContextPath()%>'
-        };
-    </script>
-    <script src="<%=request.getContextPath()%>/assets/js/app-shell.js"></script>
-    <script src="<%=request.getContextPath()%>/assets/js/catalog-page.js"></script>
+<%@ include file="/WEB-INF/includes/footer.jsp" %>
+<script src="<%=request.getContextPath()%>/assets/js/catalog-page.js"></script>
 </body>
 </html>

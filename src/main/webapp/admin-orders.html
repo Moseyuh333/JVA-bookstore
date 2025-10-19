@@ -1,0 +1,80 @@
+<meta http-equiv="refresh" content="0; url=admin-orders.jsp" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin - Quản lý trạng thái đơn hàng</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        body {
+            background-color: #f6f7fb;
+        }
+        .timeline {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        .timeline::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0.45rem;
+            width: 2px;
+            background-color: #dee2e6;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.25rem;
+            padding-left: 1.5rem;
+        }
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -0.62rem;
+            top: 0.25rem;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            background-color: #0d6efd;
+        }
+        .table-hover tbody tr { cursor: pointer; }
+        .order-row-active { background-color: #e7f1ff; }
+        .badge-status { text-transform: capitalize; }
+        .card-shadow {
+            box-shadow: 0 1rem 2.5rem rgba(18, 38, 63, 0.05);
+        }
+        .sticky-actions {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="h3 mb-0">Bảng điều khiển trạng thái đơn hàng</h1>
+                <p class="text-muted mb-0">Xem, cập nhật nhanh trạng thái để kiểm thử quy trình giao hàng và đánh giá.</p>
+            </div>
+            <div class="ms-auto">
+                <a class="btn btn-outline-secondary" href="/" target="_blank"><i class="fas fa-external-link-alt me-2"></i>Mở cửa hàng</a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card card-shadow border-0 h-100">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end mb-3">
+                            <!DOCTYPE html>
+                            <html lang="vi">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta http-equiv="refresh" content="0; url=admin-orders.jsp">
+                                <title>Redirecting…</title>
+                            </head>
+                            <body>
+                                <p>Đang chuyển hướng tới trang quản trị đơn hàng… Nếu không tự động, <a href="admin-orders.jsp">nhấn vào đây</a>.</p>
+                            </body>
+                            </html>
+                            </div>

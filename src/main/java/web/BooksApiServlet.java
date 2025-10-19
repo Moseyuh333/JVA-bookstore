@@ -57,26 +57,15 @@ public class BooksApiServlet extends HttpServlet {
                 case "/categories":
                     handleCategories(resp);
                     break;
-                case "/top":
-                    handleTopList(req, resp, null);
+                case "/search":
+                    handleSearch(req, resp);
                     break;
                 case "/":
-                    handleCatalogList(req, resp);
-                    break;
                 default:
-                    if (path.startsWith("/top/")) {
-                        String sortSegment = path.substring("/top/".length());
-                        handleTopList(req, resp, sortSegment);
-                    } else {
-                        handleCatalogList(req, resp);
-                    }
+                    handleCatalogList(req, resp);
                     break;
             }
         } catch (SQLException ex) {
-            log("BooksApiServlet - SQL error while handling path " + path + withQueryString(req), ex);
-            sendServerError(resp, ex);
-        } catch (Exception ex) {
-            log("BooksApiServlet - Unexpected error while handling path " + path + withQueryString(req), ex);
             sendServerError(resp, ex);
         }
     }
@@ -105,33 +94,30 @@ public class BooksApiServlet extends HttpServlet {
 
     private void handleCategories(HttpServletResponse resp) throws IOException, SQLException {
         List<String> categories = BookDAO.getAllCategories();
-        JsonObject payload = new JsonObject();
-        payload.add("data", toStringJsonArray(categories));
+    JsonObject payload = new JsonObject();
+    payload.add("data", toStringJsonArray(categories));
         payload.addProperty("count", categories.size());
         writeJson(resp, payload);
     }
 
-    private void handleTopList(HttpServletRequest req, HttpServletResponse resp, String pathSort) throws IOException, SQLException {
-        String sortParam = trimToNull(req.getParameter("sort"));
-        if ((sortParam == null || sortParam.isEmpty()) && pathSort != null && !pathSort.isEmpty()) {
-            sortParam = pathSort;
-        }
-        if (!BookDAO.isValidSortParam(sortParam)) {
-            sendBadRequest(resp, "Invalid sort parameter");
+    private void handleSearch(HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
+        String keyword = trimToNull(req.getParameter("q"));
+        int limit = parsePositiveInt(req.getParameter("limit"), 10, 50);
+
+        JsonObject payload = new JsonObject();
+        payload.addProperty("query", keyword == null ? "" : keyword);
+
+        if (keyword == null || keyword.length() < 2) {
+            payload.add("data", new JsonArray());
+            payload.addProperty("count", 0);
+            payload.addProperty("message", "Nhập tối thiểu 2 ký tự để tìm kiếm sách");
+            writeJson(resp, payload);
             return;
         }
 
-        SortType sortType = BookDAO.SortType.fromParam(sortParam);
-        int limit = parsePositiveInt(req.getParameter("limit"), 20, 100);
-        List<Book> books = BookDAO.getTopBooks(sortType, limit);
-
-        JsonObject payload = new JsonObject();
-        payload.addProperty("sort", sortType.getParam());
-        payload.addProperty("requestedSort", sortParam != null ? sortParam : sortType.getParam());
-        payload.addProperty("limit", limit);
-        payload.addProperty("count", books.size());
+        List<Book> books = BookDAO.searchBooks(keyword, limit);
         payload.add("data", toBookJsonArray(books));
-
+        payload.addProperty("count", books.size());
         writeJson(resp, payload);
     }
 
@@ -153,7 +139,7 @@ public class BooksApiServlet extends HttpServlet {
         int totalPages = totalItems == 0 ? 0 : (int) Math.ceil((double) totalItems / pageSize);
 
         JsonObject payload = new JsonObject();
-        payload.add("data", toBookJsonArray(books));
+    payload.add("data", toBookJsonArray(books));
         payload.addProperty("page", page);
         payload.addProperty("pageSize", pageSize);
         payload.addProperty("totalItems", totalItems);
@@ -227,14 +213,6 @@ public class BooksApiServlet extends HttpServlet {
         obj.addProperty("error", "SERVER_ERROR");
         obj.addProperty("message", ex.getMessage());
         writeJson(resp, obj);
-    }
-
-    private String withQueryString(HttpServletRequest req) {
-        String query = req.getQueryString();
-        if (query == null || query.isEmpty()) {
-            return "";
-        }
-        return "?" + query;
     }
 
     private void sendBadRequest(HttpServletResponse resp, String message) throws IOException {

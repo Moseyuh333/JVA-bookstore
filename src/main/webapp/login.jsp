@@ -1,151 +1,134 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:set var="pageTitle" value="Đăng nhập - Bookish Bliss Haven" />
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - NKbookstore</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        body { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .auth-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            padding: 2rem;
-            animation: fadeIn 0.5s ease-in;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .form-control:focus {
-          border-color: #3949ab;
-          box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.25);
-        }
-        .btn-primary {
-          background: #3949ab;
-          border: none;
-          transition: background 0.3s ease;
-        }
-        .btn-primary:hover {
-          background: #1a237e;
-        }
-    </style>
-</head>
-<body>
-<div class="auth-card" style="max-width: 480px; width: 90%;">
-  <div class="text-center my-4">
-    <img src="assets/img/nkbookstore-logo.png" alt="NKbookstore Logo" style="width:64px;height:64px;border-radius:50%;">
-    <h2 class="mb-1 mt-3" style="color:#1a237e;font-weight:700;letter-spacing:1px;">NKbookstore</h2>
-    <div class="text-muted small">by bibo090809@gmail.com</div>
-  </div>
-  <h2 class="mb-3">Login</h2>
+<html lang="vi">
+<%@ include file="/WEB-INF/includes/header.jsp" %>
 
-  <form id="loginForm">
-    <div class="mb-3">
-      <label class="form-label">Username</label>
-      <input class="form-control" name="username" required />
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Password</label>
-      <input class="form-control" type="password" name="password" required />
-    </div>
-    <button class="btn btn-primary" type="submit">Login</button>
-    <div class="mt-3 d-flex gap-3">
-      <a href="register.jsp">Create account</a>
-      <a href="forgot-password.jsp">Forgot password?</a>
-    </div>
-  </form>
-  <hr/>
-  <div>
-    <button id="loadBooks" class="btn btn-outline-secondary" disabled>Load Protected Books</button>
-    <pre id="result" class="mt-3"></pre>
-  </div>
-</div>
+<main class="min-h-screen bg-gradient-to-br from-amber-900/20 via-amber-800/30 to-amber-950/40 flex items-center justify-center py-16 px-4">
+  <section class="w-full max-w-lg">
+    <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-amber-100/80 p-10 space-y-8">
+      <div class="text-center space-y-2">
+        <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 text-amber-700 shadow-inner">
+          <i data-feather="log-in" class="w-7 h-7"></i>
+        </span>
+        <h1 class="title-font text-3xl font-bold text-amber-800">Đăng nhập</h1>
+        <p class="text-gray-500 text-sm">Chào mừng bạn trở lại với Bookish Bliss Haven</p>
+      </div>
 
+      <form id="loginForm" class="space-y-5">
+        <div class="space-y-2">
+          <label for="username" class="text-sm font-semibold text-gray-700">Tên đăng nhập</label>
+          <input id="username" name="username" type="text" required autocomplete="username"
+                 class="w-full rounded-2xl border border-amber-200/70 bg-white px-4 py-3 text-gray-800 shadow-inner focus:border-amber-500 focus:ring-2 focus:ring-amber-400/60" />
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="password" class="text-sm font-semibold text-gray-700">Mật khẩu</label>
+            <a href="<%= request.getContextPath() %>/forgot-password.jsp" class="text-sm text-amber-700 hover:text-amber-800 font-medium">Quên mật khẩu?</a>
+          </div>
+          <input id="password" name="password" type="password" required autocomplete="current-password"
+                 class="w-full rounded-2xl border border-amber-200/70 bg-white px-4 py-3 text-gray-800 shadow-inner focus:border-amber-500 focus:ring-2 focus:ring-amber-400/60" />
+        </div>
+        <button id="loginSubmit" type="submit"
+                class="w-full flex items-center justify-center gap-2 rounded-2xl bg-amber-700 text-white font-semibold py-3 shadow-lg shadow-amber-900/20 hover:bg-amber-800 transition disabled:opacity-60 disabled:cursor-not-allowed">
+          <i data-feather="arrow-right-circle" class="w-5 h-5"></i>
+          <span>Đăng nhập</span>
+        </button>
+      </form>
+
+      <div id="loginFeedback" class="space-y-2"></div>
+
+      <div class="text-center text-sm text-gray-600">
+        <span>Chưa có tài khoản?</span>
+        <a href="<%= request.getContextPath() %>/register.jsp" class="font-semibold text-amber-700 hover:text-amber-800">Đăng ký ngay</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%@ include file="/WEB-INF/includes/footer.jsp" %>
 <script>
-  let token = null;
-  const form = document.getElementById('loginForm');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const data = new URLSearchParams(new FormData(form));
-    
-    try {
-      const res = await fetch('<%= request.getContextPath() %>/api/login', {
-        method: 'POST', 
-        headers: {'Content-Type':'application/x-www-form-urlencoded'}, 
-        body: data
-      });
-      
-      if(res.ok){
-        const json = await res.json();
-        const enteredUsername = (form.elements['username']?.value || '').trim();
+  (function () {
+    const contextPath = '<%= request.getContextPath() %>';
+    const form = document.getElementById('loginForm');
+    const feedback = document.getElementById('loginFeedback');
+    const submitBtn = document.getElementById('loginSubmit');
 
-        // Check if admin login (username starts with 'admin' or is 'admin')
-        const isAdmin = enteredUsername.toLowerCase().startsWith('admin') || enteredUsername.toLowerCase() === 'admin';
+    function showMessage(type, message) {
+      if (!feedback) {
+        return;
+      }
+      feedback.innerHTML = '';
+      const wrapper = document.createElement('div');
+      const base = 'px-4 py-3 rounded-2xl border text-sm font-medium transition';
+      let tone = 'bg-red-100 border-red-200 text-red-700';
+      if (type === 'success') {
+        tone = 'bg-emerald-100 border-emerald-200 text-emerald-800';
+      } else if (type === 'info') {
+        tone = 'bg-amber-50 border-amber-200 text-amber-700';
+      }
+      wrapper.className = base + ' ' + tone;
+      wrapper.innerHTML = message;
+      feedback.appendChild(wrapper);
+    }
 
-        // Save token and username to localStorage for dropdown rendering
-        localStorage.setItem('auth_token', json.token);
-        if (isAdmin) {
-          localStorage.setItem('admin_token', json.token);
-        }
-        if (enteredUsername.length > 0) {
-          localStorage.setItem('auth_username', enteredUsername);
-          if (isAdmin) {
-            localStorage.setItem('admin_username', enteredUsername);
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const payload = new URLSearchParams(formData);
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-60');
+      submitBtn.classList.add('cursor-wait');
+
+      try {
+        const response = await fetch(contextPath + '/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload
+        });
+
+        const text = await response.text();
+        let data = {};
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch (parseError) {
+            console.warn('Không thể phân tích JSON đăng nhập', parseError);
           }
-        } else {
-          localStorage.removeItem('auth_username');
-          if (isAdmin) {
-            localStorage.removeItem('admin_username');
-          }
         }
 
-        // Show success message
-        document.getElementById('result').innerHTML = '<div class="alert alert-success">✅ Đăng nhập thành công! Đang chuyển hướng...</div>';
-
-        // Redirect to admin dashboard if admin, otherwise homepage
-        setTimeout(() => {
-          if (isAdmin) {
-            window.location.href = '<%= request.getContextPath() %>/admin-dashboard';
+        if (response.ok && data && data.token) {
+          const enteredUsername = (formData.get('username') || '').trim();
+          localStorage.setItem('auth_token', data.token);
+          if (enteredUsername.length > 0) {
+            localStorage.setItem('auth_username', enteredUsername);
           } else {
-            window.location.href = '<%= request.getContextPath() %>/';
+            localStorage.removeItem('auth_username');
           }
-        }, 1500);
-        
-      } else {
-        const text = await res.text();
-        let errorMessage = '';
-        try { 
-          const j = JSON.parse(text); 
-          errorMessage = j.error || text;
-        } catch(e){ 
-          errorMessage = text; 
+          showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
+          setTimeout(function () {
+            window.location.href = contextPath + '/';
+          }, 1200);
+        } else {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('auth_username');
+          const errorMsg = data && data.error ? data.error : (text || 'Đăng nhập thất bại.');
+          showMessage('danger', '❌ ' + errorMsg);
         }
+      } catch (error) {
+        console.error('Login error', error);
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_username');
-        document.getElementById('result').innerHTML = '<div class="alert alert-danger">❌ Đăng nhập thất bại: ' + errorMessage + '</div>';
+        showMessage('danger', '❌ Lỗi kết nối. Vui lòng thử lại.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-60');
+        submitBtn.classList.remove('cursor-wait');
       }
-    } catch (error) {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_username');
-      document.getElementById('result').innerHTML = '<div class="alert alert-danger">❌ Lỗi kết nối. Vui lòng thử lại.</div>';
-    }
-  });
-
-  document.getElementById('loadBooks').addEventListener('click', async ()=>{
-    const res = await fetch('api/books', {headers:{'Authorization':'Bearer ' + token}});
-    const text = await res.text();
-    document.getElementById('result').textContent = text;
-  });
+    });
+  })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

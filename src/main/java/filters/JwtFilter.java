@@ -30,7 +30,7 @@ public class JwtFilter implements Filter {
 
         System.out.println("JwtFilter: Request URI = " + requestUri + " | normalized path = " + path);
 
-        if (isPublicEndpoint(path, req.getMethod())) {
+        if (allowsAdminSecretBypass(path, req) || isPublicEndpoint(path, req.getMethod())) {
             chain.doFilter(request, response);
             return;
         }
@@ -59,6 +59,11 @@ public class JwtFilter implements Filter {
             return false;
         }
 
+        // Allow cart API for khách vãng lai (dựa vào session để nhận diện)
+        if (path.equals("/api/cart") || path.startsWith("/api/cart/")) {
+            return true;
+        }
+
         // Core auth endpoints remain public
         switch (path) {
             case "/api/auth/register":
@@ -85,8 +90,57 @@ public class JwtFilter implements Filter {
             if (path.equals("/api/catalog") || path.startsWith("/api/catalog/")) {
                 return true;
             }
+                if (path.equals("/api/reviews") || (path.startsWith("/api/reviews/") && !path.equals("/api/reviews/me"))) {
+                    return true;
+                }
+                if (path.equals("/api/comments") || (path.startsWith("/api/comments/") && !path.matches("/api/comments/.*\\d+"))) {
+                    return true;
+                }
         }
 
         return false;
+    }
+
+    private boolean allowsAdminSecretBypass(String path, HttpServletRequest request) {
+        if (path == null || !path.startsWith("/api/admin/orders")) {
+            return false;
+        }
+        if (isLocalhost(request)) {
+            return true;
+        }
+        String expected = getAdminSecret();
+        if (expected == null) {
+            return false;
+        }
+        String paramSecret = trimToNull(request.getParameter("secret"));
+        if (expected.equals(paramSecret)) {
+            return true;
+        }
+        String headerSecret = trimToNull(request.getHeader("X-Admin-Secret"));
+        return expected.equals(headerSecret);
+    }
+
+    private boolean isLocalhost(HttpServletRequest request) {
+        String remote = request.getRemoteAddr();
+        return "127.0.0.1".equals(remote) || "0:0:0:0:0:0:0:1".equals(remote) || "::1".equals(remote);
+    }
+
+    private String getAdminSecret() {
+        String env = System.getenv("ADMIN_PANEL_SECRET");
+        if (env != null) {
+            env = env.trim();
+            if (!env.isEmpty()) {
+                return env;
+            }
+        }
+        return "dev-secret-key-change-me";
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
