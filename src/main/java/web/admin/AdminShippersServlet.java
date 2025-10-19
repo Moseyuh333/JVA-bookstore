@@ -18,9 +18,18 @@ import java.sql.SQLException;
 @WebServlet(name = "AdminShippersServlet", urlPatterns = {"/api/admin/shippers"})
 public class AdminShippersServlet extends HttpServlet {
 
+    // =========================
+    // ⚙️ COMMON UTF-8 SETUP
+    // =========================
+    private void setupEncoding(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+        resp.setContentType("application/json; charset=UTF-8");
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json");
+        setupEncoding(req, resp);
         PrintWriter out = resp.getWriter();
 
         String action = req.getParameter("action");
@@ -36,7 +45,7 @@ public class AdminShippersServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
         } finally {
             out.flush();
         }
@@ -44,36 +53,40 @@ public class AdminShippersServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json");
+        setupEncoding(req, resp);
         PrintWriter out = resp.getWriter();
 
         String action = req.getParameter("action");
 
         try {
-            if ("create".equals(action)) {
-                createShipper(req, out);
-            } else if ("update".equals(action)) {
-                updateShipper(req, out);
-            } else if ("delete".equals(action)) {
-                deleteShipper(req, out);
-            } else {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write("{\"error\":\"Invalid action\"}");
+            switch (action) {
+                case "create" -> createShipper(req, out);
+                case "update" -> updateShipper(req, out);
+                case "delete" -> deleteShipper(req, out);
+                default -> {
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    out.write("{\"error\":\"Invalid action\"}");
+                }
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
         } finally {
             out.flush();
         }
     }
 
+    // =========================
+    // 📋 LIST ALL SHIPPERS
+    // =========================
     private void listShippers(PrintWriter out) throws SQLException {
-        String sql = "SELECT id, name, phone, email, base_fee, service_area, estimated_time, status, created_at, updated_at " +
-                     "FROM shippers ORDER BY name";
+        String sql = """
+                SELECT id, name, phone, email, base_fee, service_area,
+                       estimated_time, status, created_at, updated_at
+                FROM shippers ORDER BY name
+                """;
 
-        StringBuilder json = new StringBuilder();
-        json.append("{\"shippers\":[");
+        StringBuilder json = new StringBuilder("{\"shippers\":[");
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -98,42 +111,58 @@ public class AdminShippersServlet extends HttpServlet {
                     .append("}");
             }
         }
-
         json.append("]}");
         out.write(json.toString());
     }
 
+    // =========================
+    // 🧾 GET ONE SHIPPER
+    // =========================
     private void getShipper(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
-
         if (idStr == null) {
             out.write("{\"error\":\"ID is required\"}");
             return;
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "SELECT id, name, phone, email, base_fee, service_area, estimated_time, status, created_at, updated_at " +
-                     "FROM shippers WHERE id = ?";
+        String sql = """
+                SELECT id, name, phone, email, base_fee, service_area,
+                       estimated_time, status, created_at, updated_at
+                FROM shippers WHERE id = ?
+                """;
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
-
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    String json = "{"
-                        + "\"id\":" + rs.getInt("id") + ","
-                        + "\"name\":\"" + escapeJson(rs.getString("name")) + "\","
-                        + "\"phone\":\"" + escapeJson(rs.getString("phone")) + "\","
-                        + "\"email\":\"" + escapeJson(rs.getString("email")) + "\","
-                        + "\"base_fee\":" + rs.getBigDecimal("base_fee") + ","
-                        + "\"service_area\":\"" + escapeJson(rs.getString("service_area")) + "\","
-                        + "\"estimated_time\":\"" + escapeJson(rs.getString("estimated_time")) + "\","
-                        + "\"status\":\"" + escapeJson(rs.getString("status")) + "\","
-                        + "\"created_at\":\"" + rs.getTimestamp("created_at") + "\","
-                        + "\"updated_at\":\"" + rs.getTimestamp("updated_at") + "\""
-                        + "}";
+                    String json = String.format("""
+                            {
+                              "id": %d,
+                              "name": "%s",
+                              "phone": "%s",
+                              "email": "%s",
+                              "base_fee": %s,
+                              "service_area": "%s",
+                              "estimated_time": "%s",
+                              "status": "%s",
+                              "created_at": "%s",
+                              "updated_at": "%s"
+                            }
+                            """,
+                            rs.getInt("id"),
+                            escapeJson(rs.getString("name")),
+                            escapeJson(rs.getString("phone")),
+                            escapeJson(rs.getString("email")),
+                            rs.getBigDecimal("base_fee"),
+                            escapeJson(rs.getString("service_area")),
+                            escapeJson(rs.getString("estimated_time")),
+                            escapeJson(rs.getString("status")),
+                            rs.getTimestamp("created_at"),
+                            rs.getTimestamp("updated_at")
+                    );
                     out.write(json);
                 } else {
                     out.write("{\"error\":\"Shipper not found\"}");
@@ -142,14 +171,12 @@ public class AdminShippersServlet extends HttpServlet {
         }
     }
 
+    // =========================
+    // ➕ CREATE SHIPPER
+    // =========================
     private void createShipper(HttpServletRequest req, PrintWriter out) throws SQLException {
         String name = req.getParameter("name");
-        String phone = req.getParameter("phone");
-        String email = req.getParameter("email");
         String baseFeeStr = req.getParameter("base_fee");
-        String serviceArea = req.getParameter("service_area");
-        String estimatedTime = req.getParameter("estimated_time");
-        String status = req.getParameter("status");
 
         if (name == null || name.trim().isEmpty() || baseFeeStr == null) {
             out.write("{\"error\":\"Name and base fee are required\"}");
@@ -157,76 +184,70 @@ public class AdminShippersServlet extends HttpServlet {
         }
 
         BigDecimal baseFee = new BigDecimal(baseFeeStr);
-
-        String sql = "INSERT INTO shippers (name, phone, email, base_fee, service_area, estimated_time, status) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = """
+                INSERT INTO shippers (name, phone, email, base_fee, service_area, estimated_time, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """;
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, name.trim());
-            pstmt.setString(2, phone != null ? phone.trim() : null);
-            pstmt.setString(3, email != null ? email.trim() : null);
+            pstmt.setString(2, req.getParameter("phone"));
+            pstmt.setString(3, req.getParameter("email"));
             pstmt.setBigDecimal(4, baseFee);
-            pstmt.setString(5, serviceArea != null ? serviceArea.trim() : null);
-            pstmt.setString(6, estimatedTime != null ? estimatedTime.trim() : null);
-            pstmt.setString(7, status != null ? status : "active");
+            pstmt.setString(5, req.getParameter("service_area"));
+            pstmt.setString(6, req.getParameter("estimated_time"));
+            pstmt.setString(7, req.getParameter("status") != null ? req.getParameter("status") : "active");
 
             int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Shipper created successfully\"}");
-            } else {
-                out.write("{\"error\":\"Failed to create shipper\"}");
-            }
+            out.write(rows > 0 ? "{\"message\":\"Shipper created successfully\"}"
+                    : "{\"error\":\"Failed to create shipper\"}");
         }
     }
 
+    // =========================
+    // ✏️ UPDATE SHIPPER
+    // =========================
     private void updateShipper(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
-        String name = req.getParameter("name");
-        String phone = req.getParameter("phone");
-        String email = req.getParameter("email");
-        String baseFeeStr = req.getParameter("base_fee");
-        String serviceArea = req.getParameter("service_area");
-        String estimatedTime = req.getParameter("estimated_time");
-        String status = req.getParameter("status");
-
-        if (idStr == null || name == null || name.trim().isEmpty() || baseFeeStr == null) {
-            out.write("{\"error\":\"ID, name and base fee are required\"}");
+        if (idStr == null) {
+            out.write("{\"error\":\"ID is required\"}");
             return;
         }
 
         int id = Integer.parseInt(idStr);
-        BigDecimal baseFee = new BigDecimal(baseFeeStr);
+        BigDecimal baseFee = new BigDecimal(req.getParameter("base_fee"));
 
-        String sql = "UPDATE shippers SET name = ?, phone = ?, email = ?, base_fee = ?, " +
-                     "service_area = ?, estimated_time = ?, status = ?, updated_at = CURRENT_TIMESTAMP " +
-                     "WHERE id = ?";
+        String sql = """
+                UPDATE shippers SET name=?, phone=?, email=?, base_fee=?, service_area=?,
+                                    estimated_time=?, status=?, updated_at=CURRENT_TIMESTAMP
+                WHERE id=?
+                """;
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, name.trim());
-            pstmt.setString(2, phone != null ? phone.trim() : null);
-            pstmt.setString(3, email != null ? email.trim() : null);
+            pstmt.setString(1, req.getParameter("name"));
+            pstmt.setString(2, req.getParameter("phone"));
+            pstmt.setString(3, req.getParameter("email"));
             pstmt.setBigDecimal(4, baseFee);
-            pstmt.setString(5, serviceArea != null ? serviceArea.trim() : null);
-            pstmt.setString(6, estimatedTime != null ? estimatedTime.trim() : null);
-            pstmt.setString(7, status != null ? status : "active");
+            pstmt.setString(5, req.getParameter("service_area"));
+            pstmt.setString(6, req.getParameter("estimated_time"));
+            pstmt.setString(7, req.getParameter("status"));
             pstmt.setInt(8, id);
 
             int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Shipper updated successfully\"}");
-            } else {
-                out.write("{\"error\":\"Shipper not found\"}");
-            }
+            out.write(rows > 0 ? "{\"message\":\"Shipper updated successfully\"}"
+                    : "{\"error\":\"Shipper not found\"}");
         }
     }
 
+    // =========================
+    // ❌ DELETE SHIPPER
+    // =========================
     private void deleteShipper(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
-
         if (idStr == null) {
             out.write("{\"error\":\"ID is required\"}");
             return;
@@ -239,16 +260,15 @@ public class AdminShippersServlet extends HttpServlet {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
-
             int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Shipper deleted successfully\"}");
-            } else {
-                out.write("{\"error\":\"Shipper not found\"}");
-            }
+            out.write(rows > 0 ? "{\"message\":\"Shipper deleted successfully\"}"
+                    : "{\"error\":\"Shipper not found\"}");
         }
     }
 
+    // =========================
+    // 🔒 JSON ESCAPE
+    // =========================
     private String escapeJson(String str) {
         if (str == null) return "";
         return str.replace("\\", "\\\\")
