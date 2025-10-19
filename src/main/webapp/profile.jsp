@@ -288,6 +288,45 @@
         </div>
     </div>
 
+    <!-- Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="reviewForm" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reviewModalTitle">Viết bình luận sản phẩm</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="reviewFormAlert" class="alert alert-danger d-none" role="alert"></div>
+                        <p id="reviewModalSubtitle" class="text-muted small mb-3"></p>
+                        <div id="reviewExistingInfo" class="alert alert-info d-none" role="alert"></div>
+                        <input type="hidden" id="reviewBookId" name="bookId">
+                        <div class="mb-3">
+                            <label for="reviewRating" class="form-label">Chấm điểm sản phẩm</label>
+                            <select id="reviewRating" name="rating" class="form-select" required>
+                                <option value="5">5 - Cực kỳ hài lòng</option>
+                                <option value="4">4 - Hài lòng</option>
+                                <option value="3">3 - Tạm ổn</option>
+                                <option value="2">2 - Chưa hài lòng</option>
+                                <option value="1">1 - Rất tệ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reviewContent" class="form-label">Nội dung bình luận *</label>
+                            <textarea id="reviewContent" name="content" class="form-control" rows="6" minlength="50" required placeholder="Chia sẻ trải nghiệm của bạn (tối thiểu 50 ký tự)"></textarea>
+                            <div class="form-text">Chỉ khách đã nhận hàng mới có thể bình luận. Nội dung tối thiểu 50 ký tự.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="reviewSubmitBtn"><i class="fas fa-paper-plane me-1"></i>Gửi bình luận</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Address Modal -->
     <div class="modal fade" id="addressModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -410,6 +449,15 @@
             loading: false
         };
         let orderDetailModal = null;
+        let reviewModal = null;
+        const reviewState = {
+            bookId: null,
+            orderId: null,
+            orderItemId: null,
+            orderCode: '',
+            bookTitle: '',
+            loading: false
+        };
 
         // Check authentication on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -424,6 +472,19 @@
             const modalEl = document.getElementById('orderDetailModal');
             if (modalEl) {
                 orderDetailModal = new bootstrap.Modal(modalEl);
+            }
+
+            const reviewModalEl = document.getElementById('reviewModal');
+            if (reviewModalEl) {
+                reviewModal = new bootstrap.Modal(reviewModalEl);
+                reviewModalEl.addEventListener('hidden.bs.modal', () => {
+                    resetReviewForm();
+                    reviewState.bookId = null;
+                    reviewState.orderId = null;
+                    reviewState.orderItemId = null;
+                    reviewState.orderCode = '';
+                    reviewState.bookTitle = '';
+                });
             }
 
             loadUserProfile();
@@ -451,6 +512,11 @@
         document.getElementById('deleteAccountForm').addEventListener('submit', function(e) {
             e.preventDefault();
             deleteAccount();
+        });
+
+        document.getElementById('reviewForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            submitReview();
         });
 
         function loadUserProfile() {
@@ -1472,6 +1538,215 @@
             }
         }
 
+        function resetReviewForm() {
+            const form = document.getElementById('reviewForm');
+            if (form) {
+                form.reset();
+            }
+            const ratingEl = document.getElementById('reviewRating');
+            if (ratingEl) {
+                ratingEl.value = '5';
+            }
+            const contentEl = document.getElementById('reviewContent');
+            if (contentEl) {
+                contentEl.value = '';
+            }
+            const alertEl = document.getElementById('reviewFormAlert');
+            if (alertEl) {
+                alertEl.textContent = '';
+                alertEl.classList.add('d-none');
+            }
+            const existingInfoEl = document.getElementById('reviewExistingInfo');
+            if (existingInfoEl) {
+                existingInfoEl.textContent = '';
+                existingInfoEl.classList.add('d-none');
+            }
+        }
+
+        function setReviewFormLoading(loading) {
+            reviewState.loading = loading;
+            const submitBtn = document.getElementById('reviewSubmitBtn');
+            if (submitBtn) {
+                if (loading) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Gửi bình luận';
+                }
+            }
+            const ratingEl = document.getElementById('reviewRating');
+            const contentEl = document.getElementById('reviewContent');
+            if (ratingEl) {
+                ratingEl.disabled = loading;
+            }
+            if (contentEl) {
+                contentEl.disabled = loading;
+            }
+        }
+
+        async function openReviewModal(order, item, orderCodeDisplay) {
+            if (!item || !item.bookId) {
+                return;
+            }
+            resetReviewForm();
+            reviewState.bookId = item.bookId;
+            reviewState.orderId = order ? order.id : null;
+            reviewState.orderItemId = item.id || null;
+            reviewState.bookTitle = item.title || 'Sản phẩm';
+            reviewState.orderCode = orderCodeDisplay || (order && order.code ? order.code : '#');
+
+            const titleEl = document.getElementById('reviewModalTitle');
+            const subtitleEl = document.getElementById('reviewModalSubtitle');
+            if (titleEl) {
+                titleEl.textContent = 'Viết bình luận sản phẩm';
+            }
+            if (subtitleEl) {
+                subtitleEl.textContent = `Đơn ${orderCodeDisplay} · ${reviewState.bookTitle}`;
+            }
+            const bookIdEl = document.getElementById('reviewBookId');
+            if (bookIdEl) {
+                bookIdEl.value = reviewState.bookId;
+            }
+
+            if (reviewModal) {
+                reviewModal.show();
+            }
+
+            const alertEl = document.getElementById('reviewFormAlert');
+            if (alertEl) {
+                alertEl.classList.add('d-none');
+            }
+
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                if (alertEl) {
+                    alertEl.textContent = 'Bạn cần đăng nhập để bình luận sản phẩm.';
+                    alertEl.classList.remove('d-none');
+                }
+                return;
+            }
+
+            setReviewFormLoading(true);
+            try {
+                const response = await fetch(`${contextPath}/api/reviews/me?bookId=${reviewState.bookId}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        if (alertEl) {
+                            alertEl.textContent = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            alertEl.classList.remove('d-none');
+                        }
+                        return;
+                    }
+                    const payload = await response.json().catch(() => ({ message: 'Không thể tải đánh giá của bạn.' }));
+                    if (alertEl) {
+                        alertEl.textContent = payload.message || 'Không thể tải đánh giá của bạn.';
+                        alertEl.classList.remove('d-none');
+                    }
+                    return;
+                }
+                const payload = await response.json();
+                if (payload && payload.success && payload.review) {
+                    if (document.getElementById('reviewRating')) {
+                        document.getElementById('reviewRating').value = payload.review.rating || '5';
+                    }
+                    if (document.getElementById('reviewContent')) {
+                        document.getElementById('reviewContent').value = payload.review.content || '';
+                    }
+                    const existingInfoEl = document.getElementById('reviewExistingInfo');
+                    if (existingInfoEl) {
+                        existingInfoEl.textContent = 'Bạn đã từng bình luận sản phẩm này. Bạn có thể chỉnh sửa nội dung và gửi lại.';
+                        existingInfoEl.classList.remove('d-none');
+                    }
+                }
+            } catch (error) {
+                console.error('openReviewModal error', error);
+                if (alertEl) {
+                    alertEl.textContent = 'Không thể tải đánh giá của bạn. Vui lòng thử lại sau.';
+                    alertEl.classList.remove('d-none');
+                }
+            } finally {
+                setReviewFormLoading(false);
+            }
+        }
+
+        async function submitReview() {
+            if (!reviewState.bookId || reviewState.loading) {
+                return;
+            }
+            const ratingEl = document.getElementById('reviewRating');
+            const contentEl = document.getElementById('reviewContent');
+            const alertEl = document.getElementById('reviewFormAlert');
+            const rating = ratingEl ? parseInt(ratingEl.value, 10) : 0;
+            const content = contentEl ? contentEl.value.trim() : '';
+
+            if (!rating || rating < 1 || rating > 5) {
+                if (alertEl) {
+                    alertEl.textContent = 'Vui lòng chọn số sao hợp lệ.';
+                    alertEl.classList.remove('d-none');
+                }
+                return;
+            }
+            if (!content || content.length < 50) {
+                if (alertEl) {
+                    alertEl.textContent = 'Nội dung bình luận phải có ít nhất 50 ký tự.';
+                    alertEl.classList.remove('d-none');
+                }
+                return;
+            }
+            if (alertEl) {
+                alertEl.classList.add('d-none');
+            }
+
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                if (alertEl) {
+                    alertEl.textContent = 'Bạn cần đăng nhập để bình luận sản phẩm.';
+                    alertEl.classList.remove('d-none');
+                }
+                return;
+            }
+
+            setReviewFormLoading(true);
+            try {
+                const response = await fetch(`${contextPath}/api/reviews`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        bookId: reviewState.bookId,
+                        rating,
+                        content
+                    })
+                });
+                const payload = await response.json().catch(() => ({ success: false }));
+                if (!response.ok || !payload.success) {
+                    const message = payload && payload.message ? payload.message : 'Không thể lưu bình luận. Vui lòng thử lại.';
+                    if (alertEl) {
+                        alertEl.textContent = message;
+                        alertEl.classList.remove('d-none');
+                    }
+                    return;
+                }
+                showAlert('Đã lưu bình luận cho sản phẩm.', 'success');
+                if (reviewModal) {
+                    reviewModal.hide();
+                }
+            } catch (error) {
+                console.error('submitReview error', error);
+                if (alertEl) {
+                    alertEl.textContent = 'Không thể lưu bình luận. Vui lòng thử lại sau.';
+                    alertEl.classList.remove('d-none');
+                }
+            } finally {
+                setReviewFormLoading(false);
+            }
+        }
+
         function renderOrderDetail(order, timeline) {
             const container = document.getElementById('orderDetailContent');
             if (!container) {
@@ -1484,10 +1759,11 @@
             const orderCode = order.code && order.code.trim() ? order.code.trim() : `#${order.id}`;
             const statusMeta = getStatusMeta(order.status);
             const badgeClass = statusMeta.badge ? `bg-${statusMeta.badge}` : 'bg-secondary';
+            const allowReview = statusMeta.key === 'delivered';
 
             let itemsHtml = '<p class="text-muted mb-0">Danh sách sản phẩm trống.</p>';
             if (Array.isArray(order.items) && order.items.length > 0) {
-                const rows = order.items.map(item => `
+                const rows = order.items.map((item, idx) => `
                     <tr>
                         <td>
                             <div class="fw-semibold">${escapeHtml(item.title || 'Sản phẩm')}</div>
@@ -1496,6 +1772,11 @@
                         <td class="text-center">${item.quantity}</td>
                         <td class="text-end">${formatCurrency(item.unitPrice)}</td>
                         <td class="text-end">${formatCurrency(item.totalPrice)}</td>
+                        ${allowReview ? `<td class="text-end" style="width: 160px;">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-review-trigger data-item-index="${idx}">
+                                <i class="fas fa-pen me-1"></i>Bình luận
+                            </button>
+                        </td>` : ''}
                     </tr>
                 `).join('');
                 itemsHtml = `
@@ -1507,6 +1788,7 @@
                                     <th class="text-center" style="width: 80px;">SL</th>
                                     <th class="text-end">Đơn giá</th>
                                     <th class="text-end">Thành tiền</th>
+                                    ${allowReview ? '<th class="text-end" style="width: 160px;">Bình luận</th>' : ''}
                                 </tr>
                             </thead>
                             <tbody>${rows}</tbody>
@@ -1559,6 +1841,17 @@
                 ${timelineHtml}
                 ${order.notes ? `<div class="mt-4"><strong>Ghi chú:</strong> ${escapeHtml(order.notes)}</div>` : ''}
             `;
+
+            if (allowReview && Array.isArray(order.items) && order.items.length > 0) {
+                const buttons = container.querySelectorAll('[data-review-trigger]');
+                buttons.forEach(btn => {
+                    const index = parseInt(btn.getAttribute('data-item-index'), 10);
+                    if (!Number.isInteger(index) || !order.items[index]) {
+                        return;
+                    }
+                    btn.addEventListener('click', () => openReviewModal(order, order.items[index], orderCode));
+                });
+            }
         }
 
         function deleteAccount() {

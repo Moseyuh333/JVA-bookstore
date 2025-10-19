@@ -18,8 +18,8 @@ public final class ReviewDAO {
     }
 
     public static boolean canReview(long userId, long bookId) throws SQLException {
-        String sql = "SELECT 1 FROM orders o INNER JOIN order_items oi ON oi.order_id = o.id "
-                + "WHERE o.user_id = ? AND oi.book_id = ? AND o.status IN ('delivered', 'returned') LIMIT 1";
+    String sql = "SELECT 1 FROM orders o INNER JOIN order_items oi ON oi.order_id = o.id "
+        + "WHERE o.user_id = ? AND oi.book_id = ? AND LOWER(o.status) = 'delivered' LIMIT 1";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, userId);
