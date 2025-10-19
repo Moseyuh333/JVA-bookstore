@@ -12,23 +12,19 @@ import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.sql.*;
 
-@WebServlet(name = "AdminCommissionsServlet", urlPatterns = { "/api/admin/commissions" })
+@WebServlet(name = "AdminCommissionsServlet", urlPatterns = {"/api/admin/commissions"})
 public class AdminCommissionsServlet extends HttpServlet {
 
-    // ========= COMMON UTF-8 =========
-    private void setEncoding(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    // ====== GET (LIST + ONE) ======
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("application/json; charset=UTF-8");
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
-        resp.setContentType("application/json; charset=UTF-8");
-    }
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-        setEncoding(req, resp);
         PrintWriter out = resp.getWriter();
-
         String action = req.getParameter("action");
+
         try {
             if ("list".equals(action)) {
                 listCommissions(out);
@@ -39,87 +35,83 @@ public class AdminCommissionsServlet extends HttpServlet {
                 out.write("{\"error\":\"Invalid action\"}");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
-            e.printStackTrace();
         } finally {
             out.flush();
         }
     }
 
+    // ====== POST (CREATE / UPDATE / DELETE) ======
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-        setEncoding(req, resp);
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("application/json; charset=UTF-8");
+        req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+
         PrintWriter out = resp.getWriter();
-
         String action = req.getParameter("action");
-        try {
-            switch (action) {
-                case "create":
-                    createCommission(req, out);
-                    break;
-                case "update":
-                    updateCommission(req, out);
-                    break;
-                case "delete":
-                    deleteCommission(req, out);
-                    break;
-                default:
-                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                    out.write("{\"error\":\"Invalid action\"}");
-                    break;
-            }
 
+        try {
+            if ("create".equals(action)) {
+                createCommission(req, out);
+            } else if ("update".equals(action)) {
+                updateCommission(req, out);
+            } else if ("delete".equals(action)) {
+                deleteCommission(req, out);
+            } else {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.write("{\"error\":\"Invalid action\"}");
+            }
         } catch (Exception e) {
+            e.printStackTrace();
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
-            e.printStackTrace();
         } finally {
             out.flush();
         }
     }
 
-    // ========= GET LIST =========
+    // ====== LIST ======
     private void listCommissions(PrintWriter out) throws SQLException {
-        String sql = "SELECT sd.id, sd.shop_id, s.name AS shop_name, " +
-                "sd.discount_rate AS rate, sd.start_date AS since, " +
-                "sd.end_date, sd.active, sd.description, sd.created_at " +
-                "FROM store_discounts sd " +
-                "LEFT JOIN shops s ON sd.shop_id = s.id " +
-                "ORDER BY sd.created_at DESC";
+        String sql =
+            "SELECT sd.id, sd.shop_id, s.name AS shop_name, " +
+            "sd.discount_rate AS rate, sd.start_date AS since, " +
+            "sd.end_date, sd.active, sd.description " +
+            "FROM store_discounts sd " +
+            "LEFT JOIN shops s ON sd.shop_id = s.id " +
+            "ORDER BY sd.id DESC";
 
-        StringBuilder json = new StringBuilder("{\"commissions\":[");
+        StringBuilder json = new StringBuilder();
+        json.append("{\"commissions\":[");
+
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
 
             boolean first = true;
             while (rs.next()) {
-                if (!first)
-                    json.append(",");
+                if (!first) json.append(",");
                 first = false;
 
                 json.append("{")
-                        .append("\"id\":").append(rs.getInt("id")).append(",")
-                        .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
-                        .append("\"rate\":").append(rs.getBigDecimal("rate") != null ? rs.getBigDecimal("rate") : "0")
-                        .append(",")
-                        .append("\"since\":\"").append(rs.getTimestamp("since") != null ? rs.getTimestamp("since") : "")
-                        .append("\",")
-                        .append("\"end_date\":\"")
-                        .append(rs.getTimestamp("end_date") != null ? rs.getTimestamp("end_date") : "").append("\",")
-                        .append("\"active\":").append(rs.getBoolean("active")).append(",")
-                        .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
-                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
-                        .append("}");
+                    .append("\"id\":").append(rs.getInt("id")).append(",")
+                    .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
+                    .append("\"rate\":").append(rs.getBigDecimal("rate") != null ? rs.getBigDecimal("rate") : BigDecimal.ZERO).append(",")
+                    .append("\"since\":\"").append(rs.getTimestamp("since") != null ? rs.getTimestamp("since") : "").append("\",")
+                    .append("\"end_date\":\"").append(rs.getTimestamp("end_date") != null ? rs.getTimestamp("end_date") : "").append("\",")
+                    .append("\"active\":").append(rs.getBoolean("active")).append(",")
+                    .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\"")
+                    .append("}");
             }
         }
+
         json.append("]}");
         out.write(json.toString());
     }
 
-    // ========= GET ONE =========
+    // ====== GET ONE ======
     private void getCommission(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
         if (idStr == null) {
@@ -128,26 +120,28 @@ public class AdminCommissionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "SELECT sd.id, sd.shop_id, s.name AS shop_name, " +
-                "sd.discount_rate AS rate, sd.start_date AS since, " +
-                "sd.end_date, sd.active, sd.description, sd.created_at " +
-                "FROM store_discounts sd " +
-                "LEFT JOIN shops s ON sd.shop_id = s.id " +
-                "WHERE sd.id = ?";
+        String sql =
+            "SELECT sd.id, sd.shop_id, s.name AS shop_name, " +
+            "sd.discount_rate AS rate, sd.start_date AS since, " +
+            "sd.end_date, sd.active, sd.description " +
+            "FROM store_discounts sd " +
+            "LEFT JOIN shops s ON sd.shop_id = s.id " +
+            "WHERE sd.id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
-
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     String json = "{"
-                            + "\"id\":" + rs.getInt("id") + ","
-                            + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
-                            + "\"rate\":" + rs.getBigDecimal("rate") + ","
-                            + "\"since\":\"" + rs.getTimestamp("since") + "\","
-                            + "\"description\":\"" + escapeJson(rs.getString("description")) + "\""
-                            + "}";
+                        + "\"id\":" + rs.getInt("id") + ","
+                        + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
+                        + "\"rate\":" + rs.getBigDecimal("rate") + ","
+                        + "\"since\":\"" + rs.getTimestamp("since") + "\","
+                        + "\"end_date\":\"" + rs.getTimestamp("end_date") + "\","
+                        + "\"active\":" + rs.getBoolean("active") + ","
+                        + "\"description\":\"" + escapeJson(rs.getString("description")) + "\""
+                        + "}";
                     out.write(json);
                 } else {
                     out.write("{\"error\":\"Commission not found\"}");
@@ -156,78 +150,96 @@ public class AdminCommissionsServlet extends HttpServlet {
         }
     }
 
-    // ========= CREATE =========
+    // ====== CREATE ======
     private void createCommission(HttpServletRequest req, PrintWriter out) throws SQLException {
-        int shopId = Integer.parseInt(req.getParameter("shop_id"));
-        BigDecimal discountRate = new BigDecimal(req.getParameter("discount_rate"));
-        boolean active = req.getParameter("active") == null || Boolean.parseBoolean(req.getParameter("active"));
-        String description = req.getParameter("description");
+        String shopIdStr = req.getParameter("shop_id");
+        String rateStr = req.getParameter("discount_rate");
+        String desc = req.getParameter("description");
 
-        String sql = "INSERT INTO store_discounts (shop_id, discount_rate, start_date, active, description)" +
-                "VALUES (?, ?, NOW(), ?, ?)";
+        if (shopIdStr == null || rateStr == null) {
+            out.write("{\"error\":\"Shop ID and discount rate are required\"}");
+            return;
+        }
+
+        int shopId = Integer.parseInt(shopIdStr);
+        BigDecimal rate = new BigDecimal(rateStr);
+        boolean active = req.getParameter("active") == null || Boolean.parseBoolean(req.getParameter("active"));
+
+        String sql = "INSERT INTO store_discounts (shop_id, discount_rate, start_date, active, description) " +
+                     "VALUES (?, ?, NOW(), ?, ?)";
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, shopId);
-            pstmt.setBigDecimal(2, discountRate);
+            pstmt.setBigDecimal(2, rate);
             pstmt.setBoolean(3, active);
-            pstmt.setString(4, description != null ? description.trim() : null);
+            pstmt.setString(4, desc != null ? desc.trim() : null);
 
             int rows = pstmt.executeUpdate();
             out.write(rows > 0
-                    ? "{\"message\":\"Commission created successfully\"}"
-                    : "{\"error\":\"Failed to create commission\"}");
+                ? "{\"message\":\"Commission created successfully\"}"
+                : "{\"error\":\"Failed to create commission\"}");
         }
     }
 
-    // ========= UPDATE =========
+    // ====== UPDATE ======
     private void updateCommission(HttpServletRequest req, PrintWriter out) throws SQLException {
-        int id = Integer.parseInt(req.getParameter("id"));
-        BigDecimal discountRate = new BigDecimal(req.getParameter("discount_rate"));
-        boolean active = req.getParameter("active") == null || Boolean.parseBoolean(req.getParameter("active"));
-        String description = req.getParameter("description");
+        String idStr = req.getParameter("id");
+        String rateStr = req.getParameter("discount_rate");
+        String desc = req.getParameter("description");
 
-        String sql = "UPDATE store_discounts " +
-                "SET discount_rate = ?, active = ?, description = ?, updated_at = CURRENT_TIMESTAMP " +
-                "WHERE id = ?";
+        if (idStr == null || rateStr == null) {
+            out.write("{\"error\":\"ID and discount rate are required\"}");
+            return;
+        }
+
+        int id = Integer.parseInt(idStr);
+        BigDecimal rate = new BigDecimal(rateStr);
+        boolean active = req.getParameter("active") == null || Boolean.parseBoolean(req.getParameter("active"));
+
+        String sql = "UPDATE store_discounts SET discount_rate = ?, active = ?, description = ? WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setBigDecimal(1, discountRate);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setBigDecimal(1, rate);
             pstmt.setBoolean(2, active);
-            pstmt.setString(3, description);
+            pstmt.setString(3, desc != null ? desc.trim() : null);
             pstmt.setInt(4, id);
 
             int rows = pstmt.executeUpdate();
             out.write(rows > 0
-                    ? "{\"message\":\"Commission updated successfully\"}"
-                    : "{\"error\":\"Commission not found\"}");
+                ? "{\"message\":\"Commission updated successfully\"}"
+                : "{\"error\":\"Commission not found\"}");
         }
     }
 
-    // ========= DELETE =========
+    // ====== DELETE ======
     private void deleteCommission(HttpServletRequest req, PrintWriter out) throws SQLException {
-        int id = Integer.parseInt(req.getParameter("id"));
+        String idStr = req.getParameter("id");
+        if (idStr == null) {
+            out.write("{\"error\":\"ID is required\"}");
+            return;
+        }
+
+        int id = Integer.parseInt(idStr);
         String sql = "DELETE FROM store_discounts WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
             int rows = pstmt.executeUpdate();
             out.write(rows > 0
-                    ? "{\"message\":\"Commission deleted successfully\"}"
-                    : "{\"error\":\"Commission not found\"}");
+                ? "{\"message\":\"Commission deleted successfully\"}"
+                : "{\"error\":\"Commission not found\"}");
         }
     }
 
+    // ====== ESCAPE ======
     private String escapeJson(String str) {
-        if (str == null)
-            return "";
+        if (str == null) return "";
         return str.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
+                  .replace("\"", "\\\"")
+                  .replace("\n", "\\n")
+                  .replace("\r", "\\r");
     }
 }
