@@ -28,12 +28,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Utility functions
     const escapeHtml = (text) => {
-        if (!text) return "";
-        return text.replace(/[&<>"']/g, (m) => {
-            const map = { '&': '&amp;', '<': '<', '>': '>', '"': '"', "'": '&#39;' };
+        if (text === null || text === undefined) return "";
+        return String(text).replace(/[&<>"']/g, (m) => {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
             return map[m];
         });
     };
+
 
     const showLoading = () => {
         if (loadingState) loadingState.style.display = 'block';
