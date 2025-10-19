@@ -91,7 +91,7 @@ public class AdminProductsServlet extends HttpServlet {
         int offset = (page - 1) * limit;
 
         StringBuilder sql = new StringBuilder(
-            "SELECT b.id, b.title, b.author, b.price, b.stock_quantity, b.category, " +
+            "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock_quantity, b.category, " +
             "b.description, b.image_url, b.created_at, b.updated_at, " +
             "COALESCE(s.name, 'Unknown Shop') AS shop_name, s.commission_rate " +
             "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
