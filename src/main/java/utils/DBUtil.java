@@ -187,6 +187,7 @@ public class DBUtil {
                 stmt.execute(createOrderItemsTableSQL);
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_items_book_id ON order_items(book_id)");
+                ensureOrderItemsSchema(conn);
 
                 // Engagement tables that power catalog ranking
                 String createBookFavoritesTableSQL = "CREATE TABLE IF NOT EXISTS book_favorites (" +
@@ -221,6 +222,7 @@ public class DBUtil {
             BookDataLoader.seedBooksIfEmpty(conn);
             BookDataLoader.refreshBookAssets(conn);
             ensureMinimumStockLevels(conn);
+            ensureCouponSchema(conn);
             ensureSampleCoupons(conn);
             seedBookMetrics(conn);
         } catch (SQLException e) {
@@ -364,6 +366,105 @@ public class DBUtil {
             ensureOrderConstraints(conn);
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile orders schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureOrderItemsSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "order_items", "created_at")) {
+                stmt.execute("ALTER TABLE order_items ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "order_items", "unit_price")) {
+                stmt.execute("ALTER TABLE order_items ADD COLUMN unit_price DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            if (!columnExists(conn, "order_items", "total_price")) {
+                stmt.execute("ALTER TABLE order_items ADD COLUMN total_price DECIMAL(12, 2) NOT NULL DEFAULT 0");
+                stmt.execute("UPDATE order_items SET total_price = COALESCE(total_price, quantity * unit_price)");
+            }
+            stmt.execute("UPDATE order_items SET unit_price = COALESCE(unit_price, 0)");
+            stmt.execute("UPDATE order_items SET total_price = COALESCE(total_price, quantity * unit_price)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile order_items schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureCouponSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            String createCouponsSql = "CREATE TABLE IF NOT EXISTS coupon_codes (" +
+                "id SERIAL PRIMARY KEY," +
+                "code VARCHAR(50) UNIQUE NOT NULL," +
+                "description TEXT," +
+                "coupon_type VARCHAR(20) NOT NULL," +
+                "value DECIMAL(10, 2) NOT NULL," +
+                "max_discount DECIMAL(10, 2)," +
+                "minimum_order DECIMAL(10, 2) DEFAULT 0," +
+                "usage_limit INTEGER," +
+                "per_user_limit INTEGER," +
+                "start_date TIMESTAMP," +
+                "end_date TIMESTAMP," +
+                "status VARCHAR(20) DEFAULT 'active'," +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                ")";
+            stmt.execute(createCouponsSql);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_coupon_codes_status ON coupon_codes(status)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_coupon_codes_date ON coupon_codes(start_date, end_date)");
+
+            String createUserCouponsSql = "CREATE TABLE IF NOT EXISTS user_coupons (" +
+                "id SERIAL PRIMARY KEY," +
+                "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
+                "coupon_id INTEGER NOT NULL REFERENCES coupon_codes(id) ON DELETE CASCADE," +
+                "assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                "redeemed_at TIMESTAMP," +
+                "usage_count INTEGER DEFAULT 0," +
+                "status VARCHAR(20) DEFAULT 'available'," +
+                "CONSTRAINT uq_user_coupons UNIQUE (user_id, coupon_id)" +
+                ")";
+            stmt.execute(createUserCouponsSql);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_coupons_user ON user_coupons(user_id)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_coupons_status ON user_coupons(status)");
+
+            String createOrderCouponsSql = "CREATE TABLE IF NOT EXISTS order_coupons (" +
+                "id SERIAL PRIMARY KEY," +
+                "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +
+                "coupon_id INTEGER REFERENCES coupon_codes(id) ON DELETE SET NULL," +
+                "code VARCHAR(50) NOT NULL," +
+                "discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0," +
+                "snapshot JSONB," +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                ")";
+            stmt.execute(createOrderCouponsSql);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_coupons_order ON order_coupons(order_id)");
+
+            ensureCouponColumns(conn);
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to ensure coupon schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureCouponColumns(Connection conn) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "coupon_codes", "coupon_type")) {
+                stmt.execute("ALTER TABLE coupon_codes ADD COLUMN coupon_type VARCHAR(20) NOT NULL DEFAULT 'fixed'");
+            }
+            if (!columnExists(conn, "coupon_codes", "status")) {
+                stmt.execute("ALTER TABLE coupon_codes ADD COLUMN status VARCHAR(20) DEFAULT 'active'");
+            }
+            if (!columnExists(conn, "coupon_codes", "updated_at")) {
+                stmt.execute("ALTER TABLE coupon_codes ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "user_coupons", "status")) {
+                stmt.execute("ALTER TABLE user_coupons ADD COLUMN status VARCHAR(20) DEFAULT 'available'");
+            }
+            if (!columnExists(conn, "user_coupons", "usage_count")) {
+                stmt.execute("ALTER TABLE user_coupons ADD COLUMN usage_count INTEGER DEFAULT 0");
+            }
         }
     }
 
