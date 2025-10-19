@@ -1,138 +1,161 @@
 // ========== ADPRODUCT.JS ==========
-// Quản lý danh sách sản phẩm
+// Quản lý danh sách sản phẩm (phân trang + tìm kiếm toàn DB)
 
 document.addEventListener("DOMContentLoaded", () => {
-    if (typeof feather !== "undefined") feather.replace();
+  if (typeof feather !== "undefined") feather.replace();
 
-    const searchInput = document.getElementById("productSearchInput");
-    const tableBody = document.getElementById("product");
-    const loadingState = document.getElementById("loadingState");
-    const emptyState = document.getElementById("emptyState");
-    const tableContainer = document.getElementById("tableContainer");
+  const tableBody = document.getElementById("product");
+  const loadingState = document.getElementById("loadingState");
+  const emptyState = document.getElementById("emptyState");
+  const tableContainer = document.getElementById("tableContainer");
+  const totalEl = document.getElementById("totalProducts");
+  const inStockEl = document.getElementById("inStock");
+  const outOfStockEl = document.getElementById("outOfStock");
+  const paginationEl = document.getElementById("pagination");
+  const searchInput = document.getElementById("searchInput");
+  const searchBtn = document.getElementById("searchBtn");
 
-    let products = [];
-    let filteredProducts = [];
+  let products = [];
+  let currentPage = 1;
+  const limit = 20;
+  let currentSearch = "";
 
-    // API functions
-    const api = {
-        getProducts: () => {
-            const token = localStorage.getItem("admin_token");
-            return fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=list`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                }
-            }).then(r => r.json());
-        }
-    };
+  // ===== Utility =====
+  const escapeHtml = (text) => {
+    if (text === null || text === undefined) return "";
+    return String(text).replace(/[&<>"']/g, (m) => {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return map[m];
+    });
+  };
 
-    // Utility functions
-    const escapeHtml = (text) => {
-        if (text === null || text === undefined) return "";
-        return String(text).replace(/[&<>"']/g, (m) => {
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-            return map[m];
-        });
-    };
+  const showLoading = () => {
+    loadingState?.classList.remove("hidden");
+    tableContainer?.classList.add("hidden");
+    emptyState?.classList.add("hidden");
+  };
 
+  const hideLoading = () => {
+    loadingState?.classList.add("hidden");
+    tableContainer?.classList.remove("hidden");
+  };
 
-    const showLoading = () => {
-        if (loadingState) loadingState.style.display = 'block';
-        if (tableContainer) tableContainer.style.display = 'none';
-        if (emptyState) emptyState.style.display = 'none';
-    };
+  const showEmpty = () => {
+    emptyState?.classList.remove("hidden");
+    tableContainer?.classList.add("hidden");
+  };
 
-    const hideLoading = () => {
-        if (loadingState) loadingState.style.display = 'none';
-        if (tableContainer) tableContainer.style.display = 'block';
-    };
+  const hideEmpty = () => {
+    emptyState?.classList.add("hidden");
+    tableContainer?.classList.remove("hidden");
+  };
 
-    const showEmpty = () => {
-        if (emptyState) emptyState.style.display = 'block';
-        if (tableContainer) tableContainer.style.display = 'none';
-    };
-
-    const hideEmpty = () => {
-        if (emptyState) emptyState.style.display = 'none';
-        if (tableContainer) tableContainer.style.display = 'block';
-    };
-
-    // Render table
-    const renderTable = (list) => {
-        tableBody.innerHTML = "";
-        if (list.length === 0) {
-            showEmpty();
-            return;
-        }
-        hideEmpty();
-        list.forEach(p => {
-            const price = p.price ? new Intl.NumberFormat('vi-VN').format(p.price) + "₫" : "-";            const stock = p.stock_quantity ?? p.stock ?? "-";
-            const shop = p.shop_name || "-";
-            const commission = p.commission_rate ? p.commission_rate + "%" : "-";
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-      <td>${escapeHtml(p.id || '-')}</td>
-      <td>${escapeHtml(p.title || '-')}</td>
-      <td>${escapeHtml(p.author || '-')}</td>
-      <td>${escapeHtml(p.category || '-')}</td>
-      <td>${price}</td>
-      <td>${stock}</td>
-      <td>${escapeHtml(shop)}</td>
-      <td>${commission}</td>
-      <td>
-        <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-      </td>`;
-            tableBody.appendChild(tr);
-        });
-    };
-
-
-    // Load products from API
-    const loadProducts = async () => {
-        try {
-            showLoading();
-            const response = await api.getProducts();
-
-            if (response.products) {
-                products = response.products;
-                filteredProducts = [...products];
-                renderTable(filteredProducts);
-            } else {
-                console.error("Invalid response format:", response);
-                showEmpty();
-            }
-        } catch (error) {
-            console.error("Error loading products:", error);
-            showEmpty();
-        } finally {
-            hideLoading();
-        }
-    };
-
-    // Search filter
-    const applyFilters = () => {
-        const keyword = searchInput.value.toLowerCase().trim();
-        filteredProducts = products.filter(p =>
-            (p.name || p.title || '').toLowerCase().includes(keyword) ||
-            (p.author || '').toLowerCase().includes(keyword) ||
-            (p.category_name || p.category || '').toLowerCase().includes(keyword)
-            (p.shop_name || '').toLowerCase().includes(keyword)
-        );
-        renderTable(filteredProducts);
-    };
-
-    const resetFilters = () => {
-        if (searchInput) searchInput.value = '';
-        filteredProducts = [...products];
-        renderTable(filteredProducts);
-    };
-
-    // Event listeners
-    if (searchInput) {
-        searchInput.addEventListener("input", applyFilters);
+  // ===== Render Table =====
+  const renderTable = (list) => {
+    tableBody.innerHTML = "";
+    if (!list || list.length === 0) {
+      showEmpty();
+      return;
     }
+    hideEmpty();
+    list.forEach((p) => {
+      const price = p.price
+        ? new Intl.NumberFormat("vi-VN").format(p.price) + "₫"
+        : "-";
+      const stock = p.stock_quantity ?? p.stock ?? "-";
+      const shop = p.shop_name || "-";
+      const commission = p.commission_rate ? p.commission_rate + "%" : "-";
 
-    // Init
-    loadProducts();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(p.id || "-")}</td>
+        <td>${escapeHtml(p.title || "-")}</td>
+        <td>${escapeHtml(p.author || "-")}</td>
+        <td>${escapeHtml(p.category || "-")}</td>
+        <td>${price}</td>
+        <td>${stock}</td>
+        <td>${escapeHtml(shop)}</td>
+        <td>${commission}</td>
+        <td>
+          <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+        </td>`;
+      tableBody.appendChild(tr);
+    });
+  };
+
+  // ===== Update Stats =====
+  const updateStats = (data) => {
+    if (totalEl) totalEl.textContent = data.total || 0;
+    const inStock = data.products.filter((p) => p.stock_quantity > 0).length;
+    const outOfStock = data.products.filter(
+      (p) => !p.stock_quantity || p.stock_quantity <= 0
+    ).length;
+    if (inStockEl) inStockEl.textContent = inStock;
+    if (outOfStockEl) outOfStockEl.textContent = outOfStock;
+  };
+
+  // ===== Pagination =====
+  const updatePagination = (total, page, limit) => {
+    const totalPages = Math.ceil(total / limit);
+    paginationEl.innerHTML = `
+      <button class="btn btn-light btn-sm" ${page <= 1 ? "disabled" : ""} onclick="changePage(${page - 1})">← Trước</button>
+      <span class="mx-2">Trang ${page} / ${totalPages}</span>
+      <button class="btn btn-light btn-sm" ${page >= totalPages ? "disabled" : ""} onclick="changePage(${page + 1})">Sau →</button>
+    `;
+  };
+
+  window.changePage = (page) => {
+    currentPage = page;
+    loadProducts(currentPage, currentSearch);
+  };
+
+  // ===== Load Products =====
+  const loadProducts = async (page = 1, search = "") => {
+    try {
+      showLoading();
+      const res = await fetch(
+        `/api/admin/products?action=list&page=${page}&limit=${limit}&search=${encodeURIComponent(
+          search
+        )}`
+      );
+      const data = await res.json();
+
+      if (!data.products || data.products.length === 0) {
+        showEmpty();
+        return;
+      }
+
+      products = data.products;
+      renderTable(products);
+      updateStats(data);
+      updatePagination(data.total, data.page, data.limit);
+    } catch (err) {
+      console.error("Error loading:", err);
+      showEmpty();
+    } finally {
+      hideLoading();
+    }
+  };
+
+  // ===== Search toàn DB =====
+  if (searchBtn && searchInput) {
+    searchBtn.addEventListener("click", () => {
+      currentSearch = searchInput.value.trim();
+      currentPage = 1;
+      loadProducts(currentPage, currentSearch);
+    });
+
+    // Enter = search
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        currentSearch = searchInput.value.trim();
+        currentPage = 1;
+        loadProducts(currentPage, currentSearch);
+      }
+    });
+  }
+
+  // ===== Init =====
+  loadProducts();
 });
