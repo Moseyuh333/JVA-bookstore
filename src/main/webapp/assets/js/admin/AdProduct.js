@@ -150,7 +150,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const loadStats = async () => {
         try {
-            const res = await fetch(`/api/admin/products?action=stats`);
+            const token = localStorage.getItem("admin_token"); // ✅ lấy token đã lưu
+            const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=stats`, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+            });
+            if (!res.ok) throw new Error("Unauthorized or failed request");
+
             const data = await res.json();
             document.getElementById("totalProducts").textContent = data.total || 0;
             document.getElementById("inStock").textContent = data.in_stock || 0;
@@ -159,6 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Error loading stats:", err);
         }
     };
+
 
 
     // ===== Search toàn DB =====
