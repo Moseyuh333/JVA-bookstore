@@ -195,15 +195,15 @@ public class AdminDashboardServlet extends HttpServlet {
 
         try (Connection conn = DBUtil.getConnection()) {
             String query = "SELECT " +
-                "u.username as store_name, " +
-                "COUNT(o.id) as total_orders, " +
-                "COALESCE(SUM(o.total_amount), 0) as revenue, " +
-                "COALESCE(u.commission_rate, 0) as commission_rate " +
+                "u.id AS user_id, " +
+                "COALESCE(u.username, u.email) AS store_name, " +
+                "COUNT(o.id) AS total_orders, " +
+                "COALESCE(SUM(o.total_amount), 0) AS revenue " +
                 "FROM users u " +
-                "LEFT JOIN orders o ON u.username = o.seller_username AND o.status = 'completed' " +
-                "WHERE u.role = 'seller' " +
-                "GROUP BY u.username, u.commission_rate " +
-                "ORDER BY revenue DESC " +
+                "LEFT JOIN orders o ON u.id = o.user_id AND o.status = 'completed' " +
+                "WHERE u.role IN ('seller', 'admin', 'user') " +
+                "GROUP BY u.id, u.username, u.email " +
+                "ORDER BY revenue DESC, total_orders DESC " +
                 "LIMIT 5";
 
             try (PreparedStatement stmt = conn.prepareStatement(query);
@@ -216,7 +216,7 @@ public class AdminDashboardServlet extends HttpServlet {
                     seller.addProperty("store_name", rs.getString("store_name"));
                     seller.addProperty("total_orders", rs.getInt("total_orders"));
                     seller.addProperty("revenue", rs.getDouble("revenue"));
-                    seller.addProperty("commission_rate", rs.getDouble("commission_rate"));
+                    seller.addProperty("commission_rate", 0);
                     sellers.add(String.valueOf(index), seller);
                     index++;
                 }
