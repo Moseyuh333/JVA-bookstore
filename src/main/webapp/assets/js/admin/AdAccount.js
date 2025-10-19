@@ -34,6 +34,14 @@ async function loadAdminUsers() {
 
         data.users.forEach(u => {
             const initials = (u.username?.substring(0, 2) || 'U').toUpperCase();
+            const fullName = u.full_name || '-';
+            const birthDate = u.birth_date || '-';
+            const gender = '-'; // Not available in DB
+            const address = u.address || '-';
+            const email = u.email || '-';
+            const phone = u.phone || '-';
+            const role = u.role || 'customer';
+            const roleBadgeClass = role === 'admin' ? 'badge-admin' : 'badge-customer';
 
             tableBody.innerHTML += `
                 <tr>
@@ -45,13 +53,13 @@ async function loadAdminUsers() {
                             </div>
                         </div>
                     </td>
-                    <td>${u.username}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>${u.email}</td>
-                    <td>-</td>
-                    <td>${u.verified ? 'Đã xác minh' : 'Chưa xác minh'}</td>
+                    <td>${fullName}</td>
+                    <td>${birthDate}</td>
+                    <td>${gender}</td>
+                    <td>${address}</td>
+                    <td>${email}</td>
+                    <td>${phone}</td>
+                    <td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>
                     <td class="actions">
                         <button class="btn-icon btn-view" title="Xem">
                             <i class="fas fa-eye"></i>

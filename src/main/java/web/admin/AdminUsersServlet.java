@@ -70,31 +70,37 @@ public class AdminUsersServlet extends HttpServlet {
     }
     
     private void listUsers(PrintWriter out) throws SQLException {
-        String sql = "SELECT id, username, email, email_verified, verification_token, created_at FROM users ORDER BY created_at DESC";
-        
+        String sql = "SELECT id, username, email, full_name, phone, role, status, email_verified, created_at, updated_at, birth_date, address FROM users ORDER BY created_at DESC";
+
         StringBuilder json = new StringBuilder();
         json.append("{\"users\":[");
-        
+
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
-            
+
             boolean first = true;
             while (rs.next()) {
                 if (!first) json.append(",");
                 first = false;
-                
+
                 json.append("{")
                     .append("\"id\":").append(rs.getInt("id")).append(",")
                     .append("\"username\":\"").append(escapeJson(rs.getString("username"))).append("\",")
                     .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
+                    .append("\"full_name\":\"").append(escapeJson(rs.getString("full_name"))).append("\",")
+                    .append("\"phone\":\"").append(escapeJson(rs.getString("phone"))).append("\",")
+                    .append("\"role\":\"").append(escapeJson(rs.getString("role"))).append("\",")
+                    .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
                     .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
-                    .append("\"hasToken\":").append(rs.getString("verification_token") != null).append(",")
-                    .append("\"created\":\"").append(rs.getTimestamp("created_at").toString()).append("\"")
+                    .append("\"created\":\"").append(rs.getTimestamp("created_at").toString()).append("\",")
+                    .append("\"updated\":\"").append(rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toString() : "").append("\",")
+                    .append("\"birth_date\":\"").append(rs.getDate("birth_date") != null ? rs.getDate("birth_date").toString() : "").append("\",")
+                    .append("\"address\":\"").append(escapeJson(rs.getString("address"))).append("\"")
                     .append("}");
             }
         }
-        
+
         json.append("]}");
         out.write(json.toString());
     }

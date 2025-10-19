@@ -535,32 +535,7 @@
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody id="User">
-                                    <!-- Example Row -->
-                                    
-                                    <tr>
-                                        <td>
-                                            <div class="user-cell">
-                                                <div class="avatar">VN</div>
-                                                <div class="user-info-text">
-                                                    <div class="user-name">vonhu123</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Võ Nguyễn Quỳnh Như</td>
-                                        <td>08/08/2005</td>
-                                        <td>Nữ</td>
-                                        <td>HCM</td>
-                                        <td>nhuvonguyen2005@gmail.com</td>
-                                        <td>0923456789</td>
-                                        <td>Quản lý</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-primary">Xem</button>
-                                            <button class="btn btn-sm btn-danger">Xóa</button>
-                                        </td>
-                                    </tr>
-                                    
-                                </tbody>
+                                <tbody id="User"></tbody>
                             </table>
 
                             <div id="emptyState" class="empty-state" style="display: none;">
