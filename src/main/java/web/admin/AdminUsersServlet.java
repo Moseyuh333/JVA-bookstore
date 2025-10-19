@@ -14,6 +14,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 
 @WebServlet(name = "AdminUsersServlet", urlPatterns = {"/api/admin/users"})
 public class AdminUsersServlet extends HttpServlet {
@@ -101,12 +103,19 @@ public class AdminUsersServlet extends HttpServlet {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 boolean first = true;
+                Set<Integer> seenIds = new HashSet<>();
                 while (rs.next()) {
-                    if (!first) json.append(",");
+                    int userId = rs.getInt("id");
+                    if (!seenIds.add(userId)) {
+                        continue;
+                    }
+                    if (!first) {
+                        json.append(",");
+                    }
                     first = false;
 
                     json.append("{")
-                        .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"id\":").append(userId).append(",")
                         .append("\"username\":\"").append(escapeJson(rs.getString("username"))).append("\",")
                         .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
                         .append("\"full_name\":\"").append(escapeJson(rs.getString("full_name"))).append("\",")
@@ -115,8 +124,8 @@ public class AdminUsersServlet extends HttpServlet {
                         .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
                         .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
                         .append("\"created\":\"").append(escapeJson(rs.getTimestamp("created_at").toString())).append("\",")
-                        .append("\"updated\":\"").append(rs.getTimestamp("updated_at") != null ? escapeJson(rs.getTimestamp("updated_at").toString()) : "").append("\",")
-                        .append("\"birth_date\":\"").append(rs.getDate("birth_date") != null ? escapeJson(rs.getDate("birth_date").toString()) : "").append("\",")
+                        .append("\"updated\":\"").append(rs.getTimestamp("updated_at") != null ? escapeJson(rs.getTimestamp("updated_at").toString()) : "").append(",")
+                        .append("\"birth_date\":\"").append(rs.getDate("birth_date") != null ? escapeJson(rs.getDate("birth_date").toString()) : "").append(",")
                         .append("\"address\":\"").append(escapeJson(rs.getString("address"))).append("\"")
                         .append("}");
                 }
@@ -200,6 +209,7 @@ public class AdminUsersServlet extends HttpServlet {
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
+                resp.setStatus(HttpServletResponse.SC_CREATED);
                 out.write("{\"message\":\"User created successfully\"}");
             } else {
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
