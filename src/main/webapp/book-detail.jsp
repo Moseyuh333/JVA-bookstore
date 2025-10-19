@@ -95,6 +95,9 @@
             <button type="button" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded-md transition" data-add-to-cart data-book-id="${bookId}">
               Thêm vào giỏ
             </button>
+            <button type="button" class="border border-amber-600 text-amber-600 bg-white hover:bg-amber-50 font-semibold px-6 py-3 rounded-md transition" data-toggle-favorite data-book-id="${bookId}" aria-pressed="false">
+              Thêm vào yêu thích
+            </button>
           </div>
         </div>
       </div>
@@ -299,13 +302,149 @@
           })
           .catch(function (error) {
             console.error('Buy now error', error);
-            if (cartClient && typeof cartClient.showToast === 'function') {
-              cartClient.showToast('Không thể mua ngay sản phẩm. Vui lòng thử lại.', true);
-            }
+            showToast('Không thể mua ngay sản phẩm. Vui lòng thử lại.', true);
           })
           .finally(function () {
             button.disabled = false;
             button.classList.remove('opacity-60');
+          });
+      }
+
+      function showToast(message, isError) {
+        var cartClient = window.cartClient;
+        if (cartClient && typeof cartClient.showToast === 'function') {
+          cartClient.showToast(message, isError);
+          return;
+        }
+        var safeMessage = message || '';
+        if (window.appShell && typeof window.appShell.escapeHtml === 'function') {
+          safeMessage = window.appShell.escapeHtml(safeMessage);
+        }
+        if (isError) {
+          window.alert(safeMessage);
+        } else {
+          console.log(safeMessage);
+        }
+      }
+
+      function initFavoriteButton(bookId) {
+        var button = document.querySelector('[data-toggle-favorite]');
+        var apiClient = window.apiClient;
+        if (!button || !apiClient || Number.isNaN(bookId) || bookId <= 0) {
+          return;
+        }
+
+        var state = {
+          isFavorite: false,
+          loading: false,
+          initialized: false
+        };
+
+        function setLoading(isLoading) {
+          state.loading = isLoading;
+          button.disabled = isLoading;
+          button.classList.toggle('opacity-60', isLoading);
+          button.classList.toggle('cursor-not-allowed', isLoading);
+        }
+
+        function renderButton() {
+          var label = state.isFavorite ? 'Bỏ khỏi yêu thích' : 'Thêm vào yêu thích';
+          button.textContent = label;
+          button.setAttribute('aria-pressed', state.isFavorite ? 'true' : 'false');
+          button.classList.toggle('bg-amber-600', state.isFavorite);
+          button.classList.toggle('text-white', state.isFavorite);
+          button.classList.toggle('border-amber-600', true);
+          button.classList.toggle('text-amber-600', !state.isFavorite);
+          button.classList.toggle('bg-white', !state.isFavorite);
+        }
+
+        function ensureLoggedIn() {
+          var token = window.localStorage.getItem('auth_token');
+          if (!token) {
+            var contextPath = (window.appShell ? window.appShell.contextPath : '');
+            window.location.href = contextPath + '/login.jsp';
+            return false;
+          }
+          return true;
+        }
+
+        function toggleFavorite() {
+          if (state.loading) {
+            return;
+          }
+          if (!ensureLoggedIn()) {
+            return;
+          }
+          setLoading(true);
+          var path = '/profile/favorites/' + bookId;
+          var requestPromise = state.isFavorite ? apiClient.del(path) : apiClient.post(path, {});
+          requestPromise
+            .then(function (result) {
+              if (!result || result.success !== true) {
+                throw new Error('Thao tác không thành công');
+              }
+              state.isFavorite = !state.isFavorite;
+              renderButton();
+              showToast(result.message || (state.isFavorite ? 'Đã thêm vào yêu thích' : 'Đã bỏ khỏi yêu thích'), false);
+            })
+            .catch(function (error) {
+              console.error('Favorite toggle failed', error);
+              showToast('Không thể cập nhật danh sách yêu thích. Vui lòng thử lại.', true);
+            })
+            .finally(function () {
+              setLoading(false);
+            });
+        }
+
+        function loadInitialState() {
+          var token = window.localStorage.getItem('auth_token');
+          if (!token) {
+            renderButton();
+            return;
+          }
+          setLoading(true);
+          apiClient.get('/profile/favorites')
+            .then(function (response) {
+              if (response && response.success && Array.isArray(response.favorites)) {
+                state.isFavorite = response.favorites.some(function (item) {
+                  return Number(item.bookId) === bookId;
+                });
+              }
+            })
+            .catch(function (error) {
+              if (error && error.status === 401) {
+                state.isFavorite = false;
+              } else {
+                console.warn('Unable to load favorite state', error);
+              }
+            })
+            .finally(function () {
+              renderButton();
+              setLoading(false);
+              state.initialized = true;
+            });
+        }
+
+        button.addEventListener('click', toggleFavorite);
+        renderButton();
+        loadInitialState();
+      }
+
+      function recordRecentView(bookId) {
+        var apiClient = window.apiClient;
+        if (!apiClient || Number.isNaN(bookId) || bookId <= 0) {
+          return;
+        }
+        var token = window.localStorage.getItem('auth_token');
+        if (!token) {
+          return;
+        }
+        apiClient.post('/profile/recent-views', { bookId: bookId })
+          .catch(function (error) {
+            if (error && error.status === 404) {
+              return;
+            }
+            console.debug('Unable to record recent view', error);
           });
       }
 
@@ -314,6 +453,13 @@
         var buyNowButton = document.querySelector('[data-buy-now]');
         if (buyNowButton) {
           buyNowButton.addEventListener('click', handleBuyNowClick);
+        }
+
+        var anchor = buyNowButton || document.querySelector('[data-add-to-cart]') || document.querySelector('[data-toggle-favorite]');
+        var bookId = anchor ? parseInt(anchor.getAttribute('data-book-id'), 10) : NaN;
+        if (!Number.isNaN(bookId) && bookId > 0) {
+          initFavoriteButton(bookId);
+          recordRecentView(bookId);
         }
       }
 

@@ -231,6 +231,7 @@ public class DBUtil {
                 stmt.execute(createBookFavoritesTableSQL);
                 stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_book_favorites_user_book ON book_favorites(user_id, book_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_favorites_book_id ON book_favorites(book_id)");
+                ensureBookFavoritesSchema(conn);
 
                 String createBookReviewsTableSQL = "CREATE TABLE IF NOT EXISTS book_reviews (" +
                     "id SERIAL PRIMARY KEY," +
@@ -248,6 +249,19 @@ public class DBUtil {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_book_id ON book_reviews(book_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_user_id ON book_reviews(user_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_status ON book_reviews(status)");
+                ensureBookReviewsSchema(conn);
+
+                String createRecentViewsSql = "CREATE TABLE IF NOT EXISTS user_recent_views (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
+                    "book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE," +
+                    "viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "CONSTRAINT uq_user_recent_views UNIQUE (user_id, book_id)" +
+                    ")";
+                stmt.execute(createRecentViewsSql);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_recent_views_user ON user_recent_views(user_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_recent_views_book ON user_recent_views(book_id)");
+                ensureRecentViewsSchema(conn);
             }
 
             ensurePasswordHashColumn(conn);
@@ -529,6 +543,51 @@ public class DBUtil {
             stmt.execute("UPDATE order_payments SET status = COALESCE(status, 'pending')");
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile order_payments schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureRecentViewsSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "user_recent_views", "viewed_at")) {
+                stmt.execute("ALTER TABLE user_recent_views ADD COLUMN viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE user_recent_views SET viewed_at = COALESCE(viewed_at, CURRENT_TIMESTAMP)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile user_recent_views schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureBookFavoritesSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "book_favorites", "created_at")) {
+                stmt.execute("ALTER TABLE book_favorites ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE book_favorites SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile book_favorites schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureBookReviewsSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "book_reviews", "updated_at")) {
+                stmt.execute("ALTER TABLE book_reviews ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "book_reviews", "status")) {
+                stmt.execute("ALTER TABLE book_reviews ADD COLUMN status VARCHAR(20) DEFAULT 'published'");
+            }
+            stmt.execute("UPDATE book_reviews SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile book_reviews schema: " + ex.getMessage());
         }
     }
 
