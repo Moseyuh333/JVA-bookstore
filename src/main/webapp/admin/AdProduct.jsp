@@ -308,9 +308,16 @@
 
                     <div class="filter-bar">
                         <div class="filter-form">
+                            <select id="searchType" class="btn-custom">
+                                <option value="all">Tất cả</option>
+                                <option value="title">Tên sách</option>
+                                <option value="author">Tác giả</option>
+                                <option value="isbn">ISBN</option>
+                                <option value="shop_name">Tên shop</option>
+                            </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên sách, tác giả, ISBN, tên shop...">
+                                <input type="text" id="searchInput" placeholder="Tìm kiếm...">
                             </div>
                             <button class="btn-custom btn-search" id="searchBtn">
                                 <i class="fas fa-search"></i>

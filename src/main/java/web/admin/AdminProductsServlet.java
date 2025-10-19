@@ -85,6 +85,7 @@ public class AdminProductsServlet extends HttpServlet {
         Integer ownerId = (Integer) req.getSession().getAttribute("user_id");
 
         String search = req.getParameter("search");
+        String searchType = req.getParameter("searchType");
         String category = req.getParameter("category");
         String shopId = req.getParameter("shop_id");
         int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
@@ -112,8 +113,23 @@ public class AdminProductsServlet extends HttpServlet {
             countSql.append(" AND b.category ILIKE ?");
         }
         if (search != null && !search.trim().isEmpty()) {
-            sql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ? OR s.name ILIKE ?)");
-            countSql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ? OR s.name ILIKE ?)");
+            if ("title".equals(searchType)) {
+                sql.append(" AND b.title ILIKE ?");
+                countSql.append(" AND b.title ILIKE ?");
+            } else if ("author".equals(searchType)) {
+                sql.append(" AND b.author ILIKE ?");
+                countSql.append(" AND b.author ILIKE ?");
+            } else if ("isbn".equals(searchType)) {
+                sql.append(" AND b.isbn ILIKE ?");
+                countSql.append(" AND b.isbn ILIKE ?");
+            } else if ("shop_name".equals(searchType)) {
+                sql.append(" AND s.name ILIKE ?");
+                countSql.append(" AND s.name ILIKE ?");
+            } else {
+                // Default "all"
+                sql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ? OR s.name ILIKE ?)");
+                countSql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ? OR s.name ILIKE ?)");
+            }
         }
         if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
             sql.append(" AND s.owner_id = ?");
@@ -132,10 +148,14 @@ public class AdminProductsServlet extends HttpServlet {
                     psCount.setString(param++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
                     String pattern = "%" + search.trim() + "%";
-                    psCount.setString(param++, pattern);
-                    psCount.setString(param++, pattern);
-                    psCount.setString(param++, pattern);
-                    psCount.setString(param++, pattern);
+                    if ("title".equals(searchType) || "author".equals(searchType) || "isbn".equals(searchType) || "shop_name".equals(searchType)) {
+                        psCount.setString(param++, pattern);
+                    } else {
+                        psCount.setString(param++, pattern);
+                        psCount.setString(param++, pattern);
+                        psCount.setString(param++, pattern);
+                        psCount.setString(param++, pattern);
+                    }
                 }
                 if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
                     psCount.setInt(param++, ownerId);
@@ -155,10 +175,14 @@ public class AdminProductsServlet extends HttpServlet {
                     ps.setString(param++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
                     String pattern = "%" + search.trim() + "%";
-                    ps.setString(param++, pattern);
-                    ps.setString(param++, pattern);
-                    ps.setString(param++, pattern);
-                    ps.setString(param++, pattern);
+                    if ("title".equals(searchType) || "author".equals(searchType) || "isbn".equals(searchType) || "shop_name".equals(searchType)) {
+                        ps.setString(param++, pattern);
+                    } else {
+                        ps.setString(param++, pattern);
+                        ps.setString(param++, pattern);
+                        ps.setString(param++, pattern);
+                        ps.setString(param++, pattern);
+                    }
                 }
                 if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
                     ps.setInt(param++, ownerId);

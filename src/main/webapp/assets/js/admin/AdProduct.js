@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentPage = 1;
     const limit = 20;
     let currentSearch = "";
+    let currentSearchType = "all";
 
     // ===== Utility =====
     const escapeHtml = (text) => {
@@ -118,25 +119,27 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // ===== Load Products =====
-    const loadProducts = async (page = 1, search = "") => {
+    const loadProducts = async (page = 1, search = "", searchType = "all") => {
         try {
             showLoading();
             const token = localStorage.getItem("admin_token"); // lấy token từ localStorage
 
-            const res = await fetch(
-                `/api/admin/products?action=list&page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
-                {
-                    headers: {
-                        "Authorization": `Bearer ${token}`, // gửi token kèm request
-                        "Content-Type": "application/json"
-                    }
+            let url = `/api/admin/products?action=list&page=${page}&limit=${limit}`;
+            if (search && search.trim()) {
+                url += `&search=${encodeURIComponent(search)}&searchType=${encodeURIComponent(searchType)}`;
+            }
+
+            const res = await fetch(url, {
+                headers: {
+                    "Authorization": `Bearer ${token}`, // gửi token kèm request
+                    "Content-Type": "application/json"
                 }
-            );
+            });
 
             if (res.status === 401) {
                 console.error("❌ Unauthorized — token hết hạn hoặc chưa đăng nhập");
                 alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
-                window.location.href = "/login.jsp"; 
+                window.location.href = "/login.jsp";
                 return;
             }
 
@@ -177,22 +180,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ===== Search and Reset =====
     const resetBtn = document.getElementById("btnReset");
+    const searchType = document.getElementById("searchType");
 
     if (searchBtn) {
         searchBtn.addEventListener("click", () => {
             const searchValue = searchInput ? searchInput.value.trim() : "";
+            const type = searchType ? searchType.value : "all";
             currentSearch = searchValue;
+            currentSearchType = type;
             currentPage = 1;
-            loadProducts(currentPage, currentSearch);
+            loadProducts(currentPage, currentSearch, currentSearchType);
         });
     }
 
     if (resetBtn) {
         resetBtn.addEventListener("click", () => {
             if (searchInput) searchInput.value = "";
+            if (searchType) searchType.value = "all";
             currentSearch = "";
+            currentSearchType = "all";
             currentPage = 1;
-            loadProducts(currentPage, currentSearch);
+            loadProducts(currentPage, currentSearch, currentSearchType);
         });
     }
 
@@ -200,9 +208,11 @@ document.addEventListener("DOMContentLoaded", () => {
         searchInput.addEventListener("keypress", (e) => {
             if (e.key === "Enter") {
                 const searchValue = searchInput.value.trim();
+                const type = searchType ? searchType.value : "all";
                 currentSearch = searchValue;
+                currentSearchType = type;
                 currentPage = 1;
-                loadProducts(currentPage, currentSearch);
+                loadProducts(currentPage, currentSearch, currentSearchType);
             }
         });
     }
