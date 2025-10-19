@@ -509,62 +509,7 @@
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody id="commissionList">
-                                    <tr>
-                                        <td>Chiết khấu cơ bản</td>
-                                        <td>0 VNĐ</td>
-                                        <td>5,000,000 VNĐ</td>
-                                        <td>3%</td>
-                                        <td><span class="badge-custom badge-percentage">Phần trăm</span></td>
-                                        <td>01/10/2025</td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Chiết khấu cao</td>
-                                        <td>5,000,000 VNĐ</td>
-                                        <td>10,000,000 VNĐ</td>
-                                        <td>5%</td>
-                                        <td><span class="badge-custom badge-percentage">Phần trăm</span></td>
-                                        <td>01/10/2025</td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Chiết khấu VIP</td>
-                                        <td>10,000,000 VNĐ</td>
-                                        <td>Không giới hạn</td>
-                                        <td>8%</td>
-                                        <td><span class="badge-custom badge-percentage">Phần trăm</span></td>
-                                        <td>01/10/2025</td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
+                                <tbody id="commissionList"></tbody>
                             </table>
 
                             <div id="emptyState" class="empty-state" style="display: none;">
