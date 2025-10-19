@@ -475,6 +475,13 @@
 
                     <div class="filter-bar">
                         <div class="filter-form">
+                            <select id="searchType" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
+                                <option value="all">Tất cả</option>
+                                <option value="code">Mã code</option>
+                                <option value="description">Mô tả</option>
+                                <option value="type">Loại giảm giá</option>
+                                <option value="status">Trạng thái</option>
+                            </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="promotionSearchInput" placeholder="Tìm kiếm theo mã code, mô tả, loại...">

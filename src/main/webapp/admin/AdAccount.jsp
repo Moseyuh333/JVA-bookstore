@@ -498,6 +498,14 @@
                     <!-- Filter Bar -->
                     <div class="filter-bar">
                         <div class="filter-form">
+                            <select id="searchType" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
+                                <option value="all">Tất cả</option>
+                                <option value="username">Tên đăng nhập</option>
+                                <option value="fullname">Họ và tên</option>
+                                <option value="email">Email</option>
+                                <option value="phone">Số điện thoại</option>
+                                <option value="role">Quyền</option>
+                            </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên, email, số điện thoại...">

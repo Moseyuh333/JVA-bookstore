@@ -475,16 +475,16 @@
 
                     <div class="filter-bar">
                         <div class="filter-form">
-                            <div class="search-box">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="commissionSearchInput" placeholder="Tìm kiếm...">
-                            </div>
-                            <select id="commissionSearchType" class="form-control" style="width: 150px; height: 40px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <select id="commissionSearchType" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
                                 <option value="all">Tất cả</option>
                                 <option value="shop_name">Tên shop</option>
                                 <option value="rate">Tỷ lệ</option>
                                 <option value="description">Mô tả</option>
                             </select>
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="commissionSearchInput" placeholder="Tìm kiếm...">
+                            </div>
                             <button class="btn-custom btn-search" onclick="loadCommissions()">
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>

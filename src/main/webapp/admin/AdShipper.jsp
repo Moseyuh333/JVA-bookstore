@@ -507,10 +507,6 @@
 
                     <div class="filter-bar">
                         <div class="filter-form">
-                            <div class="search-box">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên nhà vận chuyển, thành phố...">
-                            </div>
                             <select id="searchType" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
                                 <option value="all">Tất cả</option>
                                 <option value="name">Tên</option>
@@ -518,6 +514,10 @@
                                 <option value="email">Email</option>
                                 <option value="service_area">Khu vực</option>
                             </select>
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên nhà vận chuyển, thành phố...">
+                            </div>
                             <button class="btn-custom btn-search" onclick="applyFilter()">
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>
