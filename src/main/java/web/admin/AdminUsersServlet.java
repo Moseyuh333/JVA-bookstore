@@ -1,5 +1,6 @@
 package web.admin;
 
+import org.mindrot.jbcrypt.BCrypt;
 import utils.DBUtil;
 
 import javax.servlet.ServletException;
@@ -156,13 +157,28 @@ public class AdminUsersServlet extends HttpServlet {
         String username = req.getParameter("username");
         String email = req.getParameter("email");
         String passwordHash = req.getParameter("password_hash");
+        String rawPassword = req.getParameter("password");
         String fullName = req.getParameter("full_name");
         String phone = req.getParameter("phone");
         String role = req.getParameter("role");
         String status = req.getParameter("status");
 
-        if (username == null || username.trim().isEmpty() || email == null || email.trim().isEmpty() || passwordHash == null) {
-            out.write("{\"error\":\"Username, email and password_hash are required\"}");
+        if (username == null || username.trim().isEmpty() || email == null || email.trim().isEmpty()) {
+            out.write("{\"error\":\"Username and email are required\"}");
+            return;
+        }
+
+        if ((passwordHash == null || passwordHash.trim().isEmpty()) && rawPassword != null && !rawPassword.trim().isEmpty()) {
+            String trimmed = rawPassword.trim();
+            if (trimmed.length() < 6) {
+                out.write("{\"error\":\"Password must be at least 6 characters\"}");
+                return;
+            }
+            passwordHash = BCrypt.hashpw(trimmed, BCrypt.gensalt());
+        }
+
+        if (passwordHash == null || passwordHash.trim().isEmpty()) {
+            out.write("{\"error\":\"Password is required\"}");
             return;
         }
 
@@ -174,10 +190,10 @@ public class AdminUsersServlet extends HttpServlet {
             pstmt.setString(1, username.trim());
             pstmt.setString(2, email.trim());
             pstmt.setString(3, passwordHash);
-            pstmt.setString(4, fullName != null ? fullName.trim() : null);
-            pstmt.setString(5, phone != null ? phone.trim() : null);
-            pstmt.setString(6, role != null ? role : "user");
-            pstmt.setString(7, status != null ? status : "active");
+            pstmt.setString(4, fullName != null && !fullName.trim().isEmpty() ? fullName.trim() : null);
+            pstmt.setString(5, phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
+            pstmt.setString(6, role != null && !role.trim().isEmpty() ? role.trim() : "user");
+            pstmt.setString(7, status != null && !status.trim().isEmpty() ? status.trim() : "active");
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
@@ -185,6 +201,13 @@ public class AdminUsersServlet extends HttpServlet {
             } else {
                 out.write("{\"error\":\"Failed to create user\"}");
             }
+        } catch (SQLException e) {
+            String sqlState = e.getSQLState();
+            if (sqlState != null && sqlState.startsWith("23")) {
+                out.write("{\"error\":\"Username or email already exists\"}");
+                return;
+            }
+            throw e;
         }
     }
 
