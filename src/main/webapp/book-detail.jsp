@@ -261,6 +261,21 @@
                     <p class="text-gray-700 leading-relaxed whitespace-pre-line break-words">
                       <c:out value="${r.comment}" />
                     </p>
+                    <c:if test="${not empty r.mediaUrl}">
+                      <div class="mt-3">
+                        <c:choose>
+                          <c:when test="${fn:toLowerCase(r.mediaType) eq 'video'}">
+                            <video class="w-full max-w-md rounded-md shadow-sm" controls preload="metadata">
+                              <source src="<c:out value='${r.mediaUrl}'/>" />
+                              Trình duyệt của bạn không hỗ trợ phát video.
+                            </video>
+                          </c:when>
+                          <c:otherwise>
+                            <img src="<c:out value='${r.mediaUrl}'/>" alt="Ảnh minh hoạ bình luận" class="w-full max-w-md rounded-md shadow-sm object-cover" loading="lazy" />
+                          </c:otherwise>
+                        </c:choose>
+                      </div>
+                    </c:if>
                   </div>
                 </c:forEach>
               </div>
