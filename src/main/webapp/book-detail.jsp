@@ -164,7 +164,18 @@
       <c:choose>
         <c:when test="${not empty reviews}">
           <div class="bg-white mt-10 p-8 rounded-lg text-gray-700 border border-gray-200 mb-20">
-            <h2 class="text-xl font-semibold text-amber-700 mb-4 border-b border-gray-300 pb-2">Khách hàng đánh giá</h2>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 border-b border-gray-300 pb-2">
+              <h2 class="text-xl font-semibold text-amber-700">Khách hàng đánh giá</h2>
+              <c:if test="${userHasReview}">
+                <button type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-amber-500 text-amber-600 hover:bg-amber-50 transition" data-scroll-own-review="${userReviewDomId}">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Xem đánh giá của tôi
+                </button>
+              </c:if>
+            </div>
 
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
               <!-- Cột điểm trung bình -->
@@ -202,9 +213,10 @@
               </div>
 
               <!-- Danh sách đánh giá -->
-              <div class="mt-8 divide-y divide-gray-200">
+              <div class="mt-8 divide-y divide-gray-200 w-full">
                 <c:forEach var="r" items="${reviews}">
-                  <div class="py-5">
+                  <c:set var="ownerClasses" value="${r.isOwner ? 'bg-amber-50 border-l-4 border-amber-500 rounded-md pl-4' : ''}" />
+                  <div id="${r.domId}" class="py-5 transition-colors duration-300 ${ownerClasses}">
                     <div class="flex items-center justify-between mb-2">
                       <div class="flex items-center gap-3">
                         <div
@@ -214,6 +226,9 @@
                         <div>
                           <p class="text-gray-800 font-semibold">${r.authorName}</p>
                           <p class="text-green-600 text-xs">Đã mua hàng</p>
+                          <c:if test="${r.isOwner}">
+                            <span class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Đánh giá của bạn</span>
+                          </c:if>
                           <c:if test="${not empty r.createdAt}">
                             <p class="text-gray-500 text-xs">${r.createdAt}</p>
                           </c:if>
@@ -472,6 +487,28 @@
         if (!Number.isNaN(bookId) && bookId > 0) {
           initFavoriteButton(bookId);
           recordRecentView(bookId);
+        }
+
+        var ownReviewButton = document.querySelector('[data-scroll-own-review]');
+        if (ownReviewButton) {
+          ownReviewButton.addEventListener('click', function () {
+            var targetId = ownReviewButton.getAttribute('data-scroll-own-review');
+            if (!targetId) {
+              return;
+            }
+            var target = document.getElementById(targetId);
+            if (!target) {
+              console.warn('Không tìm thấy review với id', targetId);
+              return;
+            }
+            if (typeof target.scrollIntoView === 'function') {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            target.classList.add('ring-2', 'ring-amber-400', 'ring-offset-2');
+            setTimeout(function () {
+              target.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-2');
+            }, 2400);
+          });
         }
       }
 

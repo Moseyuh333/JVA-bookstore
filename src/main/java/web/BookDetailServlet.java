@@ -1,6 +1,7 @@
 package web;
 
 import dao.ReviewDAO;
+import utils.AuthUtil;
 import utils.DBUtil;
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -40,11 +41,13 @@ public class BookDetailServlet extends HttpServlet {
                 st.execute("SET client_encoding TO 'UTF8'");
             }
 
+            req.setAttribute("soldCount", 0L);
+
             // --- Lấy chi tiết sách ---
             try (PreparedStatement ps = conn.prepareStatement(
                     "SELECT id, title, author, price, original_price, discount, " +
                             "rating_avg, review_count, stock, publisher, category, cover_image, image_url, " +
-                            "shop_name, book_url, highlights, specifications, description, reviews, sold_count " +
+                            "shop_name, book_url, highlights, specifications, description, reviews " +
                             "FROM books WHERE id = ?")) {
                 ps.setLong(1, bookId);
                 try (ResultSet rs = ps.executeQuery()) {
@@ -77,10 +80,16 @@ public class BookDetailServlet extends HttpServlet {
                     req.setAttribute("bookHighlights", rs.getString("highlights"));
                     req.setAttribute("bookSpecifications", rs.getString("specifications"));
                     req.setAttribute("bookDescription", rs.getString("description"));
-                    req.setAttribute("soldCount", safeGetLong(rs, "sold_count"));
 
                     String rawReviews = rs.getString("reviews");
-                    loadDynamicReviews(req, bookId, rawReviews, rs.getDouble("rating_avg"), rs.getInt("review_count"));
+                    Long currentUserId = null;
+                    try {
+                        currentUserId = AuthUtil.resolveUserId(req);
+                    } catch (SQLException authEx) {
+                        authEx.printStackTrace();
+                    }
+
+                    loadDynamicReviews(req, bookId, rawReviews, rs.getDouble("rating_avg"), rs.getInt("review_count"), currentUserId);
 
                     try (PreparedStatement psRelated = conn.prepareStatement(
                             "SELECT id, title, price, cover_image, image_url, category " +
@@ -161,7 +170,8 @@ public class BookDetailServlet extends HttpServlet {
         return (contextPath.endsWith("/")) ? contextPath + trimmed : contextPath + "/" + trimmed;
     }
 
-    private void loadDynamicReviews(HttpServletRequest req, long bookId, String fallbackRawReviews, double fallbackAvg, int fallbackCount) {
+    private void loadDynamicReviews(HttpServletRequest req, long bookId, String fallbackRawReviews, double fallbackAvg,
+                                    int fallbackCount, Long currentUserId) {
         try {
             List<ReviewDAO.ReviewRecord> records = ReviewDAO.listReviews(bookId, 200, 0);
             if (records != null && !records.isEmpty()) {
@@ -172,6 +182,7 @@ public class BookDetailServlet extends HttpServlet {
                 }
                 int total = 0;
                 double sum = 0;
+                String ownerDomId = null;
                 for (ReviewDAO.ReviewRecord record : records) {
                     int rating = record.rating;
                     if (rating >= 1 && rating <= 5) {
@@ -184,6 +195,13 @@ public class BookDetailServlet extends HttpServlet {
                     view.put("rating", record.rating);
                     view.put("comment", record.content != null ? record.content : "");
                     view.put("createdAt", record.createdAt);
+                    view.put("id", record.id);
+                    view.put("domId", "review-" + record.id);
+                    boolean isOwner = currentUserId != null && record.userId == currentUserId;
+                    view.put("isOwner", isOwner);
+                    if (isOwner) {
+                        ownerDomId = (String) view.get("domId");
+                    }
                     displayReviews.add(view);
                 }
                 double avg = total > 0 ? sum / total : fallbackAvg;
@@ -197,6 +215,10 @@ public class BookDetailServlet extends HttpServlet {
                 req.setAttribute("reviewStats", reviewStats);
                 req.setAttribute("reviewCount", total);
                 req.setAttribute("bookRating", avg);
+                if (ownerDomId != null) {
+                    req.setAttribute("userReviewDomId", ownerDomId);
+                    req.setAttribute("userHasReview", Boolean.TRUE);
+                }
                 return;
             }
         } catch (SQLException ex) {
@@ -207,6 +229,7 @@ public class BookDetailServlet extends HttpServlet {
         if (fallbackRawReviews != null && !fallbackRawReviews.trim().isEmpty()) {
             List<Map<String, Object>> reviews = new ArrayList<>();
             String[] parts = fallbackRawReviews.split("\\|");
+            int index = 0;
             for (String part : parts) {
                 if (part == null || part.trim().isEmpty()) {
                     continue;
@@ -238,8 +261,11 @@ public class BookDetailServlet extends HttpServlet {
                     r.put("authorName", name.isEmpty() ? "Ẩn danh" : name);
                     r.put("rating", rating);
                     r.put("comment", comment);
+                    r.put("domId", "legacy-review-" + index);
+                    r.put("isOwner", Boolean.FALSE);
                     reviews.add(r);
                 }
+                index++;
             }
             if (!reviews.isEmpty()) {
                 req.setAttribute("reviews", reviews);
@@ -293,20 +319,5 @@ public class BookDetailServlet extends HttpServlet {
             ex.printStackTrace();
         }
         return 0L;
-    }
-
-    private long safeGetLong(ResultSet rs, String column) {
-        if (rs == null || column == null) {
-            return 0L;
-        }
-        try {
-            long value = rs.getLong(column);
-            if (rs.wasNull()) {
-                return 0L;
-            }
-            return value;
-        } catch (SQLException ignored) {
-            return 0L;
-        }
     }
 }
