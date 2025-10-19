@@ -185,17 +185,7 @@ public class AdminProductsServlet extends HttpServlet {
                     }
                 }
             }
-            json.append("],")
-            .append("\"total\":").append(total)
-            .append(",\"page\":").append(page)
-            .append(",\"limit\":").append(limit)
-            .append(",\"stats\":{")
-            .append("\"total_books\":").append(totalBooks).append(",")
-            .append("\"in_stock\":").append(inStock).append(",")
-            .append("\"out_stock\":").append(outStock)
-            .append("}")
-            .append("}");
-            
+
             // === Thống kê tồn kho toàn DB ===
             int totalBooks = 0;
             int inStock = 0;
@@ -215,6 +205,17 @@ public class AdminProductsServlet extends HttpServlet {
                     outStock = rsStat.getInt("out_stock");
                 }
             }
+
+            json.append("],")
+            .append("\"total\":").append(total)
+            .append(",\"page\":").append(page)
+            .append(",\"limit\":").append(limit)
+            .append(",\"stats\":{")
+            .append("\"total_books\":").append(totalBooks).append(",")
+            .append("\"in_stock\":").append(inStock).append(",")
+            .append("\"out_stock\":").append(outStock)
+            .append("}")
+            .append("}");
             
             out.write(json.toString());
         }
