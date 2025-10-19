@@ -91,11 +91,11 @@ public class AdminProductsServlet extends HttpServlet {
         int offset = (page - 1) * limit;
 
         StringBuilder sql = new StringBuilder(
-                "SELECT b.id, b.title, b.author, b.price, b.stock_quantity, b.category, s.name AS shop_name, s.commission_rate\r\n" + //
-                                        " b.description, b.category, " +
-                        "b.stock_quantity, b.image_url, b.created_at, b.updated_at, " +
-                        "COALESCE(s.name, 'Unknown Shop') as shop_name " +
-                        "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1");
+            "SELECT b.id, b.title, b.author, b.price, b.stock_quantity, b.category, " +
+            "b.description, b.image_url, b.created_at, b.updated_at, " +
+            "COALESCE(s.name, 'Unknown Shop') AS shop_name, s.commission_rate " +
+            "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
+        );
 
         if (shopId != null && !shopId.trim().isEmpty())
             sql.append(" AND b.shop_id = ?");
