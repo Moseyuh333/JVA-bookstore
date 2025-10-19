@@ -104,12 +104,12 @@ public class AdminDashboardServlet extends HttpServlet {
 
         try (Connection conn = DBUtil.getConnection()) {
             String query = "SELECT " +
-                "DATE_FORMAT(created_at, '%Y-%m') as month, " +
+                "TO_CHAR(created_at, 'YYYY-MM') as month, " +
                 "COALESCE(SUM(total_amount), 0) as revenue " +
                 "FROM orders " +
                 "WHERE status = 'completed' " +
-                "AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH) " +
-                "GROUP BY DATE_FORMAT(created_at, '%Y-%m') " +
+                "AND created_at >= NOW() - INTERVAL '6 months' " +
+                "GROUP BY TO_CHAR(created_at, 'YYYY-MM') " +
                 "ORDER BY month";
 
             try (PreparedStatement stmt = conn.prepareStatement(query);
@@ -127,6 +127,35 @@ public class AdminDashboardServlet extends HttpServlet {
 
                 revenue.add("labels", labels);
                 revenue.add("data", data);
+            }
+        } catch (SQLException e) {
+            // If PostgreSQL syntax fails, try a simpler approach
+            System.out.println("PostgreSQL query failed, trying alternative: " + e.getMessage());
+            try (Connection conn = DBUtil.getConnection()) {
+                String query = "SELECT " +
+                    "TO_CHAR(created_at, 'YYYY-MM') as month, " +
+                    "COALESCE(SUM(total_amount), 0) as revenue " +
+                    "FROM orders " +
+                    "WHERE status = 'completed' " +
+                    "GROUP BY TO_CHAR(created_at, 'YYYY-MM') " +
+                    "ORDER BY month";
+
+                try (PreparedStatement stmt = conn.prepareStatement(query);
+                     ResultSet rs = stmt.executeQuery()) {
+
+                    JsonObject labels = new JsonObject();
+                    JsonObject data = new JsonObject();
+
+                    int index = 0;
+                    while (rs.next()) {
+                        labels.addProperty(String.valueOf(index), rs.getString("month"));
+                        data.addProperty(String.valueOf(index), rs.getDouble("revenue"));
+                        index++;
+                    }
+
+                    revenue.add("labels", labels);
+                    revenue.add("data", data);
+                }
             }
         }
 
