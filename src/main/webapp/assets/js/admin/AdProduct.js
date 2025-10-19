@@ -62,7 +62,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const price = p.price
                 ? new Intl.NumberFormat("vi-VN").format(p.price) + "₫"
                 : "-";
-            const stock = p.stock_quantity ?? p.stock ?? "-";
+            const stock = p.stock_quantity !== undefined && p.stock_quantity !== null 
+                ? p.stock_quantity 
+                : (p.stock ?? 0);
             const shop = p.shop_name || "-";
             const commission = p.commission_rate ? p.commission_rate + "%" : "-";
 
@@ -86,11 +88,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ===== Update Stats =====
     const updateStats = (data) => {
+        if (!data) return;
+
+        if (data.stats) {
+            if (totalEl) totalEl.textContent = data.stats.total_books ?? 0;
+            if (inStockEl) inStockEl.textContent = data.stats.in_stock ?? 0;
+            if (outOfStockEl) outOfStockEl.textContent = data.stats.out_stock ?? 0;
+            return;
+        }
+
         if (totalEl) totalEl.textContent = data.total || 0;
-        const inStock = data.products.filter((p) => p.stock_quantity > 0).length;
-        const outOfStock = data.products.filter(
-            (p) => !p.stock_quantity || p.stock_quantity <= 0
-        ).length;
+        const inStock = data.products?.filter((p) => p.stock_quantity > 0)?.length || 0;
+        const outOfStock = data.products?.filter((p) => !p.stock_quantity || p.stock_quantity <= 0)?.length || 0;
         if (inStockEl) inStockEl.textContent = inStock;
         if (outOfStockEl) outOfStockEl.textContent = outOfStock;
     };

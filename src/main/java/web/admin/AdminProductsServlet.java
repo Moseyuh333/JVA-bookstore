@@ -185,10 +185,37 @@ public class AdminProductsServlet extends HttpServlet {
                     }
                 }
             }
-            json.append("],\"total\":").append(total)
-                .append(",\"page\":").append(page)
-                .append(",\"limit\":").append(limit)
-                .append("}");
+            json.append("],")
+            .append("\"total\":").append(total)
+            .append(",\"page\":").append(page)
+            .append(",\"limit\":").append(limit)
+            .append(",\"stats\":{")
+            .append("\"total_books\":").append(totalBooks).append(",")
+            .append("\"in_stock\":").append(inStock).append(",")
+            .append("\"out_stock\":").append(outStock)
+            .append("}")
+            .append("}");
+            
+            // === Thống kê tồn kho toàn DB ===
+            int totalBooks = 0;
+            int inStock = 0;
+            int outStock = 0;
+
+            try (PreparedStatement psStat = conn.prepareStatement(
+                "SELECT " +
+                "COUNT(*) AS total, " +
+                "COUNT(*) FILTER (WHERE COALESCE(stock, 0) > 0) AS in_stock, " +
+                "COUNT(*) FILTER (WHERE COALESCE(stock, 0) = 0) AS out_stock " +
+                "FROM books"
+            );
+                ResultSet rsStat = psStat.executeQuery()) {
+                if (rsStat.next()) {
+                    totalBooks = rsStat.getInt("total");
+                    inStock = rsStat.getInt("in_stock");
+                    outStock = rsStat.getInt("out_stock");
+                }
+            }
+            
             out.write(json.toString());
         }
     }
