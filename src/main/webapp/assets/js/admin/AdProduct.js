@@ -148,6 +148,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    const loadStats = async () => {
+        try {
+            const res = await fetch(`/api/admin/products?action=stats`);
+            const data = await res.json();
+            document.getElementById("totalProducts").textContent = data.total || 0;
+            document.getElementById("inStock").textContent = data.in_stock || 0;
+            document.getElementById("outOfStock").textContent = data.out_stock || 0;
+        } catch (err) {
+            console.error("Error loading stats:", err);
+        }
+    };
+
 
     // ===== Search toàn DB =====
     if (searchBtn && searchInput) {
@@ -169,4 +181,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ===== Init =====
     loadProducts();
+    loadStats();
 });

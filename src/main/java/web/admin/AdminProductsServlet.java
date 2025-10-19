@@ -36,10 +36,13 @@ public class AdminProductsServlet extends HttpServlet {
                 listProducts(req, out);
             } else if ("get".equals(action)) {
                 getProduct(req, out);
+            } else if ("stats".equals(action)) {
+                getProductStats(req, out);  
             } else {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write("{\"error\":\"Invalid action\"}");
             }
+
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
@@ -241,6 +244,42 @@ public class AdminProductsServlet extends HttpServlet {
             }
         }
     }
+
+    // ========= Thống kê sản phẩm =========
+    private void getProductStats(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String userRole = (String) req.getSession().getAttribute("role");
+        Integer ownerId = (Integer) req.getSession().getAttribute("user_id");
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT " +
+            "COUNT(*) AS total, " +
+            "COUNT(*) FILTER (WHERE stock_quantity > 0) AS in_stock, " +
+            "COUNT(*) FILTER (WHERE stock_quantity <= 0 OR stock_quantity IS NULL) AS out_stock " +
+            "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
+        );
+
+        if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
+            sql.append(" AND s.owner_id = ").append(ownerId);
+        }
+
+        try (Connection conn = DBUtil.getConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql.toString())) {
+
+            if (rs.next()) {
+                int total = rs.getInt("total");
+                int inStock = rs.getInt("in_stock");
+                int outStock = rs.getInt("out_stock");
+
+                out.write("{\"total\":" + total +
+                        ",\"in_stock\":" + inStock +
+                        ",\"out_stock\":" + outStock + "}");
+            } else {
+                out.write("{\"total\":0,\"in_stock\":0,\"out_stock\":0}");
+            }
+        }
+    }
+
 
     private void createProduct(HttpServletRequest req, PrintWriter out) throws SQLException {
         String title = req.getParameter("title");
