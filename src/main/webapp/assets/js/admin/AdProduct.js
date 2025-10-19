@@ -6,31 +6,81 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const searchInput = document.getElementById("productSearchInput");
     const tableBody = document.getElementById("product");
+    const loadingState = document.getElementById("loadingState");
+    const emptyState = document.getElementById("emptyState");
+    const tableContainer = document.getElementById("tableContainer");
 
-    // Fake Data (demo)
-    const products = [
-        { id: "B001", name: "Truyện Kiều", author: "Nguyễn Du", category: "Văn học", price: "120000", stock: 35, seller: "Shop Văn Học Việt" },
-        { id: "B002", name: "Sherlock Holmes", author: "Arthur Conan Doyle", category: "Trinh thám", price: "95000", stock: 40, seller: "BookWorld" },
-    ];
+    let products = [];
+    let filteredProducts = [];
+
+    // API functions
+    const api = {
+        getProducts: () => {
+            const token = localStorage.getItem("admin_token");
+            return fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=list`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            }).then(r => r.json());
+        }
+    };
+
+    // Utility functions
+    const escapeHtml = (text) => {
+        if (!text) return "";
+        return text.replace(/[&<>"']/g, (m) => {
+            const map = { '&': '&amp;', '<': '<', '>': '>', '"': '"', "'": '&#39;' };
+            return map[m];
+        });
+    };
+
+    const showLoading = () => {
+        if (loadingState) loadingState.style.display = 'block';
+        if (tableContainer) tableContainer.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'none';
+    };
+
+    const hideLoading = () => {
+        if (loadingState) loadingState.style.display = 'none';
+        if (tableContainer) tableContainer.style.display = 'block';
+    };
+
+    const showEmpty = () => {
+        if (emptyState) emptyState.style.display = 'block';
+        if (tableContainer) tableContainer.style.display = 'none';
+    };
+
+    const hideEmpty = () => {
+        if (emptyState) emptyState.style.display = 'none';
+        if (tableContainer) tableContainer.style.display = 'block';
+    };
 
     // Render table
     const renderTable = (list) => {
         tableBody.innerHTML = "";
         if (list.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">Không có sản phẩm nào</td></tr>`;
+            showEmpty();
             return;
         }
 
+        hideEmpty();
         list.forEach(p => {
+            const price = p.price ? Number(p.price).toLocaleString('vi-VN') + "₫" : "-";
+            const stock = p.stock !== undefined ? p.stock : "-";
+            const category = p.category_name || p.category || "-";
+            const author = p.author || "-";
+            const seller = p.seller_name || p.seller || "-";
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${p.id}</td>
-                <td>${p.name}</td>
-                <td>${p.author}</td>
-                <td>${p.category}</td>
-                <td>${parseInt(p.price).toLocaleString("vi-VN")}₫</td>
-                <td>${p.stock}</td>
-                <td>${p.seller}</td>
+                <td>${escapeHtml(p.id || p.product_id || '-')}</td>
+                <td>${escapeHtml(p.name || p.title || '-')}</td>
+                <td>${escapeHtml(author)}</td>
+                <td>${escapeHtml(category)}</td>
+                <td>${price}</td>
+                <td>${stock}</td>
+                <td>${escapeHtml(seller)}</td>
                 <td>
                     <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
@@ -40,17 +90,50 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
+    // Load products from API
+    const loadProducts = async () => {
+        try {
+            showLoading();
+            const response = await api.getProducts();
+
+            if (response.products) {
+                products = response.products;
+                filteredProducts = [...products];
+                renderTable(filteredProducts);
+            } else {
+                console.error("Invalid response format:", response);
+                showEmpty();
+            }
+        } catch (error) {
+            console.error("Error loading products:", error);
+            showEmpty();
+        } finally {
+            hideLoading();
+        }
+    };
+
     // Search filter
-    searchInput?.addEventListener("input", () => {
+    const applyFilters = () => {
         const keyword = searchInput.value.toLowerCase().trim();
-        const filtered = products.filter(p =>
-            p.name.toLowerCase().includes(keyword) ||
-            p.author.toLowerCase().includes(keyword) ||
-            p.category.toLowerCase().includes(keyword)
+        filteredProducts = products.filter(p =>
+            (p.name || p.title || '').toLowerCase().includes(keyword) ||
+            (p.author || '').toLowerCase().includes(keyword) ||
+            (p.category_name || p.category || '').toLowerCase().includes(keyword)
         );
-        renderTable(filtered);
-    });
+        renderTable(filteredProducts);
+    };
+
+    const resetFilters = () => {
+        if (searchInput) searchInput.value = '';
+        filteredProducts = [...products];
+        renderTable(filteredProducts);
+    };
+
+    // Event listeners
+    if (searchInput) {
+        searchInput.addEventListener("input", applyFilters);
+    }
 
     // Init
-    renderTable(products);
+    loadProducts();
 });

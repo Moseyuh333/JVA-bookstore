@@ -6,30 +6,83 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const tableBody = document.getElementById("commissionTable");
     const searchInput = document.getElementById("commissionSearchInput");
+    const loadingState = document.getElementById("loadingState");
+    const emptyState = document.getElementById("emptyState");
+    const tableContainer = document.getElementById("tableContainer");
 
-    // Dữ liệu giả lập (demo)
-    const commissions = [
-        { id: "S001", shop: "BookHaven", rate: "10%", since: "01/01/2024", note: "Cửa hàng uy tín, doanh thu cao" },
-        { id: "S002", shop: "MangaWorld", rate: "15%", since: "05/03/2024", note: "Áp dụng chiết khấu tạm thời" },
-        { id: "S003", shop: "LightNovelVN", rate: "12%", since: "10/05/2024", note: "Chính sách mặc định" }
-    ];
+    let commissions = [];
+    let filteredCommissions = [];
+
+    // API functions
+    const api = {
+        getCommissions: () => {
+            const token = localStorage.getItem("admin_token");
+            return fetch(`${window.appConfig?.contextPath || ''}/api/admin/commissions?action=list`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            }).then(r => r.json());
+        }
+    };
+
+    // Utility functions
+    const escapeHtml = (text) => {
+        if (!text) return "";
+        return text.replace(/[&<>"']/g, (m) => {
+            const map = { '&': '&amp;', '<': '<', '>': '>', '"': '"', "'": '&#39;' };
+            return map[m];
+        });
+    };
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return "-";
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('vi-VN');
+    };
+
+    const showLoading = () => {
+        if (loadingState) loadingState.style.display = 'block';
+        if (tableContainer) tableContainer.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'none';
+    };
+
+    const hideLoading = () => {
+        if (loadingState) loadingState.style.display = 'none';
+        if (tableContainer) tableContainer.style.display = 'block';
+    };
+
+    const showEmpty = () => {
+        if (emptyState) emptyState.style.display = 'block';
+        if (tableContainer) tableContainer.style.display = 'none';
+    };
+
+    const hideEmpty = () => {
+        if (emptyState) emptyState.style.display = 'none';
+        if (tableContainer) tableContainer.style.display = 'block';
+    };
 
     // Render bảng
     const renderTable = (list) => {
         tableBody.innerHTML = "";
         if (list.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Không có dữ liệu chiết khấu</td></tr>`;
+            showEmpty();
             return;
         }
 
+        hideEmpty();
         list.forEach(c => {
+            const rate = c.rate ? c.rate + "%" : "-";
+            const since = formatDate(c.since || c.created_at);
+            const note = c.note || c.description || "-";
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${c.id}</td>
-                <td>${c.shop}</td>
-                <td>${c.rate}</td>
-                <td>${c.since}</td>
-                <td>${c.note}</td>
+                <td>${escapeHtml(c.id || c.commission_id || '-')}</td>
+                <td>${escapeHtml(c.shop || c.shop_name || '-')}</td>
+                <td>${rate}</td>
+                <td>${since}</td>
+                <td>${escapeHtml(note)}</td>
                 <td>
                     <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
@@ -39,16 +92,50 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // Tìm kiếm chiết khấu
-    searchInput?.addEventListener("input", () => {
-        const keyword = searchInput.value.toLowerCase().trim();
-        const filtered = commissions.filter(c =>
-            c.shop.toLowerCase().includes(keyword) ||
-            c.rate.toLowerCase().includes(keyword) ||
-            c.note.toLowerCase().includes(keyword)
-        );
-        renderTable(filtered);
-    });
+    // Load commissions from API
+    const loadCommissions = async () => {
+        try {
+            showLoading();
+            const response = await api.getCommissions();
 
-    renderTable(commissions);
+            if (response.commissions) {
+                commissions = response.commissions;
+                filteredCommissions = [...commissions];
+                renderTable(filteredCommissions);
+            } else {
+                console.error("Invalid response format:", response);
+                showEmpty();
+            }
+        } catch (error) {
+            console.error("Error loading commissions:", error);
+            showEmpty();
+        } finally {
+            hideLoading();
+        }
+    };
+
+    // Tìm kiếm chiết khấu
+    const applyFilters = () => {
+        const keyword = searchInput.value.toLowerCase().trim();
+        filteredCommissions = commissions.filter(c =>
+            (c.shop || c.shop_name || '').toLowerCase().includes(keyword) ||
+            (c.rate || '').toString().toLowerCase().includes(keyword) ||
+            (c.note || c.description || '').toLowerCase().includes(keyword)
+        );
+        renderTable(filteredCommissions);
+    };
+
+    const resetFilters = () => {
+        if (searchInput) searchInput.value = '';
+        filteredCommissions = [...commissions];
+        renderTable(filteredCommissions);
+    };
+
+    // Event listeners
+    if (searchInput) {
+        searchInput.addEventListener("input", applyFilters);
+    }
+
+    // Init
+    loadCommissions();
 });
