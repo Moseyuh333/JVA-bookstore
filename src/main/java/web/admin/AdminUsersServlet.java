@@ -114,6 +114,24 @@ public class AdminUsersServlet extends HttpServlet {
                     }
                     first = false;
 
+                    String createdAt = "";
+                    java.sql.Timestamp createdTs = rs.getTimestamp("created_at");
+                    if (createdTs != null) {
+                        createdAt = escapeJson(createdTs.toString());
+                    }
+
+                    String updatedAt = "";
+                    java.sql.Timestamp updatedTs = rs.getTimestamp("updated_at");
+                    if (updatedTs != null) {
+                        updatedAt = escapeJson(updatedTs.toString());
+                    }
+
+                    String birthDate = "";
+                    java.sql.Date birth = rs.getDate("birth_date");
+                    if (birth != null) {
+                        birthDate = escapeJson(birth.toString());
+                    }
+
                     json.append("{")
                         .append("\"id\":").append(userId).append(",")
                         .append("\"username\":\"").append(escapeJson(rs.getString("username"))).append("\",")
@@ -123,9 +141,9 @@ public class AdminUsersServlet extends HttpServlet {
                         .append("\"role\":\"").append(escapeJson(rs.getString("role"))).append("\",")
                         .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
                         .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
-                        .append("\"created\":\"").append(escapeJson(rs.getTimestamp("created_at").toString())).append("\",")
-                        .append("\"updated\":\"").append(rs.getTimestamp("updated_at") != null ? escapeJson(rs.getTimestamp("updated_at").toString()) : "").append(",")
-                        .append("\"birth_date\":\"").append(rs.getDate("birth_date") != null ? escapeJson(rs.getDate("birth_date").toString()) : "").append(",")
+                        .append("\"created\":\"").append(createdAt).append("\",")
+                        .append("\"updated\":\"").append(updatedAt).append(",")
+                        .append("\"birth_date\":\"").append(birthDate).append(",")
                         .append("\"address\":\"").append(escapeJson(rs.getString("address"))).append("\"")
                         .append("}");
                 }
