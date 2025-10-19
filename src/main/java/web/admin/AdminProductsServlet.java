@@ -80,14 +80,12 @@ public class AdminProductsServlet extends HttpServlet {
     private void listProducts(HttpServletRequest req, PrintWriter out) throws SQLException {
         String userRole = (String) req.getSession().getAttribute("role");
         Integer ownerId = (Integer) req.getSession().getAttribute("user_id");
-        String shopId = req.getParameter("shop_id");
+
         String search = req.getParameter("search");
         String category = req.getParameter("category");
-        String pageStr = req.getParameter("page");
-        String limitStr = req.getParameter("limit");
-
-        int page = pageStr != null ? Integer.parseInt(pageStr) : 1;
-        int limit = limitStr != null ? Integer.parseInt(limitStr) : 20;
+        String shopId = req.getParameter("shop_id");
+        int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
+        int limit = req.getParameter("limit") != null ? Integer.parseInt(req.getParameter("limit")) : 20;
         int offset = (page - 1) * limit;
 
         StringBuilder sql = new StringBuilder(
@@ -97,104 +95,101 @@ public class AdminProductsServlet extends HttpServlet {
             "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
         );
 
-        if (shopId != null && !shopId.trim().isEmpty())
+        StringBuilder countSql = new StringBuilder(
+            "SELECT COUNT(*) FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
+        );
+
+        // Điều kiện lọc
+        if (shopId != null && !shopId.trim().isEmpty()) {
             sql.append(" AND b.shop_id = ?");
-        if (search != null && !search.trim().isEmpty())
-            sql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ?)");
-        if (category != null && !category.trim().isEmpty())
-            sql.append(" AND b.category = ?");
-
-        sql.append(" ORDER BY b.created_at DESC LIMIT ? OFFSET ?");
-
-        StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM books b WHERE 1=1");
-        if (shopId != null && !shopId.trim().isEmpty())
             countSql.append(" AND b.shop_id = ?");
-        if (search != null && !search.trim().isEmpty())
-            countSql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ?)");
-        if (category != null && !category.trim().isEmpty())
-            countSql.append(" AND b.category = ?");
-
+        }
+        if (category != null && !category.trim().isEmpty()) {
+            sql.append(" AND b.category ILIKE ?");
+            countSql.append(" AND b.category ILIKE ?");
+        }
+        if (search != null && !search.trim().isEmpty()) {
+            sql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ? OR s.name ILIKE ?)");
+            countSql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ? OR s.name ILIKE ?)");
+        }
         if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
             sql.append(" AND s.owner_id = ?");
             countSql.append(" AND s.owner_id = ?");
         }
 
+        sql.append(" ORDER BY b.created_at DESC LIMIT ? OFFSET ?");
+
         try (Connection conn = DBUtil.getConnection()) {
-            // Count total
             int total = 0;
-            try (PreparedStatement countStmt = conn.prepareStatement(countSql.toString())) {
+            try (PreparedStatement psCount = conn.prepareStatement(countSql.toString())) {
                 int param = 1;
                 if (shopId != null && !shopId.trim().isEmpty())
-                    countStmt.setInt(param++, Integer.parseInt(shopId));
+                    psCount.setInt(param++, Integer.parseInt(shopId));
+                if (category != null && !category.trim().isEmpty())
+                    psCount.setString(param++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
                     String pattern = "%" + search.trim() + "%";
-                    countStmt.setString(param++, pattern);
-                    countStmt.setString(param++, pattern);
-                    countStmt.setString(param++, pattern);
+                    psCount.setString(param++, pattern);
+                    psCount.setString(param++, pattern);
+                    psCount.setString(param++, pattern);
+                    psCount.setString(param++, pattern);
                 }
-                if (category != null && !category.trim().isEmpty())
-                    countStmt.setString(param++, category.trim());
-                if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
-                    countStmt.setInt(param++, ownerId);
-                }
-                try (ResultSet rs = countStmt.executeQuery()) {
-                    if (rs.next())
-                        total = rs.getInt(1);
+                if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
+                    psCount.setInt(param++, ownerId);
+
+                try (ResultSet rs = psCount.executeQuery()) {
+                    if (rs.next()) total = rs.getInt(1);
                 }
             }
 
             // Query data
             StringBuilder json = new StringBuilder("{\"products\":[");
-            try (PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
                 int param = 1;
                 if (shopId != null && !shopId.trim().isEmpty())
-                    pstmt.setInt(param++, Integer.parseInt(shopId));
+                    ps.setInt(param++, Integer.parseInt(shopId));
+                if (category != null && !category.trim().isEmpty())
+                    ps.setString(param++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
                     String pattern = "%" + search.trim() + "%";
-                    pstmt.setString(param++, pattern);
-                    pstmt.setString(param++, pattern);
-                    pstmt.setString(param++, pattern);
+                    ps.setString(param++, pattern);
+                    ps.setString(param++, pattern);
+                    ps.setString(param++, pattern);
+                    ps.setString(param++, pattern);
                 }
-                if (category != null && !category.trim().isEmpty())
-                    pstmt.setString(param++, category.trim());
-                if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
-                    pstmt.setInt(param++, ownerId);
-                }
-                pstmt.setInt(param++, limit);
-                pstmt.setInt(param++, offset);
+                if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
+                    ps.setInt(param++, ownerId);
+                ps.setInt(param++, limit);
+                ps.setInt(param++, offset);
 
                 boolean first = true;
-                try (ResultSet rs = pstmt.executeQuery()) {
+                try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        if (!first)
-                            json.append(",");
+                        if (!first) json.append(",");
                         first = false;
                         json.append("{")
-                                .append("\"id\":").append(rs.getInt("id")).append(",")
-                                .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
-                                .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
-                                .append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",")
-                                .append("\"price\":")
-                                .append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : "0").append(",")
-                                .append("\"description\":\"").append(escapeJson(rs.getString("description")))
-                                .append("\",")
-                                .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
-                                .append("\"stock_quantity\":").append(rs.getInt("stock_quantity")).append(",")
-                                .append("\"image_url\":\"").append(escapeJson(rs.getString("image_url"))).append("\",")
-                                .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
-                                .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                                .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
-                                .append("}");
+                            .append("\"id\":").append(rs.getInt("id")).append(",")
+                            .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
+                            .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
+                            .append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",")
+                            .append("\"price\":").append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : 0).append(",")
+                            .append("\"stock_quantity\":").append(rs.getInt("stock_quantity")).append(",")
+                            .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
+                            .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
+                            .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
+                            .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                            .append("}");
                     }
                 }
             }
             json.append("],\"total\":").append(total)
-                    .append(",\"page\":").append(page)
-                    .append(",\"limit\":").append(limit)
-                    .append("}");
+                .append(",\"page\":").append(page)
+                .append(",\"limit\":").append(limit)
+                .append("}");
             out.write(json.toString());
         }
     }
+
 
     private void getProduct(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
