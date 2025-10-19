@@ -292,6 +292,8 @@ public class DBUtil {
 
     private static void ensureOrdersSchema(Connection conn) {
         try (Statement stmt = conn.createStatement()) {
+            ensureOrderRelatedEnums(conn);
+
             if (!columnExists(conn, "orders", "order_date")) {
                 stmt.execute("ALTER TABLE orders ADD COLUMN order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
             }
@@ -364,6 +366,32 @@ public class DBUtil {
         }
     }
 
+    private static void ensureOrderRelatedEnums(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            ensureEnumValue(conn, "order_status", "new");
+            ensureEnumValue(conn, "order_status", "confirmed");
+            ensureEnumValue(conn, "order_status", "shipping");
+            ensureEnumValue(conn, "order_status", "delivered");
+            ensureEnumValue(conn, "order_status", "cancelled");
+            ensureEnumValue(conn, "order_status", "returned");
+
+            ensureEnumValue(conn, "payment_status", "unpaid");
+            ensureEnumValue(conn, "payment_status", "processing");
+            ensureEnumValue(conn, "payment_status", "paid");
+            ensureEnumValue(conn, "payment_status", "failed");
+            ensureEnumValue(conn, "payment_status", "refunded");
+
+            ensureEnumValue(conn, "payment_method", "cod");
+            ensureEnumValue(conn, "payment_method", "vnpay");
+            ensureEnumValue(conn, "payment_method", "momo");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile order enums: " + ex.getMessage());
+        }
+    }
+
     private static void ensureMinimumStockLevels(Connection conn) {
         if (conn == null) {
             return;
@@ -412,6 +440,48 @@ public class DBUtil {
             stmt.executeUpdate();
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to seed FREESHIP coupon: " + ex.getMessage());
+            return;
+        }
+
+        Long couponId = null;
+        String couponIdSql = "SELECT id FROM coupon_codes WHERE code = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(couponIdSql)) {
+            stmt.setString(1, "FREESHIP");
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    couponId = rs.getLong(1);
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to fetch FREESHIP coupon id: " + ex.getMessage());
+            return;
+        }
+
+        if (couponId == null) {
+            return;
+        }
+
+        try {
+            if (!tableExists(conn, "user_coupons")) {
+                return;
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to inspect user_coupons table: " + ex.getMessage());
+            return;
+        }
+
+        String assignSql = "INSERT INTO user_coupons (user_id, coupon_id, status) "
+            + "SELECT u.id, ?, 'available' FROM users u "
+            + "WHERE NOT EXISTS (SELECT 1 FROM user_coupons uc WHERE uc.user_id = u.id AND uc.coupon_id = ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(assignSql)) {
+            stmt.setLong(1, couponId);
+            stmt.setLong(2, couponId);
+            int assigned = stmt.executeUpdate();
+            if (assigned > 0) {
+                System.out.println("DBUtil - Assigned FREESHIP coupon to " + assigned + " user(s).");
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to assign FREESHIP coupon: " + ex.getMessage());
         }
     }
 
@@ -481,6 +551,59 @@ public class DBUtil {
             }
         }
         return 0;
+    }
+
+    private static boolean tableExists(Connection conn, String tableName) throws SQLException {
+        if (conn == null) {
+            return false;
+        }
+        String sql = "SELECT 1 FROM information_schema.tables WHERE table_name = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static boolean enumTypeExists(Connection conn, String typeName) throws SQLException {
+        if (conn == null) {
+            return false;
+        }
+        String sql = "SELECT 1 FROM pg_type WHERE typname = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, typeName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static void ensureEnumValue(Connection conn, String typeName, String value) throws SQLException {
+        if (!enumTypeExists(conn, typeName)) {
+            return;
+        }
+        String existsSql = "SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = ? AND e.enumlabel = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(existsSql)) {
+            stmt.setString(1, typeName);
+            stmt.setString(2, value);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return;
+                }
+            }
+        }
+
+        if (!typeName.matches("[a-zA-Z0-9_]+")) {
+            throw new SQLException("Invalid enum type name: " + typeName);
+        }
+        String sanitizedValue = value.replace("'", "''");
+        String alterSql = "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid "
+            + "WHERE t.typname = '" + typeName + "' AND e.enumlabel = '" + sanitizedValue + "') THEN "
+            + "ALTER TYPE " + typeName + " ADD VALUE '" + sanitizedValue + "'; END IF; END $$;";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(alterSql);
+        }
     }
 
     private static boolean columnExists(Connection conn, String tableName, String columnName) throws SQLException {
