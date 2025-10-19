@@ -124,6 +124,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const contextPath = '<%= request.getContextPath() %>';
+        const ADMIN_SECRET = (() => {
+            const fromQuery = new URLSearchParams(window.location.search).get('secret');
+            if (fromQuery && fromQuery.trim() !== '') {
+                return fromQuery.trim();
+            }
+            return 'dev-secret-key-change-me';
+        })();
         const state = {
             status: 'all',
             query: '',
@@ -174,6 +181,7 @@
             if (state.query && state.query.trim() !== '') {
                 params.set('q', state.query.trim());
             }
+            params.set('secret', ADMIN_SECRET);
             const feedback = document.getElementById('ordersFeedback');
             feedback.textContent = 'Đang tải danh sách đơn hàng...';
             try {
@@ -238,7 +246,7 @@
             const detailBody = document.getElementById('detailBody');
             detailBody.innerHTML = '<div class="text-center py-4 text-muted">Đang tải chi tiết đơn hàng...</div>';
             try {
-                const response = await fetch(`${contextPath}/api/admin/orders?action=detail&id=${orderId}`);
+                const response = await fetch(`${contextPath}/api/admin/orders?action=detail&id=${orderId}&secret=${encodeURIComponent(ADMIN_SECRET)}`);
                 const data = await response.json();
                 if (!response.ok || !data.success) {
                     throw new Error(data.message || 'Không thể tải chi tiết đơn hàng');
@@ -357,7 +365,7 @@
             button.disabled = true;
             button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
             try {
-                const response = await fetch(`${contextPath}/api/admin/orders`, {
+                const response = await fetch(`${contextPath}/api/admin/orders?secret=${encodeURIComponent(ADMIN_SECRET)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'update-status', orderId: state.selectedOrderId, status, note })

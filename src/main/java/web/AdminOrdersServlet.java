@@ -29,6 +29,9 @@ public class AdminOrdersServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json; charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
+        if (!isAuthorized(req, resp)) {
+            return;
+        }
         String action = valueOrDefault(req.getParameter("action"), "list");
         try {
             switch (action.toLowerCase(Locale.US)) {
@@ -56,6 +59,9 @@ public class AdminOrdersServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json; charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
+        if (!isAuthorized(req, resp)) {
+            return;
+        }
         Map<String, Object> payload = readJsonBody(req);
         String action = valueOrDefault(req.getParameter("action"), "");
         if (payload.containsKey("action")) {
@@ -269,5 +275,47 @@ public class AdminOrdersServlet extends HttpServlet {
 
     private String valueOrDefault(String value, String defaultValue) {
         return value != null ? value : defaultValue;
+    }
+
+    private boolean isAuthorized(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (isLocalhost(req)) {
+            return true;
+        }
+        String expected = getAdminSecret();
+        String paramSecret = trimToNull(req.getParameter("secret"));
+        String headerSecret = trimToNull(req.getHeader("X-Admin-Secret"));
+        if (expected.equals(paramSecret) || expected.equals(headerSecret)) {
+            return true;
+        }
+        resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", false);
+        body.put("message", "Forbidden");
+        resp.getWriter().write(gson.toJson(body));
+        return false;
+    }
+
+    private boolean isLocalhost(HttpServletRequest req) {
+        String remote = req.getRemoteAddr();
+        return "127.0.0.1".equals(remote) || "0:0:0:0:0:0:0:1".equals(remote) || "::1".equals(remote);
+    }
+
+    private String getAdminSecret() {
+        String env = System.getenv("ADMIN_PANEL_SECRET");
+        if (env != null) {
+            env = env.trim();
+            if (!env.isEmpty()) {
+                return env;
+            }
+        }
+        return "dev-secret-key-change-me";
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
