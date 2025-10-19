@@ -3,11 +3,12 @@
 
 const contextPath = window.appConfig?.contextPath || '';
 let cachedUsers = [];
+let currentSearchTerm = '';
 
 /**
  * Tải danh sách người dùng từ API quản trị.
  */
-async function loadAdminUsers(searchTerm = '') {
+async function loadAdminUsers(searchTerm = currentSearchTerm) {
     const tableBody = document.querySelector('#User');
     const loading = document.querySelector('#loadingState');
     const emptyState = document.querySelector('#emptyState');
@@ -57,7 +58,16 @@ async function loadAdminUsers(searchTerm = '') {
             throw new Error(payload.error);
         }
 
-        cachedUsers = Array.isArray(payload?.users) ? payload.users : [];
+        const rawUsers = Array.isArray(payload?.users) ? payload.users : [];
+        const seen = new Set();
+        cachedUsers = rawUsers.filter(user => {
+            const key = user?.id ?? user?.username;
+            if (!key || seen.has(key)) {
+                return false;
+            }
+            seen.add(key);
+            return true;
+        });
 
         if (cachedUsers.length === 0) {
             if (emptyState) emptyState.style.display = 'block';
@@ -123,8 +133,8 @@ async function loadAdminUsers(searchTerm = '') {
  */
 async function applyFilters() {
     const input = document.getElementById('searchInput');
-    const searchTerm = input ? input.value.trim() : '';
-    await loadAdminUsers(searchTerm);
+    currentSearchTerm = input ? input.value.trim() : '';
+    await loadAdminUsers(currentSearchTerm);
 }
 
 /**
@@ -133,7 +143,8 @@ async function applyFilters() {
 function resetFilters() {
     const input = document.getElementById('searchInput');
     if (input) input.value = '';
-    loadAdminUsers();
+    currentSearchTerm = '';
+    loadAdminUsers('');
 }
 
 /**
@@ -298,7 +309,7 @@ function setupCreateUserModal() {
             }
 
             setFeedback('Tạo tài khoản thành công.', 'success');
-            await loadAdminUsers();
+            await loadAdminUsers(currentSearchTerm);
 
             setTimeout(() => {
                 closeModal();
