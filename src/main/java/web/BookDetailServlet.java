@@ -7,8 +7,6 @@ import javax.servlet.annotation.*;
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @WebServlet(name = "BookDetailServlet", urlPatterns = { "/books/detail" })
 public class BookDetailServlet extends HttpServlet {
@@ -36,7 +34,7 @@ public class BookDetailServlet extends HttpServlet {
             // --- Lấy chi tiết sách ---
         PreparedStatement ps = conn.prepareStatement(
             "SELECT id, title, author, price, original_price, discount, " +
-                "rating_avg, review_count, stock, publisher, category, image_url, " +
+                "rating_avg, review_count, stock, publisher, category, cover_image, image_url, " +
                 "shop_name, book_url, highlights, specifications, description, reviews " +
                 "FROM books WHERE id = ?");
             ps.setInt(1, Integer.parseInt(id));
@@ -61,7 +59,11 @@ public class BookDetailServlet extends HttpServlet {
             req.setAttribute("bookStock", rs.getString("stock"));
             req.setAttribute("bookPublisher", rs.getString("publisher"));
             req.setAttribute("bookCategory", rs.getString("category"));
-            req.setAttribute("imageUrl", rs.getString("image_url"));
+            String coverImage = safeGet(rs, "cover_image");
+            if (coverImage == null || coverImage.trim().isEmpty()) {
+                coverImage = safeGet(rs, "image_url");
+            }
+            req.setAttribute("bookImage", coverImage);
             req.setAttribute("bookShop", rs.getString("shop_name"));
             req.setAttribute("bookUrl", rs.getString("book_url"));
             req.setAttribute("bookHighlights", rs.getString("highlights"));
@@ -156,9 +158,9 @@ public class BookDetailServlet extends HttpServlet {
             }
 
             // --- Lấy sách cùng danh mục (gợi ý) ---
-            PreparedStatement psRelated = conn.prepareStatement(
-                    "SELECT id, title, price, image_url, category " +
-                            "FROM books WHERE category = ? AND id <> ? LIMIT 4");
+        PreparedStatement psRelated = conn.prepareStatement(
+            "SELECT id, title, price, cover_image, image_url, category " +
+                "FROM books WHERE category = ? AND id <> ? LIMIT 4");
             psRelated.setString(1, rs.getString("category"));
             psRelated.setInt(2, rs.getInt("id"));
             ResultSet rsRelated = psRelated.executeQuery();
@@ -170,7 +172,11 @@ public class BookDetailServlet extends HttpServlet {
                 b.put("title", rsRelated.getString("title"));
                 b.put("price", rsRelated.getBigDecimal("price"));
                 b.put("category", rsRelated.getString("category"));
-                b.put("imageUrl", rsRelated.getString("image_url"));
+                String relatedImage = safeGet(rsRelated, "cover_image");
+                if (relatedImage == null || relatedImage.trim().isEmpty()) {
+                    relatedImage = safeGet(rsRelated, "image_url");
+                }
+                b.put("coverImage", relatedImage);
                 relatedBooks.add(b);
             }
             req.setAttribute("relatedBooks", relatedBooks);
@@ -182,5 +188,16 @@ public class BookDetailServlet extends HttpServlet {
 
         RequestDispatcher rd = req.getRequestDispatcher("/book-detail.jsp");
         rd.forward(req, resp);
+    }
+
+    private String safeGet(ResultSet rs, String column) {
+        if (rs == null || column == null) {
+            return null;
+        }
+        try {
+            return rs.getString(column);
+        } catch (SQLException ignored) {
+            return null;
+        }
     }
 }
