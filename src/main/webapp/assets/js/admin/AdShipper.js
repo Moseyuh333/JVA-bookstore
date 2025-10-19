@@ -83,7 +83,14 @@ async function loadShippers() {
 // 📊 CẬP NHẬT THỐNG KÊ
 // ========================
 function updateStats(total) {
-    document.getElementById('totalShippers')?.textContent = total || 0;
+    const totalEl = document.getElementById('totalShippers');
+    if (totalEl) totalEl.textContent = total || 0;
+
+    const activeEl = document.getElementById('activeShippers');
+    if (activeEl) {
+        const activeCount = document.querySelectorAll('#ShipperTable tr .badge-success').length;
+        activeEl.textContent = activeCount;
+    }
     const activeCount = document.querySelectorAll('#ShipperTable tr .badge-success').length;
     document.getElementById('activeShippers')?.textContent = activeCount;
 }
