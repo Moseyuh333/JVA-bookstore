@@ -202,6 +202,25 @@ public class DBUtil {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_status_history_status ON order_status_history(status)");
                 ensureOrderStatusHistorySchema(conn);
 
+                String createOrderPaymentsTableSQL = "CREATE TABLE IF NOT EXISTS order_payments (" +
+                    "id SERIAL PRIMARY KEY," +
+                    "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +
+                    "method VARCHAR(20) NOT NULL," +
+                    "provider VARCHAR(50)," +
+                    "status VARCHAR(20) NOT NULL DEFAULT 'pending'," +
+                    "amount DECIMAL(12, 2) NOT NULL," +
+                    "currency VARCHAR(10) DEFAULT 'VND'," +
+                    "transaction_code VARCHAR(120)," +
+                    "paid_at TIMESTAMP," +
+                    "metadata JSONB," +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+                stmt.execute(createOrderPaymentsTableSQL);
+                stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_order_payments_transaction ON order_payments(transaction_code) WHERE transaction_code IS NOT NULL");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_order_payments_order ON order_payments(order_id)");
+                ensureOrderPaymentsSchema(conn);
+
                 // Engagement tables that power catalog ranking
                 String createBookFavoritesTableSQL = "CREATE TABLE IF NOT EXISTS book_favorites (" +
                     "id SERIAL PRIMARY KEY," +
@@ -476,6 +495,40 @@ public class DBUtil {
             ensureCouponColumns(conn);
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to ensure coupon schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureOrderPaymentsSchema(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "order_payments", "provider")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN provider VARCHAR(50)");
+            }
+            if (!columnExists(conn, "order_payments", "currency")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN currency VARCHAR(10) DEFAULT 'VND'");
+                stmt.execute("UPDATE order_payments SET currency = 'VND' WHERE currency IS NULL");
+            }
+            if (!columnExists(conn, "order_payments", "transaction_code")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN transaction_code VARCHAR(120)");
+            }
+            if (!columnExists(conn, "order_payments", "paid_at")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN paid_at TIMESTAMP");
+            }
+            if (!columnExists(conn, "order_payments", "metadata")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN metadata JSONB");
+            }
+            if (!columnExists(conn, "order_payments", "created_at")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "order_payments", "updated_at")) {
+                stmt.execute("ALTER TABLE order_payments ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            stmt.execute("UPDATE order_payments SET method = COALESCE(method, 'cod')");
+            stmt.execute("UPDATE order_payments SET status = COALESCE(status, 'pending')");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile order_payments schema: " + ex.getMessage());
         }
     }
 
