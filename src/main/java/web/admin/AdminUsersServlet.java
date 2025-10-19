@@ -43,23 +43,27 @@ public class AdminUsersServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
         PrintWriter out = resp.getWriter();
-        
+
         String action = req.getParameter("action");
-        
+
         try {
-            int affected = 0;
-            
-            if ("clear-tokens".equals(action)) {
-                affected = clearVerificationTokens();
+            if ("create".equals(action)) {
+                createUser(req, out);
+            } else if ("update".equals(action)) {
+                updateUser(req, out);
+            } else if ("delete".equals(action)) {
+                deleteUser(req, out);
+            } else if ("clear-tokens".equals(action)) {
+                int affected = clearVerificationTokens();
+                out.write("{\"message\":\"Success\", \"affected\":" + affected + "}");
             } else if ("verify-all".equals(action)) {
-                affected = verifyAllUsers();
+                int affected = verifyAllUsers();
+                out.write("{\"message\":\"Success\", \"affected\":" + affected + "}");
             } else {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write("{\"error\":\"Invalid action\"}");
                 return;
             }
-            
-            out.write("{\"message\":\"Success\", \"affected\":" + affected + "}");
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write("{\"error\":\"" + e.getMessage() + "\"}");
@@ -93,9 +97,9 @@ public class AdminUsersServlet extends HttpServlet {
                     .append("\"role\":\"").append(escapeJson(rs.getString("role"))).append("\",")
                     .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
                     .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
-                    .append("\"created\":\"").append(rs.getTimestamp("created_at").toString()).append("\",")
-                    .append("\"updated\":\"").append(rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toString() : "").append("\",")
-                    .append("\"birth_date\":\"").append(rs.getDate("birth_date") != null ? rs.getDate("birth_date").toString() : "").append("\",")
+                    .append("\"created\":\"").append(escapeJson(rs.getTimestamp("created_at").toString())).append("\",")
+                    .append("\"updated\":\"").append(rs.getTimestamp("updated_at") != null ? escapeJson(rs.getTimestamp("updated_at").toString()) : "").append("\",")
+                    .append("\"birth_date\":\"").append(rs.getDate("birth_date") != null ? escapeJson(rs.getDate("birth_date").toString()) : "").append("\",")
                     .append("\"address\":\"").append(escapeJson(rs.getString("address"))).append("\"")
                     .append("}");
             }
@@ -124,10 +128,108 @@ public class AdminUsersServlet extends HttpServlet {
     
     private int verifyAllUsers() throws SQLException {
         String sql = "UPDATE users SET email_verified = true WHERE email_verified = false";
-        
+
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return pstmt.executeUpdate();
+        }
+    }
+
+    private void createUser(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String username = req.getParameter("username");
+        String email = req.getParameter("email");
+        String passwordHash = req.getParameter("password_hash");
+        String fullName = req.getParameter("full_name");
+        String phone = req.getParameter("phone");
+        String role = req.getParameter("role");
+        String status = req.getParameter("status");
+
+        if (username == null || username.trim().isEmpty() || email == null || email.trim().isEmpty() || passwordHash == null) {
+            out.write("{\"error\":\"Username, email and password_hash are required\"}");
+            return;
+        }
+
+        String sql = "INSERT INTO users (username, email, password_hash, full_name, phone, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username.trim());
+            pstmt.setString(2, email.trim());
+            pstmt.setString(3, passwordHash);
+            pstmt.setString(4, fullName != null ? fullName.trim() : null);
+            pstmt.setString(5, phone != null ? phone.trim() : null);
+            pstmt.setString(6, role != null ? role : "user");
+            pstmt.setString(7, status != null ? status : "active");
+
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                out.write("{\"message\":\"User created successfully\"}");
+            } else {
+                out.write("{\"error\":\"Failed to create user\"}");
+            }
+        }
+    }
+
+    private void updateUser(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String idStr = req.getParameter("id");
+        String username = req.getParameter("username");
+        String email = req.getParameter("email");
+        String fullName = req.getParameter("full_name");
+        String phone = req.getParameter("phone");
+        String role = req.getParameter("role");
+        String status = req.getParameter("status");
+
+        if (idStr == null || username == null || username.trim().isEmpty() || email == null || email.trim().isEmpty()) {
+            out.write("{\"error\":\"ID, username and email are required\"}");
+            return;
+        }
+
+        int id = Integer.parseInt(idStr);
+        String sql = "UPDATE users SET username = ?, email = ?, full_name = ?, phone = ?, role = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username.trim());
+            pstmt.setString(2, email.trim());
+            pstmt.setString(3, fullName != null ? fullName.trim() : null);
+            pstmt.setString(4, phone != null ? phone.trim() : null);
+            pstmt.setString(5, role != null ? role : "user");
+            pstmt.setString(6, status != null ? status : "active");
+            pstmt.setInt(7, id);
+
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                out.write("{\"message\":\"User updated successfully\"}");
+            } else {
+                out.write("{\"error\":\"User not found\"}");
+            }
+        }
+    }
+
+    private void deleteUser(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String idStr = req.getParameter("id");
+
+        if (idStr == null) {
+            out.write("{\"error\":\"ID is required\"}");
+            return;
+        }
+
+        int id = Integer.parseInt(idStr);
+        String sql = "DELETE FROM users WHERE id = ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                out.write("{\"message\":\"User deleted successfully\"}");
+            } else {
+                out.write("{\"error\":\"User not found\"}");
+            }
         }
     }
 }
