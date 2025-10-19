@@ -19,7 +19,9 @@ public class AdminCategoriesServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json");
+        resp.setContentType("application/json; charset=UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+        req.setCharacterEncoding("UTF-8");
         PrintWriter out = resp.getWriter();
 
         String action = req.getParameter("action");
@@ -41,7 +43,10 @@ public class AdminCategoriesServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json");
+        resp.setContentType("application/json; charset=UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+        req.setCharacterEncoding("UTF-8");
+
         PrintWriter out = resp.getWriter();
 
         String action = req.getParameter("action");
@@ -66,7 +71,7 @@ public class AdminCategoriesServlet extends HttpServlet {
     }
 
     private void listCategories(PrintWriter out) throws SQLException {
-        String sql = "SELECT c.id, c.name, c.slug, c.description, c.created_at, c.updated_at, COUNT(p.id) as product_count FROM categories c LEFT JOIN products p ON c.id = p.category_id GROUP BY c.id, c.name, c.slug, c.description, c.created_at, c.updated_at ORDER BY c.name";
+        String sql = "SELECT id, name, total_products as product_count, created_at FROM categories ORDER BY name";
 
         StringBuilder json = new StringBuilder();
         json.append("{\"categories\":[");
@@ -83,11 +88,8 @@ public class AdminCategoriesServlet extends HttpServlet {
                 json.append("{")
                     .append("\"id\":").append(rs.getInt("id")).append(",")
                     .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
-                    .append("\"slug\":\"").append(escapeJson(rs.getString("slug"))).append("\",")
-                    .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
                     .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
-                    .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                    .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                    .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
                     .append("}");
             }
         }
@@ -136,7 +138,7 @@ public class AdminCategoriesServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "UPDATE categories SET name = ?, slug = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        String sql = "UPDATE categories SET name = ?, total_product = ?, created_at = CURRENT_TIMESTAMP WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

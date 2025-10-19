@@ -506,10 +506,9 @@
                             <table class="table-custom">
                                 <thead>
                                     <tr>
+                                        <th>Mã danh mục</th>
                                         <th>Tên danh mục</th>
-                                        <th>Mô tả</th>
                                         <th>Số sản phẩm</th>
-                                        <th>Trạng thái</th>
                                         <th>Ngày tạo</th>
                                         <th>Thao tác</th>
                                     </tr>

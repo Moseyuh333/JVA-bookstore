@@ -14,20 +14,28 @@ document.addEventListener("DOMContentLoaded", () => {
     let filteredCategories = [];
 
     // API functions
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem("admin_token");
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
+    };
+
     const api = {
-        getCategories: () => fetch(`${contextPath}/api/admin/categories?action=list`).then(r => r.json()),
+        getCategories: () => fetch(`${contextPath}/api/admin/categories?action=list`, {
+            headers: getAuthHeaders()
+        }).then(r => r.json()),
         createCategory: (data) => fetch(`${contextPath}/api/admin/categories?action=create`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams(data)
         }).then(r => r.json()),
         updateCategory: (id, data) => fetch(`${contextPath}/api/admin/categories?action=update&id=${id}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams(data)
         }).then(r => r.json()),
         deleteCategory: (id) => fetch(`${contextPath}/api/admin/categories?action=delete&id=${id}`, {
-            method: 'POST'
+            method: 'POST',
+            headers: getAuthHeaders()
         }).then(r => r.json())
     };
 
@@ -70,10 +78,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Render functions
     const renderCategoryRow = (category) => `
         <tr>
+            <td>${category.id}</td>
             <td>${escapeHtml(category.name)}</td>
-            <td>${escapeHtml(category.description || "")}</td>
             <td>${category.product_count || 0}</td>
-            <td><span class="badge-custom badge-active">Hoạt động</span></td>
             <td>${formatDate(category.created_at)}</td>
             <td>
                 <div class="actions">
