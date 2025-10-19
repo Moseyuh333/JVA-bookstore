@@ -1,5 +1,6 @@
 package utils;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -234,6 +235,8 @@ public class DBUtil {
             ensurePasswordHashColumn(conn);
             BookDataLoader.seedBooksIfEmpty(conn);
             BookDataLoader.refreshBookAssets(conn);
+            ensureMinimumStockLevels(conn);
+            ensureSampleCoupons(conn);
             seedBookMetrics(conn);
         } catch (SQLException e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
@@ -299,6 +302,57 @@ public class DBUtil {
             stmt.execute("UPDATE books SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile books schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureMinimumStockLevels(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        String sql = "UPDATE books SET stock_quantity = ? WHERE stock_quantity IS NULL OR stock_quantity <= ?";
+        try {
+            if (!columnExists(conn, "books", "stock_quantity")) {
+                return;
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to inspect book stock column: " + ex.getMessage());
+            return;
+        }
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, 100);
+            stmt.setInt(2, 0);
+            int updated = stmt.executeUpdate();
+            if (updated > 0) {
+                System.out.println("DBUtil - Refilled stock for " + updated + " book(s).");
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to ensure minimum stock levels: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureSampleCoupons(Connection conn) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            if (!columnExists(conn, "coupon_codes", "code")) {
+                return;
+            }
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to inspect coupon schema: " + ex.getMessage());
+            return;
+        }
+
+        String freeShipSql = "INSERT INTO coupon_codes (code, description, coupon_type, value, max_discount, minimum_order, usage_limit, per_user_limit, start_date, end_date, status) "
+            + "VALUES (?, ?, 'fixed', ?, NULL, 0, NULL, 1, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP + INTERVAL '30 days', 'active') "
+            + "ON CONFLICT (code) DO UPDATE SET description = EXCLUDED.description, coupon_type = EXCLUDED.coupon_type, value = EXCLUDED.value, max_discount = EXCLUDED.max_discount, minimum_order = EXCLUDED.minimum_order, status = 'active', updated_at = CURRENT_TIMESTAMP";
+        try (PreparedStatement stmt = conn.prepareStatement(freeShipSql)) {
+            stmt.setString(1, "FREESHIP");
+            stmt.setString(2, "Miễn phí vận chuyển cho đơn hàng bất kỳ (tối đa 26.000đ).");
+            stmt.setBigDecimal(3, BigDecimal.valueOf(26000));
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to seed FREESHIP coupon: " + ex.getMessage());
         }
     }
 
