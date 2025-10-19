@@ -71,6 +71,7 @@
                 </div>
                 <div class="flex items-center space-x-3">
                     <button type="button"
+                            data-open-search
                             class="hidden sm:inline-flex items-center px-3 py-2 rounded-full hover:bg-amber-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200">
                         <i data-feather="search" class="w-5 h-5 mr-1"></i>
                         <span class="font-medium">Tìm kiếm</span>
@@ -106,6 +107,7 @@
     </nav>
     <div id="mobileMenu" class="md:hidden hidden bg-amber-900/95 text-white border-t border-amber-700">
         <div class="px-4 py-4 space-y-3 text-sm">
+            <button type="button" data-open-search class="w-full text-left block font-medium hover:text-amber-200 transition">Tìm kiếm sách</button>
             <a href="<%= contextPath %>/index.jsp" class="block font-medium hover:text-amber-200 transition">Trang chủ</a>
             <a href="<%= contextPath %>/catalog.jsp" class="block font-medium hover:text-amber-200 transition">Danh mục sách</a>
             <a href="<%= contextPath %>/catalog.jsp?sort=best" class="block font-medium hover:text-amber-200 transition">Bán chạy</a>
@@ -114,6 +116,32 @@
                     class="w-full text-left block font-medium hover:text-amber-200 transition">Giỏ hàng</button>
             <div class="border-t border-amber-700/60 pt-3 text-amber-200/90">
                 <p class="text-xs leading-relaxed">Đăng nhập để quản lý đơn hàng, đánh giá sách và đồng bộ giỏ hàng.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="globalSearchOverlay" class="fixed inset-0 z-[80] hidden">
+        <div class="absolute inset-0 bg-black/60" data-search-dismiss></div>
+        <div class="relative mx-auto w-full max-w-3xl px-4 mt-20">
+            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-amber-100">
+                <div class="px-6 py-4 flex items-center justify-between border-b border-gray-100">
+                    <h2 class="text-lg font-semibold text-gray-800">Tìm kiếm sách</h2>
+                    <button type="button" data-search-dismiss class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-gray-500 hover:text-gray-800 hover:border-gray-400 transition">
+                        <i data-feather="x" class="w-4 h-4"></i>
+                        <span class="sr-only">Đóng tìm kiếm</span>
+                    </button>
+                </div>
+                <form id="globalSearchForm" class="px-6 py-4 border-b border-gray-100" novalidate>
+                    <label class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-amber-500">
+                        <i data-feather="search" class="w-5 h-5 text-amber-600"></i>
+                        <input id="globalSearchInput" name="q" type="search" autocomplete="off" minlength="2"
+                               placeholder="Nhập tên sách, tác giả hoặc ISBN..." class="flex-1 bg-transparent focus:outline-none text-gray-800 placeholder-gray-400">
+                    </label>
+                </form>
+                <div id="globalSearchMessage" class="px-6 py-3 text-sm text-gray-500">
+                    Nhập tối thiểu 2 ký tự để tìm kiếm sách.
+                </div>
+                <div id="globalSearchResults" class="max-h-80 overflow-y-auto divide-y divide-gray-100 hidden" aria-live="polite"></div>
             </div>
         </div>
     </div>

@@ -951,7 +951,13 @@ public class DBUtil {
         if (url == null || username == null || password == null) {
             throw new SQLException("Database configuration not initialized. Ensure DATABASE_URL env var is set or db.properties exists.");
         }
-        return DriverManager.getConnection(url, username, password);
+        Connection connection = DriverManager.getConnection(url, username, password);
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("SET client_encoding TO 'UTF8'");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to enforce UTF-8 client encoding: " + ex.getMessage());
+        }
+        return connection;
     }
 
     public static void createUser(String username, String email, String passwordHash, String verificationToken) throws SQLException {

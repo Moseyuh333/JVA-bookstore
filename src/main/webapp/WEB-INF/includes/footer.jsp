@@ -107,6 +107,7 @@
         window.appConfig.contextPath = '<%=request.getContextPath()%>';
     </script>
     <script src="<%=request.getContextPath()%>/assets/js/app-shell.js"></script>
+    <script src="<%=request.getContextPath()%>/assets/js/global-search.js"></script>
     <script src="<%=request.getContextPath()%>/assets/js/api-client.js"></script>
     <script src="<%=request.getContextPath()%>/assets/js/cart-client.js"></script>
     <script src="<%=request.getContextPath()%>/assets/js/cart-ui.js"></script>

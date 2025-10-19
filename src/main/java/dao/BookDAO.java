@@ -162,6 +162,47 @@ public class BookDAO {
         }
     }
 
+    public static List<Book> searchBooks(String keyword, int limit) throws SQLException {
+        if (keyword == null) {
+            return Collections.emptyList();
+        }
+        String trimmed = keyword.trim();
+        if (trimmed.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (limit <= 0) {
+            limit = 10;
+        }
+        limit = Math.min(limit, 50);
+
+        String escaped = escapeLikePattern(trimmed);
+        String pattern = "%" + escaped + "%";
+
+        String sql = BASE_SELECT +
+                " WHERE (b.title ILIKE ? ESCAPE '\\' " +
+                "OR b.author ILIKE ? ESCAPE '\\' " +
+                "OR b.isbn ILIKE ? ESCAPE '\\') " +
+                "ORDER BY rating_count DESC, total_sold DESC, b.title ASC LIMIT ?";
+
+        try (Connection connection = DBUtil.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, pattern);
+            statement.setString(2, pattern);
+            statement.setString(3, pattern);
+            statement.setInt(4, limit);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Book> books = new ArrayList<>();
+                while (rs.next()) {
+                    books.add(mapRow(rs));
+                }
+                return books;
+            }
+        } catch (SQLException ex) {
+            System.err.println("BookDAO - Search failed: " + sql + " | keyword=" + trimmed + " | msg=" + ex.getMessage());
+            throw ex;
+        }
+    }
+
     public static boolean isValidSortParam(String value) {
         if (value == null) {
             return true;
@@ -190,6 +231,13 @@ public class BookDAO {
             default:
                 return false;
         }
+    }
+
+    private static String escapeLikePattern(String input) {
+        return input
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 
     private static PreparedStatement prepare(Connection connection, String sql, List<Object> params) throws SQLException {

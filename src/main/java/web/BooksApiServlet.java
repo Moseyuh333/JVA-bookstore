@@ -57,6 +57,9 @@ public class BooksApiServlet extends HttpServlet {
                 case "/categories":
                     handleCategories(resp);
                     break;
+                case "/search":
+                    handleSearch(req, resp);
+                    break;
                 case "/":
                 default:
                     handleCatalogList(req, resp);
@@ -94,6 +97,27 @@ public class BooksApiServlet extends HttpServlet {
     JsonObject payload = new JsonObject();
     payload.add("data", toStringJsonArray(categories));
         payload.addProperty("count", categories.size());
+        writeJson(resp, payload);
+    }
+
+    private void handleSearch(HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
+        String keyword = trimToNull(req.getParameter("q"));
+        int limit = parsePositiveInt(req.getParameter("limit"), 10, 50);
+
+        JsonObject payload = new JsonObject();
+        payload.addProperty("query", keyword == null ? "" : keyword);
+
+        if (keyword == null || keyword.length() < 2) {
+            payload.add("data", new JsonArray());
+            payload.addProperty("count", 0);
+            payload.addProperty("message", "Nhập tối thiểu 2 ký tự để tìm kiếm sách");
+            writeJson(resp, payload);
+            return;
+        }
+
+        List<Book> books = BookDAO.searchBooks(keyword, limit);
+        payload.add("data", toBookJsonArray(books));
+        payload.addProperty("count", books.size());
         writeJson(resp, payload);
     }
 
