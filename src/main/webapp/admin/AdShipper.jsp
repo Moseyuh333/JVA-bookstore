@@ -537,6 +537,7 @@
                                         <th>Email</th>
                                         <th>Khu vực phục vụ</th>
                                         <th>Phí cơ bản</th>
+                                        <th>Thời gian ước tính</th>
                                         <th>Trạng thái</th>
                                         <th>Ngày tạo</th>
                                         <th>Thao tác</th>
