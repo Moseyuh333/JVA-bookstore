@@ -175,41 +175,39 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    // ===== Search and Reset =====
+    const resetBtn = document.getElementById("btnReset");
+
+    if (searchBtn) {
+        searchBtn.addEventListener("click", () => {
+            const searchValue = searchInput ? searchInput.value.trim() : "";
+            currentSearch = searchValue;
+            currentPage = 1;
+            loadProducts(currentPage, currentSearch);
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+            if (searchInput) searchInput.value = "";
+            currentSearch = "";
+            currentPage = 1;
+            loadProducts(currentPage, currentSearch);
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                const searchValue = searchInput.value.trim();
+                currentSearch = searchValue;
+                currentPage = 1;
+                loadProducts(currentPage, currentSearch);
+            }
+        });
+    }
+
     // ===== Init =====
     loadProducts();
     loadStats();
 });
-
-// ===== Search and Reset =====
-const searchBtn = document.getElementById("searchBtn");
-const resetBtn = document.getElementById("btnReset"); // Assuming reset button has id="btnReset"
-const searchInput = document.getElementById("searchInput");
-
-if (searchBtn) {
-    searchBtn.addEventListener("click", () => {
-        const searchValue = searchInput ? searchInput.value.trim() : "";
-        currentSearch = searchValue;
-        currentPage = 1;
-        loadProducts(currentPage, currentSearch);
-    });
-}
-
-if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-        if (searchInput) searchInput.value = "";
-        currentSearch = "";
-        currentPage = 1;
-        loadProducts(currentPage, currentSearch);
-    });
-}
-
-if (searchInput) {
-    searchInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            const searchValue = searchInput.value.trim();
-            currentSearch = searchValue;
-            currentPage = 1;
-            loadProducts(currentPage, currentSearch);
-        }
-    });
-}
