@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public final class CommentDAO {
 
@@ -20,6 +21,19 @@ public final class CommentDAO {
         if (!ReviewDAO.canReview(userId, bookId)) {
             throw new SQLException("Bạn chỉ có thể bình luận sản phẩm đã mua");
         }
+        if (content == null || content.trim().length() < 50) {
+            throw new SQLException("Nội dung bình luận phải có ít nhất 50 ký tự");
+        }
+        String normalizedContent = content.trim();
+        String normalizedMediaType = null;
+        if (mediaType != null && !mediaType.trim().isEmpty()) {
+            String lowered = mediaType.trim().toLowerCase(Locale.ROOT);
+            if (!"image".equals(lowered) && !"video".equals(lowered)) {
+                throw new SQLException("Loại nội dung đính kèm không hợp lệ. Chỉ hỗ trợ image hoặc video");
+            }
+            normalizedMediaType = lowered;
+        }
+        String normalizedMediaUrl = mediaUrl != null && !mediaUrl.trim().isEmpty() ? mediaUrl.trim() : null;
         String sql = "INSERT INTO book_comments (user_id, book_id, order_id, order_item_id, content, media_type, media_url, status) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, 'published')";
         try (Connection conn = DBUtil.getConnection();
@@ -36,9 +50,17 @@ public final class CommentDAO {
             } else {
                 stmt.setLong(4, orderItemId);
             }
-            stmt.setString(5, content);
-            stmt.setString(6, mediaType);
-            stmt.setString(7, mediaUrl);
+            stmt.setString(5, normalizedContent);
+            if (normalizedMediaType == null) {
+                stmt.setNull(6, java.sql.Types.VARCHAR);
+            } else {
+                stmt.setString(6, normalizedMediaType);
+            }
+            if (normalizedMediaUrl == null) {
+                stmt.setNull(7, java.sql.Types.VARCHAR);
+            } else {
+                stmt.setString(7, normalizedMediaUrl);
+            }
             stmt.executeUpdate();
         }
     }

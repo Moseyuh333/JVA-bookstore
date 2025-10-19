@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public final class ReviewDAO {
 
@@ -33,6 +34,20 @@ public final class ReviewDAO {
         if (!canReview(userId, bookId)) {
             throw new SQLException("Bạn chỉ có thể đánh giá những sản phẩm đã mua");
         }
+        String normalizedTitle = title != null ? title.trim() : null;
+        String normalizedContent = content != null ? content.trim() : null;
+        if (normalizedContent != null && !normalizedContent.isEmpty() && normalizedContent.length() < 50) {
+            throw new SQLException("Nội dung đánh giá phải có ít nhất 50 ký tự");
+        }
+        String normalizedMediaType = null;
+        if (mediaType != null && !mediaType.trim().isEmpty()) {
+            String lowered = mediaType.trim().toLowerCase(Locale.ROOT);
+            if (!"image".equals(lowered) && !"video".equals(lowered)) {
+                throw new SQLException("Loại nội dung đính kèm không hợp lệ. Chỉ hỗ trợ image hoặc video");
+            }
+            normalizedMediaType = lowered;
+        }
+        String normalizedMediaUrl = mediaUrl != null && !mediaUrl.trim().isEmpty() ? mediaUrl.trim() : null;
         String sql = "INSERT INTO book_reviews (user_id, book_id, rating, title, content, media_url, media_type, status) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, 'published') "
                 + "ON CONFLICT (user_id, book_id) DO UPDATE SET rating = EXCLUDED.rating, title = EXCLUDED.title, content = EXCLUDED.content, "
@@ -42,10 +57,10 @@ public final class ReviewDAO {
             stmt.setLong(1, userId);
             stmt.setLong(2, bookId);
             stmt.setInt(3, rating);
-            stmt.setString(4, title);
-            stmt.setString(5, content);
-            stmt.setString(6, mediaUrl);
-            stmt.setString(7, mediaType);
+            stmt.setString(4, normalizedTitle);
+            stmt.setString(5, normalizedContent);
+            stmt.setString(6, normalizedMediaUrl);
+            stmt.setString(7, normalizedMediaType);
             stmt.executeUpdate();
         }
     }
