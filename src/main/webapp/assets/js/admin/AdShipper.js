@@ -4,7 +4,6 @@
 // ========================
 // 📥 LOAD SHIPPERS FROM API
 // ========================
-
 async function loadShippers() {
     const tbody = document.querySelector('#ShipperTable');
     const empty = document.querySelector('#emptyState');
@@ -34,6 +33,7 @@ async function loadShippers() {
         // Không có dữ liệu
         if (!data.shippers || data.shippers.length === 0) {
             empty.style.display = 'block';
+            updateStats(0);
             return;
         }
 
@@ -73,26 +73,17 @@ async function loadShippers() {
     } catch (err) {
         console.error("❌ Lỗi khi tải dữ liệu:", err);
         empty.style.display = 'block';
+        updateStats(0);
     } finally {
         loading.style.display = 'none';
     }
 }
 
 // ========================
-// 
-// ========================
-
-function updateStats(total) {
-    
-}
-
-
-// ========================
-// 📊 KIỂM TRA HOẠT ĐỘNG CỦA NHÀ VẬN CHUYỂN & CẬP NHẬT THỐNG KÊ
+// 📊 CẬP NHẬT THỐNG KÊ
 // ========================
 function updateStats(total) {
     document.getElementById('totalShippers')?.textContent = total || 0;
-
     const activeCount = document.querySelectorAll('#ShipperTable tr .badge-success').length;
     document.getElementById('activeShippers')?.textContent = activeCount;
 }
@@ -103,7 +94,6 @@ function updateStats(total) {
 function applyFilter() {
     const search = document.getElementById('searchInput').value.toLowerCase().trim();
     const rows = document.querySelectorAll('#ShipperTable tr');
-
     rows.forEach(row => {
         const text = row.textContent.toLowerCase();
         row.style.display = text.includes(search) ? '' : 'none';
