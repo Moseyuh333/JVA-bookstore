@@ -239,23 +239,7 @@
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
-                        <tbody id="product">
-                            <!-- Sample Row -->
-                            <tr>
-                                <td>BK001</td>
-                                <td>Giết con chim nhại</td>
-                                <td>Harper Lee</td>
-                                <td>Văn học</td>
-                                <td>120.000đ</td>
-                                <td>24</td>
-                                <td>Nguyễn Văn Bán</td>
-                                <td>
-                                    <button class="btn-icon btn-view"><i class="fas fa-eye"></i></button>
-                                    <button class="btn-icon btn-edit"><i class="fas fa-edit"></i></button>
-                                    <button class="btn-icon btn-delete"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                        </tbody>
+                        <tbody id="product"></tbody>
                     </table>
                 </div>
 
