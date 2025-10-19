@@ -18,81 +18,101 @@ async function loadShippers() {
 
     try {
         loading.style.display = 'block';
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/shippers`, {
-            headers: { "Authorization": `Bearer ${token}` }
+        empty.style.display = 'none';
+        tbody.innerHTML = '';
+
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/shippers?action=list`, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
         });
 
-        if (!res.ok) throw new Error("Server trả lỗi " + res.status);
+        if (!res.ok) throw new Error("Server trả lỗi: " + res.status);
         const data = await res.json();
 
-        tbody.innerHTML = '';
-        if (data.shippers.length === 0) {
+        // Không có dữ liệu
+        if (!data.shippers || data.shippers.length === 0) {
             empty.style.display = 'block';
             return;
         }
-        empty.style.display = 'none';
 
+        // Render bảng
         data.shippers.forEach(s => {
+            const baseFee = s.base_fee ? Number(s.base_fee).toLocaleString('vi-VN') + "₫" : "-";
+            const created = s.created_at ? new Date(s.created_at).toLocaleDateString('vi-VN') : "-";
+
             tbody.innerHTML += `
                 <tr>
                     <td>${s.id}</td>
-                    <td>${s.name}</td>
-                    <td>${s.phone}</td>
-                    <td>${s.email}</td>
-                    <td>${s.base_fee.toLocaleString()}₫</td>
-                    <td>${s.service_area}</td>
-                    <td>${s.estimated_time}</td>
-                    <td>${s.status}</td>
+                    <td>${s.name || '-'}</td>
+                    <td>${s.phone || '-'}</td>
+                    <td>${s.email || '-'}</td>
+                    <td>${baseFee}</td>
+                    <td>${s.service_area || '-'}</td>
+                    <td>${s.estimated_time || '-'}</td>
+                    <td>
+                        <span class="badge ${s.status === 'active' ? 'badge-success' : 'badge-secondary'}">
+                            ${s.status}
+                        </span>
+                    </td>
+                    <td>${created}</td>
+                    <td class="actions">
+                        <button class="btn-icon btn-edit" title="Sửa" data-id="${s.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" title="Xóa" data-id="${s.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
                 </tr>`;
         });
 
+        updateStats(data.shippers.length);
+
     } catch (err) {
-        console.error(err);
+        console.error("❌ Lỗi khi tải dữ liệu:", err);
         empty.style.display = 'block';
     } finally {
         loading.style.display = 'none';
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const tableBody = document.getElementById("shipperTable");
-
-    const shippers = [
-        { id: "SH001", name: "Giao Hàng Nhanh", price: "20,000₫", hotline: "1900 636 677" },
-        { id: "SH002", name: "Viettel Post", price: "25,000₫", hotline: "1900 8095" }
-    ];
-
-    const renderTable = () => {
-        tableBody.innerHTML = "";
-        shippers.forEach(s => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${s.id}</td>
-                <td>${s.name}</td>
-                <td>${s.price}</td>
-                <td>${s.hotline}</td>
-                <td>
-                    <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tableBody.appendChild(tr);
-        });
-    };
-
-    renderTable();
-});
+// ========================
+// 📊 CẬP NHẬT THỐNG KÊ
+// ========================
+function updateStats(total) {
+    document.getElementById('totalShippers')?.textContent = total || 0;
+}
 
 // ========================
-// 🚀 Khởi tạo khi trang load
+// 🧹 RESET / SEARCH
+// ========================
+function applyFilter() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#ShipperTable tr');
+
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(search) ? '' : 'none';
+    });
+}
+
+function resetFilter() {
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('#ShipperTable tr').forEach(r => r.style.display = '');
+}
+
+// ========================
+// 🚀 KHỞI TẠO KHI LOAD TRANG
 // ========================
 window.addEventListener('load', () => {
     if (typeof feather !== "undefined") feather.replace();
-
-    // Gọi API lấy dữ liệu user thật từ servlet
     loadShippers();
 
-    // Sau khi load xong thì cập nhật thống kê
-    updateStats();
-});
+    document.getElementById('searchInput')?.addEventListener('input', e => {
+        if (e.target.value.length === 0 || e.target.value.length >= 2) applyFilter();
+    });
 
+    document.getElementById('btnReset')?.addEventListener('click', resetFilter);
+});
