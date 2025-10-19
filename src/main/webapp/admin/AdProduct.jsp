@@ -299,10 +299,10 @@
 
                 <div class="card-custom">
                     <div class="card-header-custom">
-                        <h2>Danh sách nhà vận chuyển</h2>
+                        <h2>Danh sách sản phẩm</h2>
                         <button class="btn-add" onclick="openAddModal()">
                             <i class="fas fa-plus"></i>
-                            <span>Thêm nhà vận chuyển</span>
+                            <span>Thêm sản phẩm</span>
                         </button>
                     </div>
 
@@ -310,7 +310,7 @@
                         <div class="filter-form">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên nhà vận chuyển, thành phố...">
+                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên sách, tác giả, ISBN, tên shop...">
                             </div>
                             <button class="btn-custom btn-search" onclick="applyFilter()">
                                 <i class="fas fa-search"></i>

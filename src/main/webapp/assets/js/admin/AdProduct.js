@@ -180,29 +180,36 @@ document.addEventListener("DOMContentLoaded", () => {
     loadStats();
 });
 
-// ========================
-// 🧹 RESET / SEARCH
-// ========================
-function applyFilter() {
-    const search = document.getElementById('searchInput').value.toLowerCase().trim();
-    const rows = document.querySelectorAll('#ShipperTable tr');
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(search) ? '' : 'none';
+// ===== Search and Reset =====
+const searchBtn = document.getElementById("searchBtn");
+const resetBtn = document.getElementById("btnReset"); // Assuming reset button has id="btnReset"
+const searchInput = document.getElementById("searchInput");
+
+if (searchBtn) {
+    searchBtn.addEventListener("click", () => {
+        const searchValue = searchInput ? searchInput.value.trim() : "";
+        currentSearch = searchValue;
+        currentPage = 1;
+        loadProducts(currentPage, currentSearch);
     });
 }
 
-function resetFilter() {
-    document.getElementById('searchInput').value = '';
-    document.querySelectorAll('#ShipperTable tr').forEach(r => r.style.display = '');
+if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+        if (searchInput) searchInput.value = "";
+        currentSearch = "";
+        currentPage = 1;
+        loadProducts(currentPage, currentSearch);
+    });
 }
 
-window.addEventListener('load', () => {
-    if (typeof feather !== "undefined") feather.replace();
-
-    document.getElementById('searchInput')?.addEventListener('input', e => {
-        if (e.target.value.length === 0 || e.target.value.length >= 2) applyFilter();
+if (searchInput) {
+    searchInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+            const searchValue = searchInput.value.trim();
+            currentSearch = searchValue;
+            currentPage = 1;
+            loadProducts(currentPage, currentSearch);
+        }
     });
-
-    document.getElementById('btnReset')?.addEventListener('click', resetFilter);
-});
+}
