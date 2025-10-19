@@ -91,8 +91,6 @@ function updateStats(total) {
         const activeCount = document.querySelectorAll('#ShipperTable tr .badge-success').length;
         activeEl.textContent = activeCount;
     }
-    const activeCount = document.querySelectorAll('#ShipperTable tr .badge-success').length;
-    document.getElementById('activeShippers')?.textContent = activeCount;
 }
 
 // ========================
