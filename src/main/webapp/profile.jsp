@@ -1421,6 +1421,14 @@
             return getStatusMeta(status).badge || 'secondary';
         }
 
+        function canCancelOrder(status) {
+            if (!status) {
+                return false;
+            }
+            const normalized = status.toString().trim().toLowerCase();
+            return normalized === 'new' || normalized === 'confirmed' || normalized === 'shipping';
+        }
+
         function formatCurrency(value) {
             const number = Number(value);
             if (!Number.isFinite(number)) {
@@ -1534,6 +1542,62 @@
                 console.error('viewOrderDetails error', error);
                 if (container) {
                     container.innerHTML = `<div class="alert alert-danger">${escapeHtml(error.message || 'Không thể tải chi tiết đơn hàng')}</div>`;
+                }
+            }
+        }
+
+        async function requestCancelOrder(orderId, orderCode, triggerButton) {
+            if (!orderId) {
+                return;
+            }
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                showAlert('Bạn cần đăng nhập để hủy đơn hàng.', 'warning');
+                return;
+            }
+            const confirmMessage = orderCode ? `Bạn có chắc chắn muốn hủy đơn ${orderCode}?` : 'Bạn có chắc chắn muốn hủy đơn hàng này?';
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            let reason = prompt('Nhập lý do hủy đơn (có thể bỏ trống):');
+            if (reason) {
+                reason = reason.trim();
+                if (reason.length > 255) {
+                    reason = reason.substring(0, 255);
+                }
+            }
+            if (triggerButton) {
+                triggerButton.disabled = true;
+                triggerButton.dataset.originalHtml = triggerButton.innerHTML;
+                triggerButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang hủy...';
+            }
+            try {
+                const response = await fetch(`${contextPath}/api/profile/orders/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ reason: reason || null })
+                });
+                const payload = await response.json().catch(() => ({ success: false }));
+                if (!response.ok || !payload.success) {
+                    const message = payload && payload.message ? payload.message : 'Không thể hủy đơn hàng. Vui lòng thử lại.';
+                    showAlert(message, 'danger');
+                    return;
+                }
+                showAlert(payload.message || 'Đã hủy đơn hàng.', 'success');
+                loadOrderHistory();
+                viewOrderDetails(orderId);
+            } catch (error) {
+                console.error('requestCancelOrder error', error);
+                showAlert('Không thể hủy đơn hàng. Vui lòng thử lại sau.', 'danger');
+            } finally {
+                if (triggerButton) {
+                    const original = triggerButton.dataset.originalHtml;
+                    triggerButton.innerHTML = original || '<i class="fas fa-times me-1"></i>Hủy đơn';
+                    triggerButton.disabled = false;
+                    delete triggerButton.dataset.originalHtml;
                 }
             }
         }
@@ -1760,6 +1824,7 @@
             const statusMeta = getStatusMeta(order.status);
             const badgeClass = statusMeta.badge ? `bg-${statusMeta.badge}` : 'bg-secondary';
             const allowReview = statusMeta.key === 'delivered';
+            const isCancellable = canCancelOrder(order.status);
 
             let itemsHtml = '<p class="text-muted mb-0">Danh sách sản phẩm trống.</p>';
             if (Array.isArray(order.items) && order.items.length > 0) {
@@ -1826,7 +1891,10 @@
                         ${order.paymentMethod ? `<div class="text-muted small">Thanh toán: ${escapeHtml(order.paymentMethod.toUpperCase())}</div>` : ''}
                         ${order.couponCode ? `<div class="text-muted small">Mã giảm giá: ${escapeHtml(order.couponCode)}</div>` : ''}
                     </div>
-                    <span class="badge ${badgeClass} fs-6">${escapeHtml(statusMeta.label)}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        ${isCancellable ? `<button type="button" class="btn btn-outline-danger" data-order-cancel><i class="fas fa-times me-1"></i>Hủy đơn</button>` : ''}
+                        <span class="badge ${badgeClass} fs-6">${escapeHtml(statusMeta.label)}</span>
+                    </div>
                 </div>
                 <div class="border rounded-3 p-3 bg-light mb-4">
                     <div class="d-flex justify-content-between mb-1"><span>Tạm tính</span><span>${formatCurrency(order.itemsSubtotal)}</span></div>
@@ -1841,6 +1909,13 @@
                 ${timelineHtml}
                 ${order.notes ? `<div class="mt-4"><strong>Ghi chú:</strong> ${escapeHtml(order.notes)}</div>` : ''}
             `;
+
+            if (isCancellable) {
+                const cancelBtn = container.querySelector('[data-order-cancel]');
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', () => requestCancelOrder(order.id, orderCode, cancelBtn));
+                }
+            }
 
             if (allowReview && Array.isArray(order.items) && order.items.length > 0) {
                 const buttons = container.querySelectorAll('[data-review-trigger]');

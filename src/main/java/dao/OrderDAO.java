@@ -37,6 +37,11 @@ public final class OrderDAO {
         "cancelled",
         "returned"
     ));
+    private static final Set<String> USER_CANCELLABLE_STATUSES = new HashSet<>(Arrays.asList(
+        "new",
+        "confirmed",
+        "shipping"
+    ));
 
     private OrderDAO() {
     }
@@ -141,6 +146,45 @@ public final class OrderDAO {
         try (Connection conn = DBUtil.getConnection()) {
             fetchOrderByIdInternal(conn, orderId, null);
             return loadStatusTimeline(conn, orderId);
+        }
+    }
+
+    public static Order cancelOrder(long orderId, long userId, String reason) throws SQLException {
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                Order existing = fetchOrderByIdInternal(conn, orderId, userId);
+                String normalizedStatus = normalizeStatusValue(existing.getStatus());
+                if (!isUserCancellableStatus(normalizedStatus)) {
+                    throw new SQLException("Đơn hàng không thể hủy ở trạng thái hiện tại");
+                }
+                String trimmedReason = reason == null ? "" : reason.trim();
+                if (trimmedReason.length() > 255) {
+                    trimmedReason = trimmedReason.substring(0, 255);
+                }
+                int updated;
+                String updateSql = "UPDATE orders SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+                    stmt.setLong(1, orderId);
+                    stmt.setString(2, existing.getStatus());
+                    updated = stmt.executeUpdate();
+                }
+                if (updated == 0) {
+                    throw new SQLException("Đơn hàng không thể hủy ở trạng thái hiện tại hoặc đã được cập nhật");
+                }
+                String note = trimmedReason.isEmpty() ? "Khách hủy đơn hàng" : "Khách hủy: " + trimmedReason;
+                recordStatus(conn, orderId, "cancelled", note, "user:" + userId);
+                restoreInventory(conn, orderId);
+                releaseCouponUsage(conn, orderId, userId);
+                Order updatedOrder = fetchOrderByIdInternal(conn, orderId, userId);
+                conn.commit();
+                return updatedOrder;
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         }
     }
 
@@ -397,6 +441,64 @@ public final class OrderDAO {
         }
     }
 
+    private static void restoreInventory(Connection conn, long orderId) throws SQLException {
+        if (!columnExists(conn, "books", "stock_quantity")) {
+            return;
+        }
+        Map<Long, Integer> restock = new HashMap<>();
+        String sql = "SELECT book_id, quantity FROM order_items WHERE order_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, orderId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long bookId = rs.getLong("book_id");
+                    int quantity = rs.getInt("quantity");
+                    restock.merge(bookId, quantity, Integer::sum);
+                }
+            }
+        }
+        if (restock.isEmpty()) {
+            return;
+        }
+        String updateSql = "UPDATE books SET stock_quantity = stock_quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+            for (Map.Entry<Long, Integer> entry : restock.entrySet()) {
+                stmt.setInt(1, entry.getValue());
+                stmt.setLong(2, entry.getKey());
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        }
+    }
+
+    private static void releaseCouponUsage(Connection conn, long orderId, long userId) throws SQLException {
+        String sql = "SELECT coupon_id FROM order_coupons WHERE order_id = ? AND coupon_id IS NOT NULL";
+        List<Long> couponIds = new ArrayList<>();
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, orderId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long couponId = rs.getLong("coupon_id");
+                    if (!rs.wasNull()) {
+                        couponIds.add(couponId);
+                    }
+                }
+            }
+        }
+        if (couponIds.isEmpty()) {
+            return;
+        }
+        String updateSql = "UPDATE user_coupons SET usage_count = GREATEST(COALESCE(usage_count, 0) - 1, 0), status = 'available', redeemed_at = NULL WHERE user_id = ? AND coupon_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+            for (Long couponId : couponIds) {
+                stmt.setLong(1, userId);
+                stmt.setLong(2, couponId);
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        }
+    }
+
     private static void createPaymentRecord(Connection conn, long orderId, String method, BigDecimal total) throws SQLException {
         String status = "cod".equals(method) ? "pending" : "processing";
         String sql = "INSERT INTO order_payments (order_id, method, provider, status, amount) VALUES (?, ?, ?, ?, ?)";
@@ -643,6 +745,13 @@ public final class OrderDAO {
         try (ResultSet rs = conn.getMetaData().getColumns(null, null, table.toUpperCase(Locale.ROOT), column.toUpperCase(Locale.ROOT))) {
             return rs.next();
         }
+    }
+
+    private static boolean isUserCancellableStatus(String status) {
+        if (status == null) {
+            return false;
+        }
+        return USER_CANCELLABLE_STATUSES.contains(status);
     }
 
     private static AddressSnapshot loadAddress(Connection conn, long userId, long addressId) throws SQLException {
