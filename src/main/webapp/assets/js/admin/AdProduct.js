@@ -123,13 +123,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadProducts = async (page = 1, search = "") => {
         try {
             showLoading();
-            const token = localStorage.getItem("admin_token"); // ✅ lấy token từ localStorage
+            const token = localStorage.getItem("admin_token"); // lấy token từ localStorage
 
             const res = await fetch(
                 `/api/admin/products?action=list&page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
                 {
                     headers: {
-                        "Authorization": `Bearer ${token}`, // ✅ gửi token kèm request
+                        "Authorization": `Bearer ${token}`, // gửi token kèm request
                         "Content-Type": "application/json"
                     }
                 }
@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (res.status === 401) {
                 console.error("❌ Unauthorized — token hết hạn hoặc chưa đăng nhập");
                 alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
-                window.location.href = "/login.jsp"; // hoặc trang login tương ứng
+                window.location.href = "/login.jsp"; 
                 return;
             }
 
