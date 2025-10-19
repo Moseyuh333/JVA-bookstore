@@ -27,6 +27,16 @@ public class BookDetailServlet extends HttpServlet {
             return;
         }
 
+        String highlightParam = req.getParameter("highlightReview");
+        if (highlightParam != null) {
+            String trimmed = highlightParam.trim();
+            if (trimmed.matches("\\d+")) {
+                req.setAttribute("highlightReviewDomId", "review-" + trimmed);
+            } else if ("mine".equalsIgnoreCase(trimmed)) {
+                req.setAttribute("highlightReviewDomId", "mine");
+            }
+        }
+
         long bookId;
         try {
             bookId = Long.parseLong(id);
@@ -197,6 +207,10 @@ public class BookDetailServlet extends HttpServlet {
                     view.put("createdAt", record.createdAt);
                     view.put("id", record.id);
                     view.put("domId", "review-" + record.id);
+                    if (record.mediaUrl != null && !record.mediaUrl.trim().isEmpty()) {
+                        view.put("mediaUrl", resolveImageUrl(req, record.mediaUrl));
+                        view.put("mediaType", record.mediaType);
+                    }
                     boolean isOwner = currentUserId != null && record.userId == currentUserId;
                     view.put("isOwner", isOwner);
                     if (isOwner) {
@@ -218,6 +232,10 @@ public class BookDetailServlet extends HttpServlet {
                 if (ownerDomId != null) {
                     req.setAttribute("userReviewDomId", ownerDomId);
                     req.setAttribute("userHasReview", Boolean.TRUE);
+                    Object highlight = req.getAttribute("highlightReviewDomId");
+                    if (highlight != null && "mine".equals(highlight)) {
+                        req.setAttribute("highlightReviewDomId", ownerDomId);
+                    }
                 }
                 return;
             }

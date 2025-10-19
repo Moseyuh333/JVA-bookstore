@@ -12,6 +12,8 @@ public class OrderItem {
     private BigDecimal unitPrice;
     private int quantity;
     private BigDecimal totalPrice;
+    private boolean hasReview;
+    private Long reviewId;
 
     public long getId() {
         return id;
@@ -83,5 +85,21 @@ public class OrderItem {
 
     public void setTotalPrice(BigDecimal totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public boolean isHasReview() {
+        return hasReview;
+    }
+
+    public void setHasReview(boolean hasReview) {
+        this.hasReview = hasReview;
+    }
+
+    public Long getReviewId() {
+        return reviewId;
+    }
+
+    public void setReviewId(Long reviewId) {
+        this.reviewId = reviewId;
     }
 }

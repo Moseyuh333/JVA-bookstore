@@ -115,7 +115,7 @@ public final class OrderDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     Order order = mapOrder(rs);
-                    order.setItems(findOrderItems(conn, order.getId()));
+                    order.setItems(findOrderItems(conn, order.getId(), order.getUserId()));
                     orders.add(order);
                 }
             }
@@ -207,7 +207,7 @@ public final class OrderDAO {
                 Order order = mapOrder(rs);
                 order.setCustomerEmail(rs.getString("customer_email"));
                 order.setCustomerName(rs.getString("customer_name"));
-                order.setItems(findOrderItems(conn, orderId));
+                order.setItems(findOrderItems(conn, orderId, order.getUserId()));
                 return order;
             }
         }
@@ -372,11 +372,23 @@ public final class OrderDAO {
         return order;
     }
 
-    private static List<OrderItem> findOrderItems(Connection conn, long orderId) throws SQLException {
-        String sql = "SELECT oi.id, oi.order_id, oi.book_id, oi.quantity, oi.unit_price, oi.total_price, b.title, b.author, b.image_url "
-                + "FROM order_items oi INNER JOIN books b ON b.id = oi.book_id WHERE oi.order_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, orderId);
+    private static List<OrderItem> findOrderItems(Connection conn, long orderId, Long userId) throws SQLException {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT oi.id, oi.order_id, oi.book_id, oi.quantity, oi.unit_price, oi.total_price, b.title, b.author, b.image_url");
+        if (userId != null) {
+            sql.append(", r.id AS review_id");
+        }
+        sql.append(" FROM order_items oi INNER JOIN books b ON b.id = oi.book_id");
+        if (userId != null) {
+            sql.append(" LEFT JOIN book_reviews r ON r.book_id = oi.book_id AND r.user_id = ?");
+        }
+        sql.append(" WHERE oi.order_id = ?");
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int index = 1;
+            if (userId != null) {
+                stmt.setLong(index++, userId);
+            }
+            stmt.setLong(index, orderId);
             try (ResultSet rs = stmt.executeQuery()) {
                 List<OrderItem> items = new ArrayList<>();
                 while (rs.next()) {
@@ -390,6 +402,19 @@ public final class OrderDAO {
                     item.setTitle(rs.getString("title"));
                     item.setAuthor(rs.getString("author"));
                     item.setImageUrl(rs.getString("image_url"));
+                    if (userId != null) {
+                        long reviewId = rs.getLong("review_id");
+                        if (rs.wasNull()) {
+                            item.setReviewId(null);
+                            item.setHasReview(false);
+                        } else {
+                            item.setReviewId(reviewId);
+                            item.setHasReview(true);
+                        }
+                    } else {
+                        item.setReviewId(null);
+                        item.setHasReview(false);
+                    }
                     items.add(item);
                 }
                 return items;
