@@ -14,20 +14,28 @@ document.addEventListener("DOMContentLoaded", () => {
     let filteredCategories = [];
 
     // API functions
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem("admin_token");
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
+    };
+
     const api = {
-        getCategories: () => fetch(`${contextPath}/api/admin/categories?action=list`).then(r => r.json()),
+        getCategories: () => fetch(`${contextPath}/api/admin/categories?action=list`, {
+            headers: getAuthHeaders()
+        }).then(r => r.json()),
         createCategory: (data) => fetch(`${contextPath}/api/admin/categories?action=create`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams(data)
         }).then(r => r.json()),
         updateCategory: (id, data) => fetch(`${contextPath}/api/admin/categories?action=update&id=${id}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams(data)
         }).then(r => r.json()),
         deleteCategory: (id) => fetch(`${contextPath}/api/admin/categories?action=delete&id=${id}`, {
-            method: 'POST'
+            method: 'POST',
+            headers: getAuthHeaders()
         }).then(r => r.json())
     };
 
