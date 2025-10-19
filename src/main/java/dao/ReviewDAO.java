@@ -201,6 +201,26 @@ public final class ReviewDAO {
             }
         }
 
+        removeDuplicateReviews(conn);
+        ensureReviewUniqueIndex(conn);
+
         reviewSchemaEnsured = true;
+    }
+
+    private static void removeDuplicateReviews(Connection conn) throws SQLException {
+        final String cleanupSql =
+                "DELETE FROM book_reviews a USING book_reviews b "
+                        + "WHERE a.user_id = b.user_id AND a.book_id = b.book_id AND a.id < b.id";
+        try (Statement statement = conn.createStatement()) {
+            statement.executeUpdate(cleanupSql);
+        }
+    }
+
+    private static void ensureReviewUniqueIndex(Connection conn) throws SQLException {
+        final String uniqueIndexSql =
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_book_reviews_user_book ON book_reviews(user_id, book_id)";
+        try (Statement statement = conn.createStatement()) {
+            statement.execute(uniqueIndexSql);
+        }
     }
 }
