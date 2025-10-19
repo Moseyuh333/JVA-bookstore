@@ -169,22 +169,7 @@ public class DBUtil {
                     "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                     ")";
                 stmt.execute(createOrdersTableSQL);
-
-                if (!columnExists(conn, "orders", "order_date")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                }
-                if (!columnExists(conn, "orders", "total_amount")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0");
-                }
-                if (!columnExists(conn, "orders", "status")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN status VARCHAR(50) DEFAULT 'pending'");
-                }
-                if (!columnExists(conn, "orders", "created_at")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                }
-                if (!columnExists(conn, "orders", "updated_at")) {
-                    stmt.execute("ALTER TABLE orders ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-                }
+                ensureOrdersSchema(conn);
 
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)");
@@ -302,6 +287,80 @@ public class DBUtil {
             stmt.execute("UPDATE books SET updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)");
         } catch (SQLException ex) {
             System.err.println("DBUtil - Unable to reconcile books schema: " + ex.getMessage());
+        }
+    }
+
+    private static void ensureOrdersSchema(Connection conn) {
+        try (Statement stmt = conn.createStatement()) {
+            if (!columnExists(conn, "orders", "order_date")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "orders", "total_amount")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN total_amount DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            if (!columnExists(conn, "orders", "status")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN status VARCHAR(20) DEFAULT 'new'");
+            }
+            if (!columnExists(conn, "orders", "payment_status")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid'");
+            }
+            stmt.execute("UPDATE orders SET payment_status = COALESCE(payment_status, 'unpaid')");
+
+            if (!columnExists(conn, "orders", "payment_provider")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN payment_provider VARCHAR(30)");
+            }
+            if (!columnExists(conn, "orders", "shipping_address_id")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_address_id INTEGER REFERENCES user_addresses(id) ON DELETE SET NULL");
+            }
+            if (!columnExists(conn, "orders", "shipping_snapshot")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_snapshot JSONB");
+            }
+            if (!columnExists(conn, "orders", "cart_snapshot")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN cart_snapshot JSONB");
+            }
+            if (!columnExists(conn, "orders", "items_subtotal")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN items_subtotal DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET items_subtotal = COALESCE(items_subtotal, total_amount)");
+
+            if (!columnExists(conn, "orders", "discount_amount")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET discount_amount = COALESCE(discount_amount, 0)");
+
+            if (!columnExists(conn, "orders", "shipping_fee")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN shipping_fee DECIMAL(12, 2) NOT NULL DEFAULT 0");
+            }
+            stmt.execute("UPDATE orders SET shipping_fee = COALESCE(shipping_fee, 0)");
+
+            if (!columnExists(conn, "orders", "currency")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN currency VARCHAR(10) DEFAULT 'VND'");
+            }
+            stmt.execute("UPDATE orders SET currency = COALESCE(currency, 'VND')");
+
+            if (!columnExists(conn, "orders", "coupon_code")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN coupon_code VARCHAR(50)");
+            }
+            if (!columnExists(conn, "orders", "coupon_snapshot")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN coupon_snapshot JSONB");
+            }
+
+            if (!columnExists(conn, "orders", "notes")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN notes TEXT");
+            }
+            if (!columnExists(conn, "orders", "created_at")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "orders", "updated_at")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            }
+            if (!columnExists(conn, "orders", "code")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN code VARCHAR(40)");
+            }
+            stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_code ON orders(code)");
+            stmt.execute("UPDATE orders SET code = CONCAT('ORD', LPAD(CAST(id AS TEXT), 6, '0')) WHERE code IS NULL OR code = ''");
+        } catch (SQLException ex) {
+            System.err.println("DBUtil - Unable to reconcile orders schema: " + ex.getMessage());
         }
     }
 
