@@ -2,13 +2,33 @@ const contextPath = window.appConfig?.contextPath || '';
 let cachedUsers = [];
 let currentSearchTerm = '';
 
+function getAdminToken() {
+    const rawAdminToken = localStorage.getItem('admin_token');
+    if (rawAdminToken && rawAdminToken.trim().length > 0) {
+        return rawAdminToken.trim();
+    }
+    const rawAuthToken = localStorage.getItem('auth_token');
+    if (rawAuthToken && rawAuthToken.trim().length > 0) {
+        return rawAuthToken.trim();
+    }
+    return null;
+}
+
 function buildAuthHeaders(base = {}) {
     const headers = { ...base };
-    const token = localStorage.getItem('admin_token');
+    const token = getAdminToken();
     if (token) {
         headers.Authorization = `Bearer ${token}`;
     }
     return headers;
+}
+
+function handleUnauthorized() {
+    alert('Phiên đăng nhập quản trị đã hết hạn. Vui lòng đăng nhập lại.');
+    window.localStorage.removeItem('admin_token');
+    window.localStorage.removeItem('admin_username');
+    const fallback = window.appConfig?.contextPath || '';
+    window.location.href = `${fallback}/login.jsp`;
 }
 
 async function loadAdminUsers(searchTerm = currentSearchTerm) {
@@ -38,6 +58,11 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
         const response = await fetch(url, {
             headers: buildAuthHeaders({ 'Content-Type': 'application/json' })
         });
+
+        if (response.status === 401) {
+            handleUnauthorized();
+            return;
+        }
 
         const payload = await response.json();
         if (!response.ok || payload?.error) {
@@ -258,7 +283,7 @@ function setupCreateUserModal() {
             return;
         }
 
-        const token = localStorage.getItem('admin_token');
+        const token = getAdminToken();
         if (!token) {
             setFeedback('Không tìm thấy phiên đăng nhập quản trị. Vui lòng đăng nhập lại.', 'error');
             return;
@@ -292,6 +317,11 @@ function setupCreateUserModal() {
                 headers: buildAuthHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
                 body: payload.toString()
             });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
 
             let data = null;
             try {

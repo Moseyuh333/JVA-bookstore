@@ -1,21 +1,58 @@
 document.addEventListener("DOMContentLoaded", function() {
     const contextPath = window.appConfig?.contextPath || "";
 
+    function getAdminToken() {
+        const adminToken = localStorage.getItem("admin_token");
+        if (adminToken && adminToken.trim().length > 0) {
+            return adminToken.trim();
+        }
+        const authToken = localStorage.getItem("auth_token");
+        if (authToken && authToken.trim().length > 0) {
+            return authToken.trim();
+        }
+        return null;
+    }
+
+    function handleUnauthorized() {
+        alert("Phiên đăng nhập quản trị đã hết hạn. Vui lòng đăng nhập lại.");
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_username");
+        const loginPath = contextPath + "/login.jsp";
+        window.location.href = loginPath;
+    }
+
     // Load dashboard data from API
     loadDashboardData();
 
     async function loadDashboardData() {
         try {
-            const response = await fetch(`${contextPath}/api/admin/dashboard`);
+            const token = getAdminToken();
+            if (!token) {
+                handleUnauthorized();
+                return;
+            }
+
+            const response = await fetch(`${contextPath}/api/admin/dashboard`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
             const data = await response.json();
 
-            if (data.success) {
-                updateStats(data.stats);
-                updateRevenueChart(data.revenue);
-                updateOrderStatusChart(data.orderStatus);
-                updateTopSellers(data.topSellers);
+            if (response.ok && data.success) {
+                updateStats(data.stats || {});
+                updateRevenueChart(data.revenue || {});
+                updateOrderStatusChart(data.orderStatus || {});
+                updateTopSellers(data.topSellers || {});
             } else {
-                console.error("Failed to load dashboard data:", data.error);
+                console.error("Failed to load dashboard data:", data.error || response.statusText);
             }
         } catch (error) {
             console.error("Error loading dashboard data:", error);
@@ -131,7 +168,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const tbody = document.querySelector(".table-custom tbody");
         if (!tbody) return;
 
-        const sellers = topSellersData.sellers || {};
+    const sellers = topSellersData.sellers || {};
 
         // Clear existing rows
         tbody.innerHTML = "";
@@ -144,7 +181,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 <td><strong>${seller.store_name || "N/A"}</strong></td>
                 <td>${seller.total_orders || 0}</td>
                 <td><strong>${formatCurrency(seller.revenue || 0)}₫</strong></td>
-                <td><span class="badge-percentage">${(seller.commission_rate || 0) * 100}%</span></td>
+                <td><span class="badge-percentage">${Math.round((seller.commission_rate || 0) * 100)}%</span></td>
                 <td><span class="badge-percentage">Hoạt động</span></td>
             `;
             tbody.appendChild(row);
