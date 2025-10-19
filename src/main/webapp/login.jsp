@@ -109,7 +109,8 @@
           }
           showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
           setTimeout(function () {
-            window.location.href = contextPath + '/';
+            const redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/';
+            window.location.href = redirectUrl;
           }, 1200);
         } else {
           localStorage.removeItem('auth_token');
