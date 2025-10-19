@@ -166,6 +166,7 @@
             display: flex;
             gap: 12px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .search-box {
@@ -229,6 +230,19 @@
 
         .btn-reset:hover {
             background: #d1d5db;
+        }
+
+        .btn-create {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-create:hover {
+            background: #15803d;
+        }
+
+        #openCreateUserBtn {
+            margin-left: auto;
         }
 
         /* Table */
@@ -415,6 +429,184 @@
             to { transform: rotate(360deg); }
         }
 
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(30, 41, 59, 0.55);
+            z-index: 1100;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-dialog {
+            width: 100%;
+            max-width: 560px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 45px -15px rgba(15, 23, 42, 0.35);
+            animation: modalSlideIn 0.28s ease;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 18px;
+            color: #6b7280;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .form-group input,
+        .form-group select {
+            height: 42px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #92400e;
+            box-shadow: 0 0 0 3px rgba(146, 64, 14, 0.12);
+        }
+
+        .form-feedback {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .form-feedback.success {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .form-feedback.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .modal-actions {
+            margin-top: 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-actions .btn-secondary,
+        .modal-actions .btn-primary {
+            min-width: 140px;
+            height: 42px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .modal-actions .btn-secondary {
+            background: #e5e7eb;
+            color: #4b5563;
+        }
+
+        .modal-actions .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .modal-actions .btn-primary {
+            background: #92400e;
+            color: white;
+        }
+
+        .modal-actions .btn-primary:hover {
+            background: #78350f;
+            box-shadow: 0 10px 18px -12px rgba(146, 64, 14, 0.85);
+        }
+
+        .modal-actions button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(16px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             #content {
@@ -438,12 +630,22 @@
                 justify-content: center;
             }
 
+            #openCreateUserBtn {
+                width: 100%;
+                margin-left: 0;
+            }
+
             .table-wrapper {
                 overflow-x: auto;
             }
 
             .table-custom {
                 min-width: 800px;
+            }
+
+            .modal-dialog {
+                max-height: 95vh;
+                overflow-y: auto;
             }
         }
     </style>
@@ -518,6 +720,10 @@
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
                             </button>
+                            <button class="btn-custom btn-create" type="button" id="openCreateUserBtn">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Thêm tài khoản</span>
+                            </button>
                         </div>
                     </div>
 
@@ -563,6 +769,64 @@
         <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
+
+<div class="modal-overlay" id="createUserModal" aria-hidden="true" role="dialog" aria-modal="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3>Thêm tài khoản mới</h3>
+            <button type="button" class="modal-close" data-close-modal aria-label="Đóng">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="createUserForm" class="modal-body" autocomplete="off">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="createUsername">Tên đăng nhập *</label>
+                    <input type="text" id="createUsername" name="username" placeholder="Tên đăng nhập" required>
+                </div>
+                <div class="form-group">
+                    <label for="createEmail">Email *</label>
+                    <input type="email" id="createEmail" name="email" placeholder="name@example.com" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="createPassword">Mật khẩu tạm *</label>
+                    <input type="password" id="createPassword" name="password" placeholder="Tối thiểu 6 ký tự" required>
+                </div>
+                <div class="form-group">
+                    <label for="createFullName">Họ và tên</label>
+                    <input type="text" id="createFullName" name="full_name" placeholder="Nguyễn Văn A">
+                </div>
+                <div class="form-group">
+                    <label for="createPhone">Số điện thoại</label>
+                    <input type="tel" id="createPhone" name="phone" placeholder="0987654321">
+                </div>
+                <div class="form-group">
+                    <label for="createRole">Quyền</label>
+                    <input list="roleOptions" id="createRole" name="role" placeholder="admin, user, manager">
+                    <datalist id="roleOptions">
+                        <option value="admin">
+                        <option value="user">
+                        <option value="manager">
+                        <option value="staff">
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="createStatus">Trạng thái</label>
+                    <select id="createStatus" name="status">
+                        <option value="active" selected>Đang hoạt động</option>
+                        <option value="inactive">Tạm khóa</option>
+                    </select>
+                </div>
+            </div>
+            <div id="createUserFeedback" class="form-feedback" role="alert"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-close-modal>Hủy</button>
+                <button type="submit" class="btn-primary" id="createUserSubmit">Tạo tài khoản</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="${pageContext.request.contextPath}/assets/js/admin/AdAccount.js"></script>
 </body>
 </html>

@@ -335,7 +335,7 @@
             </div>
 
             <div class="nav-item">
-                <a class="nav-link" href="admin-orders">
+                <a class="nav-link" href="admin-orders.jsp">
                     <i class="fas fa-shopping-cart"></i>
                     <span>Đơn hàng</span>
                     <span class="nav-badge">5</span>
