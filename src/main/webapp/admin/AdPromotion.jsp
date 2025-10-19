@@ -477,7 +477,7 @@
                         <div class="filter-form">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên khuyến mãi, mã code...">
+                                <input type="text" id="promotionSearchInput" placeholder="Tìm kiếm theo mã code, mô tả, loại...">
                             </div>
                             <button class="btn-custom btn-search" onclick="applyFilters()">
                                 <i class="fas fa-search"></i>
@@ -500,74 +500,18 @@
                             <table class="table-custom">
                                 <thead>
                                     <tr>
-                                        <th>Tên khuyến mãi</th>
+                                        <th>ID</th>
                                         <th>Mã code</th>
+                                        <th>Mô tả</th>
                                         <th>Loại giảm giá</th>
                                         <th>Mức giảm</th>
-                                        <th>Ngày bắt đầu</th>
-                                        <th>Ngày kết thúc</th>
+                                        <th>Thời gian</th>
                                         <th>Trạng thái</th>
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody id="promoList">
-                                    <tr>
-                                        <td>Giảm 20% sách tiểu thuyết</td>
-                                        <td>BOOK20</td>
-                                        <td>Phần trăm</td>
-                                        <td>20%</td>
-                                        <td>01/10/2025</td>
-                                        <td>31/10/2025</td>
-                                        <td><span class="badge-custom badge-active">Hoạt động</span></td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Miễn phí ship toàn quốc</td>
-                                        <td>FREESHIP</td>
-                                        <td>Cố định</td>
-                                        <td>Phí ship</td>
-                                        <td>15/10/2025</td>
-                                        <td>15/11/2025</td>
-                                        <td><span class="badge-custom badge-active">Hoạt động</span></td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Mua Manga tặng 10%</td>
-                                        <td>MANGA10</td>
-                                        <td>Phần trăm</td>
-                                        <td>10%</td>
-                                        <td>20/10/2025</td>
-                                        <td>25/10/2025</td>
-                                        <td><span class="badge-custom badge-inactive">Hết hạn</span></td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                <tbody id="promotionTable">
+                                    <!-- Data will be loaded dynamically -->
                                 </tbody>
                             </table>
 

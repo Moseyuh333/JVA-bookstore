@@ -535,7 +535,9 @@
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody id="User"></tbody>
+                                <tbody id="User">
+                                    <!-- Data will be loaded dynamically -->
+                                </tbody>
                             </table>
 
                             <div id="emptyState" class="empty-state" style="display: none;">

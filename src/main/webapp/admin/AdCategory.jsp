@@ -509,40 +509,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="categoryList">
-                                    <tr>
-                                        <td>Sách tiểu thuyết</td>
-                                        <td>Các cuốn tiểu thuyết hay nhất</td>
-                                        <td>145</td>
-                                        <td><span class="badge-custom badge-active">Hoạt động</span></td>
-                                        <td>15/10/2025</td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Manga</td>
-                                        <td>Truyện tranh Nhật Bản</td>
-                                        <td>89</td>
-                                        <td><span class="badge-custom badge-active">Hoạt động</span></td>
-                                        <td>10/10/2025</td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <!-- Data will be loaded dynamically -->
                                 </tbody>
                             </table>
 

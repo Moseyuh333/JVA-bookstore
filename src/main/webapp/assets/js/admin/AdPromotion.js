@@ -15,9 +15,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // API functions
     const api = {
-        getPromotions: () => {
+        getPromotions: (search = '', searchType = 'all') => {
             const token = localStorage.getItem("admin_token");
-            return fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=list`, {
+            const params = new URLSearchParams({
+                action: 'list'
+            });
+            if (search.trim()) {
+                params.append('search', search.trim());
+                params.append('searchType', searchType);
+            }
+            return fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?${params.toString()}`, {
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
@@ -72,20 +79,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
         hideEmpty();
         list.forEach(p => {
-            const discount = p.discount_value ? p.discount_value + (p.discount_type === 'percentage' ? '%' : '₫') : "-";
-            const valid = formatDateRange(p.start_date, p.end_date);
-            const type = p.type || p.promotion_type || "-";
+            const discount = p.discount_value ? p.discount_value + (p.type === 'percentage' ? '%' : '₫') : "-";
+            const valid = formatDateRange(p.start_at, p.end_at);
+            const type = p.type || "-";
+            const code = p.code || "-";
+            const description = p.description || "-";
+            const active = p.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>';
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${escapeHtml(p.id || p.promotion_id || '-')}</td>
-                <td>${escapeHtml(p.name || p.title || '-')}</td>
+                <td>${escapeHtml(p.id.toString())}</td>
+                <td>${escapeHtml(code)}</td>
+                <td>${escapeHtml(description)}</td>
                 <td>${escapeHtml(type)}</td>
                 <td>${discount}</td>
                 <td>${valid}</td>
+                <td>${active}</td>
                 <td>
-                    <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-sm btn-warning mr-1 edit-btn" data-id="${p.id}"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="${p.id}"><i class="fas fa-trash"></i></button>
                 </td>
             `;
             tableBody.appendChild(tr);
@@ -115,14 +127,31 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Search filter
-    const applyFilters = () => {
+    const applyFilters = async () => {
         const keyword = searchInput.value.toLowerCase().trim();
-        filteredPromotions = promotions.filter(p =>
-            (p.name || p.title || '').toLowerCase().includes(keyword) ||
-            (p.type || p.promotion_type || '').toLowerCase().includes(keyword) ||
-            (p.discount_value || '').toString().toLowerCase().includes(keyword)
-        );
-        renderTable(filteredPromotions);
+        if (keyword) {
+            // Server-side search
+            try {
+                showLoading();
+                const response = await api.getPromotions(keyword, 'all');
+                if (response.promotions) {
+                    filteredPromotions = response.promotions;
+                    renderTable(filteredPromotions);
+                } else {
+                    console.error("Invalid response format:", response);
+                    showEmpty();
+                }
+            } catch (error) {
+                console.error("Error searching promotions:", error);
+                showEmpty();
+            } finally {
+                hideLoading();
+            }
+        } else {
+            // No search, load all
+            filteredPromotions = [...promotions];
+            renderTable(filteredPromotions);
+        }
     };
 
     const resetFilters = () => {

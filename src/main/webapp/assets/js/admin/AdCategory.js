@@ -107,10 +107,14 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Data management
-    const loadCategories = async () => {
+    const loadCategories = async (searchTerm = '') => {
         try {
             showLoading();
-            const response = await api.getCategories();
+            let url = `${contextPath}/api/admin/categories?action=list`;
+            if (searchTerm) {
+                url += `&search=${encodeURIComponent(searchTerm)}`;
+            }
+            const response = await fetch(url).then(r => r.json());
 
             if (response.categories) {
                 categories = response.categories;
@@ -129,22 +133,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Filter functions
-    const applyFilters = () => {
-        const searchTerm = searchInput.value.toLowerCase().trim();
-
-        filteredCategories = categories.filter(cat =>
-            cat.name.toLowerCase().includes(searchTerm) ||
-            (cat.description && cat.description.toLowerCase().includes(searchTerm))
-        );
-
-        renderCategories(filteredCategories);
+    // Filter functions (server-side)
+    const applyFilters = async () => {
+        const searchTerm = searchInput.value.trim();
+        await loadCategories(searchTerm);
     };
 
     const resetFilters = () => {
         searchInput.value = "";
-        filteredCategories = [...categories];
-        renderCategories(filteredCategories);
+        loadCategories();
     };
 
     // Modal functions

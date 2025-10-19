@@ -27,7 +27,7 @@ public class AdminPromotionsServlet extends HttpServlet {
 
         try {
             if ("list".equals(action)) {
-                listPromotions(out);
+                listPromotions(req, out);
             } else if ("get".equals(action)) {
                 getPromotion(req, out);
             } else {
@@ -68,40 +68,77 @@ public class AdminPromotionsServlet extends HttpServlet {
         }
     }
 
-    private void listPromotions(PrintWriter out) throws SQLException {
-        String sql = "SELECT id, code, description, type, discount_value, max_discount, min_order, " +
-                     "usage_limit, used_count, start_at, end_at, active, apply_to, created_at, updated_at " +
-                     "FROM coupons ORDER BY created_at DESC";
+    private void listPromotions(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String search = req.getParameter("search");
+        String searchType = req.getParameter("searchType");
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT id, code, description, type, discount_value, max_discount, min_order, " +
+            "usage_limit, used_count, start_at, end_at, active, apply_to, created_at, updated_at " +
+            "FROM coupons WHERE 1=1"
+        );
+
+        // Add search conditions
+        if (search != null && !search.trim().isEmpty()) {
+            if ("code".equals(searchType)) {
+                sql.append(" AND code ILIKE ?");
+            } else if ("description".equals(searchType)) {
+                sql.append(" AND description ILIKE ?");
+            } else if ("type".equals(searchType)) {
+                sql.append(" AND type ILIKE ?");
+            } else {
+                // Default "all"
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR type ILIKE ?)");
+            }
+        }
+
+        sql.append(" ORDER BY created_at DESC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"promotions\":[");
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            boolean first = true;
-            while (rs.next()) {
-                if (!first) json.append(",");
-                first = false;
+            // Set search parameters
+            int paramIndex = 1;
+            if (search != null && !search.trim().isEmpty()) {
+                String pattern = "%" + search.trim() + "%";
+                if ("code".equals(searchType) || "description".equals(searchType) || "type".equals(searchType)) {
+                    pstmt.setString(paramIndex++, pattern);
+                } else {
+                    // "all" search
+                    pstmt.setString(paramIndex++, pattern);
+                    pstmt.setString(paramIndex++, pattern);
+                    pstmt.setString(paramIndex++, pattern);
+                }
+            }
 
-                json.append("{")
-                    .append("\"id\":").append(rs.getInt("id")).append(",")
-                    .append("\"code\":\"").append(escapeJson(rs.getString("code"))).append("\",")
-                    .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
-                    .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
-                    .append("\"discount_value\":").append(rs.getBigDecimal("discount_value")).append(",")
-                    .append("\"max_discount\":").append(rs.getBigDecimal("max_discount") != null ? rs.getBigDecimal("max_discount") : "null").append(",")
-                    .append("\"min_order\":").append(rs.getBigDecimal("min_order") != null ? rs.getBigDecimal("min_order") : "null").append(",")
-                    .append("\"usage_limit\":").append(rs.getInt("usage_limit") != 0 ? rs.getInt("usage_limit") : "null").append(",")
-                    .append("\"used_count\":").append(rs.getInt("used_count")).append(",")
-                    .append("\"start_at\":\"").append(rs.getTimestamp("start_at")).append("\",")
-                    .append("\"end_at\":\"").append(rs.getTimestamp("end_at")).append("\",")
-                    .append("\"active\":").append(rs.getBoolean("active")).append(",")
-                    .append("\"apply_to\":\"").append(escapeJson(rs.getString("apply_to"))).append("\",")
-                    .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                    .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
-                    .append("}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    first = false;
+
+                    json.append("{")
+                        .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"code\":\"").append(escapeJson(rs.getString("code"))).append("\",")
+                        .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
+                        .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
+                        .append("\"discount_value\":").append(rs.getBigDecimal("discount_value")).append(",")
+                        .append("\"max_discount\":").append(rs.getBigDecimal("max_discount") != null ? rs.getBigDecimal("max_discount") : "null").append(",")
+                        .append("\"min_order\":").append(rs.getBigDecimal("min_order") != null ? rs.getBigDecimal("min_order") : "null").append(",")
+                        .append("\"usage_limit\":").append(rs.getInt("usage_limit") != 0 ? rs.getInt("usage_limit") : "null").append(",")
+                        .append("\"used_count\":").append(rs.getInt("used_count")).append(",")
+                        .append("\"start_at\":\"").append(rs.getTimestamp("start_at")).append("\",")
+                        .append("\"end_at\":\"").append(rs.getTimestamp("end_at")).append("\",")
+                        .append("\"active\":").append(rs.getBoolean("active")).append(",")
+                        .append("\"apply_to\":\"").append(escapeJson(rs.getString("apply_to"))).append("\",")
+                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
+                        .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                        .append("}");
+                }
             }
         }
 

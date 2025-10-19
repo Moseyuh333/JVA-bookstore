@@ -26,7 +26,7 @@ public class AdminUsersServlet extends HttpServlet {
         
         try {
             if ("list".equals(action)) {
-                listUsers(out);
+                listUsers(req, out);
             } else {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write("{\"error\":\"Invalid action\"}");
@@ -73,35 +73,52 @@ public class AdminUsersServlet extends HttpServlet {
         }
     }
     
-    private void listUsers(PrintWriter out) throws SQLException {
-        String sql = "SELECT id, username, email, full_name, phone, role, status, email_verified, created_at, updated_at, birth_date, address FROM users ORDER BY created_at DESC";
+    private void listUsers(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String search = req.getParameter("search");
+        String sql;
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+
+        if (hasSearch) {
+            sql = "SELECT id, username, email, full_name, phone, role, status, email_verified, created_at, updated_at, birth_date, address FROM users WHERE LOWER(username) LIKE ? OR LOWER(email) LIKE ? OR LOWER(full_name) LIKE ? OR LOWER(phone) LIKE ? ORDER BY created_at DESC";
+        } else {
+            sql = "SELECT id, username, email, full_name, phone, role, status, email_verified, created_at, updated_at, birth_date, address FROM users ORDER BY created_at DESC";
+        }
 
         StringBuilder json = new StringBuilder();
         json.append("{\"users\":[");
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            boolean first = true;
-            while (rs.next()) {
-                if (!first) json.append(",");
-                first = false;
+            if (hasSearch) {
+                String likeSearch = "%" + search.trim().toLowerCase() + "%";
+                pstmt.setString(1, likeSearch);
+                pstmt.setString(2, likeSearch);
+                pstmt.setString(3, likeSearch);
+                pstmt.setString(4, likeSearch);
+            }
 
-                json.append("{")
-                    .append("\"id\":").append(rs.getInt("id")).append(",")
-                    .append("\"username\":\"").append(escapeJson(rs.getString("username"))).append("\",")
-                    .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
-                    .append("\"full_name\":\"").append(escapeJson(rs.getString("full_name"))).append("\",")
-                    .append("\"phone\":\"").append(escapeJson(rs.getString("phone"))).append("\",")
-                    .append("\"role\":\"").append(escapeJson(rs.getString("role"))).append("\",")
-                    .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
-                    .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
-                    .append("\"created\":\"").append(escapeJson(rs.getTimestamp("created_at").toString())).append("\",")
-                    .append("\"updated\":\"").append(rs.getTimestamp("updated_at") != null ? escapeJson(rs.getTimestamp("updated_at").toString()) : "").append("\",")
-                    .append("\"birth_date\":\"").append(rs.getDate("birth_date") != null ? escapeJson(rs.getDate("birth_date").toString()) : "").append("\",")
-                    .append("\"address\":\"").append(escapeJson(rs.getString("address"))).append("\"")
-                    .append("}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    first = false;
+
+                    json.append("{")
+                        .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"username\":\"").append(escapeJson(rs.getString("username"))).append("\",")
+                        .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
+                        .append("\"full_name\":\"").append(escapeJson(rs.getString("full_name"))).append("\",")
+                        .append("\"phone\":\"").append(escapeJson(rs.getString("phone"))).append("\",")
+                        .append("\"role\":\"").append(escapeJson(rs.getString("role"))).append("\",")
+                        .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
+                        .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
+                        .append("\"created\":\"").append(escapeJson(rs.getTimestamp("created_at").toString())).append("\",")
+                        .append("\"updated\":\"").append(rs.getTimestamp("updated_at") != null ? escapeJson(rs.getTimestamp("updated_at").toString()) : "").append("\",")
+                        .append("\"birth_date\":\"").append(rs.getDate("birth_date") != null ? escapeJson(rs.getDate("birth_date").toString()) : "").append("\",")
+                        .append("\"address\":\"").append(escapeJson(rs.getString("address"))).append("\"")
+                        .append("}");
+                }
             }
         }
 
