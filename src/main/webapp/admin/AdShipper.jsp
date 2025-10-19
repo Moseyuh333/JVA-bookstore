@@ -534,7 +534,7 @@
                                     <tr>
                                         <th>Nhà vận chuyển</th>
                                         <th>Số điện thoại</th>
-                                        <th>Địa chỉ</th>
+                                        <th>Email</th>
                                         <th>Khu vực phục vụ</th>
                                         <th>Phí cơ bản</th>
                                         <th>Trạng thái</th>
