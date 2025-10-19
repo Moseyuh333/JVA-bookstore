@@ -27,7 +27,7 @@ public class AdminCommissionsServlet extends HttpServlet {
 
         try {
             if ("list".equals(action)) {
-                listCommissions(out);
+                listCommissions(req, out);
             } else if ("get".equals(action)) {
                 getCommission(req, out);
             } else {
@@ -74,36 +74,67 @@ public class AdminCommissionsServlet extends HttpServlet {
     }
 
     // ====== LIST ======
-    private void listCommissions(PrintWriter out) throws SQLException {
-        String sql =
+    private void listCommissions(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String search = req.getParameter("search");
+        String searchType = req.getParameter("searchType");
+
+        StringBuilder sql = new StringBuilder(
             "SELECT sd.id, sd.shop_id, s.name AS shop_name, " +
             "sd.discount_rate AS rate, sd.start_date AS since, " +
             "sd.end_date, sd.active, sd.description " +
             "FROM store_discounts sd " +
-            "LEFT JOIN shops s ON sd.shop_id = s.id " +
-            "ORDER BY sd.id DESC";
+            "LEFT JOIN shops s ON sd.shop_id = s.id WHERE 1=1"
+        );
+
+        if (search != null && !search.trim().isEmpty()) {
+            if ("shop_name".equals(searchType)) {
+                sql.append(" AND s.name ILIKE ?");
+            } else if ("rate".equals(searchType)) {
+                sql.append(" AND CAST(sd.discount_rate AS TEXT) ILIKE ?");
+            } else if ("description".equals(searchType)) {
+                sql.append(" AND sd.description ILIKE ?");
+            } else {
+                // Default "all"
+                sql.append(" AND (s.name ILIKE ? OR CAST(sd.discount_rate AS TEXT) ILIKE ? OR sd.description ILIKE ?)");
+            }
+        }
+
+        sql.append(" ORDER BY sd.id DESC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"commissions\":[");
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            boolean first = true;
-            while (rs.next()) {
-                if (!first) json.append(",");
-                first = false;
+            int param = 1;
+            if (search != null && !search.trim().isEmpty()) {
+                String pattern = "%" + search.trim() + "%";
+                if ("shop_name".equals(searchType) || "rate".equals(searchType) || "description".equals(searchType)) {
+                    pstmt.setString(param++, pattern);
+                } else {
+                    pstmt.setString(param++, pattern);
+                    pstmt.setString(param++, pattern);
+                    pstmt.setString(param++, pattern);
+                }
+            }
 
-                json.append("{")
-                    .append("\"id\":").append(rs.getInt("id")).append(",")
-                    .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
-                    .append("\"rate\":").append(rs.getBigDecimal("rate") != null ? rs.getBigDecimal("rate") : BigDecimal.ZERO).append(",")
-                    .append("\"since\":\"").append(rs.getTimestamp("since") != null ? rs.getTimestamp("since") : "").append("\",")
-                    .append("\"end_date\":\"").append(rs.getTimestamp("end_date") != null ? rs.getTimestamp("end_date") : "").append("\",")
-                    .append("\"active\":").append(rs.getBoolean("active")).append(",")
-                    .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\"")
-                    .append("}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    first = false;
+
+                    json.append("{")
+                        .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
+                        .append("\"rate\":").append(rs.getBigDecimal("rate") != null ? rs.getBigDecimal("rate") : BigDecimal.ZERO).append(",")
+                        .append("\"since\":\"").append(rs.getTimestamp("since") != null ? rs.getTimestamp("since") : "").append("\",")
+                        .append("\"end_date\":\"").append(rs.getTimestamp("end_date") != null ? rs.getTimestamp("end_date") : "").append("\",")
+                        .append("\"active\":").append(rs.getBoolean("active")).append(",")
+                        .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\"")
+                        .append("}");
+                }
             }
         }
 

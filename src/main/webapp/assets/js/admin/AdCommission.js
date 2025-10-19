@@ -6,18 +6,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const tableBody = document.getElementById("commissionTable");
     const searchInput = document.getElementById("commissionSearchInput");
+    const searchTypeSelect = document.getElementById("commissionSearchType");
     const loadingState = document.getElementById("loadingState");
     const emptyState = document.getElementById("emptyState");
     const tableContainer = document.getElementById("tableContainer");
+
+    let currentSearchType = "all";
 
     let commissions = [];
     let filteredCommissions = [];
 
     // API functions
     const api = {
-        getCommissions: () => {
+        getCommissions: (search, searchType) => {
             const token = localStorage.getItem("admin_token");
-            return fetch(`${window.appConfig?.contextPath || ''}/api/admin/commissions?action=list`, {
+            let url = `${window.appConfig?.contextPath || ''}/api/admin/commissions?action=list`;
+            if (search && search.trim()) {
+                url += `&search=${encodeURIComponent(search.trim())}&searchType=${encodeURIComponent(searchType)}`;
+            }
+            return fetch(url, {
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
@@ -97,7 +104,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadCommissions = async () => {
         try {
             showLoading();
-            const response = await api.getCommissions();
+            const search = searchInput.value.trim();
+            const searchType = currentSearchType;
+            const response = await api.getCommissions(search, searchType);
 
             if (response.commissions) {
                 commissions = response.commissions;
@@ -118,23 +127,49 @@ document.addEventListener("DOMContentLoaded", () => {
     // Tìm kiếm chiết khấu
     const applyFilters = () => {
         const keyword = searchInput.value.toLowerCase().trim();
-        filteredCommissions = commissions.filter(c =>
-            (c.shop || c.shop_name || '').toLowerCase().includes(keyword) ||
-            (c.rate || '').toString().toLowerCase().includes(keyword) ||
-            (c.note || c.description || '').toLowerCase().includes(keyword)
-        );
+        const searchType = currentSearchType;
+
+        if (searchType === "all") {
+            filteredCommissions = commissions.filter(c =>
+                (c.shop || c.shop_name || '').toLowerCase().includes(keyword) ||
+                (c.rate || '').toString().toLowerCase().includes(keyword) ||
+                (c.note || c.description || '').toLowerCase().includes(keyword)
+            );
+        } else if (searchType === "shop_name") {
+            filteredCommissions = commissions.filter(c =>
+                (c.shop || c.shop_name || '').toLowerCase().includes(keyword)
+            );
+        } else if (searchType === "rate") {
+            filteredCommissions = commissions.filter(c =>
+                (c.rate || '').toString().toLowerCase().includes(keyword)
+            );
+        } else if (searchType === "description") {
+            filteredCommissions = commissions.filter(c =>
+                (c.note || c.description || '').toLowerCase().includes(keyword)
+            );
+        } else {
+            filteredCommissions = [...commissions];
+        }
         renderTable(filteredCommissions);
     };
 
     const resetFilters = () => {
         if (searchInput) searchInput.value = '';
+        if (searchTypeSelect) searchTypeSelect.value = 'all';
+        currentSearchType = "all";
         filteredCommissions = [...commissions];
         renderTable(filteredCommissions);
     };
 
     // Event listeners
     if (searchInput) {
-        searchInput.addEventListener("input", applyFilters);
+        searchInput.addEventListener("input", loadCommissions);
+    }
+    if (searchTypeSelect) {
+        searchTypeSelect.addEventListener("change", (e) => {
+            currentSearchType = e.target.value;
+            loadCommissions();
+        });
     }
 
     // Init
