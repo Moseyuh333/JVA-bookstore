@@ -177,8 +177,8 @@ public class AdminProductsServlet extends HttpServlet {
                                 .append("\"stock_quantity\":").append(rs.getInt("stock_quantity")).append(",")
                                 .append("\"image_url\":\"").append(escapeJson(rs.getString("image_url"))).append("\",")
                                 .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
-                                .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                                .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                                .append("\"created_at\":\"").append(escapeJson(rs.getTimestamp("created_at").toString())).append("\",")
+                                .append("\"updated_at\":\"").append(escapeJson(rs.getTimestamp("updated_at").toString())).append("\"")
                                 .append("}");
                     }
                 }
@@ -224,8 +224,8 @@ public class AdminProductsServlet extends HttpServlet {
                             + "\"stock_quantity\":" + rs.getInt("stock_quantity") + ","
                             + "\"image_url\":\"" + escapeJson(rs.getString("image_url")) + "\","
                             + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
-                            + "\"created_at\":\"" + rs.getTimestamp("created_at") + "\","
-                            + "\"updated_at\":\"" + rs.getTimestamp("updated_at") + "\""
+                            + "\"created_at\":\"" + escapeJson(rs.getTimestamp("created_at").toString()) + "\","
+                            + "\"updated_at\":\"" + escapeJson(rs.getTimestamp("updated_at").toString()) + "\""
                             + "}";
                     out.write(json);
                 } else {
