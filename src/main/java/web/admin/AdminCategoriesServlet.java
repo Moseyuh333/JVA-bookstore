@@ -133,7 +133,7 @@ public class AdminCategoriesServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "UPDATE categories SET name = ?, slug = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        String sql = "UPDATE categories SET name = ?, total_product = ?, created_at = CURRENT_TIMESTAMP WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
