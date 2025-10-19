@@ -242,6 +242,8 @@
                         </thead>
                         <tbody id="product"></tbody>
                     </table>
+                    <!-- ⚙️ Phân trang -->
+                    <div id="pagination" class="flex justify-center items-center gap-2 mt-4"></div>
                 </div>
 
             </div>
