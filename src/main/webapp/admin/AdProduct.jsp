@@ -37,6 +37,121 @@
             margin-bottom: 28px;
         }
 
+        .card-custom {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header-custom {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header-custom h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a202c;
+            margin: 0;
+        }
+
+                .btn-add {
+            background: #92400e;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-add:hover {
+            background: #78350f;
+        }
+
+        .filter-bar {
+            padding: 20px 24px;
+            background: #fafafa;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .filter-form {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            height: 40px;
+            padding: 0 16px 0 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #92400e;
+            box-shadow: 0 0 0 3px rgba(146, 64, 14, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 16px;
+        }
+
+        .btn-custom {
+            height: 40px;
+            padding: 0 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .btn-search {
+            background: #92400e;
+            color: white;
+        }
+
+        .btn-search:hover {
+            background: #78350f;
+        }
+
+        .btn-reset {
+            background: #e5e7eb;
+            color: #4b5563;
+        }
+
+        .btn-reset:hover {
+            background: #d1d5db;
+        }
+
         /* Stats */
         .stats-container {
             display: flex;
@@ -90,43 +205,6 @@
             font-weight: 700;
             color: #1a202c;
         }
-
-        /* Search bar */
-        .search-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .search-bar input {
-            flex: 1;
-            height: 42px;
-            border-radius: 10px;
-            border: 1px solid #e5e7eb;
-            padding: 0 16px;
-            font-size: 14px;
-        }
-
-        .search-bar input:focus {
-            border-color: #92400e;
-            box-shadow: 0 0 0 3px rgba(146,64,14,0.1);
-            outline: none;
-        }
-
-        .search-bar button {
-            border: none;
-            border-radius: 10px;
-            padding: 0 20px;
-            font-weight: 600;
-            cursor: pointer;
-            height: 42px;
-            transition: background 0.2s;
-        }
-
-        .btn-search { background: #92400e; color: white; }
-        .btn-search:hover { background: #78350f; }
-        .btn-add { background: #b45309; color: white; }
-        .btn-add:hover { background: #92400e; }
 
         /* Table */
         .table-container {
@@ -219,33 +297,60 @@
                     </div>
                 </div>
 
-                <div class="search-bar">
-                    <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm theo tên, tác giả, thể loại...">
-                    <button class="btn-search"><i class="fas fa-search"></i></button>
-                    <button class="btn-add" data-toggle="modal" data-target="#addProductModal"><i class="fas fa-plus"></i> Thêm</button>
-                </div>
+                <div class="card-custom">
+                    <div class="card-header-custom">
+                        <h2>Danh sách nhà vận chuyển</h2>
+                        <button class="btn-add" onclick="openAddModal()">
+                            <i class="fas fa-plus"></i>
+                            <span>Thêm nhà vận chuyển</span>
+                        </button>
+                    </div>
 
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tên sách</th>
-                                <th>Tác giả</th>
-                                <th>Thể loại</th>
-                                <th>Giá</th>
-                                <th>Tồn kho</th>
-                                <th>Shop</th>
-                                <th>Chiết khấu</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="product"></tbody>
-                    </table>
-                    <!-- ⚙️ Phân trang -->
-                    <div id="pagination" class="flex justify-center items-center gap-2 mt-4"></div>
-                </div>
+                    <div class="filter-bar">
+                        <div class="filter-form">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên nhà vận chuyển, thành phố...">
+                            </div>
+                            <button class="btn-custom btn-search" onclick="applyFilter()">
+                                <i class="fas fa-search"></i>
+                                <span>Tìm kiếm</span>
+                            </button>
+                            <button class="btn-custom btn-reset" onclick="resetFilter()">
+                                <i class="fas fa-redo"></i>
+                                <span>Đặt lại</span>
+                            </button>
+                        </div>
+                    </div>
 
+                    <div class="table-wrapper">
+                        <div id="loadingState" class="loading-state" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tên sách</th>
+                                        <th>Tác giả</th>
+                                        <th>Thể loại</th>
+                                        <th>Giá</th>
+                                        <th>Tồn kho</th>
+                                        <th>Shop</th>
+                                        <th>Chiết khấu</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="product"></tbody>
+                            </table>
+                            <!-- ⚙️ Phân trang -->
+                            <div id="pagination" class="flex justify-center items-center gap-2 mt-4"></div>
+                        </div>
+
+                </div>
             </div>
         </div>
         <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>

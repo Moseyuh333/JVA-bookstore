@@ -175,27 +175,34 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-
-
-    // ===== Search toàn DB =====
-    if (searchBtn && searchInput) {
-        searchBtn.addEventListener("click", () => {
-            currentSearch = searchInput.value.trim();
-            currentPage = 1;
-            loadProducts(currentPage, currentSearch);
-        });
-
-        // Enter = search
-        searchInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                currentSearch = searchInput.value.trim();
-                currentPage = 1;
-                loadProducts(currentPage, currentSearch);
-            }
-        });
-    }
-
     // ===== Init =====
     loadProducts();
     loadStats();
+});
+
+// ========================
+// 🧹 RESET / SEARCH
+// ========================
+function applyFilter() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#ShipperTable tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(search) ? '' : 'none';
+    });
+}
+
+function resetFilter() {
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('#ShipperTable tr').forEach(r => r.style.display = '');
+}
+
+window.addEventListener('load', () => {
+    if (typeof feather !== "undefined") feather.replace();
+
+    document.getElementById('searchInput')?.addEventListener('input', e => {
+        if (e.target.value.length === 0 || e.target.value.length >= 2) applyFilter();
+    });
+
+    document.getElementById('btnReset')?.addEventListener('click', resetFilter);
 });
