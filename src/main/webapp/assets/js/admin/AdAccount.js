@@ -1,13 +1,16 @@
-// ========== ADACCOUNT.JS ==========
-// Quản lý tài khoản người dùng trong bảng điều khiển admin.
-
 const contextPath = window.appConfig?.contextPath || '';
 let cachedUsers = [];
 let currentSearchTerm = '';
 
-/**
- * Tải danh sách người dùng từ API quản trị.
- */
+function buildAuthHeaders(base = {}) {
+    const headers = { ...base };
+    const token = localStorage.getItem('admin_token');
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+    return headers;
+}
+
 async function loadAdminUsers(searchTerm = currentSearchTerm) {
     const tableBody = document.querySelector('#User');
     const loading = document.querySelector('#loadingState');
@@ -19,16 +22,12 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
     }
 
     try {
-        if (loading) loading.style.display = 'block';
+        if (loading) {
+            loading.style.display = 'block';
+        }
         tableBody.innerHTML = '';
-        if (emptyState) emptyState.style.display = 'none';
-
-        const token = localStorage.getItem('admin_token');
-        if (!token) {
-            cachedUsers = [];
-            if (emptyState) emptyState.style.display = 'block';
-            updateStats();
-            return;
+        if (emptyState) {
+            emptyState.style.display = 'none';
         }
 
         let url = `${contextPath}/api/admin/users?action=list`;
@@ -37,25 +36,13 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
         }
 
         const response = await fetch(url, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            headers: buildAuthHeaders({ 'Content-Type': 'application/json' })
         });
 
-        let payload;
-        try {
-            payload = await response.json();
-        } catch (jsonError) {
-            throw new Error('Không thể đọc dữ liệu người dùng từ máy chủ');
-        }
-
-        if (!response.ok) {
-            throw new Error(payload?.error || `Server trả lỗi: ${response.status}`);
-        }
-
-        if (payload?.error) {
-            throw new Error(payload.error);
+        const payload = await response.json();
+        if (!response.ok || payload?.error) {
+            const message = payload?.error || `Server trả lỗi: ${response.status}`;
+            throw new Error(message);
         }
 
         const rawUsers = Array.isArray(payload?.users) ? payload.users : [];
@@ -70,7 +57,9 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
         });
 
         if (cachedUsers.length === 0) {
-            if (emptyState) emptyState.style.display = 'block';
+            if (emptyState) {
+                emptyState.style.display = 'block';
+            }
             updateStats();
             return;
         }
@@ -79,89 +68,89 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
             const initials = (user.username?.substring(0, 2) || 'U').toUpperCase();
             const fullName = user.full_name || '-';
             const birthDate = user.birth_date || '-';
-            const gender = '-';
             const address = user.address || '-';
             const email = user.email || '-';
             const phone = user.phone || '-';
             const role = user.role || 'customer';
-            const normalizedRole = role.toLowerCase();
-            const roleBadgeClass = normalizedRole === 'admin' ? 'badge-admin' : 'badge-customer';
+            const roleBadgeClass = (role || '').toLowerCase() === 'admin' ? 'badge-admin' : 'badge-customer';
 
-            return `
-                <tr>
-                    <td>
-                        <div class="user-cell">
-                            <div class="avatar">${initials}</div>
-                            <div class="user-info-text">
-                                <div class="user-name">${user.username}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${fullName}</td>
-                    <td>${birthDate}</td>
-                    <td>${gender}</td>
-                    <td>${address}</td>
-                    <td>${email}</td>
-                    <td>${phone}</td>
-                    <td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>
-                    <td class="actions">
-                        <button class="btn-icon btn-view" title="Xem">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn-icon btn-delete" title="Xóa">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
+            return [
+                '<tr>',
+                '<td>',
+                '<div class="user-cell">',
+                `<div class="avatar">${initials}</div>`,
+                '<div class="user-info-text">',
+                `<div class="user-name">${user.username}</div>`,
+                '</div>',
+                '</div>',
+                '</td>',
+                `<td>${fullName}</td>`,
+                `<td>${birthDate}</td>`,
+                '<td>-</td>',
+                `<td>${address}</td>`,
+                `<td>${email}</td>`,
+                `<td>${phone}</td>`,
+                `<td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>`,
+                '<td class="actions">',
+                '<button class="btn-icon btn-view" title="Xem">',
+                '<i class="fas fa-eye"></i>',
+                '</button>',
+                '<button class="btn-icon btn-delete" title="Xóa">',
+                '<i class="fas fa-trash"></i>',
+                '</button>',
+                '</td>',
+                '</tr>'
+            ].join('');
         }).join('');
 
         tableBody.innerHTML = rowsHtml;
-        if (emptyState) emptyState.style.display = 'none';
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
         updateStats();
     } catch (error) {
         console.error('❌ Lỗi khi tải dữ liệu:', error);
         cachedUsers = [];
-        if (emptyState) emptyState.style.display = 'block';
+        if (emptyState) {
+            emptyState.style.display = 'block';
+        }
         updateStats();
     } finally {
-        if (loading) loading.style.display = 'none';
+        if (loading) {
+            loading.style.display = 'none';
+        }
     }
 }
 
-/**
- * Áp dụng bộ lọc tìm kiếm từ input.
- */
 async function applyFilters() {
     const input = document.getElementById('searchInput');
     currentSearchTerm = input ? input.value.trim() : '';
     await loadAdminUsers(currentSearchTerm);
 }
 
-/**
- * Đặt lại bộ lọc tìm kiếm.
- */
 function resetFilters() {
     const input = document.getElementById('searchInput');
-    if (input) input.value = '';
+    if (input) {
+        input.value = '';
+    }
     currentSearchTerm = '';
     loadAdminUsers('');
 }
 
-/**
- * Cập nhật số liệu thống kê hiển thị trên dashboard nhỏ.
- */
 function updateStats() {
     const totalEl = document.getElementById('totalUsers');
     const activeEl = document.getElementById('activeUsers');
-
     const total = cachedUsers.length;
     const active = cachedUsers.filter(user => (user.status || '').toLowerCase() === 'active').length;
 
-    if (totalEl) totalEl.textContent = total;
-    if (activeEl) activeEl.textContent = active;
+    if (totalEl) {
+        totalEl.textContent = total;
+    }
+    if (activeEl) {
+        activeEl.textContent = active;
+    }
 }
 
-// Tự động tìm kiếm khi người dùng nhập.
 document.getElementById('searchInput')?.addEventListener('input', event => {
     const value = event.target.value.trim();
     if (value.length === 0 || value.length >= 2) {
@@ -169,9 +158,6 @@ document.getElementById('searchInput')?.addEventListener('input', event => {
     }
 });
 
-/**
- * Thiết lập modal tạo tài khoản mới cho admin.
- */
 function setupCreateUserModal() {
     const modal = document.getElementById('createUserModal');
     const openBtn = document.getElementById('openCreateUserBtn');
@@ -194,13 +180,17 @@ function setupCreateUserModal() {
     let lastFocusedElement = null;
 
     const clearFeedback = () => {
-        if (!feedback) return;
+        if (!feedback) {
+            return;
+        }
         feedback.textContent = '';
         feedback.className = 'form-feedback';
     };
 
     const setFeedback = (message, type = 'error') => {
-        if (!feedback) return;
+        if (!feedback) {
+            return;
+        }
         feedback.textContent = message;
         feedback.className = type === 'success' ? 'form-feedback success' : 'form-feedback error';
     };
@@ -224,7 +214,9 @@ function setupCreateUserModal() {
         modal.setAttribute('aria-modal', 'true');
         document.body.classList.add('modal-open');
         clearFeedback();
-        usernameInput?.focus({ preventScroll: true });
+        if (usernameInput && typeof usernameInput.focus === 'function') {
+            usernameInput.focus({ preventScroll: true });
+        }
     };
 
     openBtn.addEventListener('click', openModal);
@@ -277,10 +269,18 @@ function setupCreateUserModal() {
         payload.append('username', username);
         payload.append('email', email);
         payload.append('password', password);
-        if (fullName) payload.append('full_name', fullName);
-        if (phone) payload.append('phone', phone);
-        if (role) payload.append('role', role);
-        if (status) payload.append('status', status);
+        if (fullName) {
+            payload.append('full_name', fullName);
+        }
+        if (phone) {
+            payload.append('phone', phone);
+        }
+        if (role) {
+            payload.append('role', role);
+        }
+        if (status) {
+            payload.append('status', status);
+        }
 
         const originalText = submitBtn.textContent;
         submitBtn.disabled = true;
@@ -289,10 +289,7 @@ function setupCreateUserModal() {
         try {
             const response = await fetch(`${contextPath}/api/admin/users`, {
                 method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
+                headers: buildAuthHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
                 body: payload.toString()
             });
 
@@ -300,7 +297,7 @@ function setupCreateUserModal() {
             try {
                 data = await response.json();
             } catch (jsonError) {
-                // Ignore JSON parse failure; response may not contain body
+                // ignore
             }
 
             if (!response.ok || (data && data.error)) {
@@ -324,9 +321,6 @@ function setupCreateUserModal() {
     });
 }
 
-// ========================
-// 🚀 Khởi tạo khi trang load
-// ========================
 window.addEventListener('load', () => {
     if (typeof feather !== 'undefined') {
         feather.replace();
@@ -334,127 +328,4 @@ window.addEventListener('load', () => {
 
     setupCreateUserModal();
     loadAdminUsers();
-});
-// ========== ADACCOUNT.JS ==========
-// Quản lý tài khoản người dùng
-
-// ========================
-// 📥 LOAD USERS FROM API
-// ========================
-async function loadAdminUsers(searchTerm = '') {
-    const tableBody = document.querySelector('#User');
-    const loading = document.querySelector('#loadingState');
-    const emptyState = document.querySelector('#emptyState');
-
-    try {
-        if (loading) loading.style.display = 'block';
-        if (tableBody) tableBody.innerHTML = '';
-
-        const token = localStorage.getItem("admin_token");
-        let url = `${window.appConfig?.contextPath || ''}/api/admin/users?action=list`;
-        if (searchTerm) {
-            url += `&search=${encodeURIComponent(searchTerm)}`;
-        }
-
-        const res = await fetch(url, {
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            }
-        });
-        if (!res.ok) throw new Error("Server trả lỗi: " + res.status);
-        const data = await res.json();
-
-        if (data.users.length === 0) {
-            emptyState.style.display = 'block';
-            return;
-        }
-
-        // Ẩn trạng thái trống
-        emptyState.style.display = 'none';
-
-        data.users.forEach(u => {
-            const initials = (u.username?.substring(0, 2) || 'U').toUpperCase();
-            const fullName = u.full_name || '-';
-            const birthDate = u.birth_date || '-';
-            const gender = '-'; // Not available in DB
-            const address = u.address || '-';
-            const email = u.email || '-';
-            const phone = u.phone || '-';
-            const role = u.role || 'customer';
-            const roleBadgeClass = role === 'admin' ? 'badge-admin' : 'badge-customer';
-
-            tableBody.innerHTML += `
-                <tr>
-                    <td>
-                        <div class="user-cell">
-                            <div class="avatar">${initials}</div>
-                            <div class="user-info-text">
-                                <div class="user-name">${u.username}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${fullName}</td>
-                    <td>${birthDate}</td>
-                    <td>${gender}</td>
-                    <td>${address}</td>
-                    <td>${email}</td>
-                    <td>${phone}</td>
-                    <td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>
-                    <td class="actions">
-                        <button class="btn-icon btn-view" title="Xem">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn-icon btn-delete" title="Xóa">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
-        });
-
-        updateStats();
-    } catch (err) {
-        console.error("❌ Lỗi khi tải dữ liệu:", err);
-        emptyState.style.display = 'block';
-    } finally {
-        if (loading) loading.style.display = 'none';
-    }
-}
-
-
-// Áp dụng bộ lọc tìm kiếm (server-side)
-async function applyFilters() {
-    const searchTerm = document.getElementById('searchInput').value.trim();
-    await loadAdminUsers(searchTerm);
-}
-
-// Reset bộ lọc
-function resetFilters() {
-    document.getElementById('searchInput').value = '';
-    loadAdminUsers();
-}
-
-// Cập nhật thống kê tài khoản
-function updateStats() {
-    const rows = document.querySelectorAll('#User tr');
-    document.getElementById('totalUsers').textContent = rows.length;
-    document.getElementById('activeUsers').textContent = rows.length;
-}
-
-// Auto-search khi nhập
-document.getElementById('searchInput')?.addEventListener('input', e => {
-    if (e.target.value.length === 0 || e.target.value.length >= 2) applyFilters();
-});
-
-// ========================
-// 🚀 Khởi tạo khi trang load
-// ========================
-window.addEventListener('load', () => {
-    if (typeof feather !== "undefined") feather.replace();
-
-    // Gọi API lấy dữ liệu user thật từ servlet
-    loadAdminUsers();
-
-    // Sau khi load xong thì cập nhật thống kê
-    updateStats();
 });
