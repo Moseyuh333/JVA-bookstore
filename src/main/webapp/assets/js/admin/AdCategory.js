@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const escapeHtml = (text) => {
         if (!text) return "";
         return text.replace(/[&<>"']/g, (m) => {
-            const map = { "&": "&amp;", "<": "<", ">": ">", '"': """, "'": "&#39;" };
+            const map = { "&": "&amp;", "<": "<", ">": ">", '"': "\"", "'": "&#39;" };
             return map[m];
         });
     };
