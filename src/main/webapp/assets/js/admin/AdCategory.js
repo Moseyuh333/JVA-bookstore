@@ -78,10 +78,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Render functions
     const renderCategoryRow = (category) => `
         <tr>
+            <td>${category.id}</td>
             <td>${escapeHtml(category.name)}</td>
-            <td></td>
             <td>${category.product_count || 0}</td>
-            <td><span class="badge-custom badge-active">Hoạt động</span></td>
             <td>${formatDate(category.created_at)}</td>
             <td>
                 <div class="actions">
