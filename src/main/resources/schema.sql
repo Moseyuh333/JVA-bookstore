@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS books (
     category VARCHAR(100),
     stock_quantity INTEGER DEFAULT 0,
     image_url VARCHAR(500),
+    shop_id INTEGER REFERENCES shops(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -109,3 +110,65 @@ CREATE TABLE IF NOT EXISTS store_discounts (
 );
 CREATE INDEX IF NOT EXISTS idx_store_discounts_shop_id ON store_discounts(shop_id);
 CREATE INDEX IF NOT EXISTS idx_store_discounts_active ON store_discounts(active);
+
+-- Admin-specific tables
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS shops (
+    id SERIAL PRIMARY KEY,
+    owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    logo_url VARCHAR(500),
+    status VARCHAR(50) DEFAULT 'active',
+    commission_rate DECIMAL(5,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS coupons (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('percentage', 'fixed', 'shipping')),
+    discount_value DECIMAL(10,2) NOT NULL,
+    max_discount DECIMAL(10,2),
+    min_order DECIMAL(10,2),
+    usage_limit INTEGER,
+    used_count INTEGER DEFAULT 0,
+    start_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_at TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE,
+    apply_to VARCHAR(20) DEFAULT 'product' CHECK (apply_to IN ('product', 'shipping')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS shippers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    base_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+    service_area TEXT,
+    estimated_time VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for admin tables
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_shops_owner_id ON shops(owner_id);
+CREATE INDEX IF NOT EXISTS idx_shops_status ON shops(status);
+CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code);
+CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons(active);
+CREATE INDEX IF NOT EXISTS idx_coupons_start_end ON coupons(start_at, end_at);
+CREATE INDEX IF NOT EXISTS idx_shippers_status ON shippers(status);
