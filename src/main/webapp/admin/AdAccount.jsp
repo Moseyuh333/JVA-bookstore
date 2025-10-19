@@ -18,6 +18,10 @@
     <script src="https://unpkg.com/feather-icons"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        window.appConfig = window.appConfig || {};
+        window.appConfig.contextPath = '${pageContext.request.contextPath}';
+    </script>
     
     <style>
         * {
