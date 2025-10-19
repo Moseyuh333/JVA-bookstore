@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ public final class ReviewDAO {
                 + "media_url = EXCLUDED.media_url, media_type = EXCLUDED.media_type, status = 'published', updated_at = CURRENT_TIMESTAMP";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ensureReviewSchema(conn);
             stmt.setLong(1, userId);
             stmt.setLong(2, bookId);
             stmt.setInt(3, rating);
@@ -69,6 +71,7 @@ public final class ReviewDAO {
         String sql = "DELETE FROM book_reviews WHERE user_id = ? AND book_id = ?";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ensureReviewSchema(conn);
             stmt.setLong(1, userId);
             stmt.setLong(2, bookId);
             stmt.executeUpdate();
@@ -81,6 +84,7 @@ public final class ReviewDAO {
                 + "WHERE r.book_id = ? AND r.status = 'published' ORDER BY r.created_at DESC LIMIT ? OFFSET ?";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ensureReviewSchema(conn);
             stmt.setLong(1, bookId);
             stmt.setInt(2, limit);
             stmt.setInt(3, offset);
@@ -110,6 +114,7 @@ public final class ReviewDAO {
         String sql = "SELECT id, user_id, book_id, rating, title, content, media_url, media_type, created_at, updated_at FROM book_reviews WHERE user_id = ? AND book_id = ?";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ensureReviewSchema(conn);
             stmt.setLong(1, userId);
             stmt.setLong(2, bookId);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -151,5 +156,51 @@ public final class ReviewDAO {
             return null;
         }
         return timestamp.toLocalDateTime();
+    }
+
+    private static volatile boolean reviewSchemaEnsured = false;
+
+    private static void ensureReviewSchema(Connection conn) throws SQLException {
+        if (reviewSchemaEnsured) {
+            return;
+        }
+        final String tableName = "book_reviews";
+        String columnSql = "SELECT column_name FROM information_schema.columns WHERE table_name = ?";
+        java.util.Set<String> existingColumns = new java.util.HashSet<>();
+        try (PreparedStatement stmt = conn.prepareStatement(columnSql)) {
+            stmt.setString(1, tableName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    existingColumns.add(rs.getString("column_name").toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+
+        java.util.List<String> alterStatements = new java.util.ArrayList<>();
+        if (!existingColumns.contains("media_url")) {
+            alterStatements.add("ALTER TABLE book_reviews ADD COLUMN media_url VARCHAR(500)");
+        }
+        if (!existingColumns.contains("media_type")) {
+            alterStatements.add("ALTER TABLE book_reviews ADD COLUMN media_type VARCHAR(30)");
+        }
+        if (!existingColumns.contains("title")) {
+            alterStatements.add("ALTER TABLE book_reviews ADD COLUMN title VARCHAR(255)");
+        }
+        if (!existingColumns.contains("updated_at")) {
+            alterStatements.add("ALTER TABLE book_reviews ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        }
+        if (!existingColumns.contains("status")) {
+            alterStatements.add("ALTER TABLE book_reviews ADD COLUMN status VARCHAR(20) DEFAULT 'published'");
+        }
+
+        if (!alterStatements.isEmpty()) {
+            try (Statement statement = conn.createStatement()) {
+                for (String alter : alterStatements) {
+                    statement.execute(alter);
+                }
+            }
+        }
+
+        reviewSchemaEnsured = true;
     }
 }

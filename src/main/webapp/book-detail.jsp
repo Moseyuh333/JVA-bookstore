@@ -46,7 +46,9 @@
                   l1.287-3.975-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.179l1.286-3.975z" />
               </svg>
             </c:forEach>
-            <span class="text-gray-500 text-sm ml-1">(${bookRating}/5)</span>
+            <span class="text-gray-500 text-sm ml-1">
+              (<fmt:formatNumber value="${bookRating}" maxFractionDigits="1" /> / 5 · ${reviewCount} đánh giá)
+            </span>
           </div>
 
           <!-- Price -->
@@ -85,6 +87,13 @@
                 <span class="text-gray-600">Không rõ</span>
               </c:otherwise>
             </c:choose>
+          </p>
+
+          <p class="text-sm mb-4 text-gray-700">
+            <span class="text-gray-600">Đã bán:</span>
+            <span class="text-amber-700 font-medium">
+              <fmt:formatNumber value="${soldCount}" type="number" />
+            </span>
           </p>
 
           <!-- Buttons -->
@@ -205,6 +214,9 @@
                         <div>
                           <p class="text-gray-800 font-semibold">${r.authorName}</p>
                           <p class="text-green-600 text-xs">Đã mua hàng</p>
+                          <c:if test="${not empty r.createdAt}">
+                            <p class="text-gray-500 text-xs">${r.createdAt}</p>
+                          </c:if>
                         </div>
                       </div>
                     </div>
