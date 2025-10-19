@@ -13,7 +13,14 @@ async function loadAdminUsers() {
         if (loading) loading.style.display = 'block';
         if (tableBody) tableBody.innerHTML = '';
 
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/users?action=list`);
+        const token = localStorage.getItem("admin_token");
+
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/users?action=list`, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        });
         if (!res.ok) throw new Error("Server trả lỗi: " + res.status);
         const data = await res.json();
 
