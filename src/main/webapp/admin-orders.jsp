@@ -1,129 +1,306 @@
-<%@ page contentType="text/html; charset=UTF-8" language="java" isELIgnored="true" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin - Quản lý trạng thái đơn hàng</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý đơn hàng - Bookish Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f6f7fb; }
-        .timeline { position: relative; padding-left: 1.5rem; }
-        .timeline::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0.45rem; width: 2px; background-color: #dee2e6; }
-        .timeline-item { position: relative; margin-bottom: 1.25rem; padding-left: 1.5rem; }
-        .timeline-item::before { content: ""; position: absolute; left: -0.62rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; border-radius: 50%; background-color: #0d6efd; }
-        .table-hover tbody tr { cursor: pointer; }
-        .order-row-active { background-color: #e7f1ff; }
-        .badge-status { text-transform: capitalize; }
-        .card-shadow { box-shadow: 0 1rem 2.5rem rgba(18, 38, 63, 0.05); }
-        .sticky-actions { position: sticky; top: 0; z-index: 10; background-color: #fff; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f5f5;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        #wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        #content-wrapper {
+            flex: 1;
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
+        }
+
+        #content {
+            margin-top: 70px;
+            padding: 24px;
+        }
+
+        .container-fluid {
+            max-width: 1400px;
+        }
+
+        .page-title {
+            margin-bottom: 24px;
+        }
+
+        .page-title h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 8px;
+        }
+
+        .page-title p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .orders-card, .detail-card {
+            background: white;
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+
+        .orders-card .card-body {
+            padding: 24px;
+        }
+
+        .filters-wrap {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #edf2f7;
+        }
+
+        .filters-wrap label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        .filters-wrap .form-select,
+        .filters-wrap .form-control {
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+        }
+
+        .filters-wrap button {
+            height: 42px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .table-hover tbody tr {
+            cursor: pointer;
+        }
+
+        .order-row-active {
+            background: #fef3c7;
+        }
+
+        .badge-status {
+            text-transform: capitalize;
+            font-weight: 600;
+        }
+
+        .sticky-actions {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: white;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .detail-card .card-body {
+            padding: 24px;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .timeline::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0.45rem;
+            width: 2px;
+            background-color: #e2e8f0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.25rem;
+            padding-left: 1.5rem;
+        }
+
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -0.62rem;
+            top: 0.25rem;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            background-color: #92400e;
+        }
+
+        @media (max-width: 768px) {
+            #content {
+                padding: 16px;
+            }
+
+            .filters-wrap {
+                margin-bottom: 20px;
+            }
+
+            .filters-wrap .row > div {
+                margin-bottom: 12px;
+            }
+
+            .filters-wrap button {
+                width: 100%;
+            }
+
+            .orders-card .card-body,
+            .detail-card .card-body {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container py-4">
-        <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
-            <div>
-                <h1 class="h3 mb-0">Bảng điều khiển trạng thái đơn hàng</h1>
-                <p class="text-muted mb-0">Xem, cập nhật nhanh trạng thái để kiểm thử quy trình giao hàng và đánh giá.</p>
-            </div>
-            <div class="ms-auto">
-                <a class="btn btn-outline-secondary" href="<%= request.getContextPath() %>/" target="_blank"><i class="fas fa-external-link-alt me-2"></i>Mở cửa hàng</a>
-            </div>
-        </div>
 
-        <div class="row g-4">
-            <div class="col-lg-7">
-                <div class="card card-shadow border-0 h-100">
-                    <div class="card-body">
-                        <div class="row g-3 align-items-end mb-3">
-                            <div class="col-md-4">
-                                <label for="statusFilter" class="form-label">Lọc trạng thái</label>
-                                <select id="statusFilter" class="form-select">
-                                    <option value="all">Tất cả</option>
-                                    <option value="new">Đơn hàng mới</option>
-                                    <option value="confirmed">Đã xác nhận</option>
-                                    <option value="shipping">Đang giao</option>
-                                    <option value="delivered">Đã giao</option>
-                                    <option value="cancelled">Đã hủy</option>
-                                    <option value="returned">Hoàn trả</option>
-                                </select>
-                            </div>
-                            <div class="col-md-5">
-                                <label for="searchInput" class="form-label">Tìm kiếm (mã đơn, email, tên)</label>
-                                <input type="search" id="searchInput" class="form-control" placeholder="Ví dụ: ODABC123, user@gmail.com">
-                            </div>
-                            <div class="col-md-3">
-                                <button id="refreshButton" class="btn btn-primary w-100"><i class="fas fa-rotate me-2"></i>Tải lại</button>
+<div id="wrapper">
+    <%@ include file="/WEB-INF/includes/admin/AdSideBar.jsp" %>
+
+    <div id="content-wrapper">
+        <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
+
+        <div id="content">
+            <div class="container-fluid">
+                <div class="page-title d-flex flex-wrap align-items-center gap-3">
+                    <div>
+                        <h1>Quản lý đơn hàng</h1>
+                        <p>Theo dõi và cập nhật trạng thái từng đơn hàng trong hệ thống.</p>
+                    </div>
+                    <div class="ms-auto">
+                        <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/" target="_blank">
+                            <i class="fas fa-external-link-alt me-2"></i>Mở cửa hàng
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <div class="card orders-card h-100">
+                            <div class="card-body">
+                                <div class="filters-wrap">
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-4">
+                                            <label for="statusFilter" class="form-label">Lọc trạng thái</label>
+                                            <select id="statusFilter" class="form-select">
+                                                <option value="all">Tất cả</option>
+                                                <option value="new">Đơn hàng mới</option>
+                                                <option value="confirmed">Đã xác nhận</option>
+                                                <option value="shipping">Đang giao</option>
+                                                <option value="delivered">Đã giao</option>
+                                                <option value="cancelled">Đã hủy</option>
+                                                <option value="returned">Hoàn trả</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label for="searchInput" class="form-label">Tìm kiếm (mã đơn, email, tên)</label>
+                                            <input type="search" id="searchInput" class="form-control" placeholder="Ví dụ: ODABC123, user@gmail.com">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button id="refreshButton" class="btn btn-primary w-100">
+                                                <i class="fas fa-rotate me-2"></i>Tải lại
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="ordersFeedback" class="mb-3 small text-muted"></div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0" id="ordersTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="text-nowrap">Mã đơn</th>
+                                                <th>Khách hàng</th>
+                                                <th class="text-nowrap">Ngày tạo</th>
+                                                <th class="text-end">Tổng cộng</th>
+                                                <th class="text-center">Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ordersBody">
+                                            <tr><td colspan="5" class="text-center py-4 text-muted">Chưa có dữ liệu</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div id="ordersFeedback" class="mb-3 small text-muted"></div>
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="ordersTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="text-nowrap">Mã đơn</th>
-                                        <th>Khách hàng</th>
-                                        <th class="text-nowrap">Ngày tạo</th>
-                                        <th class="text-end">Tổng cộng</th>
-                                        <th class="text-center">Trạng thái</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="ordersBody">
-                                    <tr><td colspan="5" class="text-center py-4 text-muted">Chưa có dữ liệu</td></tr>
-                                </tbody>
-                            </table>
+                    <div class="col-lg-5">
+                        <div class="card detail-card h-100">
+                            <div class="card-header bg-white sticky-actions">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <h2 class="h5 mb-0">Chi tiết đơn hàng</h2>
+                                    <span id="detailStatusBadge"></span>
+                                </div>
+                            </div>
+                            <div class="card-body" id="detailBody">
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fas fa-file-invoice fa-2x mb-3"></i>
+                                    <p>Chọn một đơn hàng từ danh sách để xem chi tiết.</p>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-0" id="updateFooter" hidden>
+                                <form id="statusForm" class="row g-2 align-items-center">
+                                    <div class="col-md-6">
+                                        <label for="statusSelect" class="form-label">Cập nhật trạng thái</label>
+                                        <select id="statusSelect" class="form-select" required>
+                                            <option value="">-- Chọn trạng thái --</option>
+                                            <option value="new">Đơn hàng mới</option>
+                                            <option value="confirmed">Đã xác nhận</option>
+                                            <option value="shipping">Đang giao</option>
+                                            <option value="delivered">Đã giao</option>
+                                            <option value="cancelled">Đã hủy</option>
+                                            <option value="returned">Hoàn trả</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="noteInput" class="form-label">Ghi chú</label>
+                                        <input type="text" id="noteInput" class="form-control" placeholder="Ví dụ: Đã giao thành công">
+                                    </div>
+                                    <div class="col-12 text-end">
+                                        <button type="submit" class="btn btn-success" id="updateButton">
+                                            <i class="fas fa-save me-2"></i>Lưu trạng thái
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-5">
-                <div class="card card-shadow border-0 h-100">
-                    <div class="card-header bg-white sticky-actions">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <h2 class="h5 mb-0">Chi tiết đơn hàng</h2>
-                            <span id="detailStatusBadge"></span>
-                        </div>
-                    </div>
-                    <div class="card-body" id="detailBody">
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-file-invoice fa-2x mb-3"></i>
-                            <p>Chọn một đơn hàng từ danh sách để xem chi tiết.</p>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-white border-0" id="updateFooter" hidden>
-                        <form id="statusForm" class="row g-2 align-items-center">
-                            <div class="col-md-6">
-                                <label for="statusSelect" class="form-label">Cập nhật trạng thái</label>
-                                <select id="statusSelect" class="form-select" required>
-                                    <option value="">-- Chọn trạng thái --</option>
-                                    <option value="new">Đơn hàng mới</option>
-                                    <option value="confirmed">Đã xác nhận</option>
-                                    <option value="shipping">Đang giao</option>
-                                    <option value="delivered">Đã giao</option>
-                                    <option value="cancelled">Đã hủy</option>
-                                    <option value="returned">Hoàn trả</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="noteInput" class="form-label">Ghi chú</label>
-                                <input type="text" id="noteInput" class="form-control" placeholder="Ví dụ: Đã giao thành công">
-                            </div>
-                            <div class="col-12 text-end">
-                                <button type="submit" class="btn btn-success" id="updateButton"><i class="fas fa-save me-2"></i>Lưu trạng thái</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
         </div>
+
+        <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const contextPath = '<%= request.getContextPath() %>';
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+        const contextPath = '${pageContext.request.contextPath}';
         const ADMIN_SECRET = (() => {
             const fromQuery = new URLSearchParams(window.location.search).get('secret');
             if (fromQuery && fromQuery.trim() !== '') {

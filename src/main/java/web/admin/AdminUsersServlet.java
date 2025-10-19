@@ -49,7 +49,7 @@ public class AdminUsersServlet extends HttpServlet {
 
         try {
             if ("create".equals(action)) {
-                createUser(req, out);
+                createUser(req, resp, out);
             } else if ("update".equals(action)) {
                 updateUser(req, out);
             } else if ("delete".equals(action)) {
@@ -153,7 +153,7 @@ public class AdminUsersServlet extends HttpServlet {
         }
     }
 
-    private void createUser(HttpServletRequest req, PrintWriter out) throws SQLException {
+    private void createUser(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws SQLException {
         String username = req.getParameter("username");
         String email = req.getParameter("email");
         String passwordHash = req.getParameter("password_hash");
@@ -164,6 +164,7 @@ public class AdminUsersServlet extends HttpServlet {
         String status = req.getParameter("status");
 
         if (username == null || username.trim().isEmpty() || email == null || email.trim().isEmpty()) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.write("{\"error\":\"Username and email are required\"}");
             return;
         }
@@ -171,6 +172,7 @@ public class AdminUsersServlet extends HttpServlet {
         if ((passwordHash == null || passwordHash.trim().isEmpty()) && rawPassword != null && !rawPassword.trim().isEmpty()) {
             String trimmed = rawPassword.trim();
             if (trimmed.length() < 6) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write("{\"error\":\"Password must be at least 6 characters\"}");
                 return;
             }
@@ -178,6 +180,7 @@ public class AdminUsersServlet extends HttpServlet {
         }
 
         if (passwordHash == null || passwordHash.trim().isEmpty()) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.write("{\"error\":\"Password is required\"}");
             return;
         }
@@ -199,11 +202,13 @@ public class AdminUsersServlet extends HttpServlet {
             if (rows > 0) {
                 out.write("{\"message\":\"User created successfully\"}");
             } else {
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 out.write("{\"error\":\"Failed to create user\"}");
             }
         } catch (SQLException e) {
             String sqlState = e.getSQLState();
             if (sqlState != null && sqlState.startsWith("23")) {
+                resp.setStatus(HttpServletResponse.SC_CONFLICT);
                 out.write("{\"error\":\"Username or email already exists\"}");
                 return;
             }
