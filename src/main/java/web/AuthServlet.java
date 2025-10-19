@@ -1,6 +1,8 @@
 package web;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import utils.JwtUtil;
 import utils.DBUtil;
 import utils.EmailUtil;
@@ -13,12 +15,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.UUID;
 
 @WebServlet(name = "AuthServlet", urlPatterns = {"/api/login", "/api/auth/register", "/api/auth/send-otp", "/api/auth/verify-otp", "/api/auth/reset-password"})
 public class AuthServlet extends HttpServlet {
+
+    private static final String ATTR_JSON_BODY = "AUTH_SERVLET_JSON_BODY";
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         System.out.println("DEBUG AuthServlet - doPost called, path: " + req.getServletPath());
@@ -107,9 +113,9 @@ public class AuthServlet extends HttpServlet {
     }
 
     private void handleRegister(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {
-        String email = req.getParameter("email");
-        String username = req.getParameter("username");
-        String password = req.getParameter("password");
+        String email = extractParam(req, "email");
+        String username = extractParam(req, "username");
+        String password = extractParam(req, "password");
 
         if (email == null || email.isEmpty() || username == null || username.isEmpty() || password == null || password.isEmpty()) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -247,17 +253,17 @@ public class AuthServlet extends HttpServlet {
     }
     
     private void handleVerifyOTP(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws IOException, SQLException {
-        String email = req.getParameter("email");
-        String otp = req.getParameter("otp");
-        String username = req.getParameter("username");
-        String password = req.getParameter("password");
+        String email = extractParam(req, "email");
+        String otp = extractParam(req, "otp");
+        String username = extractParam(req, "username");
+        String password = extractParam(req, "password");
         
         if (email == null || otp == null || username == null || password == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.write("{\"error\":\"Email, OTP, username, and password are required\"}");
             return;
         }
-        
+
         // Verify OTP
         if (OTPUtil.verifyOTP(email, otp)) {
             // Check if username already exists
@@ -290,6 +296,69 @@ public class AuthServlet extends HttpServlet {
         } else {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.write("{\"error\":\"Invalid or expired OTP. Please try again.\"}");
+        }
+    }
+
+    private String extractParam(HttpServletRequest req, String name) throws IOException {
+        String value = req.getParameter(name);
+        if (value != null) {
+            value = value.trim();
+            if (!value.isEmpty()) {
+                return value;
+            }
+        }
+        JsonObject json = getJsonBody(req);
+        if (json != null) {
+            JsonElement element = json.get(name);
+            if (element != null && !element.isJsonNull()) {
+                String extracted = element.getAsString();
+                if (extracted != null) {
+                    extracted = extracted.trim();
+                    if (!extracted.isEmpty()) {
+                        return extracted;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private JsonObject getJsonBody(HttpServletRequest req) throws IOException {
+        Object cached = req.getAttribute(ATTR_JSON_BODY);
+        if (cached instanceof JsonObject) {
+            return (JsonObject) cached;
+        }
+        if (Boolean.FALSE.equals(cached)) {
+            return null;
+        }
+
+        String contentType = req.getContentType();
+        if (contentType == null || !contentType.toLowerCase().contains("application/json")) {
+            req.setAttribute(ATTR_JSON_BODY, Boolean.FALSE);
+            return null;
+        }
+
+        StringBuilder jsonPayload = new StringBuilder();
+        try (BufferedReader reader = req.getReader()) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonPayload.append(line);
+            }
+        }
+
+        if (jsonPayload.length() == 0) {
+            req.setAttribute(ATTR_JSON_BODY, Boolean.FALSE);
+            return null;
+        }
+
+        try {
+            JsonObject json = JsonParser.parseString(jsonPayload.toString()).getAsJsonObject();
+            req.setAttribute(ATTR_JSON_BODY, json);
+            return json;
+        } catch (Exception parseEx) {
+            req.setAttribute(ATTR_JSON_BODY, Boolean.FALSE);
+            System.err.println("AuthServlet - Failed to parse JSON body: " + parseEx.getMessage());
+            return null;
         }
     }
 }

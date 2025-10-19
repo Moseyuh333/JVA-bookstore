@@ -63,7 +63,7 @@ public class BookDetailServlet extends HttpServlet {
             if (coverImage == null || coverImage.trim().isEmpty()) {
                 coverImage = safeGet(rs, "image_url");
             }
-            req.setAttribute("bookImage", coverImage);
+            req.setAttribute("bookImage", resolveImageUrl(req, coverImage));
             req.setAttribute("bookShop", rs.getString("shop_name"));
             req.setAttribute("bookUrl", rs.getString("book_url"));
             req.setAttribute("bookHighlights", rs.getString("highlights"));
@@ -176,7 +176,7 @@ public class BookDetailServlet extends HttpServlet {
                 if (relatedImage == null || relatedImage.trim().isEmpty()) {
                     relatedImage = safeGet(rsRelated, "image_url");
                 }
-                b.put("coverImage", relatedImage);
+                b.put("coverImage", resolveImageUrl(req, relatedImage));
                 relatedBooks.add(b);
             }
             req.setAttribute("relatedBooks", relatedBooks);
@@ -199,5 +199,36 @@ public class BookDetailServlet extends HttpServlet {
         } catch (SQLException ignored) {
             return null;
         }
+    }
+
+    private String resolveImageUrl(HttpServletRequest req, String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        String lower = trimmed.toLowerCase();
+        if (lower.startsWith("http://") || lower.startsWith("https://")) {
+            return trimmed;
+        }
+        if (trimmed.startsWith("//")) {
+            return "https:" + trimmed;
+        }
+        String contextPath = req.getContextPath();
+        if (contextPath == null) {
+            contextPath = "";
+        }
+        if (!contextPath.isEmpty() && !contextPath.startsWith("/")) {
+            contextPath = "/" + contextPath;
+        }
+        if (trimmed.startsWith(contextPath + "/")) {
+            return trimmed;
+        }
+        if (trimmed.startsWith("/")) {
+            return contextPath.isEmpty() || "/".equals(contextPath) ? trimmed : contextPath + trimmed;
+        }
+        return (contextPath.endsWith("/")) ? contextPath + trimmed : contextPath + "/" + trimmed;
     }
 }

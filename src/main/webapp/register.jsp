@@ -84,13 +84,25 @@ let currentEmail = '';
 
   otpForm.addEventListener('submit', async function (e) {
     e.preventDefault();
-    const otp = Array.from(document.querySelectorAll('.otp-digit')).map(i => i.value).join('');
+    const otpDigits = Array.from(document.querySelectorAll('.otp-digit'));
+    const otp = otpDigits.map(i => i.value.trim()).join('');
+    if (otp.length !== otpDigits.length) {
+      alert('Vui lòng nhập đầy đủ mã OTP.');
+      return;
+    }
     const username = document.getElementById('usernameInput').value;
     const password = document.getElementById('passwordInput').value;
     try {
-      const res = await fetch(baseUrl + '/api/auth/register', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ email: currentEmail, otp: otp, username: username, password: password })
+      const params = new URLSearchParams({
+        email: currentEmail,
+        otp: otp,
+        username: username,
+        password: password
+      });
+      const res = await fetch(baseUrl + '/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params
       });
       const data = await res.json();
       if (res.ok) {
