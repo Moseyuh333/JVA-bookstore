@@ -1363,26 +1363,75 @@
             return number.toLocaleString('vi-VN') + 'đ';
         }
 
-        function formatDate(value) {
+        function normalizeToDate(value) {
             if (!value) {
-                return '';
+                return null;
             }
-            const date = new Date(value);
-            if (Number.isNaN(date.getTime())) {
-                return '';
+            if (value instanceof Date) {
+                return Number.isNaN(value.getTime()) ? null : value;
             }
-            return date.toLocaleDateString('vi-VN');
+            if (typeof value === 'string' || typeof value === 'number') {
+                const fromPrimitive = new Date(value);
+                if (!Number.isNaN(fromPrimitive.getTime())) {
+                    return fromPrimitive;
+                }
+            }
+            if (Array.isArray(value)) {
+                const [year, month, day, hour = 0, minute = 0, second = 0, nano = 0] = value;
+                if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+                    const fromArray = new Date(year, month - 1, day, hour, minute, second, Math.floor(nano / 1e6));
+                    if (!Number.isNaN(fromArray.getTime())) {
+                        return fromArray;
+                    }
+                }
+            }
+            if (typeof value === 'object') {
+                const dateSource = value.date && typeof value.date === 'object' ? value.date : value;
+                const timeSource = value.time && typeof value.time === 'object' ? value.time : value;
+                const resolveMonth = input => {
+                    if (Number.isFinite(input)) {
+                        return input;
+                    }
+                    if (typeof input === 'string') {
+                        const monthNames = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+                        const normalized = input.toUpperCase();
+                        const index = monthNames.indexOf(normalized);
+                        if (index !== -1) {
+                            return index + 1;
+                        }
+                        const parsed = parseInt(normalized, 10);
+                        if (Number.isFinite(parsed)) {
+                            return parsed;
+                        }
+                    }
+                    return null;
+                };
+                const toNumber = input => (Number.isFinite(input) ? input : parseInt(input, 10));
+                const year = toNumber(dateSource.year);
+                const month = resolveMonth(dateSource.monthValue ?? dateSource.month);
+                const day = toNumber(dateSource.day ?? dateSource.dayOfMonth);
+                if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+                    const hour = toNumber(timeSource.hour) || 0;
+                    const minute = toNumber(timeSource.minute) || 0;
+                    const second = toNumber(timeSource.second) || 0;
+                    const nano = toNumber(timeSource.nano) || 0;
+                    const fromObject = new Date(year, month - 1, day, hour, minute, second, Math.floor(nano / 1e6));
+                    if (!Number.isNaN(fromObject.getTime())) {
+                        return fromObject;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function formatDate(value) {
+            const date = normalizeToDate(value);
+            return date ? date.toLocaleDateString('vi-VN') : '';
         }
 
         function formatDateTime(value) {
-            if (!value) {
-                return '';
-            }
-            const date = new Date(value);
-            if (Number.isNaN(date.getTime())) {
-                return '';
-            }
-            return date.toLocaleString('vi-VN');
+            const date = normalizeToDate(value);
+            return date ? date.toLocaleString('vi-VN') : '';
         }
 
         async function viewOrderDetails(orderId) {
