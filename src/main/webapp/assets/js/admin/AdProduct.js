@@ -63,32 +63,29 @@ document.addEventListener("DOMContentLoaded", () => {
             showEmpty();
             return;
         }
-
         hideEmpty();
         list.forEach(p => {
-            const price = p.price ? Number(p.price).toLocaleString('vi-VN') + "₫" : "-";
-            const stock = p.stock !== undefined ? p.stock : "-";
-            const category = p.category_name || p.category || "-";
-            const author = p.author || "-";
-            const seller = p.seller_name || p.seller || "-";
-
+            const price = p.price ? new Intl.NumberFormat('vi-VN').format(p.price) + "₫" : "-";            const stock = p.stock_quantity ?? p.stock ?? "-";
+            const shop = p.shop_name || "-";
+            const commission = p.commission_rate ? p.commission_rate + "%" : "-";
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${escapeHtml(p.id || p.product_id || '-')}</td>
-                <td>${escapeHtml(p.name || p.title || '-')}</td>
-                <td>${escapeHtml(author)}</td>
-                <td>${escapeHtml(category)}</td>
-                <td>${price}</td>
-                <td>${stock}</td>
-                <td>${escapeHtml(seller)}</td>
-                <td>
-                    <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
+      <td>${escapeHtml(p.id || '-')}</td>
+      <td>${escapeHtml(p.title || '-')}</td>
+      <td>${escapeHtml(p.author || '-')}</td>
+      <td>${escapeHtml(p.category || '-')}</td>
+      <td>${price}</td>
+      <td>${stock}</td>
+      <td>${escapeHtml(shop)}</td>
+      <td>${commission}</td>
+      <td>
+        <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+      </td>`;
             tableBody.appendChild(tr);
         });
     };
+
 
     // Load products from API
     const loadProducts = async () => {
@@ -119,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
             (p.name || p.title || '').toLowerCase().includes(keyword) ||
             (p.author || '').toLowerCase().includes(keyword) ||
             (p.category_name || p.category || '').toLowerCase().includes(keyword)
+            (p.shop_name || '').toLowerCase().includes(keyword)
         );
         renderTable(filteredProducts);
     };

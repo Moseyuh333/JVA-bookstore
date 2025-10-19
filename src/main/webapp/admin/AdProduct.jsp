@@ -229,14 +229,15 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Mã</th>
+                                <th>ID</th>
                                 <th>Tên sách</th>
                                 <th>Tác giả</th>
                                 <th>Thể loại</th>
                                 <th>Giá</th>
-                                <th>Số lượng</th>
-                                <th>Người bán</th>
-                                <th>Thao tác</th>
+                                <th>Tồn kho</th>
+                                <th>Shop</th>
+                                <th>Chiết khấu</th>
+                                <th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody id="product"></tbody>

@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.sql.*;
 
-@WebServlet(name = "AdminProductsServlet", urlPatterns = {"/api/admin/products"})
+@WebServlet(name = "AdminProductsServlet", urlPatterns = { "/api/admin/products" })
 public class AdminProductsServlet extends HttpServlet {
 
     // ========= COMMON UTF-8 =========
@@ -78,6 +78,8 @@ public class AdminProductsServlet extends HttpServlet {
     }
 
     private void listProducts(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String userRole = (String) req.getSession().getAttribute("role");
+        Integer ownerId = (Integer) req.getSession().getAttribute("user_id");
         String shopId = req.getParameter("shop_id");
         String search = req.getParameter("search");
         String category = req.getParameter("category");
@@ -89,13 +91,14 @@ public class AdminProductsServlet extends HttpServlet {
         int offset = (page - 1) * limit;
 
         StringBuilder sql = new StringBuilder(
-            "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, " +
-            "b.stock_quantity, b.image_url, b.created_at, b.updated_at, " +
-            "COALESCE(s.name, 'Unknown Shop') as shop_name " +
-            "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
-        );
+                "SELECT b.id, b.title, b.author, b.price, b.stock_quantity, b.category, s.name AS shop_name, s.commission_rate\r\n" + //
+                                        " b.description, b.category, " +
+                        "b.stock_quantity, b.image_url, b.created_at, b.updated_at, " +
+                        "COALESCE(s.name, 'Unknown Shop') as shop_name " +
+                        "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1");
 
-        if (shopId != null && !shopId.trim().isEmpty()) sql.append(" AND b.shop_id = ?");
+        if (shopId != null && !shopId.trim().isEmpty())
+            sql.append(" AND b.shop_id = ?");
         if (search != null && !search.trim().isEmpty())
             sql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ?)");
         if (category != null && !category.trim().isEmpty())
@@ -104,26 +107,39 @@ public class AdminProductsServlet extends HttpServlet {
         sql.append(" ORDER BY b.created_at DESC LIMIT ? OFFSET ?");
 
         StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM books b WHERE 1=1");
-        if (shopId != null && !shopId.trim().isEmpty()) countSql.append(" AND b.shop_id = ?");
+        if (shopId != null && !shopId.trim().isEmpty())
+            countSql.append(" AND b.shop_id = ?");
         if (search != null && !search.trim().isEmpty())
             countSql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ?)");
-        if (category != null && !category.trim().isEmpty()) countSql.append(" AND b.category = ?");
+        if (category != null && !category.trim().isEmpty())
+            countSql.append(" AND b.category = ?");
+
+        if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
+            sql.append(" AND s.owner_id = ?");
+            countSql.append(" AND s.owner_id = ?");
+        }
 
         try (Connection conn = DBUtil.getConnection()) {
             // Count total
             int total = 0;
             try (PreparedStatement countStmt = conn.prepareStatement(countSql.toString())) {
                 int param = 1;
-                if (shopId != null && !shopId.trim().isEmpty()) countStmt.setInt(param++, Integer.parseInt(shopId));
+                if (shopId != null && !shopId.trim().isEmpty())
+                    countStmt.setInt(param++, Integer.parseInt(shopId));
                 if (search != null && !search.trim().isEmpty()) {
                     String pattern = "%" + search.trim() + "%";
                     countStmt.setString(param++, pattern);
                     countStmt.setString(param++, pattern);
                     countStmt.setString(param++, pattern);
                 }
-                if (category != null && !category.trim().isEmpty()) countStmt.setString(param++, category.trim());
+                if (category != null && !category.trim().isEmpty())
+                    countStmt.setString(param++, category.trim());
+                if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
+                    countStmt.setInt(param++, ownerId);
+                }
                 try (ResultSet rs = countStmt.executeQuery()) {
-                    if (rs.next()) total = rs.getInt(1);
+                    if (rs.next())
+                        total = rs.getInt(1);
                 }
             }
 
@@ -131,43 +147,51 @@ public class AdminProductsServlet extends HttpServlet {
             StringBuilder json = new StringBuilder("{\"products\":[");
             try (PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
                 int param = 1;
-                if (shopId != null && !shopId.trim().isEmpty()) pstmt.setInt(param++, Integer.parseInt(shopId));
+                if (shopId != null && !shopId.trim().isEmpty())
+                    pstmt.setInt(param++, Integer.parseInt(shopId));
                 if (search != null && !search.trim().isEmpty()) {
                     String pattern = "%" + search.trim() + "%";
                     pstmt.setString(param++, pattern);
                     pstmt.setString(param++, pattern);
                     pstmt.setString(param++, pattern);
                 }
-                if (category != null && !category.trim().isEmpty()) pstmt.setString(param++, category.trim());
+                if (category != null && !category.trim().isEmpty())
+                    pstmt.setString(param++, category.trim());
+                if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
+                    pstmt.setInt(param++, ownerId);
+                }
                 pstmt.setInt(param++, limit);
                 pstmt.setInt(param++, offset);
 
                 boolean first = true;
                 try (ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) {
-                        if (!first) json.append(",");
+                        if (!first)
+                            json.append(",");
                         first = false;
                         json.append("{")
-                            .append("\"id\":").append(rs.getInt("id")).append(",")
-                            .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
-                            .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
-                            .append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",")
-                            .append("\"price\":").append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : "0").append(",")
-                            .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
-                            .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
-                            .append("\"stock_quantity\":").append(rs.getInt("stock_quantity")).append(",")
-                            .append("\"image_url\":\"").append(escapeJson(rs.getString("image_url"))).append("\",")
-                            .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
-                            .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                            .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
-                            .append("}");
+                                .append("\"id\":").append(rs.getInt("id")).append(",")
+                                .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
+                                .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
+                                .append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",")
+                                .append("\"price\":")
+                                .append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : "0").append(",")
+                                .append("\"description\":\"").append(escapeJson(rs.getString("description")))
+                                .append("\",")
+                                .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
+                                .append("\"stock_quantity\":").append(rs.getInt("stock_quantity")).append(",")
+                                .append("\"image_url\":\"").append(escapeJson(rs.getString("image_url"))).append("\",")
+                                .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
+                                .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
+                                .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                                .append("}");
                     }
                 }
             }
             json.append("],\"total\":").append(total)
-                .append(",\"page\":").append(page)
-                .append(",\"limit\":").append(limit)
-                .append("}");
+                    .append(",\"page\":").append(page)
+                    .append(",\"limit\":").append(limit)
+                    .append("}");
             out.write(json.toString());
         }
     }
@@ -208,8 +232,12 @@ public class AdminProductsServlet extends HttpServlet {
                             + "\"stock_quantity\":" + rs.getInt("stock_quantity") + ","
                             + "\"image_url\":\"" + escapeJson(rs.getString("image_url")) + "\","
                             + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
-                            + "\"created_at\":\"" + (rs.getTimestamp("created_at") != null ? sdf.format(rs.getTimestamp("created_at")) : "") + "\","
-                            + "\"updated_at\":\"" + (rs.getTimestamp("updated_at") != null ? sdf.format(rs.getTimestamp("updated_at")) : "") + "\""
+                            + "\"created_at\":\""
+                            + (rs.getTimestamp("created_at") != null ? sdf.format(rs.getTimestamp("created_at")) : "")
+                            + "\","
+                            + "\"updated_at\":\""
+                            + (rs.getTimestamp("updated_at") != null ? sdf.format(rs.getTimestamp("updated_at")) : "")
+                            + "\""
                             + "}";
                     out.write(json);
                 } else {
@@ -338,24 +366,40 @@ public class AdminProductsServlet extends HttpServlet {
 
     // ========= Escape JSON safely =========
     private String escapeJson(String str) {
-        if (str == null) return "";
+        if (str == null)
+            return "";
         StringBuilder sb = new StringBuilder();
         for (char c : str.toCharArray()) {
             switch (c) {
-                case '\\': sb.append("\\\\"); break;
-                case '"': sb.append("\\\""); break;
-                case '\n': sb.append("\\n"); break;
-                case '\r': sb.append("\\r"); break;
-                case '\t': sb.append("\\t"); break;
-                case '\b': sb.append("\\b"); break;
-                case '\f': sb.append("\\f"); break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
                 default:
-                    if (c < 0x20) sb.append(String.format("\\u%04x", (int) c));
-                    else sb.append(c);
+                    if (c < 0x20)
+                        sb.append(String.format("\\u%04x", (int) c));
+                    else
+                        sb.append(c);
             }
         }
         return sb.toString();
     }
 
-    
 }
