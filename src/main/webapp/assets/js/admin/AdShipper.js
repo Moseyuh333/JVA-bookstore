@@ -44,12 +44,11 @@ async function loadShippers() {
 
             tbody.innerHTML += `
                 <tr>
-                    <td>${s.id}</td>
                     <td>${s.name || '-'}</td>
                     <td>${s.phone || '-'}</td>
                     <td>${s.email || '-'}</td>
-                    <td>${baseFee}</td>
                     <td>${s.service_area || '-'}</td>
+                    <td>${baseFee}</td>
                     <td>${s.estimated_time || '-'}</td>
                     <td>
                         <span class="badge ${s.status === 'active' ? 'badge-success' : 'badge-secondary'}">
