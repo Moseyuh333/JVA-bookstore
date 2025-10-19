@@ -250,21 +250,19 @@ public class AdminProductsServlet extends HttpServlet {
         String userRole = (String) req.getSession().getAttribute("role");
         Integer ownerId = (Integer) req.getSession().getAttribute("user_id");
 
-        StringBuilder sql = new StringBuilder(
-            "SELECT " +
-            "COUNT(*) AS total, " +
-            "COUNT(*) FILTER (WHERE stock_quantity > 0) AS in_stock, " +
-            "COUNT(*) FILTER (WHERE stock_quantity <= 0 OR stock_quantity IS NULL) AS out_stock " +
-            "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
-        );
+        String sql = "SELECT " +
+                "COUNT(*) AS total, " +
+                "COUNT(*) FILTER (WHERE LOWER(stock) = 'available') AS in_stock, " +
+                "COUNT(*) FILTER (WHERE LOWER(stock) = 'unavailable') AS out_stock " +
+                "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1";
 
         if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
-            sql.append(" AND s.owner_id = ").append(ownerId);
+            sql += " AND s.owner_id = " + ownerId;
         }
 
         try (Connection conn = DBUtil.getConnection();
             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql.toString())) {
+            ResultSet rs = stmt.executeQuery(sql)) {
 
             if (rs.next()) {
                 int total = rs.getInt("total");
