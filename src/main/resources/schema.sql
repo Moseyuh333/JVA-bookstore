@@ -8,11 +8,14 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     birth_date DATE,
     address TEXT,
-    verified BOOLEAN DEFAULT FALSE,
+    role VARCHAR(50) DEFAULT 'user',
+    status VARCHAR(50) DEFAULT 'active',
+    email_verified BOOLEAN DEFAULT FALSE,
     verification_token VARCHAR(255),
     reset_token VARCHAR(255),
     reset_expiry TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Index for faster lookups
