@@ -511,11 +511,11 @@
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên nhà vận chuyển, thành phố...">
                             </div>
-                            <button class="btn-custom btn-search" onclick="applyFilters()">
+                            <button class="btn-custom btn-search" onclick="applyFilter()">
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>
                             </button>
-                            <button class="btn-custom btn-reset" onclick="resetFilters()">
+                            <button class="btn-custom btn-reset" onclick="resetFilter()">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
                             </button>
@@ -542,86 +542,7 @@
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody id="shipperList">
-                                    <tr>
-                                        <td>
-                                            <div class="shipper-cell">
-                                                <div class="shipper-logo">GHN</div>
-                                                <div class="shipper-info-text">
-                                                    <div class="shipper-name">Giao Hàng Nhanh</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>1900 1111 11</td>
-                                        <td>Hà Nội</td>
-                                        <td>Toàn quốc</td>
-                                        <td>20,000 VNĐ</td>
-                                        <td><span class="badge-custom badge-active">Hoạt động</span></td>
-                                        <td>01/10/2025</td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div class="shipper-cell">
-                                                <div class="shipper-logo">VTP</div>
-                                                <div class="shipper-info-text">
-                                                    <div class="shipper-name">Viettel Post</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>1900 2222 22</td>
-                                        <td>TPHCM</td>
-                                        <td>Toàn quốc</td>
-                                        <td>18,000 VNĐ</td>
-                                        <td><span class="badge-custom badge-active">Hoạt động</span></td>
-                                        <td>05/10/2025</td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div class="shipper-cell">
-                                                <div class="shipper-logo">JNE</div>
-                                                <div class="shipper-info-text">
-                                                    <div class="shipper-name">Jne Express</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>1900 3333 33</td>
-                                        <td>Đà Nẵng</td>
-                                        <td>Miền Trung, Miền Nam</td>
-                                        <td>22,000 VNĐ</td>
-                                        <td><span class="badge-custom badge-inactive">Ngừng hoạt động</span></td>
-                                        <td>10/10/2025</td>
-                                        <td>
-                                            <div class="actions">
-                                                <button class="btn-icon btn-edit" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
+                                <tbody id="ShipperTable"></tbody>
                             </table>
 
                             <div id="emptyState" class="empty-state" style="display: none;">

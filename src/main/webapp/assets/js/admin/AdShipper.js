@@ -79,10 +79,22 @@ async function loadShippers() {
 }
 
 // ========================
-// 📊 CẬP NHẬT THỐNG KÊ
+// 
+// ========================
+
+function updateStats(total) {
+    
+}
+
+
+// ========================
+// 📊 KIỂM TRA HOẠT ĐỘNG CỦA NHÀ VẬN CHUYỂN & CẬP NHẬT THỐNG KÊ
 // ========================
 function updateStats(total) {
     document.getElementById('totalShippers')?.textContent = total || 0;
+
+    const activeCount = document.querySelectorAll('#ShipperTable tr .badge-success').length;
+    document.getElementById('activeShippers')?.textContent = activeCount;
 }
 
 // ========================
