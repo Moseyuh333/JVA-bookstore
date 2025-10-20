@@ -281,6 +281,7 @@
                         <div>
                             <div class="fw-semibold">${escapeHtml(item.title || 'Sản phẩm')}</div>
                             <div class="text-muted small">SL: ${item.quantity} | ${escapeHtml(item.author || '')}</div>
+                            ${item.shopName ? `<div class="text-muted small"><i class="fas fa-store me-1"></i>${escapeHtml(item.shopName)}</div>` : ''}
                         </div>
                         <div class="text-end">
                             <div class="fw-semibold text-primary">${formatCurrency(item.totalPrice)}</div>

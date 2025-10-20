@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS books (
     category VARCHAR(100),
     stock_quantity INTEGER DEFAULT 0,
     image_url VARCHAR(500),
+    shop_id INTEGER,
+    shop_name VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -94,6 +96,8 @@ CREATE TABLE IF NOT EXISTS order_items (
     quantity INTEGER NOT NULL,
     unit_price DECIMAL(10, 2) NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
+    shop_id INTEGER,
+    shop_name VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
