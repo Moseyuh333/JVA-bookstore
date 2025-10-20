@@ -21,7 +21,22 @@ import java.util.Set;
 @WebServlet(name = "AdminUsersServlet", urlPatterns = {"/api/admin/users"})
 public class AdminUsersServlet extends HttpServlet {
 
-    private static final Set<String> ALLOWED_ROLES = Set.of("ADMIN", "USER", "SELLER");
+    private static final Set<String> ALLOWED_ROLES = Set.of(
+        "ADMIN",
+        "CUSTOMER",
+        "SELLER",
+        "MANAGER",
+        "STAFF",
+        "SHIPPER",
+        "SUPPORT"
+    );
+
+    private static final Set<String> ALLOWED_STATUSES = Set.of(
+        "ACTIVE",
+        "INACTIVE",
+        "BANNED",
+        "PENDING"
+    );
     
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -56,7 +71,7 @@ public class AdminUsersServlet extends HttpServlet {
             if ("create".equals(action)) {
                 createUser(req, resp, out);
             } else if ("update".equals(action)) {
-                updateUser(req, out);
+                updateUser(req, resp, out);
             } else if ("delete".equals(action)) {
                 deleteUser(req, out);
             } else if ("clear-tokens".equals(action)) {
@@ -144,7 +159,7 @@ public class AdminUsersServlet extends HttpServlet {
                         .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
                         .append("\"full_name\":\"").append(escapeJson(rs.getString("full_name"))).append("\",")
                         .append("\"phone\":\"").append(escapeJson(rs.getString("phone"))).append("\",")
-                        .append("\"role\":\"").append(escapeJson(toLowerCase(roleValue, "user"))).append("\",")
+                        .append("\"role\":\"").append(escapeJson(toLowerCase(roleValue, "customer"))).append("\",")
                         .append("\"status\":\"").append(escapeJson(toLowerCase(statusValue, "active"))).append("\",")
                         .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
                         .append("\"created\":\"").append(createdAt).append("\",")
@@ -168,31 +183,61 @@ public class AdminUsersServlet extends HttpServlet {
     }
 
     private String normalizeRole(String role) {
-        if (role == null || role.trim().isEmpty()) {
-            return "user";
+        if (role == null) {
+            return "CUSTOMER";
         }
 
-        String normalized = role.trim().toUpperCase(Locale.US);
-        if (!ALLOWED_ROLES.contains(normalized)) {
-            normalized = "USER";
+        String value = role.trim().toLowerCase(Locale.US);
+        if (value.isEmpty()) {
+            return "CUSTOMER";
         }
-        return normalized.toLowerCase(Locale.US);
+
+        switch (value) {
+            case "admin":
+                return "ADMIN";
+            case "seller":
+                return "SELLER";
+            case "manager":
+                return "MANAGER";
+            case "staff":
+                return "STAFF";
+            case "shipper":
+                return "SHIPPER";
+            case "support":
+                return "SUPPORT";
+            case "customer":
+            case "user":
+                return "CUSTOMER";
+            default:
+                return ALLOWED_ROLES.contains(value.toUpperCase(Locale.US))
+                    ? value.toUpperCase(Locale.US)
+                    : "CUSTOMER";
+        }
     }
 
     private String normalizeStatus(String status) {
-        if (status == null || status.trim().isEmpty()) {
-            return "active";
+        if (status == null) {
+            return "ACTIVE";
         }
 
-        String normalized = status.trim().toLowerCase(Locale.US);
-        switch (normalized) {
+        String value = status.trim().toLowerCase(Locale.US);
+        if (value.isEmpty()) {
+            return "ACTIVE";
+        }
+
+        switch (value) {
             case "inactive":
+                return "INACTIVE";
             case "banned":
-            case "active":
+                return "BANNED";
             case "pending":
-                return normalized;
+                return "PENDING";
+            case "active":
+                return "ACTIVE";
             default:
-                return "active";
+                return ALLOWED_STATUSES.contains(value.toUpperCase(Locale.US))
+                    ? value.toUpperCase(Locale.US)
+                    : "ACTIVE";
         }
     }
     
@@ -277,6 +322,11 @@ public class AdminUsersServlet extends HttpServlet {
             }
         } catch (SQLException e) {
             String sqlState = e.getSQLState();
+            if ("22P02".equals(sqlState)) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.write("{\"error\":\"Giá trị quyền hoặc trạng thái không hợp lệ cho cơ sở dữ liệu\"}");
+                return;
+            }
             if (sqlState != null && sqlState.startsWith("23")) {
                 resp.setStatus(HttpServletResponse.SC_CONFLICT);
                 out.write("{\"error\":\"Username or email already exists\"}");
@@ -286,7 +336,7 @@ public class AdminUsersServlet extends HttpServlet {
         }
     }
 
-    private void updateUser(HttpServletRequest req, PrintWriter out) throws SQLException {
+    private void updateUser(HttpServletRequest req, HttpServletResponse resp, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
         String username = req.getParameter("username");
         String email = req.getParameter("email");
@@ -320,6 +370,14 @@ public class AdminUsersServlet extends HttpServlet {
             } else {
                 out.write("{\"error\":\"User not found\"}");
             }
+        } catch (SQLException e) {
+            String sqlState = e.getSQLState();
+            if ("22P02".equals(sqlState)) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.write("{\"error\":\"Giá trị quyền hoặc trạng thái không hợp lệ cho cơ sở dữ liệu\"}");
+                return;
+            }
+            throw e;
         }
     }
 

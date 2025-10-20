@@ -87,7 +87,9 @@ public class AdminDashboardServlet extends HttpServlet {
             }
 
             // Total revenue
-            String revenueQuery = "SELECT COALESCE(SUM(total_amount), 0) as revenue FROM orders WHERE status = 'completed'";
+            String revenueQuery = "SELECT COALESCE(SUM(total_amount), 0) AS revenue " +
+                "FROM orders " +
+                "WHERE LOWER(CAST(status AS TEXT)) IN ('completed', 'delivered')";
             try (PreparedStatement stmt = conn.prepareStatement(revenueQuery);
                  ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -104,10 +106,10 @@ public class AdminDashboardServlet extends HttpServlet {
 
         try (Connection conn = DBUtil.getConnection()) {
             String query = "SELECT " +
-                "TO_CHAR(created_at, 'YYYY-MM') as month, " +
-                "COALESCE(SUM(total_amount), 0) as revenue " +
+                "TO_CHAR(created_at, 'YYYY-MM') AS month, " +
+                "COALESCE(SUM(total_amount), 0) AS revenue " +
                 "FROM orders " +
-                "WHERE status = 'completed' " +
+                "WHERE LOWER(CAST(status AS TEXT)) IN ('completed', 'delivered') " +
                 "AND created_at >= NOW() - INTERVAL '6 months' " +
                 "GROUP BY TO_CHAR(created_at, 'YYYY-MM') " +
                 "ORDER BY month";
@@ -133,10 +135,10 @@ public class AdminDashboardServlet extends HttpServlet {
             System.out.println("PostgreSQL query failed, trying alternative: " + e.getMessage());
             try (Connection conn = DBUtil.getConnection()) {
                 String query = "SELECT " +
-                    "TO_CHAR(created_at, 'YYYY-MM') as month, " +
-                    "COALESCE(SUM(total_amount), 0) as revenue " +
+                    "TO_CHAR(created_at, 'YYYY-MM') AS month, " +
+                    "COALESCE(SUM(total_amount), 0) AS revenue " +
                     "FROM orders " +
-                    "WHERE status = 'completed' " +
+                    "WHERE LOWER(CAST(status AS TEXT)) IN ('completed', 'delivered') " +
                     "GROUP BY TO_CHAR(created_at, 'YYYY-MM') " +
                     "ORDER BY month";
 
@@ -199,10 +201,9 @@ public class AdminDashboardServlet extends HttpServlet {
                 "COALESCE(u.username, u.email) AS store_name, " +
                 "COUNT(o.id) AS total_orders, " +
                 "COALESCE(SUM(o.total_amount), 0) AS revenue " +
-                "FROM users u " +
-                "LEFT JOIN orders o ON u.id = o.user_id AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered') " +
-                "WHERE u.role IN ('SELLER', 'ADMIN', 'USER') " +
-                "GROUP BY u.id, u.username, u.email " +
+                    "FROM users u " +
+                    "LEFT JOIN orders o ON u.id = o.user_id AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered') " +
+                    "GROUP BY u.id, u.username, u.email " +
                 "ORDER BY revenue DESC, total_orders DESC " +
                 "LIMIT 5";
 
