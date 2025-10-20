@@ -23,13 +23,9 @@ public class AdminUsersServlet extends HttpServlet {
 
     private static final Set<String> ALLOWED_ROLES = Set.of(
         "ADMIN",
-        "USER",
         "CUSTOMER",
         "SELLER",
-        "MANAGER",
-        "STAFF",
-        "SHIPPER",
-        "SUPPORT"
+        "SHIPPER"
     );
 
     private static final Set<String> ALLOWED_STATUSES = Set.of(
@@ -39,8 +35,8 @@ public class AdminUsersServlet extends HttpServlet {
         "PENDING"
     );
 
-    private static final String DEFAULT_DB_ROLE = "user";
-    private static final String DEFAULT_DB_STATUS = "active";
+    private static final String DEFAULT_DB_ROLE = "CUSTOMER";
+    private static final String DEFAULT_DB_STATUS = "ACTIVE";
     
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -163,8 +159,8 @@ public class AdminUsersServlet extends HttpServlet {
                         .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
                         .append("\"full_name\":\"").append(escapeJson(rs.getString("full_name"))).append("\",")
                         .append("\"phone\":\"").append(escapeJson(rs.getString("phone"))).append("\",")
-                        .append("\"role\":\"").append(escapeJson(toLowerCase(roleValue, "user"))).append("\",")
-                        .append("\"status\":\"").append(escapeJson(toLowerCase(statusValue, "active"))).append("\",")
+                        .append("\"role\":\"").append(escapeJson(toLowerCase(roleValue, DEFAULT_DB_ROLE.toLowerCase(Locale.US)))).append("\",")
+                        .append("\"status\":\"").append(escapeJson(toLowerCase(statusValue, DEFAULT_DB_STATUS.toLowerCase(Locale.US)))).append("\",")
                         .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
                         .append("\"created\":\"").append(createdAt).append("\",")
                         .append("\"updated\":\"").append(updatedAt).append("\",")
@@ -198,20 +194,17 @@ public class AdminUsersServlet extends HttpServlet {
 
         switch (value) {
             case "admin":
+                return "ADMIN";
             case "seller":
-            case "manager":
-            case "staff":
+                return "SELLER";
             case "shipper":
-            case "support":
+                return "SHIPPER";
             case "customer":
             case "user":
-                return value;
+                return DEFAULT_DB_ROLE;
             default:
                 String upper = value.toUpperCase(Locale.US);
-                if (ALLOWED_ROLES.contains(upper)) {
-                    return value;
-                }
-                return DEFAULT_DB_ROLE;
+                return ALLOWED_ROLES.contains(upper) ? upper : DEFAULT_DB_ROLE;
         }
     }
 
@@ -220,24 +213,36 @@ public class AdminUsersServlet extends HttpServlet {
             return DEFAULT_DB_STATUS;
         }
 
-        String value = status.trim().toLowerCase(Locale.US);
+        String value = status.trim();
         if (value.isEmpty()) {
             return DEFAULT_DB_STATUS;
         }
 
-        switch (value) {
+        String upper = value.toUpperCase(Locale.US);
+        if (ALLOWED_STATUSES.contains(upper)) {
+            return upper;
+        }
+        switch (value.toLowerCase(Locale.US)) {
             case "inactive":
+                return "INACTIVE";
             case "banned":
+                return "BANNED";
             case "pending":
+                return "PENDING";
             case "active":
-                return value;
+                return "ACTIVE";
             default:
-                String upper = value.toUpperCase(Locale.US);
-                if (ALLOWED_STATUSES.contains(upper)) {
-                    return value;
-                }
                 return DEFAULT_DB_STATUS;
         }
+    }
+
+    private void setEnumParam(PreparedStatement stmt, int index, String value) throws SQLException {
+        if (value == null) {
+            stmt.setNull(index, java.sql.Types.OTHER);
+            return;
+        }
+
+        stmt.setObject(index, value, java.sql.Types.OTHER);
     }
 
     private String escapeJson(String str) {
@@ -311,8 +316,8 @@ public class AdminUsersServlet extends HttpServlet {
             pstmt.setString(3, passwordHash);
             pstmt.setString(4, fullName != null && !fullName.trim().isEmpty() ? fullName.trim() : null);
             pstmt.setString(5, phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
-            pstmt.setString(6, normalizedRole);
-            pstmt.setString(7, normalizedStatus);
+            setEnumParam(pstmt, 6, normalizedRole);
+            setEnumParam(pstmt, 7, normalizedStatus);
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
@@ -367,8 +372,8 @@ public class AdminUsersServlet extends HttpServlet {
             pstmt.setString(2, email.trim());
             pstmt.setString(3, fullName != null ? fullName.trim() : null);
             pstmt.setString(4, phone != null ? phone.trim() : null);
-            pstmt.setString(5, normalizedRole);
-            pstmt.setString(6, normalizedStatus);
+            setEnumParam(pstmt, 5, normalizedRole);
+            setEnumParam(pstmt, 6, normalizedStatus);
             pstmt.setInt(7, id);
 
             int rows = pstmt.executeUpdate();

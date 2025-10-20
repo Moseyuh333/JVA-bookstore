@@ -810,12 +810,12 @@
                 </div>
                 <div class="form-group">
                     <label for="createRole">Quyền</label>
-                    <input list="roleOptions" id="createRole" name="role" placeholder="admin, user, manager">
+                    <input list="roleOptions" id="createRole" name="role" placeholder="admin, customer, seller, shipper">
                     <datalist id="roleOptions">
                         <option value="admin">
-                        <option value="user">
-                        <option value="manager">
-                        <option value="staff">
+                        <option value="customer">
+                        <option value="seller">
+                        <option value="shipper">
                     </datalist>
                 </div>
                 <div class="form-group">
