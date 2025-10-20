@@ -440,12 +440,14 @@
             align-items: center;
             justify-content: center;
             background: rgba(30, 41, 59, 0.55);
-            z-index: 1100;
+            z-index: 2000;
             padding: 20px;
+            pointer-events: none;
         }
 
         .modal-overlay.show {
             display: flex;
+            pointer-events: auto;
         }
 
         .modal-dialog {
@@ -455,6 +457,8 @@
             border-radius: 16px;
             box-shadow: 0 25px 45px -15px rgba(15, 23, 42, 0.35);
             animation: modalSlideIn 0.28s ease;
+            pointer-events: auto;
+            position: relative;
         }
 
         .modal-header {
