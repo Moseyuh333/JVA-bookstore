@@ -289,3 +289,125 @@ CREATE TABLE IF NOT EXISTS order_coupons (
 );
 
 CREATE INDEX IF NOT EXISTS idx_order_coupons_order ON order_coupons(order_id);
+
+-- =====================================================================
+-- Trạng thái chuẩn:
+--   orders.status:
+--     PENDING → CONFIRMED_BY_VENDOR → ASSIGNED_TO_SHIPPER →
+--     IN_TRANSIT/OUT_FOR_DELIVERY → DELIVERED_WAITING_CONFIRM →
+--     RECEIVED_BY_CUSTOMER → COMPLETED     (lỗi: CANCELLED/RETURNED)
+--   shipments.status:
+--     ASSIGNED → PICKED_UP → IN_TRANSIT → OUT_FOR_DELIVERY → DELIVERED
+--     (nhánh lỗi: FAILED_DELIVERY → RETURNING → RETURNED)
+-- =====================================================================
+
+BEGIN;
+
+-- 0) CARRIER (tuỳ chọn dùng để gán nhà vận chuyển)
+CREATE TABLE IF NOT EXISTS carriers (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  base_fee NUMERIC(12,2) DEFAULT 0,
+  note VARCHAR(255)
+);
+
+-- 1) SHIPMENTS (liên kết mềm với orders qua order_id)
+CREATE TABLE IF NOT EXISTS shipments (
+  id BIGSERIAL PRIMARY KEY,
+  order_id BIGINT,                              -- sẽ FK → orders(id) bên dưới
+  carrier_id BIGINT REFERENCES carriers(id),
+  shipper_user_id VARCHAR(120) NOT NULL,        -- username shipper
+  status VARCHAR(40) NOT NULL DEFAULT 'ASSIGNED',
+  cod_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+  cod_collected BOOLEAN NOT NULL DEFAULT FALSE,
+  pickup_at TIMESTAMP NULL,
+  delivered_at TIMESTAMP NULL,
+  proof_image_url VARCHAR(255) NULL,
+  last_update_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_shipments_shipper_status
+  ON shipments (shipper_user_id, status);
+
+-- 2) SHIPMENT EVENTS (timeline trạng thái vận đơn)
+CREATE TABLE IF NOT EXISTS shipment_events (
+  id BIGSERIAL PRIMARY KEY,
+  shipment_id BIGINT NOT NULL REFERENCES shipments(id) ON DELETE CASCADE,
+  status VARCHAR(40) NOT NULL,
+  note TEXT NULL,
+  evidence_url VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  created_by VARCHAR(120) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_shipment_events_shipment
+  ON shipment_events (shipment_id, created_at DESC);
+
+-- 3) ORDER EVENTS (log trạng thái đơn hàng)
+CREATE TABLE IF NOT EXISTS order_events (
+  id BIGSERIAL PRIMARY KEY,
+  order_id BIGINT NOT NULL,
+  status VARCHAR(40) NOT NULL,
+  note TEXT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  created_by VARCHAR(120) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_order_events_order
+  ON order_events(order_id, created_at DESC);
+
+-- 4) Bảo đảm bảng ORDERS có cột trạng thái cơ bản (KHÔNG phá hiện trạng)
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS status VARCHAR(40) DEFAULT 'PENDING',
+  ADD COLUMN IF NOT EXISTS tracking_code VARCHAR(64),
+  ADD COLUMN IF NOT EXISTS payment_method VARCHAR(32),
+  ADD COLUMN IF NOT EXISTS payment_status VARCHAR(32) DEFAULT 'UNPAID';
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+
+-- 5) Thêm FK shipments → orders (an toàn nếu đã tồn tại)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'fk_shipments_order'
+      AND table_name = 'shipments'
+  ) THEN
+    ALTER TABLE shipments
+      ADD CONSTRAINT fk_shipments_order
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+-- 6) SEED DEMO (shipper01) — có thể chạy nhiều lần an toàn
+INSERT INTO carriers (name, base_fee, note)
+VALUES ('GiaoNhan Nhanh', 20000, 'Demo'), ('Siêu Ship', 25000, 'Demo')
+ON CONFLICT DO NOTHING;
+
+-- Tạo 3 shipment mẫu (gán cho shipper01). order_id giả định 5001..5003 (không bắt buộc phải tồn tại)
+INSERT INTO shipments (order_id, carrier_id, shipper_user_id, status, cod_amount)
+VALUES
+  (5001, 1, 'shipper01', 'ASSIGNED', 120000),
+  (5002, 2, 'shipper01', 'OUT_FOR_DELIVERY', 0),
+  (5003, 1, 'shipper01', 'IN_TRANSIT', 85000)
+ON CONFLICT DO NOTHING;
+
+-- Gán event mặc định cho các shipment chưa có event
+INSERT INTO shipment_events (shipment_id, status, note, created_by)
+SELECT s.id, 'ASSIGNED', 'Phân công ban đầu', 'system'
+FROM shipments s
+WHERE NOT EXISTS (
+  SELECT 1 FROM shipment_events e WHERE e.shipment_id = s.id
+);
+
+-- Bổ sung timeline mẫu cho shipment order_id=5002
+DO $$
+DECLARE s_id BIGINT;
+BEGIN
+  SELECT id INTO s_id FROM shipments WHERE order_id = 5002 LIMIT 1;
+  IF s_id IS NOT NULL THEN
+    INSERT INTO shipment_events (shipment_id, status, note, created_by) VALUES
+      (s_id, 'PICKED_UP', 'Nhận tại kho Q1', 'shipper01'),
+      (s_id, 'IN_TRANSIT', 'Rời kho Q1', 'shipper01'),
+      (s_id, 'OUT_FOR_DELIVERY', 'Đang đi giao', 'shipper01');
+  END IF;
+END $$;
+
+COMMIT;
+-- =====================================================================
