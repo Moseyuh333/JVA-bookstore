@@ -170,11 +170,16 @@
         }
 
         #detailStatusBadge {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             margin-left: 8px;
-            vertical-align: middle;
         }
 
+        #detailStatusBadge .badge {
+            font-size: 0.85rem;
+            line-height: 1;
+            transform: translateY(-1px);
+        }
 
         #detailBody > .detail-section {
             margin-bottom: 0;
