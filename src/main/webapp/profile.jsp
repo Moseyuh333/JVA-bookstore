@@ -110,7 +110,16 @@
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save me-1"></i>Lưu thay đổi
                                     </button>
+                               
+                                    <!-- Nút đăng ký bán hàng -->
+                                    <div class="mt-3">
+                                        <button id="registerVendorBtn" type="button" class="btn btn-warning w-100">
+                                            <i class="fas fa-store me-2"></i> Đăng ký trở thành người bán
+                                        </button>
+                                    </div>
+
                                 </form>
+
                             </div>
                         </div>
                     </div>
@@ -1904,6 +1913,34 @@
                 }
             }, 5000);
         }
+
+        
+document.getElementById("registerVendorBtn").addEventListener("click", async () => {
+    const email = document.querySelector("input[name='email']").value;
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        alert("Bạn cần đăng nhập để gửi yêu cầu!");
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/vendor/request?email=" + encodeURIComponent(email), {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+
+        const text = await response.text();
+        alert(text);
+    } catch (error) {
+        console.error("Lỗi gửi yêu cầu:", error);
+        alert("Không thể gửi yêu cầu. Vui lòng thử lại sau!");
+    }
+});
+
+
     </script>
     <%@ include file="/WEB-INF/includes/footer.jsp" %>
     </html>
