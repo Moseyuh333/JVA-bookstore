@@ -17,7 +17,7 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap&subset=vietnamese" rel="stylesheet">
     <script>
         window.appConfig = window.appConfig || {};
         window.appConfig.contextPath = '${pageContext.request.contextPath}';
@@ -32,7 +32,7 @@
 
         body {
             background: #f5f5f5;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
         }
 
         /* Layout */
@@ -883,6 +883,8 @@
                     <select id="createStatus" name="status">
                         <option value="active" selected>Đang hoạt động</option>
                         <option value="inactive">Tạm khóa</option>
+                        <option value="pending">Chờ kích hoạt</option>
+                        <option value="banned">Đã khóa vĩnh viễn</option>
                     </select>
                 </div>
             </div>
@@ -890,6 +892,61 @@
             <div class="modal-actions">
                 <button type="button" class="btn-secondary" data-close-modal>Hủy</button>
                 <button type="submit" class="btn-primary" id="createUserSubmit">Tạo tài khoản</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editUserModal" aria-hidden="true" role="dialog" aria-modal="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3>Chỉnh sửa tài khoản</h3>
+            <button type="button" class="modal-close" data-close-modal aria-label="Đóng">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="editUserForm" class="modal-body" autocomplete="off">
+            <input type="hidden" id="editUserId" name="id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="editUsername">Tên đăng nhập *</label>
+                    <input type="text" id="editUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">Email *</label>
+                    <input type="email" id="editEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="editFullName">Họ và tên</label>
+                    <input type="text" id="editFullName" name="full_name">
+                </div>
+                <div class="form-group">
+                    <label for="editPhone">Số điện thoại</label>
+                    <input type="tel" id="editPhone" name="phone">
+                </div>
+                <div class="form-group">
+                    <label for="editRole">Quyền</label>
+                    <select id="editRole" name="role">
+                        <option value="admin">Quản trị viên</option>
+                        <option value="customer">Khách hàng</option>
+                        <option value="seller">Người bán</option>
+                        <option value="shipper">Nhân viên giao hàng</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editStatus">Trạng thái</label>
+                    <select id="editStatus" name="status">
+                        <option value="active">Đang hoạt động</option>
+                        <option value="inactive">Tạm khóa</option>
+                        <option value="pending">Chờ kích hoạt</option>
+                        <option value="banned">Đã khóa vĩnh viễn</option>
+                    </select>
+                </div>
+            </div>
+            <div id="editUserFeedback" class="form-feedback" role="alert"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-close-modal>Hủy</button>
+                <button type="submit" class="btn-primary" id="editUserSubmit">Lưu thay đổi</button>
             </div>
         </form>
     </div>

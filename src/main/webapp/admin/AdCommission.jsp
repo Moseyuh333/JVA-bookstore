@@ -17,7 +17,7 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap&subset=vietnamese" rel="stylesheet">
     
     <style>
         * {
@@ -28,7 +28,7 @@
 
         body {
             background: #f5f5f5;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
         }
 
         #wrapper {

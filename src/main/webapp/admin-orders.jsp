@@ -8,7 +8,7 @@
     <title>Quản lý đơn hàng - Bookish Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap&subset=vietnamese" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -18,7 +18,7 @@
 
         body {
             background: #f5f5f5;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
         }
 
         #wrapper {
@@ -226,7 +226,6 @@
                                             </button>
                                         </div>
                                     </div>
-                                </div>
 
                                 <div id="ordersFeedback" class="mb-3 small text-muted"></div>
                                 <div class="table-responsive">
@@ -252,9 +251,14 @@
                     <div class="col-lg-5">
                         <div class="card detail-card h-100">
                             <div class="card-header bg-white sticky-actions">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <h2 class="h5 mb-0">Chi tiết đơn hàng</h2>
-                                    <span id="detailStatusBadge"></span>
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <h2 class="h5 mb-0">Chi tiết đơn hàng</h2>
+                                        <span id="detailStatusBadge"></span>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="openEditOrderBtn" hidden>
+                                        <i class="fas fa-pen me-1"></i>Chỉnh sửa
+                                    </button>
                                 </div>
                             </div>
                             <div class="card-body" id="detailBody">
@@ -298,6 +302,74 @@
     </div>
 </div>
 
+    <div class="modal fade" id="editOrderModal" tabindex="-1" aria-labelledby="editOrderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editOrderModalLabel">Chỉnh sửa thông tin đơn hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <form id="editOrderForm" novalidate>
+                    <div class="modal-body">
+                        <div id="editOrderFeedback" class="alert d-none" role="alert"></div>
+                        <input type="hidden" id="editOrderId">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="editOrderCode" class="form-label">Mã đơn hàng</label>
+                                <input type="text" id="editOrderCode" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editOrderPaymentProvider" class="form-label">Đối tác thanh toán</label>
+                                <input type="text" id="editOrderPaymentProvider" class="form-control" placeholder="VD: VNPAY, MOMO">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editOrderPaymentStatus" class="form-label">Trạng thái thanh toán</label>
+                                <select id="editOrderPaymentStatus" class="form-select" required>
+                                    <option value="unpaid">Chưa thanh toán</option>
+                                    <option value="processing">Đang xử lý</option>
+                                    <option value="paid">Đã thanh toán</option>
+                                    <option value="failed">Thất bại</option>
+                                    <option value="refunded">Hoàn tiền</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editOrderPaymentMethod" class="form-label">Phương thức thanh toán</label>
+                                <select id="editOrderPaymentMethod" class="form-select" required>
+                                    <option value="cod">Thanh toán khi nhận hàng (COD)</option>
+                                    <option value="vnpay">VNPay</option>
+                                    <option value="momo">MoMo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editOrderShippingFee" class="form-label">Phí vận chuyển (đ)</label>
+                                <input type="number" min="0" step="1000" id="editOrderShippingFee" class="form-control" placeholder="Ví dụ: 25000">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editOrderCouponCode" class="form-label">Mã khuyến mãi</label>
+                                <input type="text" id="editOrderCouponCode" class="form-control" maxlength="50" placeholder="Nhập mã nếu có">
+                            </div>
+                            <div class="col-12">
+                                <label for="editOrderShippingAddress" class="form-label">Địa chỉ giao hàng</label>
+                                <textarea id="editOrderShippingAddress" class="form-control" rows="3" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label for="editOrderNotes" class="form-label">Ghi chú cho đơn hàng</label>
+                                <textarea id="editOrderNotes" class="form-control" rows="3" placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi giao"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="editOrderSaveBtn">
+                            <i class="fas fa-save me-2"></i>Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        </div>
+    </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function () {
@@ -320,6 +392,8 @@
         selectedOrder: null
     };
 
+    let editOrderController = null;
+
     const STATUS_LABELS = {
         new: { label: 'Đơn mới', badge: 'info' },
         confirmed: { label: 'Đã xác nhận', badge: 'primary' },
@@ -341,6 +415,15 @@
             onFilterChange();
         });
         document.getElementById('statusForm').addEventListener('submit', onSubmitStatusUpdate);
+        editOrderController = createEditOrderModalController();
+        const editBtn = document.getElementById('openEditOrderBtn');
+        if (editBtn) {
+            editBtn.addEventListener('click', function () {
+                if (editOrderController && state.selectedOrder) {
+                    editOrderController.open(state.selectedOrder);
+                }
+            });
+        }
         loadOrders();
     });
 
@@ -456,15 +539,24 @@
         const detailBody = document.getElementById('detailBody');
         const footer = document.getElementById('updateFooter');
         const badgeContainer = document.getElementById('detailStatusBadge');
+        const editButton = document.getElementById('openEditOrderBtn');
 
         if (!state.selectedOrder) {
             detailBody.innerHTML = '<div class="text-center py-4 text-muted"><p>Không có dữ liệu đơn hàng.</p></div>';
             footer.hidden = true;
             badgeContainer.innerHTML = '';
+            if (editButton) {
+                editButton.hidden = true;
+                editButton.disabled = true;
+            }
             return;
         }
 
         const order = state.selectedOrder;
+        if (editButton) {
+            editButton.hidden = false;
+            editButton.disabled = false;
+        }
         const statusMeta = STATUS_LABELS[normalizeKey(order.status)] || { label: order.status || 'N/A', badge: 'secondary' };
         badgeContainer.innerHTML = '<span class="badge bg-' + statusMeta.badge + ' badge-status">' + escapeHtml(statusMeta.label) + '</span>';
 
@@ -507,6 +599,18 @@
                 '<div class="text-muted small">Email: ' + escapeHtml(order.customerEmail || 'Chưa rõ') + '</div>' +
                 '<div class="text-muted small">Ngày đặt: ' + formatDateTime(order.orderDate) + '</div>' +
                 '<div class="text-muted small">Thanh toán: ' + escapeHtml(order.paymentMethod || 'cod') + ' · ' + escapeHtml(order.paymentStatus || '') + '</div>' +
+                '<div class="text-muted small">Đối tác: ' + escapeHtml(order.paymentProvider || 'Không xác định') + '</div>' +
+            '</div>'
+        );
+
+        const shippingAddress = order.shippingAddress ? formatMultiline(order.shippingAddress) : '';
+        detailSections.push(
+            '<div class="mb-3">' +
+                '<h4 class="h6 mb-2">Thông tin giao hàng</h4>' +
+                '<div class="border rounded p-3 bg-light">' +
+                    (shippingAddress ? '<div class="mb-2">' + shippingAddress + '</div>' : '<div class="text-muted mb-2">Chưa có địa chỉ giao hàng.</div>') +
+                    '<div class="text-muted small">Ghi chú: ' + (order.notes ? formatMultiline(order.notes) : 'Không có') + '</div>' +
+                '</div>' +
             '</div>'
         );
 
@@ -561,6 +665,11 @@
         document.getElementById('detailBody').innerHTML = '<div class="text-center py-4 text-muted"><p>Chọn một đơn hàng từ danh sách để xem chi tiết.</p></div>';
         document.getElementById('updateFooter').hidden = true;
         document.getElementById('detailStatusBadge').innerHTML = '';
+        const editButton = document.getElementById('openEditOrderBtn');
+        if (editButton) {
+            editButton.hidden = true;
+            editButton.disabled = true;
+        }
     }
 
     async function onSubmitStatusUpdate(event) {
@@ -608,6 +717,171 @@
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-save me-2"></i>Lưu trạng thái';
         }
+    }
+
+    function createEditOrderModalController() {
+        const modalElement = document.getElementById('editOrderModal');
+        const form = document.getElementById('editOrderForm');
+        const feedback = document.getElementById('editOrderFeedback');
+        const submitBtn = document.getElementById('editOrderSaveBtn');
+        const idInput = document.getElementById('editOrderId');
+        const codeInput = document.getElementById('editOrderCode');
+        const paymentStatusSelect = document.getElementById('editOrderPaymentStatus');
+        const paymentMethodSelect = document.getElementById('editOrderPaymentMethod');
+        const paymentProviderInput = document.getElementById('editOrderPaymentProvider');
+        const shippingFeeInput = document.getElementById('editOrderShippingFee');
+        const shippingAddressInput = document.getElementById('editOrderShippingAddress');
+        const notesInput = document.getElementById('editOrderNotes');
+        const couponCodeInput = document.getElementById('editOrderCouponCode');
+
+        if (!modalElement || !form || !submitBtn) {
+            return { open: () => {}, close: () => {} };
+        }
+
+        const modalInstance = window.bootstrap && window.bootstrap.Modal
+            ? window.bootstrap.Modal.getOrCreateInstance(modalElement)
+            : null;
+
+        const clearFeedback = () => {
+            if (!feedback) {
+                return;
+            }
+            feedback.className = 'alert d-none';
+            feedback.textContent = '';
+        };
+
+        const setFeedback = (message, type) => {
+            if (!feedback) {
+                return;
+            }
+            if (!message) {
+                clearFeedback();
+                return;
+            }
+            const variant = type === 'success' ? 'alert-success' : 'alert-danger';
+            feedback.className = 'alert ' + variant;
+            feedback.textContent = message;
+        };
+
+        const toNumberString = value => {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            const num = Number(value);
+            if (!Number.isFinite(num)) {
+                return '';
+            }
+            return Math.round(num).toString();
+        };
+
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            form.reset();
+            clearFeedback();
+        });
+
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            if (!state.selectedOrderId) {
+                setFeedback('Vui lòng chọn đơn hàng trước khi lưu.', 'error');
+                return;
+            }
+
+            const payload = {
+                action: 'update-info',
+                orderId: state.selectedOrderId,
+                paymentStatus: paymentStatusSelect.value,
+                paymentMethod: paymentMethodSelect.value,
+                paymentProvider: paymentProviderInput.value.trim(),
+                shippingFee: shippingFeeInput.value.trim(),
+                shippingAddress: shippingAddressInput.value,
+                notes: notesInput.value,
+                couponCode: couponCodeInput.value.trim()
+            };
+
+            const url = contextPath + '/api/admin/orders?secret=' + encodeURIComponent(ADMIN_SECRET);
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
+            clearFeedback();
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Không thể cập nhật thông tin đơn hàng');
+                }
+
+                if (data.order) {
+                    state.selectedOrder = data.order;
+                    state.selectedOrderId = data.order.id;
+                }
+                if (Array.isArray(data.timeline)) {
+                    state.timeline = data.timeline;
+                }
+
+                setFeedback('Đã cập nhật thông tin đơn hàng.', 'success');
+                await loadOrders();
+                renderDetail();
+
+                setTimeout(() => {
+                    close();
+                }, 600);
+            } catch (error) {
+                console.error('update order info error', error);
+                setFeedback(error.message || 'Đã xảy ra lỗi khi cập nhật đơn hàng.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+
+        const open = order => {
+            if (!order) {
+                return;
+            }
+            clearFeedback();
+            idInput.value = order.id || '';
+            codeInput.value = order.code || ('#' + order.id);
+            paymentStatusSelect.value = normalizeKey(order.paymentStatus) || 'unpaid';
+            paymentMethodSelect.value = normalizeKey(order.paymentMethod) || 'cod';
+            paymentProviderInput.value = order.paymentProvider || '';
+            shippingFeeInput.value = toNumberString(order.shippingFee);
+            shippingAddressInput.value = order.shippingAddress || '';
+            notesInput.value = order.notes || '';
+            couponCodeInput.value = order.couponCode || '';
+            if (modalInstance) {
+                modalInstance.show();
+            } else {
+                modalElement.classList.add('show');
+                modalElement.style.display = 'block';
+                modalElement.removeAttribute('aria-hidden');
+            }
+        };
+
+        const close = () => {
+            if (modalInstance) {
+                modalInstance.hide();
+            } else {
+                modalElement.classList.remove('show');
+                modalElement.style.display = 'none';
+                modalElement.setAttribute('aria-hidden', 'true');
+                form.reset();
+                clearFeedback();
+            }
+        };
+
+        return { open, close };
+    }
+
+    function formatMultiline(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        return escapeHtml(String(value)).replace(/\r?\n/g, '<br>');
     }
 
     function normalizeKey(value) {

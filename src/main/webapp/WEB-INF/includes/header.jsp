@@ -12,10 +12,10 @@
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://unpkg.com/feather-icons"></script>
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap&subset=vietnamese');
 
             body {
-                font-family: 'Roboto', sans-serif;
+                font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
             }
 
             .hero-bg {

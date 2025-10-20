@@ -13,8 +13,8 @@
         window.appConfig.contextPath = '<%=request.getContextPath()%>';
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
-        body { font-family: 'Roboto', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap&subset=vietnamese');
+        body { font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
         .hero-bg { background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://static.photos/books/1200x630/42'); background-size: cover; background-position: center; }
         .book-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
         .title-font { font-family: 'Playfair Display', serif; }

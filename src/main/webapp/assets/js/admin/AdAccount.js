@@ -4,6 +4,8 @@ let currentSearchTerm = '';
 let deleteTargetUser = null;
 let viewModalController = null;
 let deleteModalController = null;
+let editModalController = null;
+let editTargetUser = null;
 
 const statusLabels = {
     active: 'Đang hoạt động',
@@ -160,14 +162,17 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
                 `<td>${address}</td>`,
                 `<td>${email}</td>`,
                 `<td>${phone}</td>`,
-                `<td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>`,
-                '<td class="actions">',
-                `<button class="btn-icon btn-view" title="Xem" data-user-id="${user.id}">`,
-                '<i class="fas fa-eye"></i>',
-                '</button>',
-                `<button class="btn-icon btn-delete" title="Xóa" data-user-id="${user.id}">`,
-                '<i class="fas fa-trash"></i>',
-                '</button>',
+                    `<td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>`,
+                    '<td class="actions">',
+                    `<button class="btn-icon btn-edit" title="Chỉnh sửa" data-user-id="${user.id}">`,
+                    '<i class="fas fa-edit"></i>',
+                    '</button>',
+                    `<button class="btn-icon btn-view" title="Xem" data-user-id="${user.id}">`,
+                    '<i class="fas fa-eye"></i>',
+                    '</button>',
+                    `<button class="btn-icon btn-delete" title="Xóa" data-user-id="${user.id}">`,
+                    '<i class="fas fa-trash"></i>',
+                    '</button>',
                 '</td>',
                 '</tr>'
             ].join('');
@@ -401,6 +406,185 @@ function setupCreateUserModal() {
             submitBtn.textContent = originalText;
         }
     });
+}
+
+function createEditUserModalController() {
+    const modal = document.getElementById('editUserModal');
+    const form = document.getElementById('editUserForm');
+    const feedback = document.getElementById('editUserFeedback');
+    const submitBtn = document.getElementById('editUserSubmit');
+    const idInput = document.getElementById('editUserId');
+    const usernameInput = document.getElementById('editUsername');
+    const emailInput = document.getElementById('editEmail');
+    const fullNameInput = document.getElementById('editFullName');
+    const phoneInput = document.getElementById('editPhone');
+    const roleSelect = document.getElementById('editRole');
+    const statusSelect = document.getElementById('editStatus');
+
+    if (!modal || !form || !submitBtn || !idInput || !usernameInput || !emailInput) {
+        return { open: () => {} };
+    }
+
+    let lastFocusedElement = null;
+
+    const clearFeedback = () => {
+        if (feedback) {
+            feedback.textContent = '';
+            feedback.className = 'form-feedback';
+        }
+    };
+
+    const setFeedback = (message, type = 'error') => {
+        if (feedback) {
+            feedback.textContent = message;
+            feedback.className = type === 'success' ? 'form-feedback success' : 'form-feedback error';
+        }
+    };
+
+    const closeModal = () => {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.setAttribute('aria-modal', 'false');
+        document.body.classList.remove('modal-open');
+        form.reset();
+        clearFeedback();
+        editTargetUser = null;
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+            lastFocusedElement.focus({ preventScroll: true });
+        }
+    };
+
+    modal.querySelectorAll('[data-close-modal]').forEach(btn => {
+        btn.addEventListener('click', closeModal);
+    });
+
+    modal.addEventListener('click', event => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && modal.classList.contains('show')) {
+            closeModal();
+        }
+    });
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!editTargetUser) {
+            setFeedback('Không xác định được tài khoản cần chỉnh sửa.');
+            return;
+        }
+
+        const username = usernameInput.value.trim();
+        const email = emailInput.value.trim();
+        const fullName = fullNameInput?.value.trim() || '';
+        const phone = phoneInput?.value.trim() || '';
+        const role = roleSelect?.value || '';
+        const status = statusSelect?.value || '';
+
+        if (!username || !email) {
+            setFeedback('Tên đăng nhập và email là bắt buộc.');
+            return;
+        }
+
+        const payload = new URLSearchParams();
+        payload.append('action', 'update');
+        payload.append('id', String(editTargetUser.id));
+        payload.append('username', username);
+        payload.append('email', email);
+        if (fullName) {
+            payload.append('full_name', fullName);
+        }
+        if (phone) {
+            payload.append('phone', phone);
+        }
+        if (role) {
+            payload.append('role', role);
+        }
+        if (status) {
+            payload.append('status', status);
+        }
+
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang lưu...';
+
+        try {
+            const response = await fetch(`${contextPath}/api/admin/users`, {
+                method: 'POST',
+                headers: buildAuthHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
+                body: payload.toString()
+            });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                // ignore parse errors
+            }
+
+            if (!response.ok || (data && data.error)) {
+                const message = data?.error || `Không thể cập nhật tài khoản (mã ${response.status})`;
+                throw new Error(message);
+            }
+
+            setFeedback('Cập nhật tài khoản thành công.', 'success');
+            await loadAdminUsers(currentSearchTerm);
+            setTimeout(() => {
+                closeModal();
+            }, 400);
+        } catch (error) {
+            console.error('❌ Lỗi khi cập nhật tài khoản:', error);
+            setFeedback(error.message || 'Đã xảy ra lỗi khi cập nhật tài khoản.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    });
+
+    const open = user => {
+        if (!user) {
+            return;
+        }
+        editTargetUser = user;
+        lastFocusedElement = document.activeElement;
+        clearFeedback();
+
+        idInput.value = user.id || '';
+        usernameInput.value = user.username || '';
+        emailInput.value = user.email || '';
+        if (fullNameInput) {
+            fullNameInput.value = user.full_name || '';
+        }
+        if (phoneInput) {
+            phoneInput.value = user.phone || '';
+        }
+        if (roleSelect) {
+            const normalizedRole = (user.role || 'customer').toLowerCase();
+            roleSelect.value = roleSelect.querySelector(`option[value="${normalizedRole}"]`) ? normalizedRole : 'customer';
+        }
+        if (statusSelect) {
+            const normalizedStatus = (user.status || 'active').toLowerCase();
+            statusSelect.value = statusSelect.querySelector(`option[value="${normalizedStatus}"]`) ? normalizedStatus : 'active';
+        }
+
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        modal.setAttribute('aria-modal', 'true');
+        document.body.classList.add('modal-open');
+        if (usernameInput && typeof usernameInput.focus === 'function') {
+            usernameInput.focus({ preventScroll: true });
+        }
+    };
+
+    return { open, close: closeModal };
 }
 
 function createViewModalController() {
@@ -637,6 +821,15 @@ function setupTableActions() {
     }
 
     tableBody.addEventListener('click', event => {
+        const editBtn = event.target.closest('.btn-edit');
+        if (editBtn) {
+            const user = findUserById(editBtn.dataset.userId);
+            if (user && editModalController) {
+                editModalController.open(user);
+            }
+            return;
+        }
+
         const viewBtn = event.target.closest('.btn-view');
         if (viewBtn) {
             const user = findUserById(viewBtn.dataset.userId);

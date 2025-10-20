@@ -15,6 +15,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,7 +95,7 @@ public final class OrderDAO {
 
     public static List<Order> findOrders(long userId, String statusFilter) throws SQLException {
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT id, code, user_id, order_date, status, payment_status, payment_method, payment_provider, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
+    sql.append("SELECT id, code, user_id, order_date, status, payment_status, payment_method, payment_provider, shipping_address, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
                 + "FROM orders WHERE user_id = ?");
         if (statusFilter != null && !statusFilter.trim().isEmpty()) {
             sql.append(" AND status = ?");
@@ -145,7 +146,7 @@ public final class OrderDAO {
     }
 
     private static Order fetchOrderByIdInternal(Connection conn, long orderId, Long userId) throws SQLException {
-        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
+    StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.shipping_address, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
                 + "u.email AS customer_email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name "
                 + "FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?");
         if (userId != null) {
@@ -272,6 +273,144 @@ public final class OrderDAO {
         }
     }
 
+    public static Order updateOrderDetails(long orderId, OrderUpdateCommand command) throws SQLException {
+        if (command == null) {
+            throw new SQLException("Không có dữ liệu để cập nhật");
+        }
+
+        List<String> assignments = new ArrayList<>();
+        List<Object> values = new ArrayList<>();
+        List<Integer> sqlTypes = new ArrayList<>();
+
+        if (command.paymentMethodSet) {
+            assignments.add("payment_method = ?");
+            values.add(command.paymentMethod);
+            sqlTypes.add(Types.VARCHAR);
+        }
+        if (command.paymentStatusSet) {
+            assignments.add("payment_status = ?");
+            values.add(command.paymentStatus);
+            sqlTypes.add(Types.VARCHAR);
+        }
+        if (command.paymentProviderSet) {
+            assignments.add("payment_provider = ?");
+            values.add(command.paymentProvider);
+            sqlTypes.add(Types.VARCHAR);
+        }
+        if (command.shippingAddressSet) {
+            assignments.add("shipping_address = ?");
+            values.add(command.shippingAddress);
+            sqlTypes.add(Types.VARCHAR);
+        }
+        if (command.shippingFeeSet) {
+            assignments.add("shipping_fee = ?");
+            values.add(command.shippingFee);
+            sqlTypes.add(Types.DECIMAL);
+        }
+        if (command.notesSet) {
+            assignments.add("notes = ?");
+            values.add(command.notes);
+            sqlTypes.add(Types.VARCHAR);
+        }
+        if (command.couponCodeSet) {
+            assignments.add("coupon_code = ?");
+            values.add(command.couponCode);
+            sqlTypes.add(Types.VARCHAR);
+        }
+
+        if (assignments.isEmpty()) {
+            throw new SQLException("Không có dữ liệu nào để cập nhật");
+        }
+
+        StringBuilder sql = new StringBuilder("UPDATE orders SET ");
+        sql.append(String.join(", ", assignments));
+        sql.append(", updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int index = 1;
+            for (int i = 0; i < values.size(); i++) {
+                Object value = values.get(i);
+                int type = sqlTypes.get(i);
+                if (value == null) {
+                    stmt.setNull(index++, type);
+                    continue;
+                }
+                if (type == Types.DECIMAL || type == Types.NUMERIC) {
+                    stmt.setBigDecimal(index++, (BigDecimal) value);
+                } else {
+                    stmt.setObject(index++, value);
+                }
+            }
+            stmt.setLong(index, orderId);
+            int updated = stmt.executeUpdate();
+            if (updated == 0) {
+                throw new SQLException("Order not found: " + orderId);
+            }
+        }
+
+        return fetchOrderForAdmin(orderId);
+    }
+
+    public static final class OrderUpdateCommand {
+        private boolean paymentMethodSet;
+        private String paymentMethod;
+        private boolean paymentStatusSet;
+        private String paymentStatus;
+        private boolean paymentProviderSet;
+        private String paymentProvider;
+        private boolean shippingAddressSet;
+        private String shippingAddress;
+        private boolean shippingFeeSet;
+        private BigDecimal shippingFee;
+        private boolean notesSet;
+        private String notes;
+        private boolean couponCodeSet;
+        private String couponCode;
+
+        public OrderUpdateCommand withPaymentMethod(String value) {
+            this.paymentMethod = value;
+            this.paymentMethodSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withPaymentStatus(String value) {
+            this.paymentStatus = value;
+            this.paymentStatusSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withPaymentProvider(String value) {
+            this.paymentProvider = value;
+            this.paymentProviderSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withShippingAddress(String value) {
+            this.shippingAddress = value;
+            this.shippingAddressSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withShippingFee(BigDecimal value) {
+            this.shippingFee = value;
+            this.shippingFeeSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withNotes(String value) {
+            this.notes = value;
+            this.notesSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withCouponCode(String value) {
+            this.couponCode = value;
+            this.couponCodeSet = true;
+            return this;
+        }
+    }
+
     private static String normalizeStatusValue(String status) {
         if (status == null) {
             return null;
@@ -319,6 +458,7 @@ public final class OrderDAO {
         order.setItemsSubtotal(rs.getBigDecimal("items_subtotal"));
         order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
         order.setShippingFee(rs.getBigDecimal("shipping_fee"));
+        order.setShippingAddress(rs.getString("shipping_address"));
         order.setTotalAmount(rs.getBigDecimal("total_amount"));
         order.setCurrency(rs.getString("currency"));
         order.setCouponCode(rs.getString("coupon_code"));
