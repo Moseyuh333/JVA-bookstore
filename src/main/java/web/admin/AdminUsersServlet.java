@@ -1,6 +1,7 @@
 package web.admin;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.postgresql.util.PGobject;
 import utils.DBUtil;
 
 import javax.servlet.ServletException;
@@ -240,6 +241,18 @@ public class AdminUsersServlet extends HttpServlet {
                     : "ACTIVE";
         }
     }
+
+    private void setEnumParam(PreparedStatement stmt, int index, String typeName, String value) throws SQLException {
+        if (value == null) {
+            stmt.setNull(index, java.sql.Types.OTHER);
+            return;
+        }
+
+        PGobject enumObject = new PGobject();
+        enumObject.setType(typeName);
+        enumObject.setValue(value);
+        stmt.setObject(index, enumObject);
+    }
     
     private String escapeJson(String str) {
         if (str == null) return "";
@@ -304,13 +317,16 @@ public class AdminUsersServlet extends HttpServlet {
        try (Connection conn = DBUtil.getConnection();
            PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
+          String normalizedRole = normalizeRole(role);
+          String normalizedStatus = normalizeStatus(status);
+
           pstmt.setString(1, username.trim());
           pstmt.setString(2, email.trim());
           pstmt.setString(3, passwordHash);
           pstmt.setString(4, fullName != null && !fullName.trim().isEmpty() ? fullName.trim() : null);
           pstmt.setString(5, phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
-          pstmt.setString(6, normalizeRole(role));
-          pstmt.setString(7, normalizeStatus(status));
+            setEnumParam(pstmt, 6, "user_role", normalizedRole);
+            setEnumParam(pstmt, 7, "user_status", normalizedStatus);
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
@@ -353,15 +369,18 @@ public class AdminUsersServlet extends HttpServlet {
         int id = Integer.parseInt(idStr);
         String sql = "UPDATE users SET username = ?, email = ?, full_name = ?, phone = ?, role = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
 
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+       try (Connection conn = DBUtil.getConnection();
+           PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, username.trim());
-            pstmt.setString(2, email.trim());
-            pstmt.setString(3, fullName != null ? fullName.trim() : null);
-            pstmt.setString(4, phone != null ? phone.trim() : null);
-            pstmt.setString(5, normalizeRole(role));
-            pstmt.setString(6, normalizeStatus(status));
+          String normalizedRole = normalizeRole(role);
+          String normalizedStatus = normalizeStatus(status);
+
+          pstmt.setString(1, username.trim());
+          pstmt.setString(2, email.trim());
+          pstmt.setString(3, fullName != null ? fullName.trim() : null);
+          pstmt.setString(4, phone != null ? phone.trim() : null);
+            setEnumParam(pstmt, 5, "user_role", normalizedRole);
+            setEnumParam(pstmt, 6, "user_status", normalizedStatus);
             pstmt.setInt(7, id);
 
             int rows = pstmt.executeUpdate();
