@@ -849,7 +849,7 @@ function setupTableActions() {
     });
 }
 
-window.addEventListener('load', () => {
+function initAdminAccountPage() {
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
@@ -860,4 +860,10 @@ window.addEventListener('load', () => {
     deleteModalController = createDeleteModalController();
     setupTableActions();
     loadAdminUsers();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminAccountPage);
+} else {
+    initAdminAccountPage();
+}

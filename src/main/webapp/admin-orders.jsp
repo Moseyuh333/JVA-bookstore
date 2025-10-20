@@ -120,6 +120,17 @@
             padding: 24px;
         }
 
+        #orderDetailColumn {
+            align-self: flex-start;
+        }
+
+        @media (min-width: 992px) {
+            #orderDetailColumn .detail-card {
+                position: sticky;
+                top: 110px;
+            }
+        }
+
         #detailBody {
             display: flex;
             flex-direction: column;
@@ -258,7 +269,7 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-5">
+                    <div class="col-lg-5" id="orderDetailColumn">
                         <div class="card detail-card">
                             <div class="card-header bg-white sticky-actions">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
