@@ -120,38 +120,6 @@
             padding: 24px;
         }
 
-        /* Force 2-column layout */
-        @media (min-width: 992px) {
-            .row.g-4.align-items-start {
-                display: flex !important;
-                flex-wrap: nowrap !important;
-            }
-            
-            .row.g-4.align-items-start > .col-lg-7,
-            .row.g-4.align-items-start > .col-lg-5 {
-                flex-shrink: 0 !important;
-            }
-            
-            .row.g-4.align-items-start > .col-lg-7 {
-                flex: 0 0 58.33333333% !important;
-                max-width: 58.33333333% !important;
-                width: 58.33333333% !important;
-            }
-            
-            .row.g-4.align-items-start > .col-lg-5 {
-                flex: 0 0 41.66666667% !important;
-                max-width: 41.66666667% !important;
-                width: 41.66666667% !important;
-            }
-            
-            /* Extra specificity for detail column */
-            #orderDetailColumn {
-                flex: 0 0 41.66666667% !important;
-                max-width: 41.66666667% !important;
-                width: 41.66666667% !important;
-            }
-        }
-
         #orderDetailColumn {
             align-self: flex-start;
         }
@@ -167,18 +135,6 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-        }
-
-        #detailStatusBadge {
-            display: inline-flex;
-            align-items: center;
-            margin-left: 8px;
-        }
-
-        #detailStatusBadge .badge {
-            font-size: 0.85rem;
-            line-height: 1;
-            transform: translateY(-1px);
         }
 
         #detailBody > .detail-section {
@@ -315,14 +271,16 @@
 
                     <div class="col-lg-5" id="orderDetailColumn">
                         <div class="card detail-card">
-                            <div class="card-header bg-white sticky-actions d-flex align-items-center justify-content-between">
-                                <h2 class="h5 mb-0 d-flex align-items-center gap-2">
-                                    Chi tiết đơn hàng
-                                    <span id="detailStatusBadge"></span>
-                                </h2>
-                                <button type="button" class="btn btn-outline-primary btn-sm" id="openEditOrderBtn" hidden>
-                                    <i class="fas fa-pen me-1"></i>Chỉnh sửa
-                                </button>
+                            <div class="card-header bg-white sticky-actions">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <h2 class="h5 mb-0">Chi tiết đơn hàng</h2>
+                                        <span id="detailStatusBadge"></span>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="openEditOrderBtn" hidden>
+                                        <i class="fas fa-pen me-1"></i>Chỉnh sửa
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body" id="detailBody">
                                 <div class="text-center py-4 text-muted">
@@ -1050,24 +1008,6 @@
         }
         return number.toLocaleString('vi-VN') + 'đ';
     }
-
-    // Force 2-column layout on page load
-    window.addEventListener('DOMContentLoaded', function() {
-        const row = document.querySelector('.row.g-4.align-items-start');
-        const col7 = document.querySelector('.col-lg-7');
-        const col5 = document.querySelector('.col-lg-5');
-        
-        if (row && col7 && col5 && window.innerWidth >= 992) {
-            row.style.display = 'flex';
-            row.style.flexWrap = 'nowrap';
-            col7.style.flex = '0 0 58.33%';
-            col7.style.maxWidth = '58.33%';
-            col7.style.width = '58.33%';
-            col5.style.flex = '0 0 41.67%';
-            col5.style.maxWidth = '41.67%';
-            col5.style.width = '41.67%';
-        }
-    });
 })();
 </script>
 </body>
