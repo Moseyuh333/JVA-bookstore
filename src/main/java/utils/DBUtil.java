@@ -31,8 +31,8 @@ public class DBUtil {
                 username = dbUri.getUserInfo().split(":")[0];
                 password = dbUri.getUserInfo().split(":")[1];
                 String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + (dbUri.getPort() != -1 ? ":" + dbUri.getPort() : "") + dbUri.getPath();
-                // Ensure SSL for Heroku
-                url = jdbcUrl + "?sslmode=require";
+                // Ensure SSL for Heroku and UTF-8 encoding
+                url = jdbcUrl + "?sslmode=require&charSet=UTF-8";
             } else {
                 try (InputStream input = DBUtil.class.getClassLoader().getResourceAsStream("db.properties")) {
                     if (input == null) {
@@ -43,6 +43,10 @@ public class DBUtil {
                     url = prop.getProperty("db.url");
                     username = prop.getProperty("db.username");
                     password = prop.getProperty("db.password");
+                    // Ensure UTF-8 encoding for local database
+                    if (!url.contains("charSet")) {
+                        url += (url.contains("?") ? "&" : "?") + "charSet=UTF-8";
+                    }
                 }
             }
             Class.forName("org.postgresql.Driver");
