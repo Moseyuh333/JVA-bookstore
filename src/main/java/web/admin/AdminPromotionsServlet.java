@@ -132,8 +132,6 @@ public class AdminPromotionsServlet extends HttpServlet {
                         .append("\"start_at\":\"").append(rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "").append("\",")
                         .append("\"end_at\":\"").append(rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "").append("\",")
                         .append("\"active\":").append(rs.getBoolean("active")).append(",")
-                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : "").append("\",")
-                        .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toString() : "").append("\"")
                         .append("}");
                 }
             }
