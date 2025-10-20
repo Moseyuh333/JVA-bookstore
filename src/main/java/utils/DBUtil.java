@@ -1099,4 +1099,21 @@ public class DBUtil {
             System.out.println("Deleted " + count + " users from database");
         }
     }
+
+    // utils/DBUtil.java
+    public static String getUserRole(String username) throws SQLException {
+        String sql = "SELECT role FROM users WHERE username = ?";
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String r = rs.getString(1);
+                    return (r == null || r.isBlank()) ? "user" : r.trim();
+                }
+            }
+        }
+        return "user";
+    }
+
 }
