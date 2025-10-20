@@ -220,14 +220,14 @@
                 </div>
 
                 <div class="row g-4 align-items-start">
-                    <div class="col-lg-7">
+                    <div class="flex-grow-1 flex-shrink-0" style="flex-basis:58%;">
                         <div class="card orders-card h-100">
                             <div class="card-body">
-                                <div class="filters-wrap">
-                                    <div class="row g-3 align-items-end">
-                                        <div class="col-md-4">
-                                            <label for="statusFilter" class="form-label">Lọc trạng thái</label>
-                                            <select id="statusFilter" class="form-select">
+                                <div class="filters-wrap mb-3">
+                                    <div class="d-flex flex-wrap align-items-end gap-3">
+                                        <div>
+                                            <label for="statusFilter" class="form-label mb-1 fw-semibold small">Lọc trạng thái</label>
+                                            <select id="statusFilter" class="form-select form-select-sm" style="min-width:150px;">
                                                 <option value="all">Tất cả</option>
                                                 <option value="new">Đơn hàng mới</option>
                                                 <option value="confirmed">Đã xác nhận</option>
@@ -237,17 +237,18 @@
                                                 <option value="returned">Hoàn trả</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-5">
-                                            <label for="searchInput" class="form-label">Tìm kiếm (mã đơn, email, tên)</label>
-                                            <input type="search" id="searchInput" class="form-control" placeholder="Ví dụ: ODABC123, user@gmail.com">
+                                        <div">
+                                            <label for="searchInput" class="form-label mb-1 fw-semibold small">Tìm kiếm (mã đơn, email, tên)</label>
+                                            <input type="search" id="searchInput" class="form-control form-control-sm" placeholder="Ví dụ: ODABC123, user@gmail.com">
                                         </div>
-                                        <div class="col-md-3">
-                                            <button id="refreshButton" class="btn btn-primary w-100">
-                                                <i class="fas fa-rotate me-2"></i>Tải lại
+                                        <div>
+                                            <label class="form-label mb-1 invisible">.</label>
+                                            <button id="refreshButton" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-rotate me-1"></i>Tải lại
                                             </button>
                                         </div>
                                     </div>
-
+                                </div>
                                 <div id="ordersFeedback" class="mb-3 small text-muted"></div>
                                 <div class="table-responsive">
                                     <table class="table table-hover align-middle mb-0" id="ordersTable">
@@ -269,13 +270,14 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-5" id="orderDetailColumn">
+                    <div class="flex-grow-1 flex-shrink-0" style="flex-basis:41%;">
                         <div class="card detail-card">
-                            <div class="card-header bg-white sticky-actions">
+                            <div class="card-header bg-white sticky-actions d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <h2 class="h5 mb-0">Chi tiết đơn hàng</h2>
-                                        <span id="detailStatusBadge"></span>
+                                    <div class= "d-flex align-items-center gap-2 flex-wrap">
+                                        <h2 class="h5 mb-0 d-flex align-items-center gap-2">Chi tiết đơn hàng
+                                            <span id="detailStatusBadge"></span>
+                                        </h2>
                                     </div>
                                     <button type="button" class="btn btn-outline-primary btn-sm" id="openEditOrderBtn" hidden>
                                         <i class="fas fa-pen me-1"></i>Chỉnh sửa
