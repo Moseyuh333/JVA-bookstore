@@ -1,7 +1,6 @@
 package web.admin;
 
 import org.mindrot.jbcrypt.BCrypt;
-import org.postgresql.util.PGobject;
 import utils.DBUtil;
 
 import javax.servlet.ServletException;
@@ -24,6 +23,7 @@ public class AdminUsersServlet extends HttpServlet {
 
     private static final Set<String> ALLOWED_ROLES = Set.of(
         "ADMIN",
+        "USER",
         "CUSTOMER",
         "SELLER",
         "MANAGER",
@@ -38,6 +38,9 @@ public class AdminUsersServlet extends HttpServlet {
         "BANNED",
         "PENDING"
     );
+
+    private static final String DEFAULT_DB_ROLE = "user";
+    private static final String DEFAULT_DB_STATUS = "active";
     
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -160,7 +163,7 @@ public class AdminUsersServlet extends HttpServlet {
                         .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
                         .append("\"full_name\":\"").append(escapeJson(rs.getString("full_name"))).append("\",")
                         .append("\"phone\":\"").append(escapeJson(rs.getString("phone"))).append("\",")
-                        .append("\"role\":\"").append(escapeJson(toLowerCase(roleValue, "customer"))).append("\",")
+                        .append("\"role\":\"").append(escapeJson(toLowerCase(roleValue, "user"))).append("\",")
                         .append("\"status\":\"").append(escapeJson(toLowerCase(statusValue, "active"))).append("\",")
                         .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
                         .append("\"created\":\"").append(createdAt).append("\",")
@@ -185,75 +188,58 @@ public class AdminUsersServlet extends HttpServlet {
 
     private String normalizeRole(String role) {
         if (role == null) {
-            return "CUSTOMER";
+            return DEFAULT_DB_ROLE;
         }
 
         String value = role.trim().toLowerCase(Locale.US);
         if (value.isEmpty()) {
-            return "CUSTOMER";
+            return DEFAULT_DB_ROLE;
         }
 
         switch (value) {
             case "admin":
-                return "ADMIN";
             case "seller":
-                return "SELLER";
             case "manager":
-                return "MANAGER";
             case "staff":
-                return "STAFF";
             case "shipper":
-                return "SHIPPER";
             case "support":
-                return "SUPPORT";
             case "customer":
             case "user":
-                return "CUSTOMER";
+                return value;
             default:
-                return ALLOWED_ROLES.contains(value.toUpperCase(Locale.US))
-                    ? value.toUpperCase(Locale.US)
-                    : "CUSTOMER";
+                String upper = value.toUpperCase(Locale.US);
+                if (ALLOWED_ROLES.contains(upper)) {
+                    return value;
+                }
+                return DEFAULT_DB_ROLE;
         }
     }
 
     private String normalizeStatus(String status) {
         if (status == null) {
-            return "ACTIVE";
+            return DEFAULT_DB_STATUS;
         }
 
         String value = status.trim().toLowerCase(Locale.US);
         if (value.isEmpty()) {
-            return "ACTIVE";
+            return DEFAULT_DB_STATUS;
         }
 
         switch (value) {
             case "inactive":
-                return "INACTIVE";
             case "banned":
-                return "BANNED";
             case "pending":
-                return "PENDING";
             case "active":
-                return "ACTIVE";
+                return value;
             default:
-                return ALLOWED_STATUSES.contains(value.toUpperCase(Locale.US))
-                    ? value.toUpperCase(Locale.US)
-                    : "ACTIVE";
+                String upper = value.toUpperCase(Locale.US);
+                if (ALLOWED_STATUSES.contains(upper)) {
+                    return value;
+                }
+                return DEFAULT_DB_STATUS;
         }
     }
 
-    private void setEnumParam(PreparedStatement stmt, int index, String typeName, String value) throws SQLException {
-        if (value == null) {
-            stmt.setNull(index, java.sql.Types.OTHER);
-            return;
-        }
-
-        PGobject enumObject = new PGobject();
-        enumObject.setType(typeName);
-        enumObject.setValue(value);
-        stmt.setObject(index, enumObject);
-    }
-    
     private String escapeJson(String str) {
         if (str == null) return "";
         return str.replace("\\", "\\\\")
@@ -287,8 +273,8 @@ public class AdminUsersServlet extends HttpServlet {
         String rawPassword = req.getParameter("password");
         String fullName = req.getParameter("full_name");
         String phone = req.getParameter("phone");
-    String role = req.getParameter("role");
-    String status = req.getParameter("status");
+        String role = req.getParameter("role");
+        String status = req.getParameter("status");
 
         if (username == null || username.trim().isEmpty() || email == null || email.trim().isEmpty()) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -312,21 +298,21 @@ public class AdminUsersServlet extends HttpServlet {
             return;
         }
 
+        String normalizedRole = normalizeRole(role);
+        String normalizedStatus = normalizeStatus(status);
+
         String sql = "INSERT INTO users (username, email, password_hash, full_name, phone, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-       try (Connection conn = DBUtil.getConnection();
-           PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-          String normalizedRole = normalizeRole(role);
-          String normalizedStatus = normalizeStatus(status);
-
-          pstmt.setString(1, username.trim());
-          pstmt.setString(2, email.trim());
-          pstmt.setString(3, passwordHash);
-          pstmt.setString(4, fullName != null && !fullName.trim().isEmpty() ? fullName.trim() : null);
-          pstmt.setString(5, phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
-            setEnumParam(pstmt, 6, "user_role", normalizedRole);
-            setEnumParam(pstmt, 7, "user_status", normalizedStatus);
+            pstmt.setString(1, username.trim());
+            pstmt.setString(2, email.trim());
+            pstmt.setString(3, passwordHash);
+            pstmt.setString(4, fullName != null && !fullName.trim().isEmpty() ? fullName.trim() : null);
+            pstmt.setString(5, phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
+            pstmt.setString(6, normalizedRole);
+            pstmt.setString(7, normalizedStatus);
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
@@ -340,7 +326,9 @@ public class AdminUsersServlet extends HttpServlet {
             String sqlState = e.getSQLState();
             if ("22P02".equals(sqlState)) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write("{\"error\":\"Giá trị quyền hoặc trạng thái không hợp lệ cho cơ sở dữ liệu\"}");
+                out.write("{\"error\":\"Giá trị quyền hoặc trạng thái không hợp lệ cho cơ sở dữ liệu\"," +
+                        "\"role\":\"" + escapeJson(normalizedRole) + "\"," +
+                        "\"status\":\"" + escapeJson(normalizedStatus) + "\"}");
                 return;
             }
             if (sqlState != null && sqlState.startsWith("23")) {
@@ -358,8 +346,8 @@ public class AdminUsersServlet extends HttpServlet {
         String email = req.getParameter("email");
         String fullName = req.getParameter("full_name");
         String phone = req.getParameter("phone");
-    String role = req.getParameter("role");
-    String status = req.getParameter("status");
+        String role = req.getParameter("role");
+        String status = req.getParameter("status");
 
         if (idStr == null || username == null || username.trim().isEmpty() || email == null || email.trim().isEmpty()) {
             out.write("{\"error\":\"ID, username and email are required\"}");
@@ -367,20 +355,20 @@ public class AdminUsersServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
+        String normalizedRole = normalizeRole(role);
+        String normalizedStatus = normalizeStatus(status);
+
         String sql = "UPDATE users SET username = ?, email = ?, full_name = ?, phone = ?, role = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
 
-       try (Connection conn = DBUtil.getConnection();
-           PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-          String normalizedRole = normalizeRole(role);
-          String normalizedStatus = normalizeStatus(status);
-
-          pstmt.setString(1, username.trim());
-          pstmt.setString(2, email.trim());
-          pstmt.setString(3, fullName != null ? fullName.trim() : null);
-          pstmt.setString(4, phone != null ? phone.trim() : null);
-            setEnumParam(pstmt, 5, "user_role", normalizedRole);
-            setEnumParam(pstmt, 6, "user_status", normalizedStatus);
+            pstmt.setString(1, username.trim());
+            pstmt.setString(2, email.trim());
+            pstmt.setString(3, fullName != null ? fullName.trim() : null);
+            pstmt.setString(4, phone != null ? phone.trim() : null);
+            pstmt.setString(5, normalizedRole);
+            pstmt.setString(6, normalizedStatus);
             pstmt.setInt(7, id);
 
             int rows = pstmt.executeUpdate();
@@ -393,7 +381,9 @@ public class AdminUsersServlet extends HttpServlet {
             String sqlState = e.getSQLState();
             if ("22P02".equals(sqlState)) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write("{\"error\":\"Giá trị quyền hoặc trạng thái không hợp lệ cho cơ sở dữ liệu\"}");
+                out.write("{\"error\":\"Giá trị quyền hoặc trạng thái không hợp lệ cho cơ sở dữ liệu\"," +
+                        "\"role\":\"" + escapeJson(normalizedRole) + "\"," +
+                        "\"status\":\"" + escapeJson(normalizedStatus) + "\"}");
                 return;
             }
             throw e;
