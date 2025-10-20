@@ -1040,6 +1040,24 @@
         }
         return number.toLocaleString('vi-VN') + 'đ';
     }
+
+    // Force 2-column layout on page load
+    window.addEventListener('DOMContentLoaded', function() {
+        const row = document.querySelector('.row.g-4.align-items-start');
+        const col7 = document.querySelector('.col-lg-7');
+        const col5 = document.querySelector('.col-lg-5');
+        
+        if (row && col7 && col5 && window.innerWidth >= 992) {
+            row.style.display = 'flex';
+            row.style.flexWrap = 'nowrap';
+            col7.style.flex = '0 0 58.33%';
+            col7.style.maxWidth = '58.33%';
+            col7.style.width = '58.33%';
+            col5.style.flex = '0 0 41.67%';
+            col5.style.maxWidth = '41.67%';
+            col5.style.width = '41.67%';
+        }
+    });
 })();
 </script>
 </body>
