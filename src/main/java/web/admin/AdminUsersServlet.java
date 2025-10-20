@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -315,14 +316,56 @@ public class AdminUsersServlet extends HttpServlet {
 
     private void setEnumParam(PreparedStatement stmt, int index, String typeName, String value) throws SQLException {
         if (value == null) {
-            stmt.setNull(index, java.sql.Types.OTHER);
+            setEnumNull(stmt, index);
             return;
         }
 
         PGobject enumObject = new PGobject();
         enumObject.setType(typeName);
         enumObject.setValue(value);
-        stmt.setObject(index, enumObject);
+        try {
+            stmt.setObject(index, enumObject);
+        } catch (SQLException ex) {
+            if (isEnumTypeUnavailable(ex)) {
+                stmt.setString(index, value);
+            } else {
+                throw ex;
+            }
+        }
+    }
+
+    private void setEnumNull(PreparedStatement stmt, int index) throws SQLException {
+        try {
+            stmt.setNull(index, Types.OTHER);
+        } catch (SQLException ex) {
+            if (isEnumTypeUnavailable(ex)) {
+                stmt.setNull(index, Types.VARCHAR);
+            } else {
+                throw ex;
+            }
+        }
+    }
+
+    private boolean isEnumTypeUnavailable(SQLException ex) {
+        if (ex == null) {
+            return false;
+        }
+        String state = ex.getSQLState();
+        if (state != null) {
+            if ("42704".equals(state) || "42883".equals(state) || "0A000".equals(state)) {
+                return true;
+            }
+        }
+        String message = ex.getMessage();
+        if (message != null) {
+            String lower = message.toLowerCase(Locale.US);
+            if (lower.contains("type \"user_role\" does not exist") ||
+                lower.contains("type \"user_status\" does not exist") ||
+                (lower.contains("type \"") && lower.contains("does not exist"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String escapeJson(String str) {
