@@ -220,7 +220,7 @@
                 </div>
 
                 <div class="row g-4 align-items-start">
-                    <div class="col-lg-7">
+                    <div class="col-lg-7 col-md-12">
                         <div class="card orders-card h-100">
                             <div class="card-body">
                                 <div class="filters-wrap">
@@ -247,6 +247,7 @@
                                             </button>
                                         </div>
                                     </div>
+                                </div>
 
                                 <div id="ordersFeedback" class="mb-3 small text-muted"></div>
                                 <div class="table-responsive">
@@ -269,8 +270,8 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-5" id="orderDetailColumn">
-                        <div class="card detail-card">
+                    <div class="col-lg-5 col-md-12" id="orderDetailColumn">
+                        <div class="card detail-card h-100">
                             <div class="card-header bg-white sticky-actions">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-3">
