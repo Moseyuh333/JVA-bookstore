@@ -98,6 +98,9 @@ public class AdminPromotionsServlet extends HttpServlet {
         StringBuilder json = new StringBuilder();
         json.append("{\"promotions\":[");
 
+        int totalPromotions = 0;
+        int activePromotions = 0;
+
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
@@ -122,6 +125,11 @@ public class AdminPromotionsServlet extends HttpServlet {
                     if (!first) json.append(",");
                     first = false;
 
+                    totalPromotions++;
+                    if (rs.getBoolean("active")) {
+                        activePromotions++;
+                    }
+
                     json.append("{")
                         .append("\"id\":").append(rs.getInt("id")).append(",")
                         .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
@@ -138,7 +146,7 @@ public class AdminPromotionsServlet extends HttpServlet {
             }
         }
 
-        json.append("]}");
+        json.append("],\"total\":").append(totalPromotions).append(",\"active\":").append(activePromotions).append("}");
         out.write(json.toString());
     }
 
