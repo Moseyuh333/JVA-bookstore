@@ -855,6 +855,7 @@ window.addEventListener('load', () => {
     }
 
     setupCreateUserModal();
+    editModalController = createEditUserModalController();
     viewModalController = createViewModalController();
     deleteModalController = createDeleteModalController();
     setupTableActions();

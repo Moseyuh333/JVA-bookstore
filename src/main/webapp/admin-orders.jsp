@@ -120,6 +120,16 @@
             padding: 24px;
         }
 
+        #detailBody {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        #detailBody > .detail-section {
+            margin-bottom: 0;
+        }
+
         .timeline {
             position: relative;
             padding-left: 1.5rem;
@@ -576,9 +586,8 @@
                 '</div>';
             }).join('');
 
-        const detailSections = [];
-        detailSections.push(
-            '<div class="mb-3">' +
+        const summarySection =
+            '<div class="detail-section">' +
                 '<div class="d-flex justify-content-between align-items-start">' +
                     '<div>' +
                         '<h3 class="h5 mb-1">' + escapeHtml(order.code || ('#' + order.id)) + '</h3>' +
@@ -589,46 +598,47 @@
                         '<div class="text-muted small">Phí vận chuyển: ' + formatCurrency(order.shippingFee) + '</div>' +
                     '</div>' +
                 '</div>' +
-            '</div>'
-        );
+            '</div>';
 
-        detailSections.push(
-            '<div class="mb-3">' +
+        const productsSection =
+            '<div class="detail-section">' +
+                '<h4 class="h6 mb-2">Sản phẩm (' + items.length + ')</h4>' +
+                '<div class="border rounded p-3 bg-light">' + itemsHtml + '</div>' +
+            '</div>';
+
+        const customerSection =
+            '<div class="detail-section">' +
                 '<div class="text-muted small">Khách hàng</div>' +
                 '<div class="fw-semibold">' + escapeHtml(order.customerName || order.customerEmail || 'Ẩn danh') + '</div>' +
                 '<div class="text-muted small">Email: ' + escapeHtml(order.customerEmail || 'Chưa rõ') + '</div>' +
                 '<div class="text-muted small">Ngày đặt: ' + formatDateTime(order.orderDate) + '</div>' +
                 '<div class="text-muted small">Thanh toán: ' + escapeHtml(order.paymentMethod || 'cod') + ' · ' + escapeHtml(order.paymentStatus || '') + '</div>' +
                 '<div class="text-muted small">Đối tác: ' + escapeHtml(order.paymentProvider || 'Không xác định') + '</div>' +
-            '</div>'
-        );
+            '</div>';
 
         const shippingAddress = order.shippingAddress ? formatMultiline(order.shippingAddress) : '';
-        detailSections.push(
-            '<div class="mb-3">' +
+        const shippingSection =
+            '<div class="detail-section">' +
                 '<h4 class="h6 mb-2">Thông tin giao hàng</h4>' +
                 '<div class="border rounded p-3 bg-light">' +
                     (shippingAddress ? '<div class="mb-2">' + shippingAddress + '</div>' : '<div class="text-muted mb-2">Chưa có địa chỉ giao hàng.</div>') +
                     '<div class="text-muted small">Ghi chú: ' + (order.notes ? formatMultiline(order.notes) : 'Không có') + '</div>' +
                 '</div>' +
-            '</div>'
-        );
+            '</div>';
 
-        detailSections.push(
-            '<div class="mb-3">' +
-                '<h4 class="h6 mb-2">Sản phẩm (' + items.length + ')</h4>' +
-                '<div class="border rounded p-3 bg-light">' + itemsHtml + '</div>' +
-            '</div>'
-        );
-
-        detailSections.push(
-            '<div>' +
+        const timelineSection =
+            '<div class="detail-section">' +
                 '<h4 class="h6 mb-2">Tiến trình trạng thái</h4>' +
                 renderTimeline(state.timeline) +
-            '</div>'
-        );
+            '</div>';
 
-        detailBody.innerHTML = detailSections.join('');
+        detailBody.innerHTML = [
+            summarySection,
+            productsSection,
+            customerSection,
+            shippingSection,
+            timelineSection
+        ].join('');
         footer.hidden = false;
         document.getElementById('statusSelect').value = normalizeKey(order.status) || '';
         document.getElementById('noteInput').value = '';
