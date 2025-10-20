@@ -23,21 +23,21 @@ import java.util.Set;
 public class AdminUsersServlet extends HttpServlet {
 
     private static final Set<String> ALLOWED_ROLES = Set.of(
-        "ADMIN",
-        "CUSTOMER",
-        "SELLER",
-        "SHIPPER"
+        "admin",
+        "customer",
+        "seller",
+        "shipper"
     );
 
     private static final Set<String> ALLOWED_STATUSES = Set.of(
-        "ACTIVE",
-        "INACTIVE",
-        "BANNED",
-        "PENDING"
+        "active",
+        "inactive",
+        "banned",
+        "pending"
     );
 
-    private static final String DEFAULT_DB_ROLE = "CUSTOMER";
-    private static final String DEFAULT_DB_STATUS = "ACTIVE";
+    private static final String DEFAULT_DB_ROLE = "customer";
+    private static final String DEFAULT_DB_STATUS = "active";
     
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -188,23 +188,23 @@ public class AdminUsersServlet extends HttpServlet {
             return DEFAULT_DB_ROLE;
         }
 
-        String upper = role.trim().toUpperCase(Locale.US);
-        if (upper.isEmpty()) {
+        String value = role.trim().toLowerCase(Locale.US);
+        if (value.isEmpty()) {
             return DEFAULT_DB_ROLE;
         }
 
-        switch (upper) {
-            case "ADMIN":
-                return "ADMIN";
-            case "SELLER":
-                return "SELLER";
-            case "SHIPPER":
-                return "SHIPPER";
-            case "CUSTOMER":
-            case "USER":
+        switch (value) {
+            case "admin":
+                return "admin";
+            case "seller":
+                return "seller";
+            case "shipper":
+                return "shipper";
+            case "customer":
+            case "user":
                 return DEFAULT_DB_ROLE;
             default:
-                return ALLOWED_ROLES.contains(upper) ? upper : DEFAULT_DB_ROLE;
+                return ALLOWED_ROLES.contains(value) ? value : DEFAULT_DB_ROLE;
         }
     }
 
@@ -218,9 +218,9 @@ public class AdminUsersServlet extends HttpServlet {
             return DEFAULT_DB_STATUS;
         }
 
-        String upper = value.toUpperCase(Locale.US);
-        if (ALLOWED_STATUSES.contains(upper)) {
-            return upper;
+        String lower = value.toLowerCase(Locale.US);
+        if (ALLOWED_STATUSES.contains(lower)) {
+            return lower;
         }
         return DEFAULT_DB_STATUS;
     }
