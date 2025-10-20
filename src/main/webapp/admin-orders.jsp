@@ -129,17 +129,26 @@
             
             .row.g-4.align-items-start > .col-lg-7,
             .row.g-4.align-items-start > .col-lg-5 {
-                flex-shrink: 0;
+                flex-shrink: 0 !important;
             }
             
             .row.g-4.align-items-start > .col-lg-7 {
                 flex: 0 0 58.33333333% !important;
                 max-width: 58.33333333% !important;
+                width: 58.33333333% !important;
             }
             
             .row.g-4.align-items-start > .col-lg-5 {
                 flex: 0 0 41.66666667% !important;
                 max-width: 41.66666667% !important;
+                width: 41.66666667% !important;
+            }
+            
+            /* Extra specificity for detail column */
+            #orderDetailColumn {
+                flex: 0 0 41.66666667% !important;
+                max-width: 41.66666667% !important;
+                width: 41.66666667% !important;
             }
         }
 
