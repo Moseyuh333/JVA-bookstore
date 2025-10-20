@@ -127,11 +127,11 @@ public class AdminPromotionsServlet extends HttpServlet {
                         .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
                         .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
                         .append("\"discount_value\":").append(rs.getBigDecimal("discount_value")).append(",")
-                        .append("\"start_at\":\"").append(rs.getTimestamp("start_at")).append("\",")
-                        .append("\"end_at\":\"").append(rs.getTimestamp("end_at")).append("\",")
+                        .append("\"start_at\":\"").append(rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "").append("\",")
+                        .append("\"end_at\":\"").append(rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "").append("\",")
                         .append("\"active\":").append(rs.getBoolean("active")).append(",")
-                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                        .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : "").append("\",")
+                        .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toString() : "").append("\"")
                         .append("}");
                 }
             }
@@ -167,11 +167,11 @@ public class AdminPromotionsServlet extends HttpServlet {
                         + "\"description\":\"" + escapeJson(rs.getString("description")) + "\","
                         + "\"type\":\"" + escapeJson(rs.getString("type")) + "\","
                         + "\"discount_value\":" + rs.getBigDecimal("discount_value") + ","
-                        + "\"start_at\":\"" + rs.getTimestamp("start_at") + "\","
-                        + "\"end_at\":\"" + rs.getTimestamp("end_at") + "\","
+                        + "\"start_at\":\"" + (rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "") + "\","
+                        + "\"end_at\":\"" + (rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "") + "\","
                         + "\"active\":" + rs.getBoolean("active") + ","
-                        + "\"created_at\":\"" + rs.getTimestamp("created_at") + "\","
-                        + "\"updated_at\":\"" + rs.getTimestamp("updated_at") + "\""
+                        + "\"created_at\":\"" + (rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : "") + "\","
+                        + "\"updated_at\":\"" + (rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toString() : "") + "\""
                         + "}";
                     out.write(json);
                 } else {
