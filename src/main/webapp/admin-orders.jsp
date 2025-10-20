@@ -303,18 +303,14 @@
 
                     <div class="col-lg-5" id="orderDetailColumn">
                         <div class="card detail-card">
-                            <div class="card-header bg-white sticky-actions">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div>
-                                    <h2 class="h5 mb-0 d-flex align-items-center gap-2">
-                                        Chi tiết đơn hàng 
-                                        <span id="detailStatusBadge"></span>
-                                    </h2>
-                                    </div>
-                                    <button type="button" class="btn btn-outline-primary btn-sm" id="openEditOrderBtn" hidden>
+                            <div class="card-header bg-white sticky-actions d-flex align-items-center justify-content-between">
+                                <h2 class="h5 mb-0 d-flex align-items-center gap-2">
+                                    Chi tiết đơn hàng
+                                    <span id="detailStatusBadge"></span>
+                                </h2>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="openEditOrderBtn" hidden>
                                     <i class="fas fa-pen me-1"></i>Chỉnh sửa
-                                    </button>
-                                </div>
+                                </button>
                             </div>
                             <div class="card-body" id="detailBody">
                                 <div class="text-center py-4 text-muted">
