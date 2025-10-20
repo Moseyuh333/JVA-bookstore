@@ -208,7 +208,7 @@
                     </div>
                 </div>
 
-                <div class="row g-4">
+                <div class="row g-4 align-items-start">
                     <div class="col-lg-7">
                         <div class="card orders-card h-100">
                             <div class="card-body">
@@ -259,7 +259,7 @@
                     </div>
 
                     <div class="col-lg-5">
-                        <div class="card detail-card h-100">
+                        <div class="card detail-card">
                             <div class="card-header bg-white sticky-actions">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-3">
