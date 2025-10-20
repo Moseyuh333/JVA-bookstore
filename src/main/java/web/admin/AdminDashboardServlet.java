@@ -200,8 +200,8 @@ public class AdminDashboardServlet extends HttpServlet {
                 "COUNT(o.id) AS total_orders, " +
                 "COALESCE(SUM(o.total_amount), 0) AS revenue " +
                 "FROM users u " +
-                "LEFT JOIN orders o ON u.id = o.user_id AND o.status = 'completed' " +
-                "WHERE u.role IN ('seller', 'admin', 'user') " +
+                "LEFT JOIN orders o ON u.id = o.user_id AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered') " +
+                "WHERE u.role IN ('SELLER', 'ADMIN', 'USER') " +
                 "GROUP BY u.id, u.username, u.email " +
                 "ORDER BY revenue DESC, total_orders DESC " +
                 "LIMIT 5";
