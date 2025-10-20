@@ -15,30 +15,108 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @WebServlet(name = "AdminUsersServlet", urlPatterns = {"/api/admin/users"})
 public class AdminUsersServlet extends HttpServlet {
 
-    private static final Set<String> ALLOWED_ROLES = Set.of(
-        "admin",
-        "customer",
-        "seller",
-        "shipper"
+    private static final List<String> ROLE_PRIORITY = List.of(
+        "CUSTOMER",
+        "USER",
+        "ADMIN",
+        "SELLER",
+        "SHIPPER"
     );
 
-    private static final Set<String> ALLOWED_STATUSES = Set.of(
-        "active",
-        "inactive",
-        "banned",
-        "pending"
+    private static final List<String> STATUS_PRIORITY = List.of(
+        "ACTIVE",
+        "INACTIVE",
+        "BANNED",
+        "PENDING"
     );
 
-    private static final String DEFAULT_DB_ROLE = "customer";
-    private static final String DEFAULT_DB_STATUS = "active";
+    private volatile Map<String, String> roleLookup = Collections.emptyMap();
+    private volatile Map<String, String> statusLookup = Collections.emptyMap();
+    private volatile String defaultRole = "CUSTOMER";
+    private volatile String defaultStatus = "ACTIVE";
     
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        refreshEnumLookups();
+    }
+
+    private void refreshEnumLookups() {
+        Map<String, String> resolvedRoles = loadEnumValues("user_role", ROLE_PRIORITY);
+        Map<String, String> resolvedStatuses = loadEnumValues("user_status", STATUS_PRIORITY);
+
+        this.roleLookup = resolvedRoles;
+        this.statusLookup = resolvedStatuses;
+        this.defaultRole = selectDefault(resolvedRoles, ROLE_PRIORITY, ROLE_PRIORITY.get(0));
+        this.defaultStatus = selectDefault(resolvedStatuses, STATUS_PRIORITY, STATUS_PRIORITY.get(0));
+    }
+
+    private Map<String, String> loadEnumValues(String typeName, List<String> fallbacks) {
+        Map<String, String> values = new HashMap<>();
+        String sql = "SELECT enumlabel FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = ? ORDER BY e.enumsortorder";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, typeName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String label = rs.getString(1);
+                    if (label != null && !label.isEmpty()) {
+                        values.put(label.toLowerCase(Locale.US), label);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[AdminUsersServlet] Unable to load enum values for " + typeName + ": " + e.getMessage());
+        }
+
+        if (values.isEmpty()) {
+            for (String fallback : fallbacks) {
+                values.put(fallback.toLowerCase(Locale.US), fallback);
+            }
+        }
+
+        return Collections.unmodifiableMap(values);
+    }
+
+    private String selectDefault(Map<String, String> lookup, List<String> priority, String hardFallback) {
+        for (String candidate : priority) {
+            String resolved = lookup.get(candidate.toLowerCase(Locale.US));
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+        return lookup.values().stream().findFirst().orElse(hardFallback);
+    }
+
+    private String toJsonLabelArray(Collection<String> labels) {
+        StringBuilder sb = new StringBuilder("[");
+        boolean first = true;
+        for (String label : labels) {
+            if (!first) {
+                sb.append(',');
+            }
+            first = false;
+            String value = label != null ? label.toLowerCase(Locale.US) : "";
+            sb.append('"').append(escapeJson(value)).append('"');
+        }
+        sb.append(']');
+        return sb.toString();
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
@@ -123,6 +201,8 @@ public class AdminUsersServlet extends HttpServlet {
             try (ResultSet rs = pstmt.executeQuery()) {
                 boolean first = true;
                 Set<Integer> seenIds = new HashSet<>();
+                String roleFallback = defaultRole != null ? defaultRole.toLowerCase(Locale.US) : "customer";
+                String statusFallback = defaultStatus != null ? defaultStatus.toLowerCase(Locale.US) : "active";
                 while (rs.next()) {
                     int userId = rs.getInt("id");
                     if (!seenIds.add(userId)) {
@@ -160,8 +240,8 @@ public class AdminUsersServlet extends HttpServlet {
                         .append("\"email\":\"").append(escapeJson(rs.getString("email"))).append("\",")
                         .append("\"full_name\":\"").append(escapeJson(rs.getString("full_name"))).append("\",")
                         .append("\"phone\":\"").append(escapeJson(rs.getString("phone"))).append("\",")
-                        .append("\"role\":\"").append(escapeJson(toLowerCase(roleValue, DEFAULT_DB_ROLE.toLowerCase(Locale.US)))).append("\",")
-                        .append("\"status\":\"").append(escapeJson(toLowerCase(statusValue, DEFAULT_DB_STATUS.toLowerCase(Locale.US)))).append("\",")
+                        .append("\"role\":\"").append(escapeJson(toLowerCase(roleValue, roleFallback))).append("\",")
+                        .append("\"status\":\"").append(escapeJson(toLowerCase(statusValue, statusFallback))).append("\",")
                         .append("\"verified\":").append(rs.getBoolean("email_verified")).append(",")
                         .append("\"created\":\"").append(createdAt).append("\",")
                         .append("\"updated\":\"").append(updatedAt).append("\",")
@@ -184,45 +264,46 @@ public class AdminUsersServlet extends HttpServlet {
     }
 
     private String normalizeRole(String role) {
-        if (role == null) {
-            return DEFAULT_DB_ROLE;
+        Map<String, String> lookup = this.roleLookup;
+        String fallback = defaultRole;
+
+        if (role == null || role.trim().isEmpty()) {
+            return fallback;
         }
 
-        String value = role.trim().toLowerCase(Locale.US);
-        if (value.isEmpty()) {
-            return DEFAULT_DB_ROLE;
+        String trimmed = role.trim();
+        String lower = trimmed.toLowerCase(Locale.US);
+        String resolved = lookup.get(lower);
+        if (resolved != null) {
+            return resolved;
         }
 
-        switch (value) {
-            case "admin":
-                return "admin";
-            case "seller":
-                return "seller";
-            case "shipper":
-                return "shipper";
-            case "customer":
-            case "user":
-                return DEFAULT_DB_ROLE;
-            default:
-                return ALLOWED_ROLES.contains(value) ? value : DEFAULT_DB_ROLE;
+        if ("user".equals(lower) || "customer".equals(lower)) {
+            String customer = lookup.get("customer");
+            if (customer != null) {
+                return customer;
+            }
+            String userRole = lookup.get("user");
+            if (userRole != null) {
+                return userRole;
+            }
         }
+
+        return null;
     }
 
     private String normalizeStatus(String status) {
-        if (status == null) {
-            return DEFAULT_DB_STATUS;
+        Map<String, String> lookup = this.statusLookup;
+        String fallback = defaultStatus;
+
+        if (status == null || status.trim().isEmpty()) {
+            return fallback;
         }
 
-        String value = status.trim();
-        if (value.isEmpty()) {
-            return DEFAULT_DB_STATUS;
-        }
-
-        String lower = value.toLowerCase(Locale.US);
-        if (ALLOWED_STATUSES.contains(lower)) {
-            return lower;
-        }
-        return DEFAULT_DB_STATUS;
+        String trimmed = status.trim();
+        String lower = trimmed.toLowerCase(Locale.US);
+        String resolved = lookup.get(lower);
+        return resolved != null ? resolved : null;
     }
 
     private void setEnumParam(PreparedStatement stmt, int index, String typeName, String value) throws SQLException {
@@ -296,7 +377,22 @@ public class AdminUsersServlet extends HttpServlet {
         }
 
         String normalizedRole = normalizeRole(role);
+        if (normalizedRole == null) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"error\":\"Giá trị quyền không hợp lệ cho cơ sở dữ liệu\"," +
+                "\"role\":\"" + escapeJson(role != null ? role : "") + "\"," +
+                "\"allowed\":" + toJsonLabelArray(roleLookup.values()) + "}");
+            return;
+        }
+
         String normalizedStatus = normalizeStatus(status);
+        if (normalizedStatus == null) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"error\":\"Giá trị trạng thái không hợp lệ cho cơ sở dữ liệu\"," +
+                "\"status\":\"" + escapeJson(status != null ? status : "") + "\"," +
+                "\"allowed\":" + toJsonLabelArray(statusLookup.values()) + "}");
+            return;
+        }
 
         String sql = "INSERT INTO users (username, email, password_hash, full_name, phone, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
@@ -353,7 +449,22 @@ public class AdminUsersServlet extends HttpServlet {
 
         int id = Integer.parseInt(idStr);
         String normalizedRole = normalizeRole(role);
+        if (normalizedRole == null) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"error\":\"Giá trị quyền không hợp lệ cho cơ sở dữ liệu\"," +
+                "\"role\":\"" + escapeJson(role != null ? role : "") + "\"," +
+                "\"allowed\":" + toJsonLabelArray(roleLookup.values()) + "}");
+            return;
+        }
+
         String normalizedStatus = normalizeStatus(status);
+        if (normalizedStatus == null) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write("{\"error\":\"Giá trị trạng thái không hợp lệ cho cơ sở dữ liệu\"," +
+                "\"status\":\"" + escapeJson(status != null ? status : "") + "\"," +
+                "\"allowed\":" + toJsonLabelArray(statusLookup.values()) + "}");
+            return;
+        }
 
         String sql = "UPDATE users SET username = ?, email = ?, full_name = ?, phone = ?, role = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
 
