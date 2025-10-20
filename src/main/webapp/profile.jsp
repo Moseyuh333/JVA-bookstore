@@ -2070,6 +2070,7 @@
                         <td>
                             <div class="fw-semibold">${escapeHtml(item.title || 'Sản phẩm')}</div>
                             ${item.author ? `<div class="text-muted small">${escapeHtml(item.author)}</div>` : ''}
+                            ${item.shopName ? `<div class="text-muted small"><i class="fas fa-store me-1"></i>${escapeHtml(item.shopName)}</div>` : ''}
                         </td>
                         <td class="text-center">${item.quantity}</td>
                         <td class="text-end">${formatCurrency(item.unitPrice)}</td>

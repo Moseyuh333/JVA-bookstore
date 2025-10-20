@@ -374,7 +374,9 @@ public final class OrderDAO {
 
     private static List<OrderItem> findOrderItems(Connection conn, long orderId, Long userId) throws SQLException {
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT oi.id, oi.order_id, oi.book_id, oi.quantity, oi.unit_price, oi.total_price, b.title, b.author, b.image_url");
+        sql.append("SELECT oi.id, oi.order_id, oi.book_id, oi.quantity, oi.unit_price, oi.total_price, ");
+        sql.append("oi.shop_id AS oi_shop_id, oi.shop_name AS oi_shop_name, ");
+        sql.append("b.title, b.author, b.image_url, b.shop_id AS b_shop_id, b.shop_name AS b_shop_name");
         if (userId != null) {
             sql.append(", r.id AS review_id");
         }
@@ -402,6 +404,32 @@ public final class OrderDAO {
                     item.setTitle(rs.getString("title"));
                     item.setAuthor(rs.getString("author"));
                     item.setImageUrl(rs.getString("image_url"));
+                    
+                    // Ưu tiên lấy shop info từ order_items (snapshot), nếu không có thì lấy từ books
+                    Integer shopId = null;
+                    String shopName = null;
+                    
+                    // Thử lấy từ order_items trước
+                    int oiShopId = rs.getInt("oi_shop_id");
+                    if (!rs.wasNull()) {
+                        shopId = oiShopId;
+                    }
+                    shopName = rs.getString("oi_shop_name");
+                    
+                    // Nếu order_items không có, fallback sang books
+                    if (shopId == null) {
+                        int bShopId = rs.getInt("b_shop_id");
+                        if (!rs.wasNull()) {
+                            shopId = bShopId;
+                        }
+                    }
+                    if (shopName == null || shopName.trim().isEmpty()) {
+                        shopName = rs.getString("b_shop_name");
+                    }
+                    
+                    item.setShopId(shopId);
+                    item.setShopName(shopName);
+                    
                     if (userId != null) {
                         long reviewId = rs.getLong("review_id");
                         if (rs.wasNull()) {
@@ -423,7 +451,7 @@ public final class OrderDAO {
     }
 
     private static void insertOrderItems(Connection conn, long orderId, CartData cartData) throws SQLException {
-        String sql = "INSERT INTO order_items (order_id, book_id, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO order_items (order_id, book_id, quantity, unit_price, total_price, shop_id, shop_name) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             for (CartLine item : cartData.items) {
                 stmt.setLong(1, orderId);
@@ -431,6 +459,15 @@ public final class OrderDAO {
                 stmt.setInt(3, item.quantity);
                 stmt.setBigDecimal(4, item.unitPrice);
                 stmt.setBigDecimal(5, item.unitPrice.multiply(BigDecimal.valueOf(item.quantity)));
+                
+                // Lưu shop info snapshot
+                if (item.shopId != null) {
+                    stmt.setInt(6, item.shopId);
+                } else {
+                    stmt.setNull(6, java.sql.Types.INTEGER);
+                }
+                stmt.setString(7, item.shopName);
+                
                 stmt.addBatch();
             }
             stmt.executeBatch();
@@ -643,7 +680,7 @@ public final class OrderDAO {
         CartData cartData = new CartData();
         boolean hasOriginalPrice = columnExists(conn, "books", "original_price");
         boolean hasStockQuantity = columnExists(conn, "books", "stock_quantity");
-        StringBuilder sql = new StringBuilder("SELECT id, title, author, image_url, price");
+        StringBuilder sql = new StringBuilder("SELECT id, title, author, image_url, price, shop_id, shop_name");
         if (hasOriginalPrice) {
             sql.append(", original_price");
         }
@@ -675,6 +712,14 @@ public final class OrderDAO {
                     item.title = rs.getString("title");
                     item.author = rs.getString("author");
                     item.imageUrl = rs.getString("image_url");
+                    
+                    // Lấy thông tin shop
+                    int shopIdValue = rs.getInt("shop_id");
+                    if (!rs.wasNull()) {
+                        item.shopId = shopIdValue;
+                    }
+                    item.shopName = rs.getString("shop_name");
+                    
                     if (hasStockQuantity) {
                         item.stockQuantity = rs.getInt("stock_quantity");
                         if (!rs.wasNull() && item.quantity > item.stockQuantity) {
@@ -700,7 +745,7 @@ public final class OrderDAO {
         for (ItemSelection selection : selections) {
             selectionMap.put(selection.getBookId(), selection);
         }
-        StringBuilder sql = new StringBuilder("SELECT c.id AS cart_id, ci.book_id, ci.quantity, ci.unit_price, b.title, b.author, b.image_url, b.stock_quantity "
+        StringBuilder sql = new StringBuilder("SELECT c.id AS cart_id, ci.book_id, ci.quantity, ci.unit_price, b.title, b.author, b.image_url, b.stock_quantity, b.shop_id, b.shop_name "
                 + "FROM carts c "
                 + "INNER JOIN cart_items ci ON ci.cart_id = c.id "
                 + "INNER JOIN books b ON b.id = ci.book_id "
@@ -743,6 +788,14 @@ public final class OrderDAO {
                     item.author = rs.getString("author");
                     item.imageUrl = rs.getString("image_url");
                     item.stockQuantity = rs.getInt("stock_quantity");
+                    
+                    // Lấy thông tin shop
+                    int shopIdValue = rs.getInt("shop_id");
+                    if (!rs.wasNull()) {
+                        item.shopId = shopIdValue;
+                    }
+                    item.shopName = rs.getString("shop_name");
+                    
                     if (!rs.wasNull() && item.quantity > item.stockQuantity) {
                         throw new SQLException("Số lượng sách \"" + item.title + "\" vượt quá tồn kho");
                     }
@@ -1021,6 +1074,8 @@ public final class OrderDAO {
         private String author;
         private String imageUrl;
         private int stockQuantity;
+        private Integer shopId;
+        private String shopName;
     }
 
     private static class AddressSnapshot {

@@ -67,6 +67,7 @@ public class BookDAO {
 
     private static final String BASE_SELECT =
             "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, b.stock_quantity, b.image_url, " +
+            "b.shop_id, b.shop_name, " +
             "b.created_at, b.updated_at, " +
             "COALESCE(sales.total_sold, metrics.total_sold, 0) AS total_sold, " +
             "COALESCE(reviews.avg_rating, metrics.avg_rating, 0) AS average_rating, " +
@@ -286,7 +287,16 @@ public class BookDAO {
         }
         int ratingCount = rs.getInt("rating_count");
         int favoriteCount = rs.getInt("favorite_count");
+        
+        // Lấy thông tin shop
+        Integer shopId = null;
+        int shopIdValue = rs.getInt("shop_id");
+        if (!rs.wasNull()) {
+            shopId = shopIdValue;
+        }
+        String shopName = rs.getString("shop_name");
+        
         return new Book(id, title, author, isbn, price, description, category, stockQuantity, imageUrl,
-                createdAt, updatedAt, totalSold, averageRating, ratingCount, favoriteCount);
+                createdAt, updatedAt, totalSold, averageRating, ratingCount, favoriteCount, shopId, shopName);
     }
 }

@@ -14,6 +14,8 @@ public class OrderItem {
     private BigDecimal totalPrice;
     private boolean hasReview;
     private Long reviewId;
+    private Integer shopId;
+    private String shopName;
 
     public long getId() {
         return id;
@@ -101,5 +103,21 @@ public class OrderItem {
 
     public void setReviewId(Long reviewId) {
         this.reviewId = reviewId;
+    }
+
+    public Integer getShopId() {
+        return shopId;
+    }
+
+    public void setShopId(Integer shopId) {
+        this.shopId = shopId;
+    }
+
+    public String getShopName() {
+        return shopName;
+    }
+
+    public void setShopName(String shopName) {
+        this.shopName = shopName;
     }
 }

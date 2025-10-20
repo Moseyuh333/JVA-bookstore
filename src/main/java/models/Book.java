@@ -19,6 +19,8 @@ public class Book {
     private final double averageRating;
     private final int ratingCount;
     private final int favoriteCount;
+    private final Integer shopId;
+    private final String shopName;
 
     public Book(
             long id,
@@ -35,7 +37,9 @@ public class Book {
             int totalSold,
             double averageRating,
             int ratingCount,
-            int favoriteCount) {
+            int favoriteCount,
+            Integer shopId,
+            String shopName) {
         this.id = id;
         this.title = title;
         this.author = author;
@@ -51,6 +55,8 @@ public class Book {
         this.averageRating = averageRating;
         this.ratingCount = ratingCount;
         this.favoriteCount = favoriteCount;
+        this.shopId = shopId;
+        this.shopName = shopName;
     }
 
     public long getId() {
@@ -111,5 +117,13 @@ public class Book {
 
     public int getFavoriteCount() {
         return favoriteCount;
+    }
+
+    public Integer getShopId() {
+        return shopId;
+    }
+
+    public String getShopName() {
+        return shopName;
     }
 }
