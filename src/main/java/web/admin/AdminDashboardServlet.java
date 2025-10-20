@@ -1,5 +1,6 @@
 package web.admin;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import utils.DBUtil;
 
@@ -14,6 +15,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 @WebServlet(name = "AdminDashboardServlet", urlPatterns = {"/api/admin/dashboard"})
 public class AdminDashboardServlet extends HttpServlet {
@@ -117,18 +120,16 @@ public class AdminDashboardServlet extends HttpServlet {
             try (PreparedStatement stmt = conn.prepareStatement(query);
                  ResultSet rs = stmt.executeQuery()) {
 
-                JsonObject labels = new JsonObject();
-                JsonObject data = new JsonObject();
+                List<String> months = new ArrayList<>();
+                List<Double> values = new ArrayList<>();
 
-                int index = 0;
                 while (rs.next()) {
-                    labels.addProperty(String.valueOf(index), rs.getString("month"));
-                    data.addProperty(String.valueOf(index), rs.getDouble("revenue"));
-                    index++;
+                    months.add(rs.getString("month"));
+                    values.add(rs.getDouble("revenue"));
                 }
 
-                revenue.add("labels", labels);
-                revenue.add("data", data);
+                revenue.add("labels", toJsonArray(months));
+                revenue.add("data", toJsonArray(values));
             }
         } catch (SQLException e) {
             // If PostgreSQL syntax fails, try a simpler approach
@@ -145,23 +146,35 @@ public class AdminDashboardServlet extends HttpServlet {
                 try (PreparedStatement stmt = conn.prepareStatement(query);
                      ResultSet rs = stmt.executeQuery()) {
 
-                    JsonObject labels = new JsonObject();
-                    JsonObject data = new JsonObject();
+                    List<String> months = new ArrayList<>();
+                    List<Double> values = new ArrayList<>();
 
-                    int index = 0;
                     while (rs.next()) {
-                        labels.addProperty(String.valueOf(index), rs.getString("month"));
-                        data.addProperty(String.valueOf(index), rs.getDouble("revenue"));
-                        index++;
+                        months.add(rs.getString("month"));
+                        values.add(rs.getDouble("revenue"));
                     }
 
-                    revenue.add("labels", labels);
-                    revenue.add("data", data);
+                    revenue.add("labels", toJsonArray(months));
+                    revenue.add("data", toJsonArray(values));
                 }
             }
         }
 
         return revenue;
+    }
+
+    private JsonArray toJsonArray(List<?> items) {
+        JsonArray array = new JsonArray();
+        for (Object item : items) {
+            if (item == null) {
+                array.add((String) null);
+            } else if (item instanceof Number) {
+                array.add(((Number) item).doubleValue());
+            } else {
+                array.add(item.toString());
+            }
+        }
+        return array;
     }
 
     private JsonObject getOrderStatusData() throws SQLException {
