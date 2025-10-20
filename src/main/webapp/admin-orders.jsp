@@ -304,13 +304,15 @@
                     <div class="col-lg-5" id="orderDetailColumn">
                         <div class="card detail-card">
                             <div class="card-header bg-white sticky-actions">
-                                <div class="d-flex align-items-center justify-content-between gap-2">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <h2 class="h5 mb-0">Chi tiết đơn hàng</h2>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                    <h2 class="h5 mb-0 d-flex align-items-center gap-2">
+                                        Chi tiết đơn hàng 
                                         <span id="detailStatusBadge"></span>
+                                    </h2>
                                     </div>
                                     <button type="button" class="btn btn-outline-primary btn-sm" id="openEditOrderBtn" hidden>
-                                        <i class="fas fa-pen me-1"></i>Chỉnh sửa
+                                    <i class="fas fa-pen me-1"></i>Chỉnh sửa
                                     </button>
                                 </div>
                             </div>
