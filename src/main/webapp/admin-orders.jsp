@@ -169,6 +169,13 @@
             gap: 1.5rem;
         }
 
+        #detailStatusBadge {
+            display: inline-block;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+
         #detailBody > .detail-section {
             margin-bottom: 0;
         }
