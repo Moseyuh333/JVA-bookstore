@@ -1,6 +1,7 @@
 package web.admin;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.postgresql.util.PGobject;
 import utils.DBUtil;
 
 import javax.servlet.ServletException;
@@ -187,23 +188,22 @@ public class AdminUsersServlet extends HttpServlet {
             return DEFAULT_DB_ROLE;
         }
 
-        String value = role.trim().toLowerCase(Locale.US);
-        if (value.isEmpty()) {
+        String upper = role.trim().toUpperCase(Locale.US);
+        if (upper.isEmpty()) {
             return DEFAULT_DB_ROLE;
         }
 
-        switch (value) {
-            case "admin":
+        switch (upper) {
+            case "ADMIN":
                 return "ADMIN";
-            case "seller":
+            case "SELLER":
                 return "SELLER";
-            case "shipper":
+            case "SHIPPER":
                 return "SHIPPER";
-            case "customer":
-            case "user":
+            case "CUSTOMER":
+            case "USER":
                 return DEFAULT_DB_ROLE;
             default:
-                String upper = value.toUpperCase(Locale.US);
                 return ALLOWED_ROLES.contains(upper) ? upper : DEFAULT_DB_ROLE;
         }
     }
@@ -222,27 +222,19 @@ public class AdminUsersServlet extends HttpServlet {
         if (ALLOWED_STATUSES.contains(upper)) {
             return upper;
         }
-        switch (value.toLowerCase(Locale.US)) {
-            case "inactive":
-                return "INACTIVE";
-            case "banned":
-                return "BANNED";
-            case "pending":
-                return "PENDING";
-            case "active":
-                return "ACTIVE";
-            default:
-                return DEFAULT_DB_STATUS;
-        }
+        return DEFAULT_DB_STATUS;
     }
 
-    private void setEnumParam(PreparedStatement stmt, int index, String value) throws SQLException {
+    private void setEnumParam(PreparedStatement stmt, int index, String typeName, String value) throws SQLException {
         if (value == null) {
             stmt.setNull(index, java.sql.Types.OTHER);
             return;
         }
 
-        stmt.setObject(index, value, java.sql.Types.OTHER);
+        PGobject enumObject = new PGobject();
+        enumObject.setType(typeName);
+        enumObject.setValue(value);
+        stmt.setObject(index, enumObject);
     }
 
     private String escapeJson(String str) {
@@ -316,8 +308,8 @@ public class AdminUsersServlet extends HttpServlet {
             pstmt.setString(3, passwordHash);
             pstmt.setString(4, fullName != null && !fullName.trim().isEmpty() ? fullName.trim() : null);
             pstmt.setString(5, phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
-            setEnumParam(pstmt, 6, normalizedRole);
-            setEnumParam(pstmt, 7, normalizedStatus);
+            setEnumParam(pstmt, 6, "user_role", normalizedRole);
+            setEnumParam(pstmt, 7, "user_status", normalizedStatus);
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
@@ -372,8 +364,8 @@ public class AdminUsersServlet extends HttpServlet {
             pstmt.setString(2, email.trim());
             pstmt.setString(3, fullName != null ? fullName.trim() : null);
             pstmt.setString(4, phone != null ? phone.trim() : null);
-            setEnumParam(pstmt, 5, normalizedRole);
-            setEnumParam(pstmt, 6, normalizedStatus);
+            setEnumParam(pstmt, 5, "user_role", normalizedRole);
+            setEnumParam(pstmt, 6, "user_status", normalizedStatus);
             pstmt.setInt(7, id);
 
             int rows = pstmt.executeUpdate();
