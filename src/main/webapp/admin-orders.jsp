@@ -20,17 +20,26 @@
             background: #f5f5f5;
             font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
         }
-
+        html, body {
+            height: 100%;
+        }
         #wrapper {
+            min-height: 100%;
             display: flex;
-            min-height: 100vh;
+            flex-direction: column;
+        }
+        #content-wrapper {
+            flex: 1 0 auto;
+        }
+        footer {
+            flex-shrink: 0;
+            width: 100%;
+            background: #0f172a;
+            color: #f1f5f9;
+            text-align: center;
+            padding: 1rem 0;
         }
 
-        #content-wrapper {
-            flex: 1;
-            margin-left: 0;
-            transition: margin-left 0.3s ease;
-        }
 
         #content {
             margin-top: 70px;
@@ -320,8 +329,6 @@
                 </div>
             </div>
         </div>
-
-        <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
 
@@ -392,7 +399,7 @@
         </div>
         </div>
     </div>
-
+<%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function () {
