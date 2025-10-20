@@ -114,6 +114,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 promotions = response.promotions;
                 filteredPromotions = [...promotions];
                 renderTable(filteredPromotions);
+
+                // Update stats
+                const totalPromoEl = document.getElementById("totalPromo");
+                const activePromoEl = document.getElementById("activePromo");
+                if (totalPromoEl) totalPromoEl.textContent = response.total || 0;
+                if (activePromoEl) activePromoEl.textContent = response.active || 0;
             } else {
                 console.error("Invalid response format:", response);
                 showEmpty();
@@ -137,6 +143,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.promotions) {
                     filteredPromotions = response.promotions;
                     renderTable(filteredPromotions);
+
+                    // Update stats for filtered results
+                    const totalPromoEl = document.getElementById("totalPromo");
+                    const activePromoEl = document.getElementById("activePromo");
+                    if (totalPromoEl) totalPromoEl.textContent = response.total || 0;
+                    if (activePromoEl) activePromoEl.textContent = response.active || 0;
                 } else {
                     console.error("Invalid response format:", response);
                     showEmpty();
