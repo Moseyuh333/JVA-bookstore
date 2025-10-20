@@ -338,7 +338,6 @@
                 <a class="nav-link" href="<c:url value='/admin-orders.jsp'/>">
                     <i class="fas fa-shopping-cart"></i>
                     <span>Đơn hàng</span>
-                    <span class="nav-badge">5</span>
                 </a>
             </div>
         </div>
