@@ -343,6 +343,26 @@
             color: #1e40af;
         }
 
+        .badge-seller {
+            background: #dcfce7;
+            color: #047857;
+        }
+
+        .badge-shipper {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-banned {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
         /* Actions */
         .actions {
             display: flex;
@@ -387,6 +407,47 @@
 
         .btn-delete:hover {
             background: #fecaca;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .detail-item {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .detail-item h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .detail-item p {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+            word-break: break-word;
+        }
+
+        .modal-warning {
+            padding: 18px;
+            border-radius: 10px;
+            background: #fef2f2;
+            color: #991b1b;
+            margin-bottom: 18px;
+        }
+
+        .modal-warning strong {
+            display: block;
+            margin-bottom: 6px;
         }
 
         /* Empty State */
@@ -832,6 +893,90 @@
                 <button type="submit" class="btn-primary" id="createUserSubmit">Tạo tài khoản</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="viewUserModal" aria-hidden="true" role="dialog" aria-modal="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3>Chi tiết tài khoản</h3>
+            <button type="button" class="modal-close" data-close-modal aria-label="Đóng">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <h4>Tên đăng nhập</h4>
+                    <p id="viewUsername">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Email</h4>
+                    <p id="viewEmail">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Họ và tên</h4>
+                    <p id="viewFullName">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Số điện thoại</h4>
+                    <p id="viewPhone">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Quyền</h4>
+                    <p id="viewRole">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Trạng thái</h4>
+                    <p id="viewStatus">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Xác thực email</h4>
+                    <p id="viewVerified">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Ngày tạo</h4>
+                    <p id="viewCreated">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Cập nhật</h4>
+                    <p id="viewUpdated">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Ngày sinh</h4>
+                    <p id="viewBirthDate">-</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Địa chỉ</h4>
+                    <p id="viewAddress">-</p>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 24px;">
+                <button type="button" class="btn-secondary" data-close-modal>Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="deleteUserModal" aria-hidden="true" role="dialog" aria-modal="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-header">
+            <h3>Xóa tài khoản</h3>
+            <button type="button" class="modal-close" data-close-modal aria-label="Đóng">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-warning">
+                <strong>Bạn có chắc muốn xóa tài khoản này?</strong>
+                <div id="deleteUserSummary">Hành động này không thể hoàn tác.</div>
+            </div>
+            <div id="deleteUserFeedback" class="form-feedback" role="alert"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-close-modal>Hủy</button>
+                <button type="button" class="btn-primary" id="deleteUserConfirm">Xóa tài khoản</button>
+            </div>
+        </div>
     </div>
 </div>
 

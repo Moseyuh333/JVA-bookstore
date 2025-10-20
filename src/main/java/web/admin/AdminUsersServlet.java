@@ -74,8 +74,12 @@ public class AdminUsersServlet extends HttpServlet {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     String label = rs.getString(1);
-                    if (label != null && !label.isEmpty()) {
-                        values.put(label.toLowerCase(Locale.US), label);
+                    if (label == null) {
+                        continue;
+                    }
+                    String trimmed = label.trim();
+                    if (!trimmed.isEmpty()) {
+                        values.put(trimmed.toLowerCase(Locale.US), trimmed);
                     }
                 }
             }
@@ -83,10 +87,9 @@ public class AdminUsersServlet extends HttpServlet {
             System.err.println("[AdminUsersServlet] Unable to load enum values for " + typeName + ": " + e.getMessage());
         }
 
-        if (values.isEmpty()) {
-            for (String fallback : fallbacks) {
-                values.put(fallback.toLowerCase(Locale.US), fallback);
-            }
+        for (String fallback : fallbacks) {
+            String key = fallback.toLowerCase(Locale.US);
+            values.putIfAbsent(key, key);
         }
 
         return Collections.unmodifiableMap(values);
