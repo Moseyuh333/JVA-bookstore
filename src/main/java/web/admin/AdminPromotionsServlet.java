@@ -296,7 +296,8 @@ public class AdminPromotionsServlet extends HttpServlet {
 
     private String escapeJson(String str) {
         if (str == null) return "";
-        return str.replace("\\", "\\\\")
+        return str.replaceAll("[\\x00-\\x1F\\x7F-\\x9F]", "")
+                  .replace("\\", "\\\\")
                   .replace("\"", "\\\"")
                   .replace("\n", "\\n")
                   .replace("\r", "\\r");
