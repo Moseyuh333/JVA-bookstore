@@ -871,13 +871,12 @@
                 </div>
                 <div class="form-group">
                     <label for="createRole">Quyền</label>
-                    <input list="roleOptions" id="createRole" name="role" placeholder="admin, customer, seller, shipper">
-                    <datalist id="roleOptions">
-                        <option value="admin">
-                        <option value="customer">
-                        <option value="seller">
-                        <option value="shipper">
-                    </datalist>
+                    <select id="createRole" name="role">
+                        <option value="admin">Quản trị viên</option>
+                        <option value="customer" selected>Khách hàng</option>
+                        <option value="seller">Người bán</option>
+                        <option value="shipper">Nhân viên giao hàng</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="createStatus">Trạng thái</label>

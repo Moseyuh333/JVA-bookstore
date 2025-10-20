@@ -88,8 +88,12 @@ public class AdminUsersServlet extends HttpServlet {
         }
 
         for (String fallback : fallbacks) {
-            String key = fallback.toLowerCase(Locale.US);
-            values.putIfAbsent(key, key);
+            if (fallback == null || fallback.trim().isEmpty()) {
+                continue;
+            }
+            String trimmed = fallback.trim();
+            String key = trimmed.toLowerCase(Locale.US);
+            values.putIfAbsent(key, trimmed);
         }
 
         return Collections.unmodifiableMap(values);
