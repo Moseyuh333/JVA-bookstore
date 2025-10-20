@@ -272,7 +272,7 @@
                     <div class="col-lg-5" id="orderDetailColumn">
                         <div class="card detail-card">
                             <div class="card-header bg-white sticky-actions">
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center justify-content-between gap-2">
                                     <div class="d-flex align-items-center gap-3">
                                         <h2 class="h5 mb-0">Chi tiết đơn hàng</h2>
                                         <span id="detailStatusBadge"></span>
