@@ -77,16 +77,24 @@ public class AdminCategoriesServlet extends HttpServlet {
 
     private void listCategories(HttpServletRequest req, PrintWriter out) throws SQLException {
         String search = req.getParameter("search");
+        String searchType = req.getParameter("searchType");
+
         StringBuilder sql = new StringBuilder(
-            "SELECT id, name, total_products, created_at " +
+            "SELECT id, name, COALESCE(total_products, 0) AS total_products, created_at " +
             "FROM categories WHERE 1=1"
         );
 
         if (search != null && !search.trim().isEmpty()) {
-            if ("id".equalsIgnoreCase(req.getParameter("searchType"))) {
-                sql.append(" AND CAST(id AS TEXT) ILIKE ?");
-            } else {
-                sql.append(" AND name ILIKE ?");
+            switch (searchType != null ? searchType.toLowerCase() : "all") {
+                case "id":
+                    sql.append(" AND CAST(id AS TEXT) ILIKE ?");
+                    break;
+                case "name":
+                case "description": // hiện tại không có description, nên dùng chung name
+                case "all":
+                default:
+                    sql.append(" AND name ILIKE ?");
+                    break;
             }
         }
 
@@ -98,7 +106,7 @@ public class AdminCategoriesServlet extends HttpServlet {
         try (Connection conn = DBUtil.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            // Gán parameter nếu có tìm kiếm
+            // Thêm tham số nếu có tìm kiếm
             if (search != null && !search.trim().isEmpty()) {
                 pstmt.setString(1, "%" + search.trim() + "%");
             }
@@ -126,6 +134,7 @@ public class AdminCategoriesServlet extends HttpServlet {
         json.append("]}");
         out.write(json.toString());
     }
+
 
     private void createCategory(HttpServletRequest req, PrintWriter out) throws SQLException {
         String name = req.getParameter("name");
