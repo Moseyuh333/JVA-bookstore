@@ -208,21 +208,20 @@ public class AdminDashboardServlet extends HttpServlet {
     private JsonObject getTopSellers() throws SQLException {
         JsonObject topSellers = new JsonObject();
 
-         try (Connection conn = DBUtil.getConnection()) {
-             String query = "SELECT \n" +
-                 "    s.id AS shop_id,\n" +
-                 "    s.name AS store_name,\n" +
-                 "    s.status,\n" +
-                 "    COUNT(o.id) AS total_orders,\n" +
-                 "    COALESCE(SUM(o.total_amount), 0) AS revenue,\n" +
-                 "    ROUND(s.commission_rate, 2) AS commission_rate\n" +
-                 "FROM shops s\n" +
-                 "LEFT JOIN orders o \n" +
-                 "    ON o.shop_id = s.id \n" +
-                 "    AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered')\n" +
-                 "GROUP BY s.id, s.name, s.status, s.commission_rate\n" +
-                 "ORDER BY revenue DESC\n" +
-                 "LIMIT 5";
+        try (Connection conn = DBUtil.getConnection()) {
+            String query = "SELECT " +
+                "s.id AS shop_id, " +
+                "s.name AS store_name, " +
+                "s.status, " +
+                "COUNT(o.id) AS total_orders, " +
+                "COALESCE(SUM(o.total_amount), 0) AS revenue, " +
+                "ROUND(s.commission_rate, 2) AS commission_rate " +
+                "FROM shops s " +
+                "LEFT JOIN orders o ON o.shop_id = s.id " +
+                "AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered') " +
+                "GROUP BY s.id, s.name, s.status, s.commission_rate " +
+                "ORDER BY revenue DESC, total_orders DESC " +
+                "LIMIT 5";
 
             try (PreparedStatement stmt = conn.prepareStatement(query);
                  ResultSet rs = stmt.executeQuery()) {
