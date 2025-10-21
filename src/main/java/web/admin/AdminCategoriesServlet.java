@@ -101,12 +101,8 @@ public class AdminCategoriesServlet extends HttpServlet {
             // Gán parameter nếu có tìm kiếm
             if (search != null && !search.trim().isEmpty()) {
                 String pattern = "%" + search.trim() + "%";
-                if (sql.indexOf("?") == sql.lastIndexOf("?")) {
-                    pstmt.setString(1, pattern);
-                } else {
-                    pstmt.setString(1, pattern);
-                    pstmt.setString(2, pattern);
-                }
+                pstmt.setString(1, pattern);
+                pstmt.setString(2, pattern);
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
