@@ -1108,14 +1108,12 @@ public class DBUtil {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    //String r = rs.getString("1");
-                    return rs.getString("role");
-                    //return (r == null || r.isBlank()) ? "user" : r.trim();
+                    String r = rs.getString("1");
+                    return (r == null || r.isBlank()) ? "user" : r.trim();
                 }
-                return null;
             }
         }
-        //return "user";
+        return "user";
     }
 
 }
