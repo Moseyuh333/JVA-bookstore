@@ -348,7 +348,6 @@
                                         <th>Giá</th>
                                         <th>Tồn kho</th>
                                         <th>Shop</th>
-                                        <th>Chiết khấu</th>
                                         <th>Hành động</th>
                                     </tr>
                                 </thead>
