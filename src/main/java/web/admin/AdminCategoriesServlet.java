@@ -74,7 +74,7 @@ public class AdminCategoriesServlet extends HttpServlet {
         String search = req.getParameter("search");
         String searchType = req.getParameter("searchType");
 
-        StringBuilder sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories ");
+        StringBuilder sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories");
 
         if (search != null && !search.trim().isEmpty()) {
             search = "%" + search.trim().toLowerCase() + "%";
@@ -87,7 +87,7 @@ public class AdminCategoriesServlet extends HttpServlet {
             }
         }
 
-        sql.append("ORDER BY id ASC");
+        sql.append(" ORDER BY id ASC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"categories\":[");
