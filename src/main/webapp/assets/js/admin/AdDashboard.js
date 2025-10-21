@@ -181,7 +181,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 <td><strong>${seller.store_name || "N/A"}</strong></td>
                 <td>${seller.total_orders || 0}</td>
                 <td><strong>${formatCurrency(seller.revenue || 0)}₫</strong></td>
-                <td><span class="badge-percentage">${Math.round((seller.commission_rate || 0) * 100)}%</span></td>
+                <td><span class="badge-percentage">${seller.commission_rate ?? 0}%</span></td>
                 <td><span class="badge-percentage">Hoạt động</span></td>
             `;
             tbody.appendChild(row);

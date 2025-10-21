@@ -209,19 +209,22 @@ public class AdminDashboardServlet extends HttpServlet {
         JsonObject topSellers = new JsonObject();
 
         try (Connection conn = DBUtil.getConnection()) {
-            String query = "SELECT " +
-                "s.id AS shop_id, " +
-                "s.name AS store_name, " +
-                "s.status, " +
-                "COUNT(o.id) AS total_orders, " +
-                "COALESCE(SUM(o.total_amount), 0) AS revenue, " +
-                "ROUND(s.commission_rate, 2) AS commission_rate " +
-                "FROM shops s " +
-                "LEFT JOIN orders o ON o.shop_id = s.id " +
-                "AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered') " +
-                "GROUP BY s.id, s.name, s.status, s.commission_rate " +
-                "ORDER BY revenue DESC, total_orders DESC " +
-                "LIMIT 5";
+        String query =
+            "SELECT " +
+            "s.id AS shop_id, " +
+            "s.name AS store_name, " +
+            "s.status, " +
+            "COUNT(DISTINCT o.id) AS total_orders, " +
+            "COALESCE(SUM(oi.unit_price * oi.quantity), 0) AS revenue, " +
+            "ROUND(s.commission_rate, 2) AS commission_rate " +
+            "FROM shops s " +
+            "LEFT JOIN books b ON b.shop_id = s.id " +
+            "LEFT JOIN order_items oi ON oi.book_id = b.id " +
+            "LEFT JOIN orders o ON o.id = oi.order_id " +
+            "AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered') " +
+            "GROUP BY s.id, s.name, s.status, s.commission_rate " +
+            "ORDER BY revenue DESC, total_orders DESC " +
+            "LIMIT 5";
 
             try (PreparedStatement stmt = conn.prepareStatement(query);
                  ResultSet rs = stmt.executeQuery()) {
@@ -233,7 +236,7 @@ public class AdminDashboardServlet extends HttpServlet {
                     seller.addProperty("store_name", rs.getString("store_name"));
                     seller.addProperty("total_orders", rs.getInt("total_orders"));
                     seller.addProperty("revenue", rs.getDouble("revenue"));
-                    seller.addProperty("commission_rate", 0);
+                    seller.addProperty("commission_rate", rs.getDouble("commission_rate"));
                     sellers.add(String.valueOf(index), seller);
                     index++;
                 }
