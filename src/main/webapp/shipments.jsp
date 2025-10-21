@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page isELIgnored="true" %>
 <%
   String ctx = request.getContextPath();
 %>
