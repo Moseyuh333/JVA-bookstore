@@ -28,7 +28,7 @@ public class AdminCategoriesServlet extends HttpServlet {
 
         try {
             if ("list".equals(action)) {
-                listCategories(out);
+                listCategories(req, out);
             } else {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write("{\"error\":\"Invalid action\"}");
@@ -70,27 +70,52 @@ public class AdminCategoriesServlet extends HttpServlet {
         }
     }
 
-    private void listCategories(PrintWriter out) throws SQLException {
-        String sql = "SELECT id, name, total_products as product_count, created_at FROM categories ORDER BY name";
+    private void listCategories(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String search = req.getParameter("search");
+        String searchType = req.getParameter("searchType");
+
+        StringBuilder sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories ORDER BY name");
+
+        if (search != null && !search.trim().isEmpty()) {
+            search = "%" + search.trim().toLowerCase() + "%";
+            if ("id".equalsIgnoreCase(searchType)) {
+                sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories WHERE CAST(id AS TEXT) LIKE ? ");
+            } else if ("name".equalsIgnoreCase(searchType)) {
+                sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories WHERE LOWER(name) LIKE ? ");
+            } else {
+                sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories WHERE LOWER(name) LIKE ? OR CAST(id AS TEXT) LIKE ? ");
+            }
+        }
+
+        sql.append("ORDER BY id ASC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"categories\":[");
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            if (search != null && !search.trim().isEmpty()) {
+                if ("id".equalsIgnoreCase(searchType) || "name".equalsIgnoreCase(searchType)) {
+                    pstmt.setString(1, search);
+                } else {
+                    pstmt.setString(1, search);
+                    pstmt.setString(2, search);
+                }
 
-            boolean first = true;
-            while (rs.next()) {
-                if (!first) json.append(",");
-                first = false;
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    first = false;
 
-                json.append("{")
-                    .append("\"id\":").append(rs.getInt("id")).append(",")
-                    .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
-                    .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
-                    .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
-                    .append("}");
+                    json.append("{")
+                        .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
+                        .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
+                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
+                        .append("}");
+                }
             }
         }
 
