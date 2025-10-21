@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const escapeHtml = (text) => {
         if (text === null || text === undefined) return "";
         return String(text).replace(/[&<>"']/g, (m) => {
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+            const map = { '&': '&amp;', '<': '<', '>': '>', '"': '"', "'": '&#39;' };
             return map[m];
         });
     };
@@ -81,16 +81,24 @@ document.addEventListener("DOMContentLoaded", () => {
         hideEmpty();
         list.forEach(c => {
             const rate = c.rate ? c.rate + "%" : "-";
-            const since = formatDate(c.since || c.created_at);
-            const note = c.note || c.description || "-";
+            const createdAt = formatDate(c.created_at);
+            const updatedAt = formatDate(c.updated_at);
+            const type = c.type || "-";
+            const minRevenue = c.min_revenue ? Number(c.min_revenue).toLocaleString('vi-VN') + "₫" : "-";
+            const maxRevenue = c.max_revenue ? Number(c.max_revenue).toLocaleString('vi-VN') + "₫" : "∞";
+            const status = c.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>';
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${escapeHtml(c.id || c.commission_id || '-')}</td>
-                <td>${escapeHtml(c.shop || c.shop_name || '-')}</td>
+                <td>${escapeHtml(c.id.toString())}</td>
+                <td>${escapeHtml(c.name)}</td>
+                <td>${escapeHtml(type)}</td>
+                <td>${minRevenue}</td>
+                <td>${maxRevenue}</td>
                 <td>${rate}</td>
-                <td>${since}</td>
-                <td>${escapeHtml(note)}</td>
+                <td>${status}</td>
+                <td>${createdAt}</td>
+                <td>${updatedAt}</td>
                 <td>
                     <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
@@ -112,6 +120,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 commissions = response.commissions;
                 filteredCommissions = [...commissions];
                 renderTable(filteredCommissions);
+
+                // Update stats
+                const totalCommissionEl = document.getElementById("totalCommission");
+                const activeCommissionEl = document.getElementById("activeCommission");
+                const averageRateEl = document.getElementById("averageRate");
+                if (totalCommissionEl) totalCommissionEl.textContent = response.total || 0;
+                if (activeCommissionEl) activeCommissionEl.textContent = response.active || 0;
+                if (averageRateEl) averageRateEl.textContent = (response.average_rate || 0).toFixed(2) + "%";
             } else {
                 console.error("Invalid response format:", response);
                 showEmpty();
@@ -131,21 +147,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (searchType === "all") {
             filteredCommissions = commissions.filter(c =>
-                (c.shop || c.shop_name || '').toLowerCase().includes(keyword) ||
-                (c.rate || '').toString().toLowerCase().includes(keyword) ||
-                (c.note || c.description || '').toLowerCase().includes(keyword)
+                (c.name || '').toLowerCase().includes(keyword) ||
+                (c.type || '').toLowerCase().includes(keyword) ||
+                (c.rate || '').toString().toLowerCase().includes(keyword)
             );
-        } else if (searchType === "shop_name") {
+        } else if (searchType === "name") {
             filteredCommissions = commissions.filter(c =>
-                (c.shop || c.shop_name || '').toLowerCase().includes(keyword)
+                (c.name || '').toLowerCase().includes(keyword)
+            );
+        } else if (searchType === "type") {
+            filteredCommissions = commissions.filter(c =>
+                (c.type || '').toLowerCase().includes(keyword)
             );
         } else if (searchType === "rate") {
             filteredCommissions = commissions.filter(c =>
                 (c.rate || '').toString().toLowerCase().includes(keyword)
-            );
-        } else if (searchType === "description") {
-            filteredCommissions = commissions.filter(c =>
-                (c.note || c.description || '').toLowerCase().includes(keyword)
             );
         } else {
             filteredCommissions = [...commissions];

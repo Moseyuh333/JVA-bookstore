@@ -9,7 +9,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý chiết khấu - Bookish Admin</title>
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -18,7 +18,7 @@
     <script src="https://unpkg.com/feather-icons"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap&subset=vietnamese" rel="stylesheet">
-    
+
     <style>
         * {
             margin: 0;
@@ -450,7 +450,7 @@
                         </div>
                         <div class="stat-content">
                             <h3>Tổng chính sách</h3>
-                            <div class="number" id="totalPolicies">0</div>
+                            <div class="number" id="totalCommission">0</div>
                         </div>
                     </div>
                     <div class="stat-box revenue">
@@ -459,7 +459,7 @@
                         </div>
                         <div class="stat-content">
                             <h3>Chiết khấu trung bình</h3>
-                            <div class="number" id="avgCommission">5.2%</div>
+                            <div class="number" id="averageRate">5.2%</div>
                         </div>
                     </div>
                 </div>
@@ -477,9 +477,9 @@
                         <div class="filter-form">
                             <select id="commissionSearchType" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
                                 <option value="all">Tất cả</option>
-                                <option value="shop_name">Tên shop</option>
+                                <option value="name">Tên chính sách</option>
+                                <option value="type">Loại</option>
                                 <option value="rate">Tỷ lệ</option>
-                                <option value="description">Mô tả</option>
                             </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
@@ -506,12 +506,15 @@
                             <table class="table-custom">
                                 <thead>
                                     <tr>
+                                        <th>ID</th>
                                         <th>Tên chính sách</th>
-                                        <th>Mức doanh số tối thiểu</th>
-                                        <th>Mức doanh số tối đa</th>
+                                        <th>Loại</th>
+                                        <th>Doanh số tối thiểu</th>
+                                        <th>Doanh số tối đa</th>
                                         <th>% Chiết khấu</th>
-                                        <th>Loại chiết khấu</th>
+                                        <th>Trạng thái</th>
                                         <th>Ngày tạo</th>
+                                        <th>Ngày sửa đổi gần nhất</th>
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
