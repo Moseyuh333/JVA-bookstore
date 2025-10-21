@@ -75,7 +75,12 @@ public class AdminPromotionsServlet extends HttpServlet {
         String searchType = req.getParameter("searchType");
 
         StringBuilder sql = new StringBuilder(
-            "SELECT id, name, code, description, discount_scope, discount_type, discount_value, start_date as start_at, end_date as end_at, status as active, shop_id " +
+            "SELECT id, name, code, description, " +
+            "       discount_type AS type, " +
+            "       discount_kind AS kind, " +
+            "       discount_value, " +
+            "       start_date AS start_at, end_date AS end_at, " +
+            "       status AS active, shop_id " +
             "FROM promotions WHERE 1=1"
         );
 
@@ -135,8 +140,8 @@ public class AdminPromotionsServlet extends HttpServlet {
                         .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
                         .append("\"code\":\"").append(escapeJson(rs.getString("code"))).append("\",")
                         .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
-                        .append("\"scope\":\"").append(escapeJson(rs.getString("discount_scope"))).append("\",")
-                        .append("\"discount_type\":\"").append(escapeJson(rs.getString("discount_type"))).append("\",")
+                        .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
+                        .append("\"kind\":\"").append(escapeJson(rs.getString("kind"))).append("\",")
                         .append("\"discount_value\":").append(rs.getBigDecimal("discount_value")).append(",")
                         .append("\"start_at\":\"").append(rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "").append("\",")
                         .append("\"end_at\":\"").append(rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "").append("\",")
@@ -160,7 +165,12 @@ public class AdminPromotionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "SELECT id, name, code, description, discount_scope, discount_type, discount_value, start_date as start_at, end_date as end_at, status as active, shop_id " +
+        String sql = "SELECT id, name, code, description, " +
+                     "       discount_type AS type, " +
+                     "       discount_kind AS kind, " +
+                     "       discount_value, " +
+                     "       start_date AS start_at, end_date AS end_at, " +
+                     "       status AS active, shop_id " +
                      "FROM promotions WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
@@ -175,8 +185,8 @@ public class AdminPromotionsServlet extends HttpServlet {
                         + "\"name\":\"" + escapeJson(rs.getString("name")) + "\","
                         + "\"code\":\"" + escapeJson(rs.getString("code")) + "\","
                         + "\"description\":\"" + escapeJson(rs.getString("description")) + "\","
-                        + "\"scope\":\"" + escapeJson(rs.getString("discount_scope")) + "\","
-                        + "\"discount_type\":\"" + escapeJson(rs.getString("discount_type")) + "\","
+                        + "\"type\":\"" + escapeJson(rs.getString("type")) + "\","
+                        + "\"kind\":\"" + escapeJson(rs.getString("kind")) + "\","
                         + "\"discount_value\":" + rs.getBigDecimal("discount_value") + ","
                         + "\"start_at\":\"" + (rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "") + "\","
                         + "\"end_at\":\"" + (rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "") + "\","
@@ -195,8 +205,8 @@ public class AdminPromotionsServlet extends HttpServlet {
         String name = req.getParameter("name");
         String code = req.getParameter("code");
         String description = req.getParameter("description");
-        String scope = req.getParameter("scope");
-        String type = req.getParameter("discount_type");
+        String type = req.getParameter("type");
+        String kind = req.getParameter("kind");
         String discountValueStr = req.getParameter("discount_value");
         String startAt = req.getParameter("start_at");
         String endAt = req.getParameter("end_at");
@@ -212,7 +222,7 @@ public class AdminPromotionsServlet extends HttpServlet {
         boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
         Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
 
-        String sql = "INSERT INTO promotions (name, code, description, discount_scope, discount_type, discount_value, start_date, end_date, status, shop_id) " +
+        String sql = "INSERT INTO promotions (name, code, description, discount_type, discount_kind, discount_value, start_date, end_date, status, shop_id) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBUtil.getConnection();
@@ -221,8 +231,8 @@ public class AdminPromotionsServlet extends HttpServlet {
             pstmt.setString(1, name.trim());
             pstmt.setString(2, code.trim().toUpperCase());
             pstmt.setString(3, description != null ? description.trim() : null);
-            pstmt.setString(4, scope);
-            pstmt.setString(5, type);
+            pstmt.setString(4, type);
+            pstmt.setString(5, kind);
             pstmt.setBigDecimal(6, discountValue);
             pstmt.setString(7, startAt);
             pstmt.setString(8, endAt);
@@ -247,8 +257,8 @@ public class AdminPromotionsServlet extends HttpServlet {
         String name = req.getParameter("name");
         String code = req.getParameter("code");
         String description = req.getParameter("description");
-        String scope = req.getParameter("scope");
-        String type = req.getParameter("discount_type");
+        String type = req.getParameter("type");
+        String kind = req.getParameter("kind");
         String discountValueStr = req.getParameter("discount_value");
         String startAt = req.getParameter("start_at");
         String endAt = req.getParameter("end_at");
@@ -265,7 +275,7 @@ public class AdminPromotionsServlet extends HttpServlet {
         boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
         Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
 
-        String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_scope = ?, discount_type = ?, discount_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
+        String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_type = ?, discount_kind = ?, discount_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -273,8 +283,8 @@ public class AdminPromotionsServlet extends HttpServlet {
             pstmt.setString(1, name.trim());
             pstmt.setString(2, code.trim().toUpperCase());
             pstmt.setString(3, description != null ? description.trim() : null);
-            pstmt.setString(4, scope);
-            pstmt.setString(5, type);
+            pstmt.setString(4, type);
+            pstmt.setString(5, kind);
             pstmt.setBigDecimal(6, discountValue);
             pstmt.setString(7, startAt);
             pstmt.setString(8, endAt);
