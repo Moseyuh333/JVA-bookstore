@@ -31,7 +31,7 @@ public final class ReviewDAO {
         }
     }
 
-    public static void upsertReview(long userId, long bookId, int rating, String title, String content, String mediaUrl, String mediaType) throws SQLException {
+    public static ReviewRecord upsertReview(long userId, long bookId, int rating, String title, String content, String mediaUrl, String mediaType) throws SQLException {
         if (!canReview(userId, bookId)) {
             throw new SQLException("Bạn chỉ có thể đánh giá những sản phẩm đã mua");
         }
@@ -64,6 +64,7 @@ public final class ReviewDAO {
             stmt.setString(6, normalizedMediaUrl);
             stmt.setString(7, normalizedMediaType);
             stmt.executeUpdate();
+            return fetchReview(conn, userId, bookId);
         }
     }
 
@@ -91,19 +92,7 @@ public final class ReviewDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 List<ReviewRecord> list = new ArrayList<>();
                 while (rs.next()) {
-                    ReviewRecord record = new ReviewRecord();
-                    record.id = rs.getLong("id");
-                    record.userId = rs.getLong("user_id");
-                    record.bookId = rs.getLong("book_id");
-                    record.rating = rs.getInt("rating");
-                    record.title = rs.getString("title");
-                    record.content = rs.getString("content");
-                    record.mediaUrl = rs.getString("media_url");
-                    record.mediaType = rs.getString("media_type");
-                    record.createdAt = toLocalDateTime(rs.getTimestamp("created_at"));
-                    record.updatedAt = toLocalDateTime(rs.getTimestamp("updated_at"));
-                    record.reviewerName = rs.getString("full_name");
-                    list.add(record);
+                    list.add(mapRecord(rs));
                 }
                 return list;
             }
@@ -119,22 +108,46 @@ public final class ReviewDAO {
             stmt.setLong(2, bookId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    ReviewRecord record = new ReviewRecord();
-                    record.id = rs.getLong("id");
-                    record.userId = rs.getLong("user_id");
-                    record.bookId = rs.getLong("book_id");
-                    record.rating = rs.getInt("rating");
-                    record.title = rs.getString("title");
-                    record.content = rs.getString("content");
-                    record.mediaUrl = rs.getString("media_url");
-                    record.mediaType = rs.getString("media_type");
-                    record.createdAt = toLocalDateTime(rs.getTimestamp("created_at"));
-                    record.updatedAt = toLocalDateTime(rs.getTimestamp("updated_at"));
-                    return record;
+                    return mapRecord(rs);
                 }
                 return null;
             }
         }
+    }
+
+    private static ReviewRecord fetchReview(Connection conn, long userId, long bookId) throws SQLException {
+        String sql = "SELECT id, user_id, book_id, rating, title, content, media_url, media_type, created_at, updated_at "
+                + "FROM book_reviews WHERE user_id = ? AND book_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setLong(2, bookId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapRecord(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    private static ReviewRecord mapRecord(ResultSet rs) throws SQLException {
+        ReviewRecord record = new ReviewRecord();
+        record.id = rs.getLong("id");
+        record.userId = rs.getLong("user_id");
+        record.bookId = rs.getLong("book_id");
+        record.rating = rs.getInt("rating");
+        record.title = rs.getString("title");
+        record.content = rs.getString("content");
+        record.mediaUrl = rs.getString("media_url");
+        record.mediaType = rs.getString("media_type");
+        record.createdAt = toLocalDateTime(rs.getTimestamp("created_at"));
+        record.updatedAt = toLocalDateTime(rs.getTimestamp("updated_at"));
+        try {
+            record.reviewerName = rs.getString("full_name");
+        } catch (SQLException ignored) {
+            // Column only available in listReviews join
+        }
+        return record;
     }
 
     public static class ReviewRecord {

@@ -4,12 +4,15 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import dao.ReviewDAO;
 import utils.AuthUtil;
+import utils.FileStorageUtil;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -18,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @WebServlet(name = "ReviewServlet", urlPatterns = {"/api/reviews", "/api/reviews/*"})
+@MultipartConfig
 public class ReviewServlet extends HttpServlet {
 
     private final Gson gson = new Gson();
@@ -46,21 +50,59 @@ public class ReviewServlet extends HttpServlet {
                 sendUnauthorized(response);
                 return;
             }
-            Map<String, Object> payload = readJson(request);
-            Long bookId = parseId(payload.get("bookId"));
-            int rating = parseInt(payload.get("rating"), -1);
-            if (bookId == null || rating < 1 || rating > 5) {
+            String contentType = request.getContentType() != null ? request.getContentType().toLowerCase() : "";
+            boolean isMultipart = contentType.contains("multipart/form-data");
+            ReviewPayload payload;
+            Part mediaPart = null;
+            if (isMultipart) {
+                payload = parsePayloadFromMultipart(request);
+                mediaPart = safeGetPart(request, "media");
+            } else {
+                payload = parsePayloadFromJson(readJson(request));
+            }
+            if (payload.bookId == null || payload.rating < 1 || payload.rating > 5) {
                 sendBadRequest(response, "Dữ liệu đánh giá không hợp lệ");
                 return;
             }
-            String title = stringValue(payload.get("title"));
-            String content = stringValue(payload.get("content"));
-            String mediaUrl = stringValue(payload.get("mediaUrl"));
-            String mediaType = stringValue(payload.get("mediaType"));
-            ReviewDAO.upsertReview(userId, bookId, rating, title, content, mediaUrl, mediaType);
+            ReviewDAO.ReviewRecord existing = ReviewDAO.findUserReview(userId, payload.bookId);
+            String contextPath = request.getContextPath();
+            if (payload.mediaUrl != null) {
+                payload.mediaUrl = FileStorageUtil.normalizeReviewMediaUrl(payload.mediaUrl, contextPath);
+                if (payload.mediaUrl == null) {
+                    payload.mediaType = null;
+                }
+            }
+            if (!payload.removeMedia && (payload.mediaUrl == null || payload.mediaUrl.isEmpty()) && existing != null) {
+                payload.mediaUrl = existing.mediaUrl;
+                payload.mediaType = existing.mediaType;
+            }
+            try {
+                if (mediaPart != null && mediaPart.getSize() > 0) {
+                    FileStorageUtil.StoredFile storedFile = FileStorageUtil.storeReviewMedia(mediaPart);
+                    payload.mediaUrl = storedFile.getPublicUrl();
+                    payload.mediaType = storedFile.getMediaType();
+                    payload.removeMedia = false;
+                }
+            } catch (IOException uploadEx) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write(gson.toJson(buildError(uploadEx.getMessage())));
+                return;
+            }
+            if (payload.removeMedia) {
+                payload.mediaUrl = null;
+                payload.mediaType = null;
+            }
+            ReviewDAO.ReviewRecord saved = ReviewDAO.upsertReview(userId, payload.bookId, payload.rating, payload.title, payload.content, payload.mediaUrl, payload.mediaType);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
+            result.put("review", saved);
             response.getWriter().write(gson.toJson(result));
+            if (existing != null && existing.mediaUrl != null) {
+                boolean shouldDelete = payload.mediaUrl == null || !existing.mediaUrl.equals(payload.mediaUrl);
+                if (shouldDelete) {
+                    FileStorageUtil.deleteReviewMedia(existing.mediaUrl, contextPath);
+                }
+            }
         } catch (SQLException ex) {
             handleServerError(response, ex);
         }
@@ -87,10 +129,14 @@ public class ReviewServlet extends HttpServlet {
                 sendNotFound(response);
                 return;
             }
+            ReviewDAO.ReviewRecord existing = ReviewDAO.findUserReview(userId, bookId);
             ReviewDAO.deleteReview(userId, bookId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             response.getWriter().write(gson.toJson(result));
+            if (existing != null && existing.mediaUrl != null) {
+                FileStorageUtil.deleteReviewMedia(existing.mediaUrl, request.getContextPath());
+            }
         } catch (SQLException ex) {
             handleServerError(response, ex);
         }
@@ -134,6 +180,40 @@ public class ReviewServlet extends HttpServlet {
             response.getWriter().write(gson.toJson(payload));
         } catch (SQLException ex) {
             handleServerError(response, ex);
+        }
+    }
+
+    private ReviewPayload parsePayloadFromJson(Map<String, Object> data) {
+        ReviewPayload payload = new ReviewPayload();
+        payload.bookId = parseId(data.get("bookId"));
+        payload.rating = parseInt(data.get("rating"), -1);
+        payload.title = stringValue(data.get("title"));
+        payload.content = stringValue(data.get("content"));
+        payload.mediaUrl = stringValue(data.get("mediaUrl"));
+        payload.mediaType = stringValue(data.get("mediaType"));
+        Object remove = data.get("removeMedia");
+        payload.removeMedia = remove instanceof Boolean ? (Boolean) remove : "true".equalsIgnoreCase(stringValue(remove));
+        return payload;
+    }
+
+    private ReviewPayload parsePayloadFromMultipart(HttpServletRequest request) {
+        ReviewPayload payload = new ReviewPayload();
+        payload.bookId = parseId(request.getParameter("bookId"));
+        payload.rating = parseInt(request.getParameter("rating"), -1);
+        payload.title = stringValue(request.getParameter("title"));
+        payload.content = stringValue(request.getParameter("content"));
+        payload.mediaUrl = stringValue(request.getParameter("mediaUrl"));
+        payload.mediaType = stringValue(request.getParameter("mediaType"));
+        String remove = stringValue(request.getParameter("removeMedia"));
+        payload.removeMedia = remove != null && ("true".equalsIgnoreCase(remove) || "1".equals(remove));
+        return payload;
+    }
+
+    private Part safeGetPart(HttpServletRequest request, String name) {
+        try {
+            return request.getPart(name);
+        } catch (Exception ex) {
+            return null;
         }
     }
 
@@ -229,5 +309,15 @@ public class ReviewServlet extends HttpServlet {
         ex.printStackTrace();
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         response.getWriter().write(gson.toJson(buildError("Có lỗi xảy ra: " + ex.getMessage())));
+    }
+
+    private static final class ReviewPayload {
+        private Long bookId;
+        private int rating;
+        private String title;
+        private String content;
+        private String mediaUrl;
+        private String mediaType;
+        private boolean removeMedia;
     }
 }

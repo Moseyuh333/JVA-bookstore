@@ -101,15 +101,26 @@
 
         if (response.ok && data && data.token) {
           const enteredUsername = (formData.get('username') || '').trim();
-          localStorage.setItem('auth_token', data.token);
-          if (enteredUsername.length > 0) {
-            localStorage.setItem('auth_username', enteredUsername);
+          const isAdmin = data.redirect === '/admin-dashboard';
+          if (isAdmin) {
+            localStorage.setItem('admin_token', data.token);
+            if (enteredUsername.length > 0) {
+              localStorage.setItem('admin_username', enteredUsername);
+            } else {
+              localStorage.removeItem('admin_username');
+            }
           } else {
-            localStorage.removeItem('auth_username');
+            localStorage.setItem('auth_token', data.token);
+            if (enteredUsername.length > 0) {
+              localStorage.setItem('auth_username', enteredUsername);
+            } else {
+              localStorage.removeItem('auth_username');
+            }
           }
           showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
           setTimeout(function () {
-            window.location.href = contextPath + '/';
+            const redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/';
+            window.location.href = redirectUrl;
           }, 1200);
         } else {
           localStorage.removeItem('auth_token');

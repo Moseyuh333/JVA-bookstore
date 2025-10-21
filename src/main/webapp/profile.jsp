@@ -110,27 +110,6 @@
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save me-1"></i>Lưu thay đổi
                                     </button>
-
-
-
-                                        <c:if test="${sessionScope.user.role ne 'vendor'}">
-                                    <div class="mt-3">
-                                        <button id="registerVendorBtn" type="button" class="btn btn-warning w-100">
-                                            <i class="fas fa-store me-2"></i> Đăng ký trở thành người bán
-                                        </button>
-                                    </div>
-                                </c:if>
-
-                                <c:if test="${sessionScope.user.role eq 'vendor'}">
-                                    <div class="mt-3">
-                                        <a href="${pageContext.request.contextPath}/vendor/dashboard" class="btn btn-success w-100">
-                                            <i class="fas fa-store me-2"></i> Quản lý cửa hàng của tôi
-                                        </a>
-                                    </div>
-                                </c:if>
-
-
-
                                 </form>
                             </div>
                         </div>
@@ -2091,6 +2070,7 @@
                         <td>
                             <div class="fw-semibold">${escapeHtml(item.title || 'Sản phẩm')}</div>
                             ${item.author ? `<div class="text-muted small">${escapeHtml(item.author)}</div>` : ''}
+                            ${item.shopName ? `<div class="text-muted small"><i class="fas fa-store me-1"></i>${escapeHtml(item.shopName)}</div>` : ''}
                         </td>
                         <td class="text-center">${item.quantity}</td>
                         <td class="text-end">${formatCurrency(item.unitPrice)}</td>
@@ -2237,41 +2217,6 @@
                 }
             }, 5000);
         }
-
-        
-            document.addEventListener('DOMContentLoaded', function () {
-                const btn = document.getElementById('registerVendorBtn');
-                if (btn) {
-                    btn.addEventListener('click', async function () {
-                        if (confirm('Bạn có chắc muốn đăng ký trở thành người bán không?')) {
-                            const token = localStorage.getItem('token');
-                            if (!token) {
-                                alert('Vui lòng đăng nhập lại!');
-                                return;
-                            }
-
-                            const response = await fetch('/api/vendor/register', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': 'Bearer ' + token
-                                }
-                            });
-
-                            if (response.ok) {
-                                alert('Yêu cầu đăng ký đã được gửi. Chờ admin duyệt!');
-                                location.reload();
-                            } else {
-                                const msg = await response.text();
-                                alert('Đăng ký thất bại: ' + msg);
-                            }
-                        }
-                    });
-                }
-            });
-
-
-
     </script>
     <%@ include file="/WEB-INF/includes/footer.jsp" %>
     </html>

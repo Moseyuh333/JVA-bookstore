@@ -9,6 +9,7 @@ public class Order {
     private long id;
     private String code;
     private long userId;
+    private Integer shopId;
     private LocalDateTime orderDate;
     private String status;
     private String paymentStatus;
@@ -17,6 +18,7 @@ public class Order {
     private BigDecimal itemsSubtotal;
     private BigDecimal discountAmount;
     private BigDecimal shippingFee;
+    private String shippingAddress;
     private BigDecimal totalAmount;
     private String currency;
     private String couponCode;
@@ -49,6 +51,14 @@ public class Order {
 
     public void setUserId(long userId) {
         this.userId = userId;
+    }
+
+    public Integer getShopId() {
+        return shopId;
+    }
+
+    public void setShopId(Integer shopId) {
+        this.shopId = shopId;
     }
 
     public LocalDateTime getOrderDate() {
@@ -113,6 +123,14 @@ public class Order {
 
     public void setShippingFee(BigDecimal shippingFee) {
         this.shippingFee = shippingFee;
+    }
+
+    public String getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(String shippingAddress) {
+        this.shippingAddress = shippingAddress;
     }
 
     public BigDecimal getTotalAmount() {

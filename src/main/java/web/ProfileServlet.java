@@ -136,6 +136,18 @@ public class ProfileServlet extends HttpServlet {
                 case "recent-views":
                     recordRecentView(request, response);
                     break;
+                case "orders":
+                    if (segments.size() == 3 && "cancel".equalsIgnoreCase(segments.get(2))) {
+                        Long orderId = parseId(segments.get(1));
+                        if (orderId == null) {
+                            sendNotFound(response);
+                        } else {
+                            cancelUserOrder(request, response, orderId);
+                        }
+                    } else {
+                        sendNotFound(response);
+                    }
+                    break;
                 default:
                     sendNotFound(response);
                     break;
@@ -675,6 +687,34 @@ public class ProfileServlet extends HttpServlet {
         responseMap.put("success", true);
         responseMap.put("timeline", timeline);
         response.getWriter().write(gson.toJson(responseMap));
+    }
+
+    private void cancelUserOrder(HttpServletRequest request, HttpServletResponse response, long orderId)
+            throws IOException, SQLException {
+        Map<String, Object> responseMap = new HashMap<>();
+        Long userId = getRequiredUserId(request, response, responseMap);
+        if (userId == null) {
+            return;
+        }
+        Map<String, Object> requestData = readJsonRequest(request);
+        String reason = requestData != null ? stringValue(requestData.get("reason")) : null;
+        try {
+            Order order = OrderDAO.cancelOrder(orderId, userId, reason);
+            responseMap.put("success", true);
+            responseMap.put("message", "Đơn hàng đã được hủy.");
+            responseMap.put("order", order);
+            response.getWriter().write(gson.toJson(responseMap));
+        } catch (SQLException ex) {
+            String message = ex.getMessage() != null ? ex.getMessage() : "Không thể hủy đơn hàng.";
+            if (message.contains("Order not found")) {
+                sendNotFound(response);
+                return;
+            }
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            responseMap.put("success", false);
+            responseMap.put("message", message);
+            response.getWriter().write(gson.toJson(responseMap));
+        }
     }
 
     private void listUserAddresses(HttpServletRequest request, HttpServletResponse response) 

@@ -96,7 +96,15 @@ public class AuthServlet extends HttpServlet {
             }
             String token = JwtUtil.generateToken(subject);
             System.out.println("DEBUG Login - Token generated: " + (token != null));
-            String response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
+
+            // Check user role for admin redirect
+            String role = DBUtil.getUserRole(username);
+            String response;
+            if ("admin".equals(role)) {
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/admin-dashboard\"}";
+            } else {
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
+            }
             System.out.println("DEBUG Login - Response: " + response);
             out.write(response);
         } else {
