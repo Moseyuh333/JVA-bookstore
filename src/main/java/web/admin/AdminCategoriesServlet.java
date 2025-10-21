@@ -77,25 +77,13 @@ public class AdminCategoriesServlet extends HttpServlet {
 
     private void listCategories(HttpServletRequest req, PrintWriter out) throws SQLException {
         String search = req.getParameter("search");
-        String searchType = req.getParameter("searchType");
-
         StringBuilder sql = new StringBuilder(
-            "SELECT c.id, c.name, COALESCE(b.book_count, 0) as product_count, c.created_at " +
-            "FROM categories c " +
-            "LEFT JOIN (SELECT category, COUNT(*) as book_count FROM books GROUP BY category) b ON c.name = b.category " +
-            "WHERE 1=1"
+            "SELECT id, name, total_products, created_at " +
+            "FROM categories WHERE 1=1"
         );
 
-        // Add search conditions
         if (search != null && !search.trim().isEmpty()) {
-            if ("name".equals(searchType)) {
-                sql.append(" AND name ILIKE ?");
-            } else if ("description".equals(searchType)) {
-                sql.append(" AND description ILIKE ?");
-            } else {
-                // "all" search
-                sql.append(" AND (name ILIKE ? OR description ILIKE ?)");
-            }
+            sql.append(" AND name ILIKE ?");
         }
 
         sql.append(" ORDER BY name");
@@ -104,19 +92,11 @@ public class AdminCategoriesServlet extends HttpServlet {
         json.append("{\"categories\":[");
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            // Set search parameters
-            int paramIndex = 1;
+            // Gán parameter nếu có tìm kiếm
             if (search != null && !search.trim().isEmpty()) {
-                String pattern = "%" + search.trim() + "%";
-                if ("name".equals(searchType) || "description".equals(searchType)) {
-                    pstmt.setString(paramIndex++, pattern);
-                } else {
-                    // "all" search
-                    pstmt.setString(paramIndex++, pattern);
-                    pstmt.setString(paramIndex++, pattern);
-                }
+                pstmt.setString(1, "%" + search.trim() + "%");
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -128,8 +108,12 @@ public class AdminCategoriesServlet extends HttpServlet {
                     json.append("{")
                         .append("\"id\":").append(rs.getInt("id")).append(",")
                         .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
-                        .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
-                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : "").append("\"")
+                        .append("\"total_products\":").append(rs.getInt("total_products")).append(",")
+                        .append("\"created_at\":\"")
+                        .append(rs.getTimestamp("created_at") != null
+                            ? escapeJson(rs.getTimestamp("created_at").toString())
+                            : "")
+                        .append("\"")
                         .append("}");
                 }
             }
