@@ -1,5 +1,4 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page isELIgnored="true" %>
 <%
   String ctx = request.getContextPath();
 %>
@@ -7,82 +6,85 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Đơn được phân công</title>
+  <title>Danh sách vận đơn</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body{margin:0;background:linear-gradient(135deg,#2b1a12 0%,#20150f 100%);color:#e5e7eb;font-family:system-ui}
-    .wrap{max-width:1100px;margin:auto;padding:16px}
-    .top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#190f0a;border:1px solid #3b2a1f;border-radius:14px;margin:16px 0}
-    .brand{display:flex;gap:10px;align-items:center}
-    .badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#fef3c7;color:#b45309;font-weight:700}
-    .btn{padding:8px 12px;border-radius:12px;border:1px solid #3b2a1f;background:#23160f;color:#fff;cursor:pointer}
-    .btn.primary{background:#b45309;border-color:#b45309}
-    .card{background:#1c1917;border:1px solid #3b2a1f;border-radius:16px;padding:14px}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    select,input{background:#23160f;border:1px solid #3b2a1f;border-radius:12px;color:#e5e7eb;padding:8px 12px}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid #2e241b;padding:10px 12px;text-align:left}
-    .pill{padding:.25rem .5rem;border-radius:9999px;background:#fef3c7;color:#b45309}
-    .err{color:#ef4444}
-  </style>
+  <!-- Đồng bộ “vibe” trang chủ, không dùng header.jsp -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
 </head>
-<body>
-<div class="wrap">
-  <div class="top">
-    <div class="brand">
-      <div class="badge">📋</div>
-      <div>
-        <div style="font-size:18px;font-weight:800;color:#fcd34d">Đơn được phân công</div>
-        <div style="font-size:12px;color:#9ca3af">Quản lý toàn bộ vận đơn của bạn</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn" onclick="location.href='<%=ctx%>/dashboard-shipper.jsp'">Dashboard</button>
-      <button class="btn primary" onclick="location.href='<%=ctx%>/shipments.jsp'">Tất cả đơn</button>
-      <button id="logout" class="btn">Đăng xuất</button>
-    </div>
-  </div>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+<div class="container mx-auto px-4 py-8">
 
-  <div class="card">
-    <div class="row">
-      <select id="fStatus">
-        <option value="">Tất cả trạng thái</option>
-        <option>ASSIGNED</option><option>PICKED_UP</option><option>IN_TRANSIT</option>
-        <option>OUT_FOR_DELIVERY</option><option>DELIVERED</option><option>FAILED_DELIVERY</option>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Vận đơn của tôi</h1>
+    <div class="flex items-center gap-2">
+      <input id="fQuery" type="text" class="border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="Tìm mã/đơn hàng/khách...">
+      <select id="fStatus" class="border border-gray-300 rounded-md px-3 py-2 text-sm">
+        <option value="">Tất cả</option>
+        <option value="ASSIGNED">Đã phân công</option>
+        <option value="PICKED_UP">Đã lấy hàng</option>
+        <option value="IN_TRANSIT">Đang vận chuyển</option>
+        <option value="OUT_FOR_DELIVERY">Đang giao</option>
+        <option value="DELIVERED">Đã giao</option>
+        <option value="FAILED_DELIVERY">Giao thất bại</option>
+        <option value="RETURNING">Đang hoàn</option>
+        <option value="RETURNED">Đã hoàn</option>
       </select>
-      <input id="fQuery" placeholder="Tìm theo mã đơn / order id">
-      <button class="btn" onclick="load(1)">Lọc</button>
-      <div id="err" class="err" style="margin-left:auto"></div>
+      <button id="btnFilter" class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm">
+        <i data-feather="filter" class="w-4 h-4 mr-2"></i>Lọc
+      </button>
     </div>
   </div>
 
-  <div class="card" style="margin-top:12px">
-    <div style="overflow:auto">
-      <table>
-        <thead><tr style="color:#9ca3af"><th>#</th><th>Order ID</th><th>Trạng thái</th><th>COD</th><th>Cập nhật</th><th></th></tr></thead>
-        <tbody id="rows"></tbody>
+  <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
+    <div class="p-4 overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr class="hover:bg-gray-50">
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn hàng</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cập nhật</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+          </tr>
+        </thead>
+        <tbody id="shipments-body">
+          <!-- JS render -->
+        </tbody>
       </table>
-    </div>
-    <div class="row" style="justify-content:space-between;margin-top:8px">
-      <button class="btn" onclick="if(page>1) load(page-1)">« Trang trước</button>
-      <div id="pageInfo" style="color:#9ca3af"></div>
-      <button class="btn" onclick="if(page<total) load(page+1)">Trang sau »</button>
+
+      <div class="mt-4 flex items-center justify-between">
+        <button id="prevPage" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+          « Trước
+        </button>
+        <div id="pageInfo" class="text-sm text-gray-500">Trang 1</div>
+        <button id="nextPage" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+          Sau »
+        </button>
+      </div>
+      <p id="err" class="text-sm text-red-600 mt-3"></p>
     </div>
   </div>
+
 </div>
 
-<script>
-  // ===== Auth wrapper (tự gắn JWT & parse an toàn) =====
-  const ctx = '<%=ctx%>';
-  const TOKEN = localStorage.getItem('auth_token');
-  const ROLE  = (localStorage.getItem('auth_role')||'').toLowerCase();
-  if (!TOKEN || ROLE !== 'shipper') location.replace(ctx + '/login.jsp');
+<%@ include file="/WEB-INF/includes/footer.jsp" %>
+<script>feather.replace();</script>
 
-  async function authFetch(url,opt={}) {
+<script>
+  const ctx = '<%=ctx%>';
+  function guardRole(){
+    const role = localStorage.getItem('auth_role')||'';
+    if(role.toLowerCase()!=='shipper'){ location.href = ctx+'/login.jsp'; }
+  }
+  guardRole();
+
+  async function authFetch(url,opt={}){
+    const token = localStorage.getItem('auth_token')||'';
     const headers = new Headers(opt.headers||{});
-    headers.set('Authorization','Bearer '+TOKEN);
-    headers.set('Accept','application/json');
-    const res = await fetch(url,{...opt,headers});
+    if (token) headers.set('Authorization','Bearer '+token);
+    const res = await fetch(url,{...opt, headers});
     const ct = res.headers.get('content-type')||'';
     if (!res.ok) {
       const body = await res.text();
@@ -94,37 +96,50 @@
   }
 
   const apiBase = ctx + '/api/shipper';
-  let page=1, size=20, total=1;
+  let page=1, size=10;
 
-  async function load(p=1){
-    page=p;
-    err.textContent='';
-    const st = fStatus.value || '';
-    const q  = encodeURIComponent((fQuery.value||'').trim());
+  async function load(){
     try{
-      const data = await authFetch(`${apiBase}/shipments?page=${page}&size=${size}&status=${st}&q=${q}`);
-      total = data.totalPages || 1;
-      pageInfo.textContent = `Trang ${page}/${total}`;
-      rows.innerHTML='';
+      const status = document.getElementById('fStatus').value||'';
+      const q = (document.getElementById('fQuery').value||'').trim();
+      const url = new URL(apiBase + '/shipments', location.origin);
+      url.searchParams.set('page', page);
+      url.searchParams.set('size', size);
+      if (status) url.searchParams.set('status', status);
+      if (q) url.searchParams.set('q', q); // nếu BE đã hỗ trợ
+      const data = await authFetch(url.toString());
+      const tbody = document.getElementById('shipments-body');
+      tbody.innerHTML = '';
       (data.items||[]).forEach(it=>{
-        const last=(it.lastUpdateAt||'').replace('T',' ').slice(0,19);
-        rows.insertAdjacentHTML('beforeend', `
-          <tr>
-            <td>\${it.id??'-'}</td>
-            <td>\${it.orderId??'-'}</td>
-            <td><span class="pill">\${it.status??'-'}</span></td>
-            <td>\${(it.codAmount||0).toLocaleString('vi-VN')} ₫</td>
-            <td>\${last||'-'}</td>
-            <td><button class="btn primary" onclick="location.href='\${ctx}/shipment-detail.jsp?id=\${it.id}'">Chi tiết</button></td>
+        const lastEvt = (it.lastEventAt || it.updatedAt || it.createdAt || '').toString();
+        const last = lastEvt ? new Date(lastEvt).toLocaleString('vi-VN') : '-';
+        const badge = `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">${it.status??'-'}</span>`;
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr class="hover:bg-gray-50">
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.id}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.orderCode||'-'}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.receiverName||'-'}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${badge}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${last}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
+              <button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm"
+                      onclick="location.href='${ctx}/shipment-detail.jsp?id=${it.id}'">
+                Chi tiết
+              </button>
+            </td>
           </tr>`);
       });
+      document.getElementById('pageInfo').textContent = `Trang ${data.page||page}`;
     }catch(e){
-      err.textContent = 'Lỗi tải: ' + e.message; // sẽ thấy rõ nếu server trả HTML (do 401/404/redirect)
+      document.getElementById('err').textContent = e.message;
     }
   }
 
-  document.getElementById('logout').onclick=()=>{localStorage.clear();location.href=ctx+'/login.jsp';};
-  load(1);
+  document.getElementById('btnFilter').onclick = ()=>{ page=1; load(); };
+  document.getElementById('prevPage').onclick = ()=>{ if(page>1){ page--; load(); } };
+  document.getElementById('nextPage').onclick = ()=>{ page++; load(); };
+
+  load();
 </script>
 </body>
 </html>

@@ -9,86 +9,106 @@
   <meta charset="UTF-8">
   <title>Shipper Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Đồng bộ “vibe” trang chủ, không dùng header.jsp -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <style>
-    :root{--amber:#92400e;--bg:#12100f;--card:#1c1917;--muted:#9ca3af;--ring:#f59e0b}
-    body{margin:0;background:linear-gradient(135deg,#2b1a12 0%,#20150f 100%);color:#e5e7eb;font-family:system-ui,Segoe UI,Roboto}
-    .wrap{max-width:1100px;margin:auto;padding:16px}
-    .top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#190f0a;border:1px solid #3b2a1f;border-radius:14px;margin:16px 0}
-    .brand{display:flex;gap:10px;align-items:center}
-    .badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#fef3c7;color:#b45309;font-weight:700}
-    .btn{padding:8px 12px;border-radius:12px;border:1px solid #3b2a1f;background:#23160f;color:#fff;cursor:pointer}
-    .btn.primary{background:#b45309;border-color:#b45309}
-    .btn.light{background:#2a1a12}
-    .grid{display:grid;gap:12px}
-    .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .card{background:#1c1917;border:1px solid #3b2a1f;border-radius:16px;padding:16px}
-    .muted{color:#9ca3af}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid #2e241b;padding:10px 12px;text-align:left}
-    .pill{padding:.25rem .5rem;border-radius:9999px;background:#fef3c7;color:#b45309}
-    .err{color:#ef4444}
-  </style>
 </head>
-<body>
-  <div class="wrap">
-    <div class="top">
-      <div class="brand">
-        <div class="badge">🚚</div>
-        <div>
-          <div style="font-size:18px;font-weight:800;color:#fcd34d">Shipper Dashboard</div>
-          <div class="muted" style="font-size:12px">Tổng quan các đơn được phân công</div>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+<div class="container mx-auto px-4 py-8">
+
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-semibold">Bảng điều khiển Shipper</h1>
+      <div class="flex items-center gap-2">
+        <button id="logout" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+          <i data-feather="log-out" class="w-4 h-4 mr-2"></i>Đăng xuất
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
+        <div class="p-4">
+          <div class="text-gray-500 text-sm">Đang giao</div>
+          <div id="kpi-in-progress" class="text-2xl font-bold">0</div>
         </div>
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn light" onclick="location.href='<%=ctx%>/dashboard-shipper.jsp'">Dashboard</button>
-        <button class="btn" onclick="location.href='<%=ctx%>/shipments.jsp'">Tất cả đơn</button>
-        <button id="logout" class="btn">Đăng xuất</button>
+      <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
+        <div class="p-4">
+          <div class="text-gray-500 text-sm">Đã giao</div>
+          <div id="kpi-delivered" class="text-2xl font-bold">0</div>
+        </div>
       </div>
-    </div>
-
-    <div class="grid g3">
-      <div class="card"><div class="muted">Đang giao</div><div id="cIn" style="font:700 28px/1 system-ui">0</div></div>
-      <div class="card"><div class="muted">Đã giao</div><div id="cDone" style="font:700 28px/1 system-ui">0</div></div>
-      <div class="card"><div class="muted">Thất bại/Hoàn</div><div id="cFail" style="font:700 28px/1 system-ui">0</div></div>
-    </div>
-
-    <div class="grid" style="grid-template-columns: 1fr 320px; margin-top:12px">
-      <div class="card"><canvas id="pie" height="180"></canvas></div>
-      <div class="card">
-        <div style="font-weight:700;margin-bottom:8px">Hành động nhanh</div>
-        <button class="btn primary" onclick="location.href='<%=ctx%>/shipments.jsp'">Xem tất cả đơn</button>
-        <div style="height:8px"></div>
-        <button class="btn light" onclick="reload()">Tải lại số liệu</button>
-        <div class="muted" style="margin-top:6px;font-size:12px">* Số liệu theo user đăng nhập.</div>
-        <div id="err" class="err" style="margin-top:6px"></div>
+      <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
+        <div class="p-4">
+          <div class="text-gray-500 text-sm">Thất bại</div>
+          <div id="kpi-failed" class="text-2xl font-bold">0</div>
+        </div>
       </div>
-    </div>
-
-    <div class="card" style="margin-top:12px">
-      <div style="font-weight:700;margin-bottom:6px">10 đơn cập nhật gần nhất</div>
-      <div style="overflow:auto">
-        <table>
-          <thead><tr class="muted"><th>#</th><th>Order ID</th><th>Trạng thái</th><th>COD</th><th>Cập nhật</th><th></th></tr></thead>
-          <tbody id="rows"></tbody>
-        </table>
+      <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
+        <div class="p-4">
+          <div class="text-gray-500 text-sm">Tỷ lệ thành công</div>
+          <div id="kpi-success-rate" class="text-2xl font-bold">0%</div>
+        </div>
       </div>
     </div>
   </div>
 
-<script>
-  // ====== AUTH + FETCH WRAPPER (fix JSON lỗi '<!doctype...') ======
-  const ctx = '<%=ctx%>';
-  const TOKEN = localStorage.getItem('auth_token');
-  const ROLE  = (localStorage.getItem('auth_role')||'').toLowerCase();
-  if (!TOKEN || ROLE !== 'shipper') location.replace(ctx + '/login.jsp');
+  <!-- Chart -->
+  <div class="rounded-xl border border-amber-200 bg-white shadow-sm mb-8">
+    <div class="px-4 py-3 border-b border-amber-100">
+      <h2 class="text-lg font-medium">Tỷ lệ giao hàng</h2>
+    </div>
+    <div class="p-4">
+      <canvas id="chart-success" height="140"></canvas>
+    </div>
+  </div>
 
-  async function authFetch(url, opt={}) {
+  <!-- Bảng 10 vận đơn gần nhất -->
+  <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
+    <div class="px-4 py-3 border-b border-amber-100">
+      <h2 class="text-lg font-medium">10 vận đơn gần nhất</h2>
+    </div>
+    <div class="p-4 overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr class="hover:bg-gray-50">
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn hàng</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cập nhật</th>
+            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+          </tr>
+        </thead>
+        <tbody id="recent-shipments">
+          <!-- JS render -->
+        </tbody>
+      </table>
+      <p id="err" class="text-sm text-red-600 mt-3"></p>
+    </div>
+  </div>
+
+</div>
+
+<%@ include file="/WEB-INF/includes/footer.jsp" %>
+<script>feather.replace();</script>
+
+<script>
+  const ctx = '<%=ctx%>';
+  function guardRole(){
+    const role = localStorage.getItem('auth_role')||'';
+    if(role.toLowerCase()!=='shipper'){ location.href = ctx+'/login.jsp'; }
+  }
+  guardRole();
+
+  async function authFetch(url,opt={}){
+    const token = localStorage.getItem('auth_token')||'';
     const headers = new Headers(opt.headers||{});
-    headers.set('Authorization','Bearer '+TOKEN);
-    headers.set('Accept','application/json');
+    if (token) headers.set('Authorization','Bearer '+token);
     const res = await fetch(url,{...opt, headers});
-    // Nếu server trả HTML (redirect/404), đừng .json() ngay
     const ct = res.headers.get('content-type')||'';
     if (!res.ok) {
       const body = await res.text();
@@ -105,28 +125,46 @@
   let chart;
 
   async function reload(){
-    document.getElementById('err').textContent='';
     try{
-      const st = await authFetch(apiBase + '/stats');
-      const inP = st.inProgress||0, done=st.delivered||0, fail=st.failed||0;
-      cIn.textContent=inP; cDone.textContent=done; cFail.textContent=fail;
+      // KPI
+      const stats = await authFetch(apiBase + '/stats');
+      document.getElementById('kpi-in-progress').textContent = stats.inProgress||0;
+      document.getElementById('kpi-delivered').textContent  = stats.delivered||0;
+      document.getElementById('kpi-failed').textContent     = stats.failed||0;
+      document.getElementById('kpi-success-rate').textContent = ((stats.successRate||0)*100).toFixed(0)+'%';
 
-      const data = {labels:['Đang giao','Đã giao','Thất bại'], datasets:[{data:[inP,done,fail]}]};
+      // Chart
+      const el = document.getElementById('chart-success');
       if (chart) chart.destroy();
-      chart = new Chart(document.getElementById('pie'),{type:'pie',data});
+      chart = new Chart(el, {
+        type:'doughnut',
+        data:{
+          labels:['Thành công','Thất bại','Đang giao'],
+          datasets:[{ data:[stats.delivered||0, stats.failed||0, stats.inProgress||0] }]
+        }
+      });
 
-      const list = await authFetch(apiBase + '/shipments?page=1&size=10');
-      const tb = document.getElementById('rows'); tb.innerHTML='';
+      // Recent
+      const list = await authFetch(apiBase + '/shipments?size=10&page=1');
+      const tbody = document.getElementById('recent-shipments');
+      tbody.innerHTML = '';
       (list.items||[]).forEach(it=>{
-        const last=(it.lastUpdateAt||'').replace('T',' ').slice(0,19);
-        tb.insertAdjacentHTML('beforeend', `
-          <tr>
-            <td>\${it.id??'-'}</td>
-            <td>\${it.orderId??'-'}</td>
-            <td><span class="pill">\${it.status??'-'}</span></td>
-            <td>\${(it.codAmount||0).toLocaleString('vi-VN')} ₫</td>
-            <td>\${last||'-'}</td>
-            <td><button class="btn primary" onclick="location.href='\${ctx}/shipment-detail.jsp?id=\${it.id}'">Chi tiết</button></td>
+        const lastEvt = (it.lastEventAt || it.updatedAt || it.createdAt || '').toString();
+        const last = lastEvt ? new Date(lastEvt).toLocaleString('vi-VN') : '-';
+        const badge = `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">${it.status??'-'}</span>`;
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr class="hover:bg-gray-50">
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.id}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.orderCode||'-'}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.receiverName||'-'}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${badge}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${last}</td>
+            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
+              <button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm"
+                      onclick="location.href='${ctx}/shipment-detail.jsp?id=${it.id}'">
+                Chi tiết
+              </button>
+            </td>
           </tr>`);
       });
     }catch(e){
