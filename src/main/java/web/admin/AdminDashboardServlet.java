@@ -221,7 +221,7 @@ public class AdminDashboardServlet extends HttpServlet {
             "LEFT JOIN books b ON b.shop_id = s.id " +
             "LEFT JOIN order_items oi ON oi.book_id = b.id " +
             "LEFT JOIN orders o ON o.id = oi.order_id " +
-            "AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered') " +
+            "AND LOWER(o.status) IN ('completed', 'delivered') " +
             "GROUP BY s.id, s.name, s.status, s.commission_rate " +
             "ORDER BY revenue DESC, total_orders DESC " +
             "LIMIT 5";
