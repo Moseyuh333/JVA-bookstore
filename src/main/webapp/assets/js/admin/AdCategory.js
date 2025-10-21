@@ -37,6 +37,9 @@ const api = {
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams(data)
     }).then(r => r.json()),
+    getCategory: (id) => fetch(`${contextPath}/api/admin/categories?action=get&id=${id}`, {
+        headers: getAuthHeaders()
+    }).then(r => r.json()),
     updateCategory: (id, data) => fetch(`${contextPath}/api/admin/categories?action=update&id=${id}`, {
         method: 'POST',
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -163,13 +166,49 @@ const resetFilters = () => {
 
 // Modal functions
 window.openAddModal = () => {
-    // TODO: Implement add modal
-    alert("Add category modal - Coming soon!");
+    const name = prompt('Tên danh mục (bắt buộc):');
+    if (!name || !name.trim()) return alert('Tên danh mục là bắt buộc');
+
+    api.createCategory({ name: name.trim() })
+        .then(res => {
+            if (res.message) {
+                const idPart = res.id ? ('ID: ' + res.id + '\n') : '';
+                const createdPart = res.created_at ? ('Created: ' + res.created_at + '\n') : '';
+                const totalPart = typeof res.total_products !== 'undefined' ? ('Total products: ' + res.total_products + '\n') : '';
+                alert('Tạo danh mục thành công\n' + idPart + createdPart + totalPart);
+                loadCategories();
+            } else {
+                alert('Lỗi: ' + (res.error || 'Không thể tạo danh mục'));
+            }
+        }).catch(err => {
+            console.error(err);
+            alert('Lỗi khi tạo danh mục');
+        });
 };
 
 window.editCategory = (id) => {
-    // TODO: Implement edit modal
-    alert(`Edit category ${id} - Coming soon!`);
+    api.getCategory(id).then(data => {
+        if (data.error) return alert('Lỗi: ' + data.error);
+        const currentName = data.name || '';
+        const name = prompt('Tên danh mục (bắt buộc):', currentName);
+        if (!name || !name.trim()) return alert('Tên danh mục là bắt buộc');
+
+        api.updateCategory(id, { name: name.trim() })
+            .then(res => {
+                if (res.message) {
+                    alert('Cập nhật danh mục thành công');
+                    loadCategories();
+                } else {
+                    alert('Lỗi: ' + (res.error || 'Không thể cập nhật danh mục'));
+                }
+            }).catch(err => {
+                console.error(err);
+                alert('Lỗi khi cập nhật danh mục');
+            });
+    }).catch(err => {
+        console.error(err);
+        alert('Lỗi khi tải thông tin danh mục');
+    });
 };
 
 window.deleteCategory = async (id) => {
