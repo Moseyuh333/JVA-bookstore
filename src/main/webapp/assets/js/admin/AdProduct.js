@@ -69,18 +69,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
-        <td>${escapeHtml(p.id || "-")}</td>
-        <td>${escapeHtml(p.title || "-")}</td>
-        <td>${escapeHtml(p.author || "-")}</td>
-        <td>${escapeHtml(p.category || "-")}</td>
-        <td>${price}</td>
-        <td>${stock}</td>
-        <td>${escapeHtml(shop)}</td>
-        <td>${commission}</td>
-        <td>
-          <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-        </td>`;
+                <td>${escapeHtml(p.id || "-")}</td>
+                <td>${escapeHtml(p.title || "-")}</td>
+                <td>${escapeHtml(p.author || "-")}</td>
+                <td>${escapeHtml(p.category || "-")}</td>
+                <td>${price}</td>
+                <td>${stock}</td>
+                <td>${escapeHtml(shop)}</td>
+                <td>
+                <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                </td>`;
             tableBody.appendChild(tr);
         });
     };
