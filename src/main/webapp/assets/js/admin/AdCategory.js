@@ -164,39 +164,66 @@ const resetFilters = () => {
     loadCategories();
 };
 
-// Modal functions
-window.openAddModal = () => {
-    const name = prompt('Tên danh mục (bắt buộc):');
-    if (!name || !name.trim()) return alert('Tên danh mục là bắt buộc');
+// Modal handling
+const modalOverlay = document.getElementById('categoryModalOverlay');
+const modalBox = document.getElementById('categoryModalBox');
+const modalClose = document.getElementById('categoryModalClose');
+const modalCancel = document.getElementById('categoryCancel');
+const categoryForm = document.getElementById('categoryForm');
+const categoryIdInput = document.getElementById('categoryId');
+const categoryNameInput = document.getElementById('categoryName');
+const categoryModalTitle = document.getElementById('categoryModalTitle');
 
-    api.createCategory({ name: name.trim() })
-        .then(res => {
-            if (res.message) {
-                const idPart = res.id ? ('ID: ' + res.id + '\n') : '';
-                const createdPart = res.created_at ? ('Created: ' + res.created_at + '\n') : '';
-                const totalPart = typeof res.total_products !== 'undefined' ? ('Total products: ' + res.total_products + '\n') : '';
-                alert('Tạo danh mục thành công\n' + idPart + createdPart + totalPart);
-                loadCategories();
-            } else {
-                alert('Lỗi: ' + (res.error || 'Không thể tạo danh mục'));
-            }
-        }).catch(err => {
-            console.error(err);
-            alert('Lỗi khi tạo danh mục');
-        });
+function openModal() {
+    modalOverlay.classList.add('active');
+    modalBox.classList.add('active');
+    categoryNameInput.focus();
+}
+
+function closeModal() {
+    modalOverlay.classList.remove('active');
+    modalBox.classList.remove('active');
+    categoryForm.reset();
+    categoryIdInput.value = '';
+}
+
+modalClose?.addEventListener('click', closeModal);
+modalCancel?.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
+modalOverlay?.addEventListener('click', closeModal);
+
+window.openAddModal = () => {
+    categoryModalTitle.textContent = 'Thêm danh mục mới';
+    categoryIdInput.value = '';
+    categoryNameInput.value = '';
+    openModal();
 };
 
 window.editCategory = (id) => {
     api.getCategory(id).then(data => {
         if (data.error) return alert('Lỗi: ' + data.error);
-        const currentName = data.name || '';
-        const name = prompt('Tên danh mục (bắt buộc):', currentName);
-        if (!name || !name.trim()) return alert('Tên danh mục là bắt buộc');
+        categoryModalTitle.textContent = 'Chỉnh sửa danh mục';
+        categoryIdInput.value = data.id || id;
+        categoryNameInput.value = data.name || '';
+        openModal();
+    }).catch(err => {
+        console.error(err);
+        alert('Lỗi khi tải thông tin danh mục');
+    });
+};
 
-        api.updateCategory(id, { name: name.trim() })
+// Handle form submit for create/update
+categoryForm?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const id = categoryIdInput.value;
+    const name = categoryNameInput.value && categoryNameInput.value.trim();
+    if (!name) return alert('Tên danh mục là bắt buộc');
+
+    if (id) {
+        api.updateCategory(id, { name })
             .then(res => {
                 if (res.message) {
                     alert('Cập nhật danh mục thành công');
+                    closeModal();
                     loadCategories();
                 } else {
                     alert('Lỗi: ' + (res.error || 'Không thể cập nhật danh mục'));
@@ -205,11 +232,25 @@ window.editCategory = (id) => {
                 console.error(err);
                 alert('Lỗi khi cập nhật danh mục');
             });
-    }).catch(err => {
-        console.error(err);
-        alert('Lỗi khi tải thông tin danh mục');
-    });
-};
+    } else {
+        api.createCategory({ name })
+            .then(res => {
+                if (res.message) {
+                    const idPart = res.id ? ('ID: ' + res.id + '\n') : '';
+                    const createdPart = res.created_at ? ('Created: ' + res.created_at + '\n') : '';
+                    const totalPart = typeof res.total_products !== 'undefined' ? ('Total products: ' + res.total_products + '\n') : '';
+                    alert('Tạo danh mục thành công\n' + idPart + createdPart + totalPart);
+                    closeModal();
+                    loadCategories();
+                } else {
+                    alert('Lỗi: ' + (res.error || 'Không thể tạo danh mục'));
+                }
+            }).catch(err => {
+                console.error(err);
+                alert('Lỗi khi tạo danh mục');
+            });
+    }
+});
 
 window.deleteCategory = async (id) => {
     if (!confirm("Bạn có chắc muốn xóa danh mục này?")) return;
