@@ -105,7 +105,10 @@ const renderCategoryRow = (category) => `
     `;
 
 const renderCategories = (cats) => {
-    if (cats.length === 0) {
+    // Luôn xóa danh sách cũ trước khi vẽ mới
+    categoryList.innerHTML = "";
+
+    if (!Array.isArray(cats) || cats.length === 0) {
         showEmpty();
         return;
     }
@@ -113,6 +116,7 @@ const renderCategories = (cats) => {
     hideEmpty();
     categoryList.innerHTML = cats.map(renderCategoryRow).join("");
 };
+
 
 const updateStats = () => {
     const total = categories.length;
@@ -197,3 +201,8 @@ window.resetFilters = resetFilters;
 
 console.log("✓ AdCategory.js initialized");
 
+let debounceTimer;
+searchInput.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(applyFilters, 300);
+});
