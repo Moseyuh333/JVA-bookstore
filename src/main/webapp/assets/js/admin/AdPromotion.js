@@ -17,11 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const api = {
         getPromotions: (search = '', searchType = 'all') => {
             const token = localStorage.getItem("admin_token");
-            if (!token) {
-                alert("Phiên đăng nhập quản trị đã hết hạn. Vui lòng đăng nhập lại.");
-                window.location.href = (window.appConfig?.contextPath || '') + "/login.jsp";
-                return Promise.reject(new Error("No token"));
-            }
             const params = new URLSearchParams({
                 action: 'list'
             });
@@ -35,30 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Content-Type": "application/json"
                 }
             }).then(r => r.json());
-        },
-        createPromotion: (data) => fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=create`, {
-            method: 'POST',
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("admin_token")}`,
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: new URLSearchParams(data)
-        }).then(r => r.json()),
-        updatePromotion: (id, data) => fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=update&id=${id}`, {
-            method: 'POST',
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("admin_token")}`,
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: new URLSearchParams(data)
-        }).then(r => r.json()),
-        deletePromotion: (id) => fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=delete&id=${id}`, {
-            method: 'POST',
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("admin_token")}`,
-                "Content-Type": "application/json"
-            }
-        }).then(r => r.json())
+        }
     };
 
     // Utility functions
@@ -190,12 +162,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Search filter
     const applyFilters = async () => {
         const keyword = searchInput.value.toLowerCase().trim();
-        const searchType = document.getElementById("searchType")?.value || 'all';
         if (keyword) {
             // Server-side search
             try {
                 showLoading();
-                const response = await api.getPromotions(keyword, searchType);
+                const response = await api.getPromotions(keyword, 'all');
                 if (response.promotions) {
                     filteredPromotions = response.promotions;
                     renderTable(filteredPromotions);
