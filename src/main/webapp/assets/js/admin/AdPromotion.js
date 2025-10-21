@@ -79,18 +79,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         hideEmpty();
         list.forEach(p => {
-            const discount =
-                p.discount_type === "percent"
-                    ? `${p.discount_value}%`
-                    : `${p.discount_value.toLocaleString()}₫`;
+            const vnd = n => Number(n).toLocaleString('vi-VN');
 
-            const scopeLabel = {
-                product: "Giảm giá sản phẩm",
-                shipping: "Giảm phí vận chuyển"
-            }[p.scope] || "-";
+            const kind = p.kind || 'percentage';
+            const discount =
+                p.discount_value == null ? '-' :
+                (kind === 'percentage' ? `${p.discount_value}%` : `${vnd(p.discount_value)}đ`);
+
+            const typeLabel =
+                p.type === 'shipping' ? 'shipping' :
+                p.type === 'product'  ? 'product'  : '-';
 
             const valid = formatDateRange(p.start_at, p.end_at);
-            const type = p.discount_type || "-";
             const code = p.code || "-";
             const description = p.description || "-";
             const active = p.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>';
@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${escapeHtml(p.id.toString())}</td>
                 <td>${escapeHtml(code)}</td>
                 <td>${escapeHtml(description)}</td>
-                <td>${escapeHtml(scopeLabel)}</td>
+                <td>${escapeHtml(typeLabel)}</td>
                 <td>${discount}</td>
                 <td>${valid}</td>
                 <td>${active}</td>
