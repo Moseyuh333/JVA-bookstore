@@ -104,15 +104,11 @@ public class AdminPromotionsServlet extends HttpServlet {
             int paramIndex = 1;
             if (search != null && !search.trim().isEmpty()) {
                 String pattern = "%" + search.trim() + "%";
-                if ("code".equals(searchType) || "description".equals(searchType) || "type".equals(searchType)) {
-                    pstmt.setString(paramIndex++, pattern);
-                } else {
-                    // "all" search
-                    pstmt.setString(paramIndex++, pattern);
-                    pstmt.setString(paramIndex++, pattern);
+                for (int i = 0; i < 4; i++) {
                     pstmt.setString(paramIndex++, pattern);
                 }
             }
+
 
             try (ResultSet rs = pstmt.executeQuery()) {
 
