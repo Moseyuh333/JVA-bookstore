@@ -90,7 +90,7 @@ public class AdminCategoriesServlet extends HttpServlet {
             }
         }
 
-        sql.append(" ORDER BY id DESC");
+        sql.append("ORDER BY id ASC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"categories\":[");
@@ -101,8 +101,12 @@ public class AdminCategoriesServlet extends HttpServlet {
             // Gán parameter nếu có tìm kiếm
             if (search != null && !search.trim().isEmpty()) {
                 String pattern = "%" + search.trim() + "%";
-                pstmt.setString(1, pattern);
-                pstmt.setString(2, pattern);
+                if (sql.indexOf("?") == sql.lastIndexOf("?")) {
+                    pstmt.setString(1, pattern);
+                } else {
+                    pstmt.setString(1, pattern);
+                    pstmt.setString(2, pattern);
+                }
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {

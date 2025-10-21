@@ -103,7 +103,7 @@ public class AdminPromotionsServlet extends HttpServlet {
             }
         }
 
-        sql.append(" ORDER BY id DESC");
+        sql.append("ORDER BY id ASC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"promotions\":[");
