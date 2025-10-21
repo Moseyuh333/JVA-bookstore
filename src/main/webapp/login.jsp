@@ -115,9 +115,7 @@
 
             } else if (isSeller) { 
             // Nếu bạn muốn lưu token riêng cho seller (tùy chọn)
-            localStorage.setItem('seller_token', data.token); 
-            localStorage.removeItem('auth_token'); // Đảm bảo token user bị xóa
-            
+            localStorage.setItem('seller_token', data.token);        
             if (enteredUsername.length > 0) {
               localStorage.setItem('seller_username', enteredUsername);
             } else {
