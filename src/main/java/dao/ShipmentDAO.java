@@ -8,34 +8,98 @@ import utils.DBUtil;
 public class ShipmentDAO {
 
     public List<Shipment> findByShipper(String username, String status, int page, int size) throws SQLException {
-        List<Shipment> list = new ArrayList<>();
-        String sql = "SELECT * FROM shipments WHERE shipper_user_id=? "
-                   + (status != null && !status.isEmpty() ? "AND status=? " : "")
-                   + "ORDER BY last_update_at DESC LIMIT ? OFFSET ?";
+    List<Shipment> list = new ArrayList<>();
+
+        String sql =
+            "SELECT " +
+            "  s.id, s.order_id, s.shipper_user_id, s.status, s.cod_amount, s.cod_collected, " +
+            "  s.pickup_at, s.delivered_at, s.proof_image_url, s.last_update_at, " +
+            "  o.code AS order_code, " +
+            "  (o.shipping_snapshot->>'recipient_name') AS receiver_name, " +
+            "  (o.shipping_snapshot->>'phone')          AS receiver_phone, " +
+            "  NULLIF(CONCAT_WS(', ', " +
+            "      NULLIF(o.shipping_snapshot->>'line1',''), " +
+            "      NULLIF(o.shipping_snapshot->>'line2',''), " +
+            "      NULLIF(o.shipping_snapshot->>'ward',''), " +
+            "      NULLIF(o.shipping_snapshot->>'district',''), " +
+            "      NULLIF(o.shipping_snapshot->>'city',''), " +
+            "      NULLIF(o.shipping_snapshot->>'province','')" +
+            "  ), '') AS receiver_address " +
+            "FROM shipments s " +
+            "JOIN orders o ON o.id = s.order_id " +
+            "WHERE s.shipper_user_id = ? " +
+            (status != null && !status.isEmpty() ? "AND s.status = ? " : "") +
+            "ORDER BY s.last_update_at DESC " +
+            "LIMIT ? OFFSET ?";
+
         try (Connection con = DBUtil.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            PreparedStatement ps = con.prepareStatement(sql)) {
+
             int i = 1;
             ps.setString(i++, username);
             if (status != null && !status.isEmpty()) ps.setString(i++, status);
             ps.setInt(i++, size);
             ps.setInt(i, (page - 1) * size);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Shipment s = mapShipment(rs);
-                list.add(s);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapShipmentJoined(rs));
+                }
             }
         }
         return list;
     }
 
+
     public Shipment findById(long id) throws SQLException {
+        String sql =
+            "SELECT " +
+            "  s.id, s.order_id, s.shipper_user_id, s.status, s.cod_amount, s.cod_collected, " +
+            "  s.pickup_at, s.delivered_at, s.proof_image_url, s.last_update_at, " +
+            "  o.code AS order_code, " +
+            "  (o.shipping_snapshot->>'recipient_name') AS receiver_name, " +
+            "  (o.shipping_snapshot->>'phone')          AS receiver_phone, " +
+            "  NULLIF(CONCAT_WS(', ', " +
+            "      NULLIF(o.shipping_snapshot->>'line1',''), " +
+            "      NULLIF(o.shipping_snapshot->>'line2',''), " +
+            "      NULLIF(o.shipping_snapshot->>'ward',''), " +
+            "      NULLIF(o.shipping_snapshot->>'district',''), " +
+            "      NULLIF(o.shipping_snapshot->>'city',''), " +
+            "      NULLIF(o.shipping_snapshot->>'province','')" +
+            "  ), '') AS receiver_address " +
+            "FROM shipments s " +
+            "JOIN orders o ON o.id = s.order_id " +
+            "WHERE s.id = ?";
+
         try (Connection con = DBUtil.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM shipments WHERE id=?")) {
+            PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setLong(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapShipment(rs);
-            return null;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapShipmentJoined(rs);
+            }
         }
+        return null;
+    }
+
+    private Shipment mapShipmentJoined(ResultSet rs) throws SQLException {
+        Shipment s = new Shipment();
+        s.setId(rs.getLong("id"));
+        s.setOrderId(rs.getLong("order_id"));
+        s.setShipperUserId(rs.getString("shipper_user_id"));
+        s.setStatus(rs.getString("status"));
+        s.setCodAmount(rs.getDouble("cod_amount"));
+        s.setCodCollected(rs.getBoolean("cod_collected"));
+        s.setPickupAt(rs.getTimestamp("pickup_at"));
+        s.setDeliveredAt(rs.getTimestamp("delivered_at"));
+        s.setProofImageUrl(rs.getString("proof_image_url"));
+        s.setLastUpdateAt(rs.getTimestamp("last_update_at"));
+
+        // joined fields from orders
+        s.setOrderCode(rs.getString("order_code"));
+        s.setReceiverName(rs.getString("receiver_name"));
+        s.setReceiverPhone(rs.getString("receiver_phone"));
+        s.setReceiverAddress(rs.getString("receiver_address"));
+        return s;
     }
 
     public List<ShipmentEvent> findEvents(long shipmentId) throws SQLException {
