@@ -20,9 +20,18 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const api = {
-        getCategories: () => fetch(`${contextPath}/api/admin/categories?action=list`, {
-            headers: getAuthHeaders()
-        }).then(r => r.json()),
+        getCategories: (search = '', searchType = 'all') => {
+            const params = new URLSearchParams({
+                action: 'list'
+            });
+            if (search.trim()) {
+                params.append('search', search.trim());
+                params.append('searchType', searchType);
+            }
+            return fetch(`${contextPath}/api/admin/categories?${params.toString()}`, {
+                headers: getAuthHeaders()
+            }).then(r => r.json());
+        },
         createCategory: (data) => fetch(`${contextPath}/api/admin/categories?action=create`, {
             method: 'POST',
             headers: { ...getAuthHeaders(), 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -114,14 +123,10 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Data management
-    const loadCategories = async (searchTerm = '') => {
+    const loadCategories = async (searchTerm = '', searchType = 'all') => {
         try {
             showLoading();
-            let url = `${contextPath}/api/admin/categories?action=list`;
-            if (searchTerm) {
-                url += `&search=${encodeURIComponent(searchTerm)}`;
-            }
-            const response = await fetch(url).then(r => r.json());
+            const response = await api.getCategories(searchTerm, searchType);
 
             if (response.categories) {
                 categories = response.categories;
@@ -143,7 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Filter functions (server-side)
     const applyFilters = async () => {
         const searchTerm = searchInput.value.trim();
-        await loadCategories(searchTerm);
+        const searchType = document.getElementById("searchType")?.value || 'all';
+        await loadCategories(searchTerm, searchType);
     };
 
     const resetFilters = () => {

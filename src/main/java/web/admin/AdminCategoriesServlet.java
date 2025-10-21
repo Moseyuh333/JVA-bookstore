@@ -28,7 +28,7 @@ public class AdminCategoriesServlet extends HttpServlet {
 
         try {
             if ("list".equals(action)) {
-                listCategories(out);
+                listCategories(req, out);
             } else {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write("{\"error\":\"Invalid action\"}");
@@ -70,27 +70,60 @@ public class AdminCategoriesServlet extends HttpServlet {
         }
     }
 
-    private void listCategories(PrintWriter out) throws SQLException {
-        String sql = "SELECT id, name, total_products as product_count, created_at FROM categories ORDER BY name";
+    private void listCategories(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String search = req.getParameter("search");
+        String searchType = req.getParameter("searchType");
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT id, name, total_products as product_count, created_at FROM categories WHERE 1=1"
+        );
+
+        // Add search conditions
+        if (search != null && !search.trim().isEmpty()) {
+            if ("name".equals(searchType)) {
+                sql.append(" AND name ILIKE ?");
+            } else if ("description".equals(searchType)) {
+                sql.append(" AND description ILIKE ?");
+            } else {
+                // "all" search
+                sql.append(" AND (name ILIKE ? OR description ILIKE ?)");
+            }
+        }
+
+        sql.append(" ORDER BY name");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"categories\":[");
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            boolean first = true;
-            while (rs.next()) {
-                if (!first) json.append(",");
-                first = false;
+            // Set search parameters
+            int paramIndex = 1;
+            if (search != null && !search.trim().isEmpty()) {
+                String pattern = "%" + search.trim() + "%";
+                if ("name".equals(searchType) || "description".equals(searchType)) {
+                    pstmt.setString(paramIndex++, pattern);
+                } else {
+                    // "all" search
+                    pstmt.setString(paramIndex++, pattern);
+                    pstmt.setString(paramIndex++, pattern);
+                }
+            }
 
-                json.append("{")
-                    .append("\"id\":").append(rs.getInt("id")).append(",")
-                    .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
-                    .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
-                    .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
-                    .append("}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    first = false;
+
+                    json.append("{")
+                        .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
+                        .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
+                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
+                        .append("}");
+                }
             }
         }
 

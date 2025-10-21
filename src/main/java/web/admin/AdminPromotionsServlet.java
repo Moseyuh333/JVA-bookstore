@@ -85,9 +85,17 @@ public class AdminPromotionsServlet extends HttpServlet {
 
         // Add search conditions
         if (search != null && !search.trim().isEmpty()) {
-            sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+            if ("code".equals(searchType)) {
+                sql.append(" AND code ILIKE ?");
+            } else if ("description".equals(searchType)) {
+                sql.append(" AND description ILIKE ?");
+            } else if ("type".equals(searchType)) {
+                sql.append(" AND discount_type ILIKE ?");
+            } else {
+                // "all" search
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+            }
         }
-
 
         sql.append(" ORDER BY id DESC");
 
@@ -108,6 +116,7 @@ public class AdminPromotionsServlet extends HttpServlet {
                     pstmt.setString(paramIndex++, pattern);
                 } else {
                     // "all" search
+                    pstmt.setString(paramIndex++, pattern);
                     pstmt.setString(paramIndex++, pattern);
                     pstmt.setString(paramIndex++, pattern);
                     pstmt.setString(paramIndex++, pattern);
