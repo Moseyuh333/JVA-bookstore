@@ -76,27 +76,18 @@ public class AdminPromotionsServlet extends HttpServlet {
 
         StringBuilder sql = new StringBuilder(
             "SELECT id, name, code, description, " +
-            "       discount_type AS type, " +
-            "       discount_kind AS kind, " +
-            "       discount_value, " +
-            "       start_date AS start_at, end_date AS end_at, " +
-            "       status AS active, shop_id " +
+            "discount_scope AS scope, " +               // product / shipping
+            "discount_type AS type, " +                 // percent / amount
+            "discount_value, max_discount_value, min_order_value, " +
+            "start_date AS start_at, end_date AS end_at, status AS active " +
             "FROM promotions WHERE 1=1"
         );
 
         // Add search conditions
         if (search != null && !search.trim().isEmpty()) {
-            if ("code".equals(searchType)) {
-                sql.append(" AND code ILIKE ?");
-            } else if ("description".equals(searchType)) {
-                sql.append(" AND description ILIKE ?");
-            } else if ("type".equals(searchType)) {
-                sql.append(" AND discount_type ILIKE ?");
-            } else {
-                // Default "all"
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_type ILIKE ?)");
-            }
+            sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
         }
+
 
         sql.append(" ORDER BY id DESC");
 
@@ -140,14 +131,16 @@ public class AdminPromotionsServlet extends HttpServlet {
                         .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
                         .append("\"code\":\"").append(escapeJson(rs.getString("code"))).append("\",")
                         .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
+                        .append("\"scope\":\"").append(escapeJson(rs.getString("scope"))).append("\",")
                         .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
-                        .append("\"kind\":\"").append(escapeJson(rs.getString("kind"))).append("\",")
-                        .append("\"discount_value\":").append(rs.getBigDecimal("discount_value")).append(",")
+                        .append("\"discount_value\":").append(rs.getBigDecimal("discount_value") != null ? rs.getBigDecimal("discount_value") : 0).append(",")
+                        .append("\"max_discount_value\":").append(rs.getBigDecimal("max_discount_value") != null ? rs.getBigDecimal("max_discount_value") : 0).append(",")
+                        .append("\"min_order_value\":").append(rs.getBigDecimal("min_order_value") != null ? rs.getBigDecimal("min_order_value") : 0).append(",")
                         .append("\"start_at\":\"").append(rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "").append("\",")
                         .append("\"end_at\":\"").append(rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "").append("\",")
-                        .append("\"active\":").append(rs.getBoolean("active")).append(",")
-                        .append("\"shop_id\":").append(rs.getInt("shop_id")).append("")
+                        .append("\"active\":").append(rs.getBoolean("active"))
                         .append("}");
+                    
                 }
             }
         }

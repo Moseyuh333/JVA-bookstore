@@ -80,20 +80,33 @@ document.addEventListener("DOMContentLoaded", () => {
         hideEmpty();
         list.forEach(p => {
             const vnd = n => Number(n).toLocaleString('vi-VN');
+            const type = p.type || "-";             // percent / amount
+            const scope = p.scope || "-";           // product / shipping
 
-            const kind = p.kind || 'percentage';
-            const discount =
-                p.discount_value == null ? '-' :
-                (kind === 'percentage' ? `${p.discount_value}%` : `${vnd(p.discount_value)}đ`);
-
+            // Xác định nhãn loại khuyến mãi (hiển thị dễ hiểu hơn)
             const typeLabel =
-                p.type === 'shipping' ? 'shipping' :
-                p.type === 'product'  ? 'product'  : '-';
+                scope === "shipping" ? "Giảm phí vận chuyển" :
+                scope === "product"  ? "Giảm giá sản phẩm" :
+                "-";
+
+            // Xử lý giá trị giảm
+            let discount = "-";
+            if (type === "percent")
+                discount = `${p.discount_value}%`;
+            else if (type === "amount")
+                discount = `${vnd(p.discount_value)}đ`;
+
+            if (p.max_discount_value && p.max_discount_value > 0)
+                discount += ` (tối đa ${vnd(p.max_discount_value)}đ)`;
+            if (p.min_order_value && p.min_order_value > 0)
+                discount += `, đơn ≥ ${vnd(p.min_order_value)}đ`;
 
             const valid = formatDateRange(p.start_at, p.end_at);
             const code = p.code || "-";
             const description = p.description || "-";
-            const active = p.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>';
+            const active = p.active
+                ? '<span class="badge badge-success">Active</span>'
+                : '<span class="badge badge-secondary">Inactive</span>';
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -105,12 +118,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${valid}</td>
                 <td>${active}</td>
                 <td>
-                    <button class="btn btn-sm btn-warning mr-1 edit-btn" data-id="${p.id}"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger delete-btn" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-sm btn-warning mr-1 edit-btn" data-id="${p.id}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="${p.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </td>
             `;
             tableBody.appendChild(tr);
         });
+
     };
 
     // Load promotions from API
