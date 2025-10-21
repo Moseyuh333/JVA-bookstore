@@ -20,6 +20,11 @@ public class AdminPromotionsServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // Check authentication
+        if (!isAuthenticated(req, resp)) {
+            return;
+        }
+
         resp.setContentType("application/json; charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
         PrintWriter out = resp.getWriter();
@@ -79,7 +84,8 @@ public class AdminPromotionsServlet extends HttpServlet {
             "discount_scope AS scope, " +               // product / shipping
             "discount_type AS type, " +                 // percent / amount
             "discount_value, max_discount_value, min_order_value, " +
-            "start_date AS start_at, end_date AS end_at, status AS active " +
+            "start_date AS start_at, end_date AS end_at, status AS active, " +
+            "shop_id " +                                // ✅ thêm vào đây
             "FROM promotions WHERE 1=1"
         );
 
@@ -137,6 +143,7 @@ public class AdminPromotionsServlet extends HttpServlet {
 
                     json.append("{")
                         .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"shop_id\":").append(rs.getInt("shop_id")).append(",") // ✅ thêm dòng này
                         .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
                         .append("\"code\":\"").append(escapeJson(rs.getString("code"))).append("\",")
                         .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
@@ -330,6 +337,17 @@ public class AdminPromotionsServlet extends HttpServlet {
                 out.write("{\"error\":\"Promotion not found\"}");
             }
         }
+    }
+
+    private boolean isAuthenticated(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String authHeader = req.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.setContentType("application/json");
+            resp.getWriter().write("{\"error\": \"Unauthorized\"}");
+            return false;
+        }
+        return true;
     }
 
     private String escapeJson(String str) {

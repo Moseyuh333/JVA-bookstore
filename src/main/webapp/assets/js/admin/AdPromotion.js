@@ -17,6 +17,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const api = {
         getPromotions: (search = '', searchType = 'all') => {
             const token = localStorage.getItem("admin_token");
+            if (!token) {
+                alert("Phiên đăng nhập quản trị đã hết hạn. Vui lòng đăng nhập lại.");
+                window.location.href = (window.appConfig?.contextPath || '') + "/login.jsp";
+                return Promise.reject(new Error("No token"));
+            }
             const params = new URLSearchParams({
                 action: 'list'
             });
