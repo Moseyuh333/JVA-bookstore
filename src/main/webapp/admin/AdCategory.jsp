@@ -477,9 +477,8 @@
                         <div class="filter-form">
                             <select id="searchType" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
                                 <option value="all">Tất cả</option>
+                                <option value="id">Mã danh mục</option>
                                 <option value="name">Tên danh mục</option>
-                                <option value="description">Mô tả</option>
-                                <option value="status">Trạng thái</option>
                             </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
