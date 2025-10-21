@@ -1,124 +1,136 @@
-<%@ page contentType="text/html;charset=UTF-8" %>
-<%@ page isELIgnored="true" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%
   String ctx = request.getContextPath();
 %>
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Đơn được phân công</title>
-  <style>
-    .btn{padding:.45rem .8rem;border:1px solid #ddd;border-radius:.5rem;background:#fff;cursor:pointer}
-    .btn.primary{background:#2563eb;color:#fff;border-color:#2563eb}
-    .btn.light{background:#f3f4f6}
-    .toolbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
-    .wrap{max-width:1100px;margin:1.25rem auto;padding:0 1rem}
-    .table{width:100%;border-collapse:collapse}
-    .table th,.table td{padding:.6rem;border-bottom:1px solid #eee;text-align:left}
-    .badge{padding:.2rem .5rem;border-radius:.5rem;background:#eef2ff}
-    select,input{padding:.4rem .5rem;border:1px solid #ddd;border-radius:.5rem}
-  </style>
-</head>
-<body>
-<div class="wrap">
-  <div class="toolbar" style="justify-content:space-between;margin-bottom:1rem">
-    <div>
-      <h1 style="margin:0">Đơn được phân công</h1>
-      <div class="toolbar" style="margin-top:.4rem">
-        <button class="btn light" onclick="location.href='<%=ctx%>/dashboard-shipper.jsp'">⬅️ Dashboard</button>
-        <button class="btn" onclick="reloadData()">Tải lại</button>
+<html lang="vi">
+<%@ include file="/WEB-INF/includes/header.jsp" %>
+
+<main class="min-h-screen bg-gradient-to-br from-amber-900/15 via-amber-800/20 to-amber-950/30 pb-20">
+  <section class="bg-white/90 backdrop-blur-sm border-b border-amber-100/70">
+    <div class="container mx-auto max-w-6xl px-4">
+      <div class="flex items-center justify-between py-4">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-100 text-amber-700">
+            <i data-feather="list" class="w-5 h-5"></i>
+          </span>
+          <div>
+            <h1 class="text-xl font-bold text-amber-800 m-0">Đơn được phân công</h1>
+            <p class="text-sm text-gray-500">Quản lý toàn bộ vận đơn của bạn</p>
+          </div>
+        </div>
+        <nav class="flex items-center gap-2">
+          <a href="<%=ctx%>/dashboard-shipper.jsp" class="px-3 py-2 rounded-xl text-sm font-medium text-amber-800 hover:bg-amber-100">Dashboard</a>
+          <a href="<%=ctx%>/shipments.jsp" class="px-3 py-2 rounded-xl text-sm font-medium bg-amber-700 text-white hover:bg-amber-800">Tất cả đơn</a>
+        </nav>
       </div>
     </div>
-    <div class="toolbar">
-      <label>Trạng thái:</label>
-      <select id="status">
-        <option value="">(Tất cả)</option>
-        <option>ASSIGNED</option>
-        <option>PICKED_UP</option>
-        <option>IN_TRANSIT</option>
-        <option>OUT_FOR_DELIVERY</option>
-        <option>DELIVERED</option>
-        <option>FAILED_DELIVERY</option>
-        <option>RETURNING</option>
-        <option>RETURNED</option>
-        <option>CANCELLED</option>
+  </section>
+
+  <section class="container mx-auto max-w-6xl px-4">
+    <!-- Filters -->
+    <div class="bg-white/95 border border-amber-100 rounded-2xl p-4 shadow-sm mt-6 flex flex-wrap gap-3 items-center">
+      <select id="fStatus" class="border rounded-xl px-3 py-2">
+        <option value="">Tất cả trạng thái</option>
+        <option value="ASSIGNED">ASSIGNED</option>
+        <option value="PICKED_UP">PICKED_UP</option>
+        <option value="IN_TRANSIT">IN_TRANSIT</option>
+        <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
+        <option value="DELIVERED">DELIVERED</option>
+        <option value="FAILED_DELIVERY">FAILED_DELIVERY</option>
       </select>
-      <label>Trang:</label><input id="page" type="number" value="1" min="1" style="width:76px">
-      <label>Kích thước:</label>
-      <select id="size"><option>10</option><option selected>20</option><option>50</option></select>
-      <button class="btn primary" onclick="reloadData()">Lọc</button>
+      <input id="fQuery" class="border rounded-xl px-3 py-2" placeholder="Tìm theo mã đơn / order id" />
+      <button class="px-3 py-2 rounded-xl bg-amber-100 text-amber-800 hover:bg-amber-200" onclick="loadShipments(1)">Lọc</button>
+      <div id="err" class="text-sm text-red-600 ml-auto"></div>
     </div>
-  </div>
 
-  <div style="overflow:auto">
-    <table class="table">
-      <thead><tr>
-        <th>#</th><th>Order ID</th><th>Trạng thái</th><th>COD</th><th>Cập nhật</th><th></th>
-      </tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
+    <!-- Table -->
+    <div class="bg-white/95 border border-amber-100 rounded-2xl p-4 shadow-sm mt-4">
+      <div class="overflow-auto">
+        <table class="w-full text-sm">
+          <thead>
+          <tr class="text-gray-500 border-b">
+            <th class="text-left py-2 pr-3">#</th>
+            <th class="text-left py-2 pr-3">Order ID</th>
+            <th class="text-left py-2 pr-3">Trạng thái</th>
+            <th class="text-left py-2 pr-3">COD</th>
+            <th class="text-left py-2 pr-3">Cập nhật</th>
+            <th class="text-left py-2"> </th>
+          </tr>
+          </thead>
+          <tbody id="tblBody"></tbody>
+        </table>
+      </div>
 
-  <div class="toolbar" style="justify-content:space-between;margin-top:1rem">
-    <div id="pageInfo" class="muted"></div>
-    <div class="toolbar">
-      <button class="btn" id="prevBtn">Trước</button>
-      <button class="btn" id="nextBtn">Sau</button>
+      <div class="flex justify-between items-center mt-3">
+        <button id="prev" class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100">« Trang trước</button>
+        <div id="pageInfo" class="text-sm text-gray-600"></div>
+        <button id="next" class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100">Trang sau »</button>
+      </div>
     </div>
-  </div>
-  <div id="err" style="color:#ef4444;margin-top:.5rem"></div>
-</div>
+  </section>
+</main>
+
+<%@ include file="/WEB-INF/includes/footer.jsp" %>
 
 <script>
-const apiBase = '<%=ctx%>/api/shipper';
-let curPage = 1, totalPages = 1;
+  // auth agent
+  const ctx = '<%=ctx%>';
+  const TOKEN = localStorage.getItem('auth_token');
+  const ROLE  = (localStorage.getItem('auth_role') || '').toLowerCase();
+  if (!TOKEN || ROLE !== 'shipper') location.replace(ctx + '/login.jsp');
 
-async function reloadData() {
-  document.getElementById('err').textContent = '';
-  const status = document.getElementById('status').value;
-  const size = parseInt(document.getElementById('size').value||'20',10);
-  const url = new URL(apiBase+'/shipments', window.location.origin);
-  url.searchParams.set('page', curPage);
-  url.searchParams.set('size', size);
-  if (status) url.searchParams.set('status', status);
-  try {
-    const res = await fetch(url, {credentials:'same-origin'});
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    totalPages = Math.max(1, Math.ceil((data.total||0)/size));
-    document.getElementById('page').value = curPage;
-    document.getElementById('pageInfo').textContent = `Trang ${curPage}/${totalPages} — Tổng ${data.total||0} đơn`;
-
-    const tb = document.getElementById('tbody'); tb.innerHTML = '';
-    (data.items||[]).forEach(it=>{
-      const last = (it.lastUpdateAt||'').replace('T',' ').slice(0,19);
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${it.id}</td>
-        <td>${it.orderId ?? '-'}</td>
-        <td><span class="badge">${it.status}</span></td>
-        <td>${(it.codAmount||0).toLocaleString('vi-VN')} ₫</td>
-        <td>${last}</td>
-        <td><button class="btn primary" onclick="location.href='${'<%=ctx%>'}/shipment-detail.jsp?id=${it.id}'">Chi tiết</button></td>
-      `;
-      tb.appendChild(tr);
-    });
-
-    document.getElementById('prevBtn').disabled = curPage<=1;
-    document.getElementById('nextBtn').disabled = curPage>=totalPages;
-  } catch(e) {
-    document.getElementById('err').textContent = 'Lỗi tải: '+e.message+'. Có thể cần đăng nhập.';
+  async function authFetch(url, options = {}) {
+    const headers = new Headers(options.headers || {});
+    headers.set('Authorization', 'Bearer ' + TOKEN);
+    headers.set('Accept', 'application/json');
+    const res = await fetch(url, { ...options, headers });
+    if (res.status === 401 || res.status === 403) { localStorage.clear(); location.replace(ctx + '/login.jsp'); }
+    return res;
   }
-}
 
-document.getElementById('prevBtn').onclick = ()=>{ if(curPage>1){curPage--; reloadData();}};
-document.getElementById('nextBtn').onclick = ()=>{ if(curPage<totalPages){curPage++; reloadData();}};
-document.getElementById('page').addEventListener('change', e=>{
-  const p = parseInt(e.target.value||'1',10);
-  curPage = Math.max(1, p); reloadData();
-});
-reloadData();
+  const apiBase = ctx + '/api/shipper';
+  let page = 1, size = 20, totalPages = 1;
+
+  async function loadShipments(p = 1) {
+    page = p;
+    document.getElementById('err').textContent = '';
+    const st = document.getElementById('fStatus').value || '';
+    const q  = encodeURIComponent((document.getElementById('fQuery').value || '').trim());
+    try {
+      const url = `${apiBase}/shipments?page=${page}&size=${size}&status=${st}&q=${q}`;
+      const r = await authFetch(url);
+      const data = await r.json();
+
+      totalPages = data.totalPages || 1;
+      document.getElementById('pageInfo').textContent = `Trang ${page}/${totalPages}`;
+
+      const tb = document.getElementById('tblBody');
+      tb.innerHTML = '';
+      (data.items || []).forEach(it => {
+        const last = (it.lastUpdateAt || '').replace('T',' ').slice(0,19);
+        const tr = document.createElement('tr');
+        tr.className = 'border-b last:border-0';
+        tr.innerHTML = `
+          <td class="py-2 pr-3">\${it.id ?? '-'}</td>
+          <td class="py-2 pr-3">\${it.orderId ?? '-'}</td>
+          <td class="py-2 pr-3"><span class="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800">\${it.status ?? '-'}</span></td>
+          <td class="py-2 pr-3">\${(it.codAmount || 0).toLocaleString('vi-VN')} ₫</td>
+          <td class="py-2 pr-3">\${last || '-'}</td>
+          <td class="py-2">
+            <button class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
+              onclick="location.href='\${ctx}/shipment-detail.jsp?id=\${it.id}'">Chi tiết</button>
+          </td>
+        `;
+        tb.appendChild(tr);
+      });
+    } catch (e) {
+      document.getElementById('err').textContent = 'Lỗi tải: ' + (e.message || e);
+    }
+  }
+
+  document.getElementById('prev').onclick = () => { if (page > 1) loadShipments(page - 1); };
+  document.getElementById('next').onclick = () => { if (page < totalPages) loadShipments(page + 1); };
+  document.addEventListener('DOMContentLoaded', () => loadShipments(1));
 </script>
-</body>
 </html>
