@@ -360,9 +360,9 @@
                 </div>
             </div>
         </div>
-        <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
+<%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
 <script src="${pageContext.request.contextPath}/assets/js/admin/AdProduct.js"></script>
 </body>
 </html>
