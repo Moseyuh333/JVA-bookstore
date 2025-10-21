@@ -80,8 +80,10 @@ public class AdminCategoriesServlet extends HttpServlet {
         String searchType = req.getParameter("searchType");
 
         StringBuilder sql = new StringBuilder(
-            "SELECT id, name, COALESCE(total_products, 0) AS total_products, created_at " +
-            "FROM categories WHERE 1=1"
+            "SELECT c.id, c.name, COUNT(b.id) AS total_products, c.created_at " +
+            "FROM categories c " +
+            "LEFT JOIN books b ON b.category = c.name " +
+            "WHERE 1=1"
         );
 
         if (search != null && !search.trim().isEmpty()) {
@@ -90,7 +92,6 @@ public class AdminCategoriesServlet extends HttpServlet {
                     sql.append(" AND CAST(id AS TEXT) ILIKE ?");
                     break;
                 case "name":
-                case "description": // hiện tại không có description, nên dùng chung name
                 case "all":
                 default:
                     sql.append(" AND name ILIKE ?");
