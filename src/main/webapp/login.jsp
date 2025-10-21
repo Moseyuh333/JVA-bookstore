@@ -102,6 +102,9 @@
         if (response.ok && data && data.token) {
           const enteredUsername = (formData.get('username') || '').trim();
           const isAdmin = data.redirect === '/admin-dashboard';
+          // *** THÊM LOGIC NÀY ***
+          const isSeller = data.redirect === '/seller-dashboard';
+
           if (isAdmin) {
             localStorage.setItem('admin_token', data.token);
             if (enteredUsername.length > 0) {
@@ -109,6 +112,19 @@
             } else {
               localStorage.removeItem('admin_username');
             }
+
+            } else if (isSeller) { 
+            // Nếu bạn muốn lưu token riêng cho seller (tùy chọn)
+            localStorage.setItem('seller_token', data.token); 
+            localStorage.removeItem('auth_token'); // Đảm bảo token user bị xóa
+            
+            if (enteredUsername.length > 0) {
+              localStorage.setItem('seller_username', enteredUsername);
+            } else {
+              localStorage.removeItem('seller_username');
+            }
+
+            
           } else {
             localStorage.setItem('auth_token', data.token);
             if (enteredUsername.length > 0) {

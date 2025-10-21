@@ -1,11 +1,11 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Seller Dashboard</title>
 </head>
 <body>
-    <h1>Welcome Seller!</h1>
-    <p>This is your vendor dashboard.</p>
-</body>
+    <h1>Chào mừng Seller!</h1>
+    </body>
 </html>
