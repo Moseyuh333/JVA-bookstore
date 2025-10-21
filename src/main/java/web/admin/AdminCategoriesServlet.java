@@ -83,10 +83,14 @@ public class AdminCategoriesServlet extends HttpServlet {
         );
 
         if (search != null && !search.trim().isEmpty()) {
-            sql.append(" AND name ILIKE ?");
+            if ("id".equalsIgnoreCase(req.getParameter("searchType"))) {
+                sql.append(" AND CAST(id AS TEXT) ILIKE ?");
+            } else {
+                sql.append(" AND name ILIKE ?");
+            }
         }
 
-        sql.append(" ORDER BY name");
+        sql.append(" ORDER BY id DESC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"categories\":[");
@@ -96,7 +100,9 @@ public class AdminCategoriesServlet extends HttpServlet {
 
             // Gán parameter nếu có tìm kiếm
             if (search != null && !search.trim().isEmpty()) {
-                pstmt.setString(1, "%" + search.trim() + "%");
+                String pattern = "%" + search.trim() + "%";
+                pstmt.setString(1, pattern);
+                pstmt.setString(2, pattern);
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
