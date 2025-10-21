@@ -214,14 +214,12 @@ public class AdminDashboardServlet extends HttpServlet {
             "s.id AS shop_id, " +
             "s.name AS store_name, " +
             "s.status, " +
-            "COUNT(DISTINCT o.id) AS total_orders, " +
-            "COALESCE(SUM(oi.unit_price * oi.quantity), 0) AS revenue, " +
+            "COUNT(o.id) AS total_orders, " +
+            "COALESCE(SUM(o.total_amount), 0) AS revenue, " +
             "ROUND(s.commission_rate, 2) AS commission_rate " +
             "FROM shops s " +
-            "LEFT JOIN books b ON b.shop_id = s.id " +
-            "LEFT JOIN order_items oi ON oi.book_id = b.id " +
-            "LEFT JOIN orders o ON o.id = oi.order_id " +
-            "AND LOWER(o.status) IN ('completed', 'delivered') " +
+            "LEFT JOIN orders o ON o.shop_id = s.id " +
+            "AND LOWER(o.status) IN ('completed', 'delivered', 'confirmed', 'shipping') " +
             "GROUP BY s.id, s.name, s.status, s.commission_rate " +
             "ORDER BY revenue DESC, total_orders DESC " +
             "LIMIT 5";
