@@ -79,9 +79,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         hideEmpty();
         list.forEach(p => {
-            const discount = p.discount_value ? p.discount_value + (p.type === 'percentage' ? '%' : '₫') : "-";
+            const discount =
+                p.discount_type === "percent"
+                    ? `${p.discount_value}%`
+                    : `${p.discount_value.toLocaleString()}₫`;
+
+            const scopeLabel = {
+                product: "Giảm giá sản phẩm",
+                shipping: "Giảm phí vận chuyển"
+            }[p.scope] || "-";
+
             const valid = formatDateRange(p.start_at, p.end_at);
-            const type = p.type || "-";
+            const type = p.discount_type || "-";
             const code = p.code || "-";
             const description = p.description || "-";
             const active = p.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>';
@@ -91,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${escapeHtml(p.id.toString())}</td>
                 <td>${escapeHtml(code)}</td>
                 <td>${escapeHtml(description)}</td>
-                <td>${escapeHtml(type)}</td>
+                <td>${escapeHtml(scopeLabel)}</td>
                 <td>${discount}</td>
                 <td>${valid}</td>
                 <td>${active}</td>
