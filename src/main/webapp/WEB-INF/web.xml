@@ -94,12 +94,4 @@
         <url-pattern>/api/admin/clear-users</url-pattern>
     </servlet-mapping>
 
-    <servlet>
-        <servlet-name>SellerDashboard</servlet-name>
-        <jsp-file>/Seller/sellerDashboard.jsp</jsp-file> </servlet>
-    <servlet-mapping>
-        <servlet-name>SellerDashboard</servlet-name>
-        <url-pattern>/seller-dashboard</url-pattern>
-    </servlet-mapping>
-
 </web-app>
