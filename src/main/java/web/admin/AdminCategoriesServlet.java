@@ -19,11 +19,6 @@ public class AdminCategoriesServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // Check authentication
-        if (!isAuthenticated(req, resp)) {
-            return;
-        }
-
         resp.setContentType("application/json; charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
         req.setCharacterEncoding("UTF-8");
@@ -33,7 +28,7 @@ public class AdminCategoriesServlet extends HttpServlet {
 
         try {
             if ("list".equals(action)) {
-                listCategories(req, out);
+                listCategories(out);
             } else {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write("{\"error\":\"Invalid action\"}");
@@ -75,64 +70,33 @@ public class AdminCategoriesServlet extends HttpServlet {
         }
     }
 
-    private void listCategories(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String search = req.getParameter("search");
-        String searchType = req.getParameter("searchType");
+    private void listCategories(PrintWriter out) throws SQLException {
+        String sql = "SELECT id, name, total_products as product_count, created_at FROM categories ORDER BY name";
 
-        StringBuilder sql = new StringBuilder(
-            "SELECT c.id, c.name, COUNT(b.id) AS total_products, c.created_at " +
-            "FROM categories c " +
-            "LEFT JOIN books b ON b.category = c.name " +
-            "WHERE 1=1 "
-        );
-
-        if (search != null && !search.trim().isEmpty()) {
-            switch (searchType != null ? searchType.toLowerCase() : "all") {
-                case "id":
-                    sql.append("AND CAST(c.id AS TEXT) ILIKE ? ");
-                    break;
-                case "name":
-                case "all":
-                default:
-                    sql.append("AND c.name ILIKE ? ");
-                    break;
-            }
-        }
-
-        sql.append("GROUP BY c.id, c.name, c.created_at ORDER BY c.id ASC");
-
-        StringBuilder json = new StringBuilder("{\"categories\":[");
+        StringBuilder json = new StringBuilder();
+        json.append("{\"categories\":[");
 
         try (Connection conn = DBUtil.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
 
-            if (search != null && !search.trim().isEmpty()) {
-                pstmt.setString(1, "%" + search.trim() + "%");
-            }
+            boolean first = true;
+            while (rs.next()) {
+                if (!first) json.append(",");
+                first = false;
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                boolean first = true;
-                while (rs.next()) {
-                    if (!first) json.append(",");
-                    first = false;
-
-                    json.append("{")
-                        .append("\"id\":").append(rs.getInt("id")).append(",")
-                        .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
-                        .append("\"total_products\":").append(rs.getInt("total_products")).append(",")
-                        .append("\"created_at\":\"")
-                        .append(rs.getTimestamp("created_at") != null
-                                ? escapeJson(rs.getTimestamp("created_at").toString())
-                                : "")
-                        .append("\"}");
-                }
+                json.append("{")
+                    .append("\"id\":").append(rs.getInt("id")).append(",")
+                    .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
+                    .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
+                    .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
+                    .append("}");
             }
         }
 
         json.append("]}");
         out.write(json.toString());
     }
-
 
     private void createCategory(HttpServletRequest req, PrintWriter out) throws SQLException {
         String name = req.getParameter("name");
@@ -216,17 +180,6 @@ public class AdminCategoriesServlet extends HttpServlet {
                 out.write("{\"error\":\"Category not found\"}");
             }
         }
-    }
-
-    private boolean isAuthenticated(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String authHeader = req.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            resp.setContentType("application/json");
-            resp.getWriter().write("{\"error\": \"Unauthorized\"}");
-            return false;
-        }
-        return true;
     }
 
     private String escapeJson(String str) {
