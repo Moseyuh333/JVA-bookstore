@@ -83,30 +83,29 @@ public class AdminCategoriesServlet extends HttpServlet {
             "SELECT c.id, c.name, COUNT(b.id) AS total_products, c.created_at " +
             "FROM categories c " +
             "LEFT JOIN books b ON b.category = c.name " +
-            "WHERE 1=1"
+            "WHERE 1=1 "
         );
 
         if (search != null && !search.trim().isEmpty()) {
             switch (searchType != null ? searchType.toLowerCase() : "all") {
                 case "id":
-                    sql.append(" AND CAST(id AS TEXT) ILIKE ?");
+                    sql.append("AND CAST(c.id AS TEXT) ILIKE ? ");
                     break;
                 case "name":
                 case "all":
                 default:
-                    sql.append(" AND name ILIKE ?");
+                    sql.append("AND c.name ILIKE ? ");
                     break;
             }
         }
 
-        sql.append(" GROUP BY c.id, c.name, c.created_at ORDER BY c.id ASC");
-        StringBuilder json = new StringBuilder();
-        json.append("{\"categories\":[");
+        sql.append("GROUP BY c.id, c.name, c.created_at ORDER BY c.id ASC");
+
+        StringBuilder json = new StringBuilder("{\"categories\":[");
 
         try (Connection conn = DBUtil.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            // Thêm tham số nếu có tìm kiếm
             if (search != null && !search.trim().isEmpty()) {
                 pstmt.setString(1, "%" + search.trim() + "%");
             }
@@ -123,10 +122,9 @@ public class AdminCategoriesServlet extends HttpServlet {
                         .append("\"total_products\":").append(rs.getInt("total_products")).append(",")
                         .append("\"created_at\":\"")
                         .append(rs.getTimestamp("created_at") != null
-                            ? escapeJson(rs.getTimestamp("created_at").toString())
-                            : "")
-                        .append("\"")
-                        .append("}");
+                                ? escapeJson(rs.getTimestamp("created_at").toString())
+                                : "")
+                        .append("\"}");
                 }
             }
         }
