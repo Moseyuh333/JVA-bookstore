@@ -42,9 +42,9 @@ public class AdminDashboardServlet extends HttpServlet {
             JsonObject orderStatusData = getOrderStatusData();
             response.add("orderStatus", orderStatusData);
 
-            // Get top shops
-            JsonObject topShops = getTopShops();
-            response.add("topShops", topShops);
+            // Get top sellers
+            JsonObject topSellers = getTopSellers();
+            response.add("topSellers", topSellers);
 
             response.addProperty("success", true);
 
@@ -205,43 +205,40 @@ public class AdminDashboardServlet extends HttpServlet {
         return orderStatus;
     }
 
-    private JsonObject getTopShops() throws SQLException {
-        JsonObject topShops = new JsonObject();
+    private JsonObject getTopSellers() throws SQLException {
+        JsonObject topSellers = new JsonObject();
 
         try (Connection conn = DBUtil.getConnection()) {
             String query = "SELECT " +
-                "s.id AS shop_id, " +
-                "s.name AS shop_name, " +
-                "s.commission_rate, " +
-                "COUNT(DISTINCT o.id) AS total_orders, " +
-                "COALESCE(SUM(oi.total_price), 0) AS revenue " +
-                "FROM shops s " +
-                "LEFT JOIN books b ON s.id = b.shop_id " +
-                "LEFT JOIN order_items oi ON b.id = oi.book_id " +
-                "LEFT JOIN orders o ON oi.order_id = o.id AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered') " +
-                "GROUP BY s.id, s.name, s.commission_rate " +
+                "u.id AS user_id, " +
+                "COALESCE(u.username, u.email) AS store_name, " +
+                "COUNT(o.id) AS total_orders, " +
+                "COALESCE(SUM(o.total_amount), 0) AS revenue " +
+                    "FROM users u " +
+                    "LEFT JOIN orders o ON u.id = o.user_id AND LOWER(CAST(o.status AS TEXT)) IN ('completed', 'delivered') " +
+                    "GROUP BY u.id, u.username, u.email " +
                 "ORDER BY revenue DESC, total_orders DESC " +
                 "LIMIT 5";
 
             try (PreparedStatement stmt = conn.prepareStatement(query);
                  ResultSet rs = stmt.executeQuery()) {
 
-                JsonObject shops = new JsonObject();
+                JsonObject sellers = new JsonObject();
                 int index = 0;
                 while (rs.next()) {
-                    JsonObject shop = new JsonObject();
-                    shop.addProperty("store_name", rs.getString("shop_name"));
-                    shop.addProperty("total_orders", rs.getInt("total_orders"));
-                    shop.addProperty("revenue", rs.getDouble("revenue"));
-                    shop.addProperty("commission_rate", rs.getDouble("commission_rate"));
-                    shops.add(String.valueOf(index), shop);
+                    JsonObject seller = new JsonObject();
+                    seller.addProperty("store_name", rs.getString("store_name"));
+                    seller.addProperty("total_orders", rs.getInt("total_orders"));
+                    seller.addProperty("revenue", rs.getDouble("revenue"));
+                    seller.addProperty("commission_rate", 0);
+                    sellers.add(String.valueOf(index), seller);
                     index++;
                 }
 
-                topShops.add("shops", shops);
+                topSellers.add("sellers", sellers);
             }
         }
 
-        return topShops;
+        return topSellers;
     }
 }

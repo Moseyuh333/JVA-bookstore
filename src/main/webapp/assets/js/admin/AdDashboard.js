@@ -168,29 +168,27 @@ document.addEventListener("DOMContentLoaded", function() {
         const tbody = document.querySelector(".table-custom tbody");
         if (!tbody) return;
 
-        const sellers = topSellersData.sellers || {};
-        const shops = topSellersData.shops || {};
-        const data = Object.keys(shops).length > 0 ? shops : sellers;
+    const sellers = topSellersData.sellers || {};
 
         // Clear existing rows
         tbody.innerHTML = "";
 
         // Add new rows
-        Object.values(data).forEach((item, index) => {
+        Object.values(sellers).forEach((seller, index) => {
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td><span class="rank-badge rank-${index + 1}">${index + 1}</span></td>
-                <td><strong>${item.store_name || "N/A"}</strong></td>
-                <td>${item.total_orders || 0}</td>
-                <td><strong>${formatCurrency(item.revenue || 0)}₫</strong></td>
-                <td><span class="badge-percentage">${Math.round((item.commission_rate || 0) * 100)}%</span></td>
+                <td><strong>${seller.store_name || "N/A"}</strong></td>
+                <td>${seller.total_orders || 0}</td>
+                <td><strong>${formatCurrency(seller.revenue || 0)}₫</strong></td>
+                <td><span class="badge-percentage">${Math.round((seller.commission_rate || 0) * 100)}%</span></td>
                 <td><span class="badge-percentage">Hoạt động</span></td>
             `;
             tbody.appendChild(row);
         });
 
         // If no data, show default rows
-        if (Object.keys(data).length === 0) {
+        if (Object.keys(sellers).length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td><span class="rank-badge rank-1">1</span></td>
