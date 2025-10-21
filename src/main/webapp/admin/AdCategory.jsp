@@ -531,9 +531,6 @@
         <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
-<script src="${pageContext.request.contextPath}/assets/js/admin/AdCategory.js"></script>
-</body>
-</html>
 
 <!-- Category modal (custom, no bootstrap JS dependency) -->
 <style>
@@ -577,3 +574,7 @@
         </div>
     </form>
 </div>
+
+<script src="${pageContext.request.contextPath}/assets/js/admin/AdCategory.js"></script>
+</body>
+</html>
