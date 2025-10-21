@@ -99,8 +99,7 @@ public class AdminCategoriesServlet extends HttpServlet {
             }
         }
 
-        sql.append(" ORDER BY id ASC");
-
+        sql.append(" GROUP BY c.id, c.name, c.created_at ORDER BY c.id ASC");
         StringBuilder json = new StringBuilder();
         json.append("{\"categories\":[");
 
