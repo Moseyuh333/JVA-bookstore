@@ -126,7 +126,7 @@ public class AdminCategoriesServlet extends HttpServlet {
                         .append("\"id\":").append(rs.getInt("id")).append(",")
                         .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
                         .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
-                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
+                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : "").append("\"")
                         .append("}");
                 }
             }
