@@ -76,17 +76,18 @@ public class AdminCategoriesServlet extends HttpServlet {
 
         StringBuilder sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories");
 
-        if (search != null && !search.trim().isEmpty()) {
+        boolean hasSearch = (search != null && !search.trim().isEmpty());
+
+        if (hasSearch) {
             search = "%" + search.trim().toLowerCase() + "%";
             if ("id".equalsIgnoreCase(searchType)) {
-                sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories WHERE CAST(id AS TEXT) LIKE ? ");
+                sql.append(" WHERE CAST(id AS TEXT) LIKE ?");
             } else if ("name".equalsIgnoreCase(searchType)) {
-                sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories WHERE LOWER(name) LIKE ? ");
+                sql.append(" WHERE LOWER(name) LIKE ?");
             } else {
-                sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories WHERE LOWER(name) LIKE ? OR CAST(id AS TEXT) LIKE ? ");
+                sql.append(" WHERE LOWER(name) LIKE ? OR CAST(id AS TEXT) LIKE ?");
             }
         }
-
         sql.append(" ORDER BY id ASC");
 
         StringBuilder json = new StringBuilder();
