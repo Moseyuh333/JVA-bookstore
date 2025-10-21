@@ -80,7 +80,10 @@ public class AdminCategoriesServlet extends HttpServlet {
         String searchType = req.getParameter("searchType");
 
         StringBuilder sql = new StringBuilder(
-            "SELECT id, name, total_products as product_count, created_at FROM categories WHERE 1=1"
+            "SELECT c.id, c.name, COALESCE(b.book_count, 0) as product_count, c.created_at " +
+            "FROM categories c " +
+            "LEFT JOIN (SELECT category, COUNT(*) as book_count FROM books GROUP BY category) b ON c.name = b.category " +
+            "WHERE 1=1"
         );
 
         // Add search conditions
