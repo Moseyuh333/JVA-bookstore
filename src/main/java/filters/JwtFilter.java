@@ -96,7 +96,6 @@ public class JwtFilter implements Filter {
                 if (path.equals("/api/comments") || (path.startsWith("/api/comments/") && !path.matches("/api/comments/.*\\d+"))) {
                     return true;
                 }
-                // Temporarily allow admin endpoints for testing
                 if (path.equals("/api/admin/categories") || path.equals("/api/admin/dashboard") || path.equals("/api/admin/promotions")) {
                     return true;
                 }
