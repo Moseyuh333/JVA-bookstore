@@ -192,6 +192,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialize
     loadCategories();
+    window.applyFilters = applyFilters;
+    window.resetFilters = resetFilters;
 
     console.log("✓ AdCategory.js initialized");
 });
