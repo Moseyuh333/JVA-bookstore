@@ -244,6 +244,39 @@
             background: #d1d5db;
         }
 
+        /* Reuse user-management create button style for consistency */
+        .btn-create {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-create:hover {
+            background: #15803d;
+        }
+
+        /* Align create button to the right similar to user management */
+        #openCreateCategoryBtn {
+            margin-left: auto;
+        }
+
+        /* Green add button like user management */
+        .btn-add-green {
+            background: #10b981; /* emerald-500 */
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-add-green:hover {
+            background: #059669; /* emerald-600 */
+        }
+
         .table-wrapper {
             padding: 24px;
         }
@@ -467,10 +500,6 @@
                 <div class="card-custom">
                     <div class="card-header-custom">
                         <h2>Danh sách danh mục</h2>
-                        <button class="btn-add" onclick="openAddModal()">
-                            <i class="fas fa-plus"></i>
-                            <span>Thêm danh mục</span>
-                        </button>
                     </div>
 
                     <div class="filter-bar">
@@ -491,6 +520,10 @@
                             <button class="btn-custom btn-reset" onclick="resetFilters()">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
+                            </button>
+                            <button class="btn-custom btn-create" type="button" id="openCreateCategoryBtn" onclick="openAddModal()">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Thêm danh mục</span>
                             </button>
                         </div>
                     </div>
