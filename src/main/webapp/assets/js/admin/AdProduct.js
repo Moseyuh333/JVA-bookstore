@@ -145,12 +145,18 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await res.json();
-            if (!data.products || data.products.length === 0) return showEmpty();
 
-            products = data.products;
-            renderTable(products);
-            updateStats(data);
-            updatePagination(data.total, data.page, data.limit);
+            if (!data.products || data.products.length === 0) {
+                tableBody.innerHTML = "";  
+                showEmpty();           
+            } else {
+                hideEmpty();        
+                products = data.products;
+                renderTable(products);
+                updateStats(data);
+                updatePagination(data.total, data.page, data.limit);
+            }
+
         } catch (err) {
             console.error("Error loading:", err);
             showEmpty();
