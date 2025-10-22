@@ -166,11 +166,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Search filter
     const applyFilters = async () => {
         const keyword = searchInput.value.toLowerCase().trim();
+        const searchType = searchTypeSelect ? searchTypeSelect.value : 'all';
         if (keyword) {
             // Server-side search
             try {
                 showLoading();
-                const response = await api.getPromotions(keyword, 'all');
+                const response = await api.getPromotions(keyword, searchType);
                 if (response.promotions) {
                     filteredPromotions = response.promotions;
                     renderTable(filteredPromotions);
