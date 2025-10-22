@@ -466,11 +466,6 @@
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>
                             </button>
-                            <div id="emptyState" class="empty-state hidden">
-                                <i class="fas fa-box-open text-gray-400 text-4xl mb-2"></i>
-                                <p class="text-gray-600 font-medium">Không tìm thấy dữ liệu</p>
-                                <p class="text-gray-400 text-sm">Không có sản phẩm nào phù hợp với tiêu chí tìm kiếm</p>
-                            </div>
                             <button type="button" class="btn-custom btn-reset" id="btnReset">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
@@ -506,6 +501,11 @@
                             </table>
                             <!-- ⚙️ Phân trang -->
                             <div id="pagination" class="flex justify-center items-center gap-2 mt-4"></div>
+                        </div>
+                        <div id="emptyState" class="empty-state hidden">
+                            <i class="fas fa-box-open text-gray-400 text-4xl mb-2"></i>
+                            <p class="text-gray-600 font-medium">Không tìm thấy dữ liệu</p>
+                            <p class="text-gray-400 text-sm">Không có sản phẩm nào phù hợp với tiêu chí tìm kiếm</p>
                         </div>
 
                 </div>
