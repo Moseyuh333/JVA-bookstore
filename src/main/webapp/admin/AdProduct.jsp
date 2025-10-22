@@ -380,3 +380,77 @@
 <script src="${pageContext.request.contextPath}/assets/js/admin/AdProduct.js"></script>
 </body>
 </html>
+
+<!-- Product modal markup -->
+<div id="productModalOverlay" class="modal-overlay" style="display:none"></div>
+<div id="productModalBox" class="modal-box" style="display:none; z-index:10000; width:720px;">
+    <div class="modal-header">
+        <h3 id="productModalTitle">Thêm sản phẩm</h3>
+        <button id="productModalClose" class="modal-close" aria-label="Đóng">&times;</button>
+    </div>
+    <form id="productForm" class="modal-body" autocomplete="off">
+        <input type="hidden" id="productId" name="id" />
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="prodTitle">Tiêu đề *</label>
+                <input type="text" id="prodTitle" name="title" required />
+            </div>
+            <div class="form-group">
+                <label for="prodAuthor">Tác giả</label>
+                <input type="text" id="prodAuthor" name="author" />
+            </div>
+            <div class="form-group">
+                <label for="prodISBN">ISBN</label>
+                <input type="text" id="prodISBN" name="isbn" />
+            </div>
+            <div class="form-group">
+                <label for="prodPrice">Giá *</label>
+                <input type="number" id="prodPrice" name="price" step="0.01" required />
+            </div>
+            <div class="form-group">
+                <label for="prodStock">Tồn kho</label>
+                <input type="number" id="prodStock" name="stock" />
+            </div>
+            <div class="form-group">
+                <label for="prodCategory">Thể loại</label>
+                <input type="text" id="prodCategory" name="category" />
+            </div>
+            <div class="form-group full-width">
+                <label for="prodDescription">Mô tả</label>
+                <input type="text" id="prodDescription" name="description" />
+            </div>
+            <div class="form-group full-width">
+                <label for="prodImage">Ảnh (URL)</label>
+                <input type="text" id="prodImage" name="image_url" />
+            </div>
+            <div class="form-group">
+                <label for="prodShopId">Shop ID *</label>
+                <input type="number" id="prodShopId" name="shop_id" required />
+            </div>
+        </div>
+        <div id="productFeedback" class="form-feedback" role="alert" style="display:none"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="productCancel">Hủy</button>
+            <button type="submit" class="btn-primary" id="productSave">Lưu</button>
+        </div>
+    </form>
+</div>
+
+<!-- Product delete confirmation -->
+<div id="productDeleteOverlay" class="modal-overlay" style="display:none"></div>
+<div id="productDeleteBox" class="modal-box" style="display:none; z-index:10001; width:420px;">
+    <div class="modal-header">
+        <h3>Xóa sản phẩm</h3>
+        <button id="productDeleteClose" class="modal-close" aria-label="Đóng">&times;</button>
+    </div>
+    <div class="modal-body">
+        <div class="modal-warning">
+            <strong>Bạn có chắc muốn xóa sản phẩm này?</strong>
+        </div>
+        <div id="productDeleteFeedback" class="form-feedback" role="alert" style="display:none"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="productDeleteCancel">Hủy</button>
+            <button type="button" class="btn-primary" id="productDeleteConfirm">Xóa</button>
+        </div>
+    </div>
+</div>

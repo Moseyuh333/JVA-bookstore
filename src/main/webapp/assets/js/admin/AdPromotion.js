@@ -207,3 +207,75 @@ document.addEventListener("DOMContentLoaded", () => {
     // Init
     loadPromotions();
 });
+
+// ===== Promotion modal CRUD =====
+const promoOverlay = document.getElementById('promoModalOverlay');
+const promoBox = document.getElementById('promoModalBox');
+const promoForm = document.getElementById('promoForm');
+const promoIdInput = document.getElementById('promoId');
+const promoTitleEl = document.getElementById('promoModalTitle');
+
+function show(el){ if(el) el.style.display='block'; }
+function hide(el){ if(el) el.style.display='none'; }
+
+function openAddPromo(){
+    promoForm.reset(); promoIdInput.value=''; promoTitleEl.textContent='Thêm khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
+}
+
+async function openEditPromo(id){
+    try{
+        const token = localStorage.getItem('admin_token');
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=get&id=${id}`,{headers:{'Authorization':`Bearer ${token}`}});
+        const data = await res.json();
+        if(data.error){ alert(data.error); return; }
+        promoIdInput.value = data.id || '';
+        document.getElementById('promoName').value = data.name || '';
+        document.getElementById('promoCode').value = data.code || '';
+        document.getElementById('promoDescription').value = data.description || '';
+        document.getElementById('promoType').value = data.type || 'percent';
+        document.getElementById('promoKind').value = data.kind || 'product';
+        document.getElementById('promoValue').value = data.discount_value || '';
+        // parse timestamps if present
+        if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);
+        if(data.end_at) document.getElementById('promoEnd').value = (new Date(data.end_at)).toISOString().slice(0,16);
+        document.getElementById('promoActive').value = data.active ? 'true' : 'false';
+        promoTitleEl.textContent='Chỉnh sửa khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
+    }catch(err){ console.error(err); alert('Lỗi khi lấy khuyến mãi'); }
+}
+
+document.getElementById('promoModalClose')?.addEventListener('click', ()=>{ hide(promoOverlay); hide(promoBox); });
+document.getElementById('promoCancel')?.addEventListener('click', ()=>{ hide(promoOverlay); hide(promoBox); });
+
+promoForm?.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const id = promoIdInput.value;
+    const fd = new FormData(promoForm);
+    const params = new URLSearchParams(); for(const [k,v] of fd.entries()) params.append(k,v);
+    const token = localStorage.getItem('admin_token');
+    try{
+        const action = id ? 'update' : 'create'; if(id) params.append('id', id);
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=${action}`,{ method:'POST', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString() });
+        const data = await res.json(); if(data.error){ const fb=document.getElementById('promoFeedback'); fb.textContent = data.error; fb.style.display='block'; return; }
+        hide(promoOverlay); hide(promoBox); loadPromotions(); alert(data.message || 'Thành công');
+    }catch(err){ console.error(err); alert('Lỗi khi lưu khuyến mãi'); }
+});
+
+// Hook add button
+document.getElementById('openCreatePromotionBtn')?.addEventListener('click', openAddPromo);
+
+// Delegate table actions
+document.querySelector('#promotionTable')?.addEventListener('click', (e)=>{
+    const edit = e.target.closest('.edit-btn'); if(edit && edit.dataset.id){ openEditPromo(edit.dataset.id); return; }
+    const del = e.target.closest('.delete-btn'); if(del && del.dataset.id){ openDeletePromo(del.dataset.id); return; }
+});
+
+// Delete flow
+const promoDeleteOverlay = document.getElementById('promoDeleteOverlay');
+const promoDeleteBox = document.getElementById('promoDeleteBox');
+let deletingPromo = null;
+function openDeletePromo(id){ deletingPromo = id; show(promoDeleteOverlay); show(promoDeleteBox); }
+document.getElementById('promoDeleteCancel')?.addEventListener('click', ()=>{ hide(promoDeleteOverlay); hide(promoDeleteBox); deletingPromo=null; });
+document.getElementById('promoDeleteClose')?.addEventListener('click', ()=>{ hide(promoDeleteOverlay); hide(promoDeleteBox); deletingPromo=null; });
+document.getElementById('promoDeleteConfirm')?.addEventListener('click', async ()=>{
+    if(!deletingPromo) return; const token=localStorage.getItem('admin_token'); try{ const res=await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=delete&id=${deletingPromo}`,{method:'POST', headers:{'Authorization':`Bearer ${token}`}}); const data=await res.json(); if(data.error){ document.getElementById('promoDeleteFeedback').textContent=data.error; document.getElementById('promoDeleteFeedback').style.display='block'; return; } hide(promoDeleteOverlay); hide(promoDeleteBox); deletingPromo=null; loadPromotions(); alert(data.message||'Đã xóa'); }catch(err){ console.error(err); alert('Lỗi khi xóa'); }
+});

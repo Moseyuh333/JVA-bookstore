@@ -125,3 +125,135 @@ window.addEventListener('load', () => {
 
     document.getElementById('btnReset')?.addEventListener('click', resetFilter);
 });
+
+// ===== Modal CRUD for Shipper =====
+// Helper to show/hide modal
+function showElement(el) { if (el) el.style.display = 'block'; }
+function hideElement(el) { if (el) el.style.display = 'none'; }
+
+const shipperOverlay = document.getElementById('shipperModalOverlay');
+const shipperBox = document.getElementById('shipperModalBox');
+const shipperForm = document.getElementById('shipperForm');
+const shipperTitle = document.getElementById('shipperModalTitle');
+const shipperIdInput = document.getElementById('shipperId');
+
+// Open Add Modal
+function openAddShipper() {
+    shipperForm.reset();
+    shipperIdInput.value = '';
+    shipperTitle.textContent = 'Thêm nhà vận chuyển';
+    hideElement(document.getElementById('shipperFeedback'));
+    showElement(shipperOverlay);
+    showElement(shipperBox);
+}
+
+// Open Edit Modal
+async function openEditShipper(id) {
+    try {
+        const token = localStorage.getItem('admin_token');
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/shippers?action=get&id=${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        // populate form
+        shipperIdInput.value = data.id || '';
+        document.getElementById('shipperName').value = data.name || '';
+        document.getElementById('shipperPhone').value = data.phone || '';
+        document.getElementById('shipperEmail').value = data.email || '';
+        document.getElementById('shipperBaseFee').value = data.base_fee || '';
+        document.getElementById('shipperServiceArea').value = data.service_area || '';
+        document.getElementById('shipperEstimatedTime').value = data.estimated_time || '';
+        document.getElementById('shipperStatus').value = data.status || 'active';
+
+        shipperTitle.textContent = 'Chỉnh sửa nhà vận chuyển';
+        hideElement(document.getElementById('shipperFeedback'));
+        showElement(shipperOverlay);
+        showElement(shipperBox);
+    } catch (err) {
+        console.error('Error fetching shipper', err);
+        alert('Lỗi khi lấy dữ liệu nhà vận chuyển');
+    }
+}
+
+// Close handlers
+document.getElementById('shipperModalClose')?.addEventListener('click', () => { hideElement(shipperOverlay); hideElement(shipperBox); });
+document.getElementById('shipperCancel')?.addEventListener('click', () => { hideElement(shipperOverlay); hideElement(shipperBox); });
+
+// Form submit (create/update)
+shipperForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = shipperIdInput.value;
+    const formData = new FormData(shipperForm);
+    const params = new URLSearchParams();
+    for (const [k, v] of formData.entries()) params.append(k, v);
+    const token = localStorage.getItem('admin_token');
+
+    try {
+        const action = id ? 'update' : 'create';
+        if (id) params.append('id', id);
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/shippers?action=${action}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
+        });
+        const data = await res.json();
+        if (data.error) {
+            const fb = document.getElementById('shipperFeedback'); fb.textContent = data.error; fb.style.display = 'block'; return;
+        }
+        // success
+        hideElement(shipperOverlay); hideElement(shipperBox);
+        loadShippers();
+        alert(data.message || 'Thao tác thành công');
+    } catch (err) {
+        console.error('Error saving shipper', err);
+        alert('Lỗi khi lưu nhà vận chuyển');
+    }
+});
+
+// Hook add button
+document.getElementById('openCreateShipperBtn')?.addEventListener('click', openAddShipper);
+
+// Delegate edit/delete buttons in table
+document.querySelector('#ShipperTable')?.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.btn-edit');
+    if (editBtn && editBtn.dataset.id) {
+        openEditShipper(editBtn.dataset.id);
+        return;
+    }
+    const deleteBtn = e.target.closest('.btn-delete');
+    if (deleteBtn && deleteBtn.dataset.id) {
+        openDeleteShipper(deleteBtn.dataset.id);
+        return;
+    }
+});
+
+// ===== Delete flow =====
+const deleteOverlay = document.getElementById('shipperDeleteOverlay');
+const deleteBox = document.getElementById('shipperDeleteBox');
+let deletingId = null;
+
+function openDeleteShipper(id) {
+    deletingId = id;
+    showElement(deleteOverlay); showElement(deleteBox);
+}
+
+document.getElementById('shipperDeleteCancel')?.addEventListener('click', () => { hideElement(deleteOverlay); hideElement(deleteBox); deletingId = null; });
+document.getElementById('shipperDeleteClose')?.addEventListener('click', () => { hideElement(deleteOverlay); hideElement(deleteBox); deletingId = null; });
+
+document.getElementById('shipperDeleteConfirm')?.addEventListener('click', async () => {
+    if (!deletingId) return;
+    const token = localStorage.getItem('admin_token');
+    try {
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/shippers?action=delete&id=${deletingId}`, {
+            method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.error) { document.getElementById('shipperDeleteFeedback').textContent = data.error; document.getElementById('shipperDeleteFeedback').style.display = 'block'; return; }
+        hideElement(deleteOverlay); hideElement(deleteBox); deletingId = null; loadShippers(); alert(data.message || 'Đã xóa');
+    } catch (err) {
+        console.error('Error deleting shipper', err);
+        alert('Lỗi khi xóa nhà vận chuyển');
+    }
+});
+

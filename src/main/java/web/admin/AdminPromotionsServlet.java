@@ -212,7 +212,7 @@ public class AdminPromotionsServlet extends HttpServlet {
         Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
 
         String sql = "INSERT INTO promotions (name, code, description, discount_type, discount_kind, discount_value, start_date, end_date, status, shop_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, start_date AS created_at";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -232,11 +232,14 @@ public class AdminPromotionsServlet extends HttpServlet {
                 pstmt.setNull(10, java.sql.Types.INTEGER);
             }
 
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Promotion created successfully\"}");
-            } else {
-                out.write("{\"error\":\"Failed to create promotion\"}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int newId = rs.getInt("id");
+                    java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                    out.write("{\"id\":" + newId + ", \"created_at\":\"" + (createdAt != null ? createdAt.toString() : "") + "\", \"message\":\"Promotion created successfully\"}");
+                } else {
+                    out.write("{\"error\":\"Failed to create promotion\"}");
+                }
             }
         }
     }

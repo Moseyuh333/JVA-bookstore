@@ -352,8 +352,7 @@ public class AdminProductsServlet extends HttpServlet {
         int shopId = Integer.parseInt(shopIdStr);
 
         String sql = "INSERT INTO books (title, author, isbn, price, description, category, stock, image_url, shop_id) "
-                +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at";
 
         try (Connection conn = DBUtil.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -368,11 +367,14 @@ public class AdminProductsServlet extends HttpServlet {
             pstmt.setString(8, imageUrl != null ? imageUrl.trim() : null);
             pstmt.setInt(9, shopId);
 
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Product created successfully\"}");
-            } else {
-                out.write("{\"error\":\"Failed to create product\"}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int newId = rs.getInt("id");
+                    java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                    out.write("{\"id\":" + newId + ", \"created_at\":\"" + (createdAt != null ? createdAt.toString() : "") + "\", \"message\":\"Product created successfully\"}");
+                } else {
+                    out.write("{\"error\":\"Failed to create product\"}");
+                }
             }
         }
     }

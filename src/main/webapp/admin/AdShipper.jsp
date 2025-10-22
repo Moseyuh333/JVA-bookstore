@@ -584,3 +584,73 @@
 <script src ="${pageContext.request.contextPath}/assets/js/admin/AdShipper.js"></script>
 </body>
 </html>
+ 
+<!-- Shipper modals -->
+<div id="shipperModalOverlay" class="modal-overlay" style="display:none"></div>
+<div id="shipperModalBox" class="modal-box" style="display:none; z-index:10000;">
+    <div class="modal-header">
+        <h3 id="shipperModalTitle">Thêm nhà vận chuyển</h3>
+        <button id="shipperModalClose" class="modal-close" aria-label="Đóng">&times;</button>
+    </div>
+    <form id="shipperForm" class="modal-body" autocomplete="off">
+        <input type="hidden" id="shipperId" name="id" />
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="shipperName">Tên nhà vận chuyển *</label>
+                <input type="text" id="shipperName" name="name" required />
+            </div>
+            <div class="form-group">
+                <label for="shipperPhone">Số điện thoại</label>
+                <input type="tel" id="shipperPhone" name="phone" />
+            </div>
+            <div class="form-group">
+                <label for="shipperEmail">Email</label>
+                <input type="email" id="shipperEmail" name="email" />
+            </div>
+            <div class="form-group">
+                <label for="shipperBaseFee">Phí cơ bản *</label>
+                <input type="number" id="shipperBaseFee" name="base_fee" step="0.01" required />
+            </div>
+            <div class="form-group full-width">
+                <label for="shipperServiceArea">Khu vực phục vụ</label>
+                <input type="text" id="shipperServiceArea" name="service_area" />
+            </div>
+            <div class="form-group">
+                <label for="shipperEstimatedTime">Thời gian ước tính</label>
+                <input type="text" id="shipperEstimatedTime" name="estimated_time" />
+            </div>
+            <div class="form-group">
+                <label for="shipperStatus">Trạng thái</label>
+                <select id="shipperStatus" name="status">
+                    <option value="active">Đang hoạt động</option>
+                    <option value="inactive">Tạm khóa</option>
+                </select>
+            </div>
+        </div>
+        <div id="shipperFeedback" class="form-feedback" role="alert" style="display:none"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="shipperCancel">Hủy</button>
+            <button type="submit" class="btn-primary" id="shipperSave">Lưu</button>
+        </div>
+    </form>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="shipperDeleteOverlay" class="modal-overlay" style="display:none"></div>
+<div id="shipperDeleteBox" class="modal-box" style="display:none; z-index:10001; width:420px;">
+    <div class="modal-header">
+        <h3>Xóa nhà vận chuyển</h3>
+        <button id="shipperDeleteClose" class="modal-close" aria-label="Đóng">&times;</button>
+    </div>
+    <div class="modal-body">
+        <div class="modal-warning">
+            <strong>Bạn có chắc muốn xóa nhà vận chuyển này?</strong>
+            <div id="shipperDeleteSummary">Hành động này không thể hoàn tác.</div>
+        </div>
+        <div id="shipperDeleteFeedback" class="form-feedback" role="alert" style="display:none"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="shipperDeleteCancel">Hủy</button>
+            <button type="button" class="btn-primary" id="shipperDeleteConfirm">Xóa</button>
+        </div>
+    </div>
+</div>

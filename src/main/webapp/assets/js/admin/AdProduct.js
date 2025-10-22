@@ -220,3 +220,79 @@ document.addEventListener("DOMContentLoaded", () => {
     loadProducts();
     loadStats();
 });
+
+// ===== Product modal CRUD =====
+const productOverlay = document.getElementById('productModalOverlay');
+const productBox = document.getElementById('productModalBox');
+const productForm = document.getElementById('productForm');
+const productIdInput = document.getElementById('productId');
+const productTitleEl = document.getElementById('productModalTitle');
+
+function showEl(el){ if(el) el.style.display='block'; }
+function hideEl(el){ if(el) el.style.display='none'; }
+
+function openAddProduct(){
+    productForm.reset(); productIdInput.value=''; productTitleEl.textContent='Thêm sản phẩm'; hideEl(document.getElementById('productFeedback')); showEl(productOverlay); showEl(productBox);
+}
+
+async function openEditProduct(id){
+    try{
+        const token = localStorage.getItem('admin_token');
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=get&id=${id}`,{headers:{'Authorization':`Bearer ${token}`}});
+        const data = await res.json(); if(data.error){ alert(data.error); return; }
+        productIdInput.value = data.id || '';
+        document.getElementById('prodTitle').value = data.title || '';
+        document.getElementById('prodAuthor').value = data.author || '';
+        document.getElementById('prodISBN').value = data.isbn || '';
+        document.getElementById('prodPrice').value = data.price || '';
+        document.getElementById('prodStock').value = data.stock || '';
+        document.getElementById('prodCategory').value = data.category || '';
+        document.getElementById('prodDescription').value = data.description || '';
+        document.getElementById('prodImage').value = data.image_url || '';
+        document.getElementById('prodShopId').value = data.shop_id || '';
+        productTitleEl.textContent='Chỉnh sửa sản phẩm'; hideEl(document.getElementById('productFeedback')); showEl(productOverlay); showEl(productBox);
+    }catch(err){ console.error(err); alert('Lỗi khi lấy sản phẩm'); }
+}
+
+document.getElementById('productModalClose')?.addEventListener('click', ()=>{ hideEl(productOverlay); hideEl(productBox); });
+document.getElementById('productCancel')?.addEventListener('click', ()=>{ hideEl(productOverlay); hideEl(productBox); });
+
+productForm?.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const id = productIdInput.value;
+    const fd = new FormData(productForm);
+    const params = new URLSearchParams(); for(const [k,v] of fd.entries()) params.append(k,v);
+    const token = localStorage.getItem('admin_token');
+    try{
+        const action = id ? 'update' : 'create'; if(id) params.append('id', id);
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=${action}`,{ method:'POST', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString() });
+        const data = await res.json(); if(data.error){ const fb=document.getElementById('productFeedback'); fb.textContent = data.error; fb.style.display='block'; return; }
+        hideEl(productOverlay); hideEl(productBox); loadProducts(); alert(data.message || 'Thành công');
+    }catch(err){ console.error(err); alert('Lỗi khi lưu sản phẩm'); }
+});
+
+// Hook add button
+document.getElementById('openCreateProductBtn')?.addEventListener('click', openAddProduct);
+
+// Delegate table actions (edit/delete)
+document.querySelector('table')?.addEventListener('click', (e)=>{
+    const editBtn = e.target.closest('.btn-warning, .btn-edit');
+    const delBtn = e.target.closest('.btn-danger, .btn-delete');
+    if(editBtn){
+        const tr = editBtn.closest('tr'); const id = tr?.querySelector('td')?.textContent?.trim(); if(id) openEditProduct(id); return;
+    }
+    if(delBtn){
+        const tr = delBtn.closest('tr'); const id = tr?.querySelector('td')?.textContent?.trim(); if(id) openDeleteProduct(id); return;
+    }
+});
+
+// Delete flow
+const productDeleteOverlay = document.getElementById('productDeleteOverlay');
+const productDeleteBox = document.getElementById('productDeleteBox');
+let deletingProduct = null;
+function openDeleteProduct(id){ deletingProduct = id; showEl(productDeleteOverlay); showEl(productDeleteBox); }
+document.getElementById('productDeleteCancel')?.addEventListener('click', ()=>{ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; });
+document.getElementById('productDeleteClose')?.addEventListener('click', ()=>{ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; });
+document.getElementById('productDeleteConfirm')?.addEventListener('click', async ()=>{
+    if(!deletingProduct) return; const token=localStorage.getItem('admin_token'); try{ const res=await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=delete&id=${deletingProduct}`,{method:'POST', headers:{'Authorization':`Bearer ${token}`}}); const data=await res.json(); if(data.error){ document.getElementById('productDeleteFeedback').textContent=data.error; document.getElementById('productDeleteFeedback').style.display='block'; return; } hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; loadProducts(); alert(data.message||'Đã xóa'); }catch(err){ console.error(err); alert('Lỗi khi xóa'); }
+});

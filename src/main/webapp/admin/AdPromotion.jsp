@@ -553,3 +553,86 @@
 <script src ="${pageContext.request.contextPath}/assets/js/admin/AdPromotion.js"></script>
 </body>
 </html>
+
+<!-- Promotion modals -->
+<div id="promoModalOverlay" class="modal-overlay" style="display:none"></div>
+<div id="promoModalBox" class="modal-box" style="display:none; z-index:10000;">
+    <div class="modal-header">
+        <h3 id="promoModalTitle">Thêm khuyến mãi</h3>
+        <button id="promoModalClose" class="modal-close" aria-label="Đóng">&times;</button>
+    </div>
+    <form id="promoForm" class="modal-body" autocomplete="off">
+        <input type="hidden" id="promoId" name="id" />
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="promoName">Tên chương trình *</label>
+                <input type="text" id="promoName" name="name" required />
+            </div>
+            <div class="form-group">
+                <label for="promoCode">Mã code *</label>
+                <input type="text" id="promoCode" name="code" required />
+            </div>
+            <div class="form-group">
+                <label for="promoType">Loại giảm</label>
+                <select id="promoType" name="type">
+                    <option value="percent">Phần trăm</option>
+                    <option value="amount">Số tiền</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="promoKind">Phạm vi</label>
+                <select id="promoKind" name="kind">
+                    <option value="product">Sản phẩm</option>
+                    <option value="shipping">Phí vận chuyển</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="promoValue">Giá trị giảm *</label>
+                <input type="number" id="promoValue" name="discount_value" step="0.01" required />
+            </div>
+            <div class="form-group">
+                <label for="promoStart">Bắt đầu</label>
+                <input type="datetime-local" id="promoStart" name="start_at" />
+            </div>
+            <div class="form-group">
+                <label for="promoEnd">Kết thúc</label>
+                <input type="datetime-local" id="promoEnd" name="end_at" />
+            </div>
+            <div class="form-group full-width">
+                <label for="promoDescription">Mô tả</label>
+                <input type="text" id="promoDescription" name="description" />
+            </div>
+            <div class="form-group">
+                <label for="promoActive">Trạng thái</label>
+                <select id="promoActive" name="active">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+        </div>
+        <div id="promoFeedback" class="form-feedback" role="alert" style="display:none"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="promoCancel">Hủy</button>
+            <button type="submit" class="btn-primary" id="promoSave">Lưu</button>
+        </div>
+    </form>
+</div>
+
+<!-- Promotion Delete modal -->
+<div id="promoDeleteOverlay" class="modal-overlay" style="display:none"></div>
+<div id="promoDeleteBox" class="modal-box" style="display:none; z-index:10001; width:420px;">
+    <div class="modal-header">
+        <h3>Xóa khuyến mãi</h3>
+        <button id="promoDeleteClose" class="modal-close" aria-label="Đóng">&times;</button>
+    </div>
+    <div class="modal-body">
+        <div class="modal-warning">
+            <strong>Bạn có chắc muốn xóa khuyến mãi này?</strong>
+        </div>
+        <div id="promoDeleteFeedback" class="form-feedback" role="alert" style="display:none"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="promoDeleteCancel">Hủy</button>
+            <button type="button" class="btn-primary" id="promoDeleteConfirm">Xóa</button>
+        </div>
+    </div>
+</div>

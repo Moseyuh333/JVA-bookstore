@@ -209,7 +209,7 @@ public class AdminShippersServlet extends HttpServlet {
         BigDecimal baseFee = new BigDecimal(baseFeeStr);
 
         String sql = "INSERT INTO shippers (name, phone, email, base_fee, service_area, estimated_time, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at";
 
         try (Connection conn = DBUtil.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -222,11 +222,14 @@ public class AdminShippersServlet extends HttpServlet {
             pstmt.setString(6, estimatedTime != null ? estimatedTime.trim() : null);
             pstmt.setString(7, status != null ? status : "active");
 
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Shipper created successfully\"}");
-            } else {
-                out.write("{\"error\":\"Failed to create shipper\"}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int newId = rs.getInt("id");
+                    java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                    out.write("{\"id\":" + newId + ", \"created_at\":\"" + (createdAt != null ? createdAt.toString() : "") + "\", \"message\":\"Shipper created successfully\"}");
+                } else {
+                    out.write("{\"error\":\"Failed to create shipper\"}");
+                }
             }
         }
     }
