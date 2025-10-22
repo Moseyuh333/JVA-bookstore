@@ -32,26 +32,25 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const showLoading = () => {
-            loadingState?.classList.remove("hidden");
-            tableContainer?.classList.add("hidden");
-            emptyState?.classList.add("hidden");
-        };
+        if (loadingState) loadingState.style.display = "block";
+        if (tableWrapper) tableWrapper.style.display = "none";
+        if (emptyState) emptyState.style.display = "none";
+    };
 
-        const hideLoading = () => {
-            loadingState?.classList.add("hidden");
-            tableContainer?.classList.remove("hidden");
-        };
+    const hideLoading = () => {
+        if (loadingState) loadingState.style.display = "none";
+        if (tableWrapper) tableWrapper.style.display = "block";
+    };
 
-        const showEmpty = () => {
-            emptyState?.classList.remove("hidden");
-            tableWrapper?.classList.add("hidden");
-        };
+    const showEmpty = () => {
+        if (emptyState) emptyState.style.display = "block";
+        if (tableWrapper) tableWrapper.style.display = "none";
+    };
 
-        const hideEmpty = () => {
-            emptyState?.classList.add("hidden");
-            tableWrapper?.classList.remove("hidden");
-        };
-
+    const hideEmpty = () => {
+        if (emptyState) emptyState.style.display = "none";
+        if (tableWrapper) tableWrapper.style.display = "block";
+    };
 
     // ===== Render Table =====
     const renderTable = (list) => {
