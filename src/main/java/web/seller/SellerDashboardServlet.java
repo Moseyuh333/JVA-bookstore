@@ -18,7 +18,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-@WebServlet(name = "SellerDashboardServlet", urlPatterns = {"/api/seller/dashboard"})
+@WebServlet("/seller-dashboard")
 public class SellerDashboardServlet extends HttpServlet {
 
     @Override
