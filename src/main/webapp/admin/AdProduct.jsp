@@ -222,34 +222,22 @@
         }
 
         /* Modal styling - fixed for pointer events and scroll */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2147483646;
-            display: none;
-            pointer-events: auto !important;
-        }
-
-        .modal-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            z-index: 2147483647;
-            display: none;
-            width: 720px;
-            max-width: 90vw;
-            max-height: 85vh;
-            overflow: auto;
-            pointer-events: auto !important;
-        }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9998; }
+        .modal-overlay.active { display: block; }
+        .modal-box { display: none; position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 680px; max-width: 95%; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .modal-box.active { display: block; }
+        .modal-header { padding: 18px 22px; border-bottom: 1px solid #eef2f6; display:flex; justify-content:space-between; align-items:center; }
+        .modal-title { font-size:18px; font-weight:700; color:#1a202c; }
+        .modal-body { padding: 18px 22px; }
+        .modal-footer { padding: 14px 22px; border-top: 1px solid #eef2f6; text-align: right; }
+        .modal-input { width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; }
+        .btn-primary-modal { background:#92400e; color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer; }
+        .btn-secondary-modal { background:#e5e7eb; color:#374151; border:none; padding:10px 16px; border-radius:8px; margin-right:8px; cursor:pointer; }
+        .modal-row { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+        .modal-label { width:160px; font-size:14px; color:#374151; }
+        .form-feedback { margin-top:12px; padding:10px 12px; border-radius:8px; display:none; }
+        .form-feedback.success { display:block; background:#dcfce7; color:#166534; }
+        .form-feedback.error { display:block; background:#fee2e2; color:#991b1b; }
 
         /* Prevent background scroll when modal is open */
         body.modal-open {
