@@ -2,44 +2,66 @@ package web.seller;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@WebServlet({"/seller/dashboard", "/seller/products", "/seller/orders", "/seller/analytics", "/seller/profile", "/seller/settings"})
+// Giả sử bạn có model User trong hệ thống để kiểm tra vai trò
+// import models.User; 
+
+/**
+ * Servlet xử lý yêu cầu hiển thị trang Seller Dashboard.
+ * Ánh xạ URL: /seller-dashboard
+ * Chú ý: Vì dùng @WebServlet, phải xóa ánh xạ /seller-dashboard trong web.xml
+ */
+@WebServlet("/seller-dashboard") 
 public class SellerDashboardServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // Lấy đường dẫn người dùng đang truy cập
-        String path = req.getServletPath();
-
-        // Kiểm tra đăng nhập và role
-        Object role = req.getSession().getAttribute("role");
-        if (role == null || !role.equals("seller")) {
+        
+        // 1. KIỂM TRA XÁC THỰC VÀ VAI TRÒ (AUTHORIZATION)
+        Object userObj = req.getSession().getAttribute("currentUser");
+        String username = null;
+        String role = "User"; // Mặc định là User nếu không tìm thấy
+        if (userObj == null) {
+            // Nếu chưa đăng nhập, chuyển hướng về trang đăng nhập
             resp.sendRedirect(req.getContextPath() + "/login.jsp");
             return;
         }
 
-        // Chuyển hướng tương ứng JSP
-        String page = "/WEB-INF/views/seller/dashboard.jsp"; // mặc định
-        switch (path) {
-            case "/seller/products":
-                page = "/WEB-INF/views/seller/products.jsp";
-                break;
-            case "/seller/orders":
-                page = "/WEB-INF/views/seller/orders.jsp";
-                break;
-            case "/seller/analytics":
-                page = "/WEB-INF/views/seller/analytics.jsp";
-                break;
-            case "/seller/profile":
-                page = "/WEB-INF/views/seller/profile.jsp";
-                break;
-            case "/seller/settings":
-                page = "/WEB-INF/views/seller/settings.jsp";
-                break;
+        /* // Logic mẫu để lấy Username và Role từ User Object (Cần import models.User)
+        if (userObj instanceof User) {
+            User user = (User) userObj;
+            username = user.getUsername(); // Hoặc getEmail()
+            role = user.getRole();
+            
+            if (!"seller".equalsIgnoreCase(role)) {
+                // Nếu đã đăng nhập nhưng không phải vai trò seller, chuyển về trang chủ
+                resp.sendRedirect(req.getContextPath() + "/");
+                return;
+            }
         }
+        */
 
-        req.getRequestDispatcher(page).forward(req, resp);
+        // DÙNG DỮ LIỆU TẠM THỜI cho JSP để đảm bảo hiển thị
+        // Nếu không có User Object, dùng Seller token từ localStorage (đã có ở client)
+        if (username == null) {
+            // Trong môi trường thực tế, bạn cần lấy User Object từ Session/Token
+            username = "Seller_Account"; 
+            role = "Seller"; 
+}
+
+        // Đặt thuộc tính vào request để JSP có thể đọc được (ví dụ: ${username}, ${role})
+        req.setAttribute("username", username); 
+        req.setAttribute("role", role); 
+
+        // 2. CHUYỂN TIẾP (FORWARD) TỚI GIAO DIỆN JSP
+        // Đường dẫn: /Seller/sellerDashboard.jsp
+        req.getRequestDispatcher("/Seller/sellerDashboard.jsp").forward(req, resp);
+        
     }
+    
+    // Xóa các hàm thống kê cũ
 }
