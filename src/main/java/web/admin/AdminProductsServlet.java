@@ -147,7 +147,7 @@ public class AdminProductsServlet extends HttpServlet {
                 if (category != null && !category.trim().isEmpty())
                     psCount.setString(param++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
-                    String pattern = "%" + search.trim() + "%";
+                    String pattern = search.trim() + "%";
                     if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
                         psCount.setString(param++, pattern);
                     } else {
@@ -166,7 +166,8 @@ public class AdminProductsServlet extends HttpServlet {
             }
 
             // Query data
-            StringBuilder json = new StringBuilder("{\"products\":[");
+            StringBuilder json = new StringBuilder("{\"products\":");
+            boolean hasProducts = false;
             try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
                 int param = 1;
                 if (shopId != null && !shopId.trim().isEmpty())
@@ -174,7 +175,7 @@ public class AdminProductsServlet extends HttpServlet {
                 if (category != null && !category.trim().isEmpty())
                     ps.setString(param++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
-                    String pattern = "%" + search.trim() + "%";
+                    String pattern = search.trim() + "%";
                     if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
                         ps.setString(param++, pattern);
                     } else {
@@ -189,12 +190,10 @@ public class AdminProductsServlet extends HttpServlet {
                 ps.setInt(param++, limit);
                 ps.setInt(param++, offset);
 
-                boolean first = true;
                 try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        if (!first) json.append(",");
-                        first = false;
-                        json.append("{")
+                    if (rs.next()) {
+                        hasProducts = true;
+                        json.append("[{")
                             .append("\"id\":").append(rs.getInt("id")).append(",")
                             .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
                             .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
@@ -206,6 +205,23 @@ public class AdminProductsServlet extends HttpServlet {
                             .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
                             .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
                             .append("}");
+                        while (rs.next()) {
+                            json.append(",{")
+                                .append("\"id\":").append(rs.getInt("id")).append(",")
+                                .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
+                                .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
+                                .append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",")
+                                .append("\"price\":").append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : 0).append(",")
+                                .append("\"stock\":").append(rs.getInt("stock")).append(",")
+                                .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
+                                .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
+                                .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
+                                .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                                .append("}");
+                        }
+                        json.append("]");
+                    } else {
+                        json.append("null");
                     }
                 }
             }
@@ -230,8 +246,7 @@ public class AdminProductsServlet extends HttpServlet {
                 }
             }
 
-            json.append("],")
-            .append("\"total\":").append(total)
+            json.append(",\"total\":").append(total)
             .append(",\"page\":").append(page)
             .append(",\"limit\":").append(limit)
             .append(",\"stats\":{")
@@ -240,7 +255,7 @@ public class AdminProductsServlet extends HttpServlet {
             .append("\"out_stock\":").append(outStock)
             .append("}")
             .append("}");
-            
+
             out.write(json.toString());
         }
     }
