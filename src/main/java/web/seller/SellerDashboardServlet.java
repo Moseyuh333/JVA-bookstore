@@ -1,6 +1,5 @@
 package web.seller;
 
-// Import các thư viện cần thiết cho Servlet và xử lý request/response
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -8,12 +7,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-// Giả sử bạn có class User (model) và nó có phương thức getRole()
+// Giả sử bạn có model User trong hệ thống để kiểm tra vai trò
 // import models.User; 
 
 /**
  * Servlet xử lý yêu cầu hiển thị trang Seller Dashboard.
  * Ánh xạ URL: /seller-dashboard
+ * Chú ý: Vì dùng @WebServlet, phải xóa ánh xạ /seller-dashboard trong web.xml
  */
 @WebServlet("/seller-dashboard") 
 public class SellerDashboardServlet extends HttpServlet {
@@ -21,23 +21,24 @@ public class SellerDashboardServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         
-        // ***************************************************************
-        // BƯỚC 1: KIỂM TRA XÁC THỰC VÀ VAI TRÒ (AUTHORIZATION CHECK)
-        // ***************************************************************
-        
-        // Lấy thông tin user từ session (AuthServlet đã lưu)
+        // 1. KIỂM TRA XÁC THỰC VÀ VAI TRÒ (AUTHORIZATION)
         Object userObj = req.getSession().getAttribute("currentUser");
-        
-        // Nếu userObj là null (chưa đăng nhập), chuyển hướng về trang đăng nhập
+        String username = null;
+        String role = "User"; // Mặc định là User nếu không tìm thấy
+
         if (userObj == null) {
+            // Nếu chưa đăng nhập, chuyển hướng về trang đăng nhập
             resp.sendRedirect(req.getContextPath() + "/login.jsp");
             return;
         }
 
-        /* // Nếu bạn muốn kiểm tra vai trò cụ thể:
+        /* // Logic mẫu để lấy Username và Role từ User Object (Cần import models.User)
         if (userObj instanceof User) {
             User user = (User) userObj;
-            if (!"seller".equalsIgnoreCase(user.getRole())) {
+            username = user.getUsername(); // Hoặc getEmail()
+            role = user.getRole();
+            
+            if (!"seller".equalsIgnoreCase(role)) {
                 // Nếu đã đăng nhập nhưng không phải vai trò seller, chuyển về trang chủ
                 resp.sendRedirect(req.getContextPath() + "/");
                 return;
@@ -45,25 +46,22 @@ public class SellerDashboardServlet extends HttpServlet {
         }
         */
 
-        // ***************************************************************
-        // BƯỚC 2: CHUYỂN TIẾP (FORWARD) TỚI GIAO DIỆN JSP
-        // ***************************************************************
+        // DÙNG DỮ LIỆU TẠM THỜI cho JSP để đảm bảo hiển thị
+        // Nếu không có User Object, dùng Seller token từ localStorage (đã có ở client)
+        if (username == null) {
+            // Trong môi trường thực tế, bạn cần lấy User Object từ Session/Token
+            username = "Seller_Account"; 
+            role = "Seller"; 
+        }
 
-        // Forward request tới file JSP. 
-        // Đường dẫn phải khớp với vị trí file JSP của bạn: /Seller/sellerDashboard.jsp
-        // (Sử dụng tên file sellerDashboard.jsp khớp với file bạn cung cấp)
+        // Đặt thuộc tính vào request để JSP có thể đọc được (ví dụ: ${username}, ${role})
+        req.setAttribute("username", username); 
+        req.setAttribute("role", role); 
+
+        // 2. CHUYỂN TIẾP (FORWARD) TỚI GIAO DIỆN JSP
+        // Đường dẫn: /Seller/sellerDashboard.jsp
         req.getRequestDispatcher("/Seller/sellerDashboard.jsp").forward(req, resp);
     }
     
-    // ***************************************************************
-    // CÁC HÀM GET DATA BỊ XÓA/COMMENT ĐỂ TRÁNH LỖI KHI CHƯA DÙNG
-    // Nếu muốn dùng lại, bạn cần chuyển các hàm này thành API riêng và gọi bằng AJAX
-    // ***************************************************************
-    /*
-    private JsonObject getDashboardStats() throws SQLException { ... }
-    private JsonObject getRevenueData() throws SQLException { ... }
-    private JsonObject getOrderStatusData() throws SQLException { ... }
-    private JsonObject getTopSellers() throws SQLException { ... }
-    private JsonArray toJsonArray(List<?> items) { ... }
-    */
+    // Xóa các hàm thống kê cũ
 }
