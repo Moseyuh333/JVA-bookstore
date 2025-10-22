@@ -25,6 +25,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import dao.ShipmentDAO;
+
 
 public final class OrderDAO {
 
@@ -85,6 +87,8 @@ public final class OrderDAO {
                 if (mode == CheckoutMode.CART) {
                     clearCartAfterCheckout(conn, cartData, selections);
                 }
+                
+                new ShipmentDAO().createForNewOrderRandomShipper(conn, orderId);
                 Order order = fetchOrderByIdInternal(conn, orderId, userId);
                 conn.commit();
                 return order;

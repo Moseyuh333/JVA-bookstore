@@ -14,8 +14,8 @@ public class ShipmentDAO {
             "SELECT " +
             "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
             "  o.code AS order_code, " +
-            "  (o.shipping_snapshot->>'recipient_name') AS receiver_name, " +
-            "  (o.shipping_snapshot->>'phone')          AS receiver_phone, " +
+            "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " + 
+            "  (o.shipping_snapshot->>'phone')         AS receiver_phone, " +
             "  NULLIF(CONCAT_WS(', ', " +
             "      NULLIF(o.shipping_snapshot->>'line1',''), " +
             "      NULLIF(o.shipping_snapshot->>'line2',''), " +
@@ -56,8 +56,8 @@ public class ShipmentDAO {
             "SELECT " +
             "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
             "  o.code AS order_code, " +
-            "  (o.shipping_snapshot->>'recipient_name') AS receiver_name, " +
-            "  (o.shipping_snapshot->>'phone')          AS receiver_phone, " +
+            "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " + 
+            "  (o.shipping_snapshot->>'phone')         AS receiver_phone, " +
             "  NULLIF(CONCAT_WS(', ', " +
             "      NULLIF(o.shipping_snapshot->>'line1',''), " +
             "      NULLIF(o.shipping_snapshot->>'line2',''), " +
@@ -70,6 +70,7 @@ public class ShipmentDAO {
             "FROM shipments s " +
             "JOIN orders o ON o.id = s.order_id " +
             "WHERE s.id = ?";
+
 
         try (Connection con = DBUtil.getConnection();
             PreparedStatement ps = con.prepareStatement(sql)) {
@@ -212,21 +213,6 @@ public class ShipmentDAO {
         return map;
     }
 
-    private Shipment mapShipment(ResultSet rs) throws SQLException {
-        Shipment s = new Shipment();
-        s.setId(rs.getLong("id"));
-        s.setOrderId((Long) rs.getObject("order_id"));
-        s.setShipperUserId(rs.getString("shipper_user_id"));
-        s.setStatus(rs.getString("status"));
-        s.setCodAmount(rs.getDouble("cod_amount"));
-        s.setCodCollected(rs.getBoolean("cod_collected"));
-        s.setPickupAt(rs.getTimestamp("pickup_at"));
-        s.setDeliveredAt(rs.getTimestamp("delivered_at"));
-        s.setProofImageUrl(rs.getString("proof_image_url"));
-        s.setLastUpdateAt(rs.getTimestamp("last_update_at"));
-        return s;
-    }
-
     private ShipmentEvent mapEvent(ResultSet rs) throws SQLException {
         ShipmentEvent e = new ShipmentEvent();
         e.setId(rs.getLong("id"));
@@ -238,4 +224,52 @@ public class ShipmentDAO {
         e.setCreatedBy(rs.getString("created_by"));
         return e;
     }
+
+    public void createForNewOrderRandomShipper(Connection con, long orderId) throws SQLException {
+    // 1) lấy username của 1 shipper ngẫu nhiên
+        final String pickSql =
+            "SELECT u.username " +
+            "FROM users u " +
+            "JOIN user_roles ur ON ur.user_id = u.id " +
+            "WHERE role = 'shipper'::user_role " +
+            "ORDER BY random() " +
+            "LIMIT 1";
+
+        String shipperUser = null;
+        try (PreparedStatement ps = con.prepareStatement(pickSql);
+            ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                shipperUser = rs.getString(1);
+            }
+        }
+        if (shipperUser == null || shipperUser.isEmpty()) {
+            throw new SQLException("No shipper user found. Please seed at least one SHIPPER account.");
+        }
+
+        final String insSql =
+            "INSERT INTO shipments (order_id, shipper_user_id, assigned_at, last_update_at) " +
+            "VALUES (?, ?, NOW(), NOW())";
+
+        try (PreparedStatement ps = con.prepareStatement(insSql)) {
+            ps.setLong(1, orderId);
+            ps.setString(2, shipperUser);
+            ps.executeUpdate();
+        }
+    }
+
+    public void createForNewOrderRandomShipper(long orderId) throws SQLException {
+        try (Connection con = DBUtil.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                createForNewOrderRandomShipper(con, orderId);
+                con.commit();
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+
 }
