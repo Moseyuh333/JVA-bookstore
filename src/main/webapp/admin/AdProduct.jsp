@@ -221,16 +221,17 @@
             color: #1a202c;
         }
 
-        /* Modal styling */
+        /* Modal styling - fixed for pointer events and scroll */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100vw;
+            height: 100vh;
             background: rgba(0, 0, 0, 0.5);
             z-index: 2147483646;
             display: none;
+            pointer-events: auto;
         }
 
         .modal-box {
@@ -246,7 +247,13 @@
             width: 720px;
             max-width: 90vw;
             max-height: 85vh;
-            overflow-y: auto;
+            overflow: auto;
+            pointer-events: auto;
+        }
+
+        /* Prevent background scroll when modal is open */
+        body.modal-open {
+            overflow: hidden !important;
         }
 
         .modal-header {

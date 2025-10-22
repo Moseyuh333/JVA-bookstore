@@ -248,9 +248,10 @@ function openAddProduct(){
     productForm.reset(); 
     productIdInput.value = ''; 
     productTitleEl.textContent = 'Thêm sản phẩm'; 
-    hideEl(document.getElementById('productFeedback')); 
+    hideEl(document.getElementById('productFeedback'));
     showEl(productOverlay); 
     showEl(productBox);
+    document.body.classList.add('modal-open');
 }
 
 async function openEditProduct(id){
@@ -268,11 +269,12 @@ async function openEditProduct(id){
             showEl(fb);
             return; 
         }
-        populateProductForm(data);
-        productTitleEl.textContent = 'Chỉnh sửa sản phẩm'; 
-        hideEl(document.getElementById('productFeedback')); 
-        showEl(productOverlay); 
-        showEl(productBox);
+    populateProductForm(data);
+    productTitleEl.textContent = 'Chỉnh sửa sản phẩm'; 
+    hideEl(document.getElementById('productFeedback'));
+    showEl(productOverlay); 
+    showEl(productBox);
+    document.body.classList.add('modal-open');
     }catch(err){ 
         console.error(err); 
         const fb = document.getElementById('productFeedback');
@@ -281,8 +283,16 @@ async function openEditProduct(id){
     }
 }
 
-document.getElementById('productModalClose')?.addEventListener('click', ()=>{ hideEl(productOverlay); hideEl(productBox); });
-document.getElementById('productCancel')?.addEventListener('click', ()=>{ hideEl(productOverlay); hideEl(productBox); });
+document.getElementById('productModalClose')?.addEventListener('click', ()=>{ 
+    hideEl(productOverlay); 
+    hideEl(productBox); 
+    document.body.classList.remove('modal-open');
+});
+document.getElementById('productCancel')?.addEventListener('click', ()=>{ 
+    hideEl(productOverlay); 
+    hideEl(productBox); 
+    document.body.classList.remove('modal-open');
+});
 
 productForm?.addEventListener('submit', async (e)=>{
     e.preventDefault();
@@ -362,7 +372,13 @@ document.getElementById('productDeleteConfirm')?.addEventListener('click', async
 });
 
 // Close when clicking overlay
-productOverlay?.addEventListener('click', (e)=>{ if(e.target===productOverlay){ hideEl(productOverlay); hideEl(productBox); } });
+productOverlay?.addEventListener('click', (e)=>{ 
+    if(e.target===productOverlay){ 
+        hideEl(productOverlay); 
+        hideEl(productBox); 
+        document.body.classList.remove('modal-open');
+    } 
+});
 productDeleteOverlay?.addEventListener('click', (e)=>{ if(e.target===productDeleteOverlay){ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; } });
 
 // Close on Escape
@@ -372,6 +388,7 @@ document.addEventListener('keydown', (e)=>{
             hideEl(productOverlay); 
             hideEl(productBox); 
             hideEl(document.getElementById('productFeedback'));
+            document.body.classList.remove('modal-open');
         }
         if(productDeleteBox && productDeleteBox.style.display==='block'){ 
             hideEl(productDeleteOverlay); 
