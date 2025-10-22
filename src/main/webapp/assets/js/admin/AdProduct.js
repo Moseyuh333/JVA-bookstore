@@ -266,7 +266,16 @@ productForm?.addEventListener('submit', async (e)=>{
     try{
         const action = id ? 'update' : 'create'; if(id) params.append('id', id);
         const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=${action}`,{ method:'POST', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString() });
-        const data = await res.json(); if(data.error){ const fb=document.getElementById('productFeedback'); fb.textContent = data.error; fb.style.display='block'; return; }
+        const data = await res.json();
+        if(data.error){ const fb=document.getElementById('productFeedback'); fb.textContent = data.error; fb.style.display='block'; return; }
+        // If create returned id, use it (helpful for immediate edit or navigation)
+        if(!id && data.id){
+            // Optionally open edit view or just inform
+            hideEl(productOverlay); hideEl(productBox);
+            loadProducts();
+            alert('Sản phẩm đã được tạo (ID: ' + data.id + ')');
+            return;
+        }
         hideEl(productOverlay); hideEl(productBox); loadProducts(); alert(data.message || 'Thành công');
     }catch(err){ console.error(err); alert('Lỗi khi lưu sản phẩm'); }
 });

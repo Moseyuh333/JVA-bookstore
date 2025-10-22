@@ -338,7 +338,7 @@
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
                             </button>
-                            <button class="btn-custom btn-create" type="button" id="openCreateProductBtn" onclick="openAddModal()">
+                            <button class="btn-custom btn-create" type="button" id="openCreateProductBtn" onclick="openAddProduct()">
                                 <i class="fas fa-plus"></i>
                                 <span>Thêm sản phẩm</span>
                             </button>
