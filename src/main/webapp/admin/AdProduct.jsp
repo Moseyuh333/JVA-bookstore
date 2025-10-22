@@ -482,7 +482,11 @@
                             <div class="spinner"></div>
                             <p>Đang tải dữ liệu...</p>
                         </div>
-
+                            <div id="emptyState" class="empty-state hidden">
+                                <i class="fas fa-box-open text-gray-400 text-4xl mb-2"></i>
+                                <p class="text-gray-600 font-medium">Không tìm thấy dữ liệu</p>
+                                <p class="text-gray-400 text-sm">Không có sản phẩm nào phù hợp với tiêu chí tìm kiếm</p>
+                            </div>
                         <div class="table-container">
                             <table>
                                 <thead>
@@ -501,11 +505,6 @@
                             </table>
                             <!-- ⚙️ Phân trang -->
                             <div id="pagination" class="flex justify-center items-center gap-2 mt-4"></div>
-                        </div>
-                        <div id="emptyState" class="empty-state hidden">
-                            <i class="fas fa-box-open text-gray-400 text-4xl mb-2"></i>
-                            <p class="text-gray-600 font-medium">Không tìm thấy dữ liệu</p>
-                            <p class="text-gray-400 text-sm">Không có sản phẩm nào phù hợp với tiêu chí tìm kiếm</p>
                         </div>
 
                 </div>
