@@ -86,18 +86,18 @@ public class AdminPromotionsServlet extends HttpServlet {
         // Add search conditions
         if (search != null && !search.trim().isEmpty()) {
             if ("all".equals(searchType) || searchType == null) {
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_type ILIKE ?)");
             } else if ("code".equals(searchType)) {
                 sql.append(" AND code ILIKE ?");
             } else if ("description".equals(searchType)) {
                 sql.append(" AND description ILIKE ?");
-            } else if ("kind".equals(searchType)) {
-                sql.append(" AND discount_scope ILIKE ?");
             } else if ("type".equals(searchType)) {
                 sql.append(" AND discount_type ILIKE ?");
+            } else if ("status".equals(searchType)) {
+                sql.append(" AND status = ?");
             } else {
                 // Default to all if invalid searchType
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_type ILIKE ?)");
             }
         }
 
@@ -116,13 +116,18 @@ public class AdminPromotionsServlet extends HttpServlet {
             // Set search parameters
             int paramIndex = 1;
             if (search != null && !search.trim().isEmpty()) {
-                String pattern = "%" + search.trim() + "%";
                 if ("all".equals(searchType) || searchType == null) {
-                    for (int i = 0; i < 4; i++) {
+                    String pattern = "%" + search.trim() + "%";
+                    for (int i = 0; i < 3; i++) {
                         pstmt.setString(paramIndex++, pattern);
                     }
+                } else if ("status".equals(searchType)) {
+                    // For status, convert search to boolean
+                    boolean statusValue = "true".equalsIgnoreCase(search.trim()) || "active".equalsIgnoreCase(search.trim()) || "1".equals(search.trim());
+                    pstmt.setBoolean(paramIndex++, statusValue);
                 } else {
                     // For specific search types, only one parameter
+                    String pattern = "%" + search.trim() + "%";
                     pstmt.setString(paramIndex++, pattern);
                 }
             }
