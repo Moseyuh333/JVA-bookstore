@@ -180,6 +180,21 @@ async function openEditShipper(id) {
 document.getElementById('shipperModalClose')?.addEventListener('click', () => { hideElement(shipperOverlay); hideElement(shipperBox); });
 document.getElementById('shipperCancel')?.addEventListener('click', () => { hideElement(shipperOverlay); hideElement(shipperBox); });
 
+// Close when clicking overlay
+shipperOverlay?.addEventListener('click', (e)=>{ if(e.target===shipperOverlay){ hideElement(shipperOverlay); hideElement(shipperBox); } });
+
+// Close delete overlay click
+const shipperDeleteOverlayEl = document.getElementById('shipperDeleteOverlay');
+shipperDeleteOverlayEl?.addEventListener('click', (e)=>{ if(e.target===shipperDeleteOverlayEl){ hideElement(shipperDeleteOverlayEl); hideElement(deleteBox); deletingId=null; } });
+
+// Close modals on Escape
+document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+        if(shipperBox && shipperBox.style.display==='block'){ hideElement(shipperOverlay); hideElement(shipperBox); }
+        if(deleteBox && deleteBox.style.display==='block'){ hideElement(shipperDeleteOverlayEl); hideElement(deleteBox); deletingId=null; }
+    }
+});
+
 // Form submit (create/update)
 shipperForm?.addEventListener('submit', async (e) => {
     e.preventDefault();

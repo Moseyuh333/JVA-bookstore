@@ -581,56 +581,54 @@
         <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
-<script src ="${pageContext.request.contextPath}/assets/js/admin/AdShipper.js"></script>
-</body>
-</html>
- 
-<!-- Shipper modals -->
+<!-- Shipper modals (standardized and moved before script) -->
 <div id="shipperModalOverlay" class="modal-overlay" style="display:none"></div>
 <div id="shipperModalBox" class="modal-box" style="display:none; z-index:10000;">
     <div class="modal-header">
-        <h3 id="shipperModalTitle">Thêm nhà vận chuyển</h3>
+        <div id="shipperModalTitle" class="modal-title">Thêm nhà vận chuyển</div>
         <button id="shipperModalClose" class="modal-close" aria-label="Đóng">&times;</button>
     </div>
     <form id="shipperForm" class="modal-body" autocomplete="off">
         <input type="hidden" id="shipperId" name="id" />
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="shipperName">Tên nhà vận chuyển *</label>
-                <input type="text" id="shipperName" name="name" required />
+        <div class="modal-body">
+            <div class="modal-row">
+                <div class="modal-label">Tên nhà vận chuyển <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="shipperName" name="name" class="modal-input" type="text" required placeholder="Tên nhà vận chuyển"/></div>
             </div>
-            <div class="form-group">
-                <label for="shipperPhone">Số điện thoại</label>
-                <input type="tel" id="shipperPhone" name="phone" />
+            <div class="modal-row">
+                <div class="modal-label">Số điện thoại</div>
+                <div style="flex:1"><input id="shipperPhone" name="phone" class="modal-input" type="tel" placeholder="Số điện thoại"/></div>
             </div>
-            <div class="form-group">
-                <label for="shipperEmail">Email</label>
-                <input type="email" id="shipperEmail" name="email" />
+            <div class="modal-row">
+                <div class="modal-label">Email</div>
+                <div style="flex:1"><input id="shipperEmail" name="email" class="modal-input" type="email" placeholder="Email"/></div>
             </div>
-            <div class="form-group">
-                <label for="shipperBaseFee">Phí cơ bản *</label>
-                <input type="number" id="shipperBaseFee" name="base_fee" step="0.01" required />
+            <div class="modal-row">
+                <div class="modal-label">Phí cơ bản <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="shipperBaseFee" name="base_fee" class="modal-input" type="number" step="0.01" required placeholder="Phí cơ bản"/></div>
             </div>
-            <div class="form-group full-width">
-                <label for="shipperServiceArea">Khu vực phục vụ</label>
-                <input type="text" id="shipperServiceArea" name="service_area" />
+            <div class="modal-row">
+                <div class="modal-label">Khu vực phục vụ</div>
+                <div style="flex:1"><input id="shipperServiceArea" name="service_area" class="modal-input" type="text" placeholder="Khu vực"/></div>
             </div>
-            <div class="form-group">
-                <label for="shipperEstimatedTime">Thời gian ước tính</label>
-                <input type="text" id="shipperEstimatedTime" name="estimated_time" />
+            <div class="modal-row">
+                <div class="modal-label">Thời gian ước tính</div>
+                <div style="flex:1"><input id="shipperEstimatedTime" name="estimated_time" class="modal-input" type="text" placeholder="Ví dụ: 2-3 ngày"/></div>
             </div>
-            <div class="form-group">
-                <label for="shipperStatus">Trạng thái</label>
-                <select id="shipperStatus" name="status">
-                    <option value="active">Đang hoạt động</option>
-                    <option value="inactive">Tạm khóa</option>
-                </select>
+            <div class="modal-row">
+                <div class="modal-label">Trạng thái</div>
+                <div style="flex:1">
+                    <select id="shipperStatus" name="status" class="modal-input">
+                        <option value="active">Đang hoạt động</option>
+                        <option value="inactive">Tạm khóa</option>
+                    </select>
+                </div>
             </div>
         </div>
         <div id="shipperFeedback" class="form-feedback" role="alert" style="display:none"></div>
-        <div class="modal-actions">
-            <button type="button" class="btn-secondary" id="shipperCancel">Hủy</button>
-            <button type="submit" class="btn-primary" id="shipperSave">Lưu</button>
+        <div class="modal-footer">
+            <button type="button" id="shipperCancel" class="btn-secondary-modal">Hủy</button>
+            <button type="submit" id="shipperSave" class="btn-primary-modal">Lưu</button>
         </div>
     </form>
 </div>
@@ -639,7 +637,7 @@
 <div id="shipperDeleteOverlay" class="modal-overlay" style="display:none"></div>
 <div id="shipperDeleteBox" class="modal-box" style="display:none; z-index:10001; width:420px;">
     <div class="modal-header">
-        <h3>Xóa nhà vận chuyển</h3>
+        <div class="modal-title">Xóa nhà vận chuyển</div>
         <button id="shipperDeleteClose" class="modal-close" aria-label="Đóng">&times;</button>
     </div>
     <div class="modal-body">
@@ -648,9 +646,13 @@
             <div id="shipperDeleteSummary">Hành động này không thể hoàn tác.</div>
         </div>
         <div id="shipperDeleteFeedback" class="form-feedback" role="alert" style="display:none"></div>
-        <div class="modal-actions">
-            <button type="button" class="btn-secondary" id="shipperDeleteCancel">Hủy</button>
-            <button type="button" class="btn-primary" id="shipperDeleteConfirm">Xóa</button>
+        <div class="modal-footer">
+            <button type="button" id="shipperDeleteCancel" class="btn-secondary-modal">Hủy</button>
+            <button type="button" id="shipperDeleteConfirm" class="btn-primary-modal">Xóa</button>
         </div>
     </div>
 </div>
+
+<script src ="${pageContext.request.contextPath}/assets/js/admin/AdShipper.js"></script>
+</body>
+</html>

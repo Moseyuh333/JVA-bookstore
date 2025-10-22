@@ -377,61 +377,58 @@
     </div>
 </div>
 <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
-<script src="${pageContext.request.contextPath}/assets/js/admin/AdProduct.js"></script>
-</body>
-</html>
 
-<!-- Product modal markup -->
+<!-- Product modal markup (moved before script include and standardized) -->
 <div id="productModalOverlay" class="modal-overlay" style="display:none"></div>
 <div id="productModalBox" class="modal-box" style="display:none; z-index:10000; width:720px;">
     <div class="modal-header">
-        <h3 id="productModalTitle">Thêm sản phẩm</h3>
+        <div id="productModalTitle" class="modal-title">Thêm sản phẩm</div>
         <button id="productModalClose" class="modal-close" aria-label="Đóng">&times;</button>
     </div>
     <form id="productForm" class="modal-body" autocomplete="off">
         <input type="hidden" id="productId" name="id" />
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="prodTitle">Tiêu đề *</label>
-                <input type="text" id="prodTitle" name="title" required />
+        <div class="modal-body">
+            <div class="modal-row">
+                <div class="modal-label">Tiêu đề <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="prodTitle" name="title" class="modal-input" type="text" required placeholder="Tiêu đề" /></div>
             </div>
-            <div class="form-group">
-                <label for="prodAuthor">Tác giả</label>
-                <input type="text" id="prodAuthor" name="author" />
+            <div class="modal-row">
+                <div class="modal-label">Tác giả</div>
+                <div style="flex:1"><input id="prodAuthor" name="author" class="modal-input" type="text" placeholder="Tác giả" /></div>
             </div>
-            <div class="form-group">
-                <label for="prodISBN">ISBN</label>
-                <input type="text" id="prodISBN" name="isbn" />
+            <div class="modal-row">
+                <div class="modal-label">ISBN</div>
+                <div style="flex:1"><input id="prodISBN" name="isbn" class="modal-input" type="text" placeholder="ISBN" /></div>
             </div>
-            <div class="form-group">
-                <label for="prodPrice">Giá *</label>
-                <input type="number" id="prodPrice" name="price" step="0.01" required />
+            <div class="modal-row">
+                <div class="modal-label">Giá <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="prodPrice" name="price" class="modal-input" type="number" step="0.01" required placeholder="Giá" /></div>
             </div>
-            <div class="form-group">
-                <label for="prodStock">Tồn kho</label>
-                <input type="number" id="prodStock" name="stock" />
+            <div class="modal-row">
+                <div class="modal-label">Tồn kho</div>
+                <div style="flex:1"><input id="prodStock" name="stock" class="modal-input" type="number" placeholder="Tồn kho" /></div>
             </div>
-            <div class="form-group">
-                <label for="prodCategory">Thể loại</label>
-                <input type="text" id="prodCategory" name="category" />
+            <div class="modal-row">
+                <div class="modal-label">Thể loại</div>
+                <div style="flex:1"><input id="prodCategory" name="category" class="modal-input" type="text" placeholder="Thể loại" /></div>
             </div>
-            <div class="form-group full-width">
-                <label for="prodDescription">Mô tả</label>
-                <input type="text" id="prodDescription" name="description" />
+            <div class="modal-row">
+                <div class="modal-label">Mô tả</div>
+                <div style="flex:1"><input id="prodDescription" name="description" class="modal-input" type="text" placeholder="Mô tả" /></div>
             </div>
-            <div class="form-group full-width">
-                <label for="prodImage">Ảnh (URL)</label>
-                <input type="text" id="prodImage" name="image_url" />
+            <div class="modal-row">
+                <div class="modal-label">Ảnh (URL)</div>
+                <div style="flex:1"><input id="prodImage" name="image_url" class="modal-input" type="text" placeholder="URL ảnh" /></div>
             </div>
-            <div class="form-group">
-                <label for="prodShopId">Shop ID *</label>
-                <input type="number" id="prodShopId" name="shop_id" required />
+            <div class="modal-row">
+                <div class="modal-label">Shop ID <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="prodShopId" name="shop_id" class="modal-input" type="number" required placeholder="Shop ID" /></div>
             </div>
         </div>
         <div id="productFeedback" class="form-feedback" role="alert" style="display:none"></div>
-        <div class="modal-actions">
-            <button type="button" class="btn-secondary" id="productCancel">Hủy</button>
-            <button type="submit" class="btn-primary" id="productSave">Lưu</button>
+        <div class="modal-footer">
+            <button type="button" id="productCancel" class="btn-secondary-modal">Hủy</button>
+            <button type="submit" id="productSave" class="btn-primary-modal">Lưu</button>
         </div>
     </form>
 </div>
@@ -440,7 +437,7 @@
 <div id="productDeleteOverlay" class="modal-overlay" style="display:none"></div>
 <div id="productDeleteBox" class="modal-box" style="display:none; z-index:10001; width:420px;">
     <div class="modal-header">
-        <h3>Xóa sản phẩm</h3>
+        <div class="modal-title">Xóa sản phẩm</div>
         <button id="productDeleteClose" class="modal-close" aria-label="Đóng">&times;</button>
     </div>
     <div class="modal-body">
@@ -448,9 +445,13 @@
             <strong>Bạn có chắc muốn xóa sản phẩm này?</strong>
         </div>
         <div id="productDeleteFeedback" class="form-feedback" role="alert" style="display:none"></div>
-        <div class="modal-actions">
-            <button type="button" class="btn-secondary" id="productDeleteCancel">Hủy</button>
-            <button type="button" class="btn-primary" id="productDeleteConfirm">Xóa</button>
+        <div class="modal-footer">
+            <button type="button" id="productDeleteCancel" class="btn-secondary-modal">Hủy</button>
+            <button type="button" id="productDeleteConfirm" class="btn-primary-modal">Xóa</button>
         </div>
     </div>
 </div>
+
+<script src="${pageContext.request.contextPath}/assets/js/admin/AdProduct.js"></script>
+</body>
+</html>

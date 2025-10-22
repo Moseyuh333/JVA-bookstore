@@ -296,3 +296,15 @@ document.getElementById('productDeleteClose')?.addEventListener('click', ()=>{ h
 document.getElementById('productDeleteConfirm')?.addEventListener('click', async ()=>{
     if(!deletingProduct) return; const token=localStorage.getItem('admin_token'); try{ const res=await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=delete&id=${deletingProduct}`,{method:'POST', headers:{'Authorization':`Bearer ${token}`}}); const data=await res.json(); if(data.error){ document.getElementById('productDeleteFeedback').textContent=data.error; document.getElementById('productDeleteFeedback').style.display='block'; return; } hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; loadProducts(); alert(data.message||'Đã xóa'); }catch(err){ console.error(err); alert('Lỗi khi xóa'); }
 });
+
+// Close when clicking overlay
+productOverlay?.addEventListener('click', (e)=>{ if(e.target===productOverlay){ hideEl(productOverlay); hideEl(productBox); } });
+productDeleteOverlay?.addEventListener('click', (e)=>{ if(e.target===productDeleteOverlay){ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; } });
+
+// Close on Escape
+document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+        if(productBox && productBox.style.display==='block'){ hideEl(productOverlay); hideEl(productBox); }
+        if(productDeleteBox && productDeleteBox.style.display==='block'){ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; }
+    }
+});
