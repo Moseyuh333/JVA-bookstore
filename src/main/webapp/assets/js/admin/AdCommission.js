@@ -190,6 +190,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Init
     loadCommissions();
+    // Hook reset button
+    document.getElementById('btnReset')?.addEventListener('click', resetFilters);
     // Modal wiring
     const modalOverlay = document.getElementById('commissionModalOverlay');
     const modalBox = document.getElementById('commissionModalBox');
