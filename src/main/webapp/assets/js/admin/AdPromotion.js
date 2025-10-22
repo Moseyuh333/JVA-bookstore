@@ -206,6 +206,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Init
     loadPromotions();
+    // Hook reset button
+    document.getElementById('btnReset')?.addEventListener('click', resetFilters);
 });
 
 // ===== Promotion modal CRUD =====
