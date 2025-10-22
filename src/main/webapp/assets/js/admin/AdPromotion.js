@@ -259,9 +259,13 @@ promoForm?.addEventListener('submit', async (e)=>{
         console.log('[Promotions] response status', res.status);
         const text = await res.text();
         let data = {};
-        try{ data = JSON.parse(text); } catch(err){ console.warn('Could not parse JSON response for promotions:', text); }
+        try{ data = JSON.parse(text); } catch(err){
+            console.warn('Could not parse JSON response for promotions:', text);
+            alert('Server trả về (POST):\n' + text);
+            return;
+        }
         console.log('[Promotions] response json', data);
-        if(data.error){ const fb=document.getElementById('promoFeedback'); fb.textContent = data.error; fb.style.display='block'; return; }
+        if(data.error){ const fb=document.getElementById('promoFeedback'); fb.textContent = data.error; fb.style.display='block'; alert('Server trả về lỗi (POST):\n' + data.error); return; }
         // success
         const fb=document.getElementById('promoFeedback'); if(fb){ fb.style.display='none'; }
         hide(promoOverlay); hide(promoBox); loadPromotions(); alert(data.message || 'Thành công');
@@ -297,8 +301,12 @@ async function openEditPromo(id){
         console.log('[Promotions] get status', res.status);
         const text = await res.text();
         let data = {};
-        try{ data = JSON.parse(text); } catch(err){ console.warn('Could not parse JSON get response:', text); }
-        if(data.error){ alert(data.error); return; }
+        try{ data = JSON.parse(text); } catch(err){
+            console.warn('Could not parse JSON get response:', text);
+            alert('Server trả về (GET):\n' + text);
+            return;
+        }
+        if(data.error){ alert('Server trả về lỗi (GET):\n' + data.error); return; }
         promoIdInput.value = data.id || '';
         document.getElementById('promoName').value = data.name || '';
         document.getElementById('promoCode').value = data.code || '';
