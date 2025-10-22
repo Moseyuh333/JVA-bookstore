@@ -256,11 +256,13 @@ function populateProductForm(data) {
     productIdInput.value = data.id || '';
     document.getElementById('prodTitle').value = data.title || '';
     document.getElementById('prodAuthor').value = data.author || '';
-    document.getElementById('prodISBN').value = data.isbn || '';
     document.getElementById('prodPrice').value = data.price || '';
     document.getElementById('prodStock').value = data.stock || '';
     document.getElementById('prodCategory').value = data.category || '';
-    document.getElementById('prodDescription').value = data.description || '';
+    // Strip HTML tags for description textarea to display plain text
+    const desc = data.description || '';
+    const tmp = document.createElement('div'); tmp.innerHTML = desc; const plain = tmp.textContent || tmp.innerText || '';
+    document.getElementById('prodDescription').value = plain;
     document.getElementById('prodImage').value = data.image_url || '';
     updateImagePreview(data.image_url || '');
     document.getElementById('prodShopId').value = data.shop_id || '';
