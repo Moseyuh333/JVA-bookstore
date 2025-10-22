@@ -229,7 +229,6 @@ public class ShipperApiServlet extends HttpServlet {
         }
         if (token == null || token.isEmpty()) return null;
 
-        // 3) decode -> subject có thể là username HOẶC id
         try {
             String sub = JwtUtil.validateToken(token);
             if (sub == null || sub.isEmpty()) return null;
@@ -239,37 +238,38 @@ public class ShipperApiServlet extends HttpServlet {
         }
     }
 
-    // Nếu subject là id → chuyển ra username; nếu là username hợp lệ → giữ nguyên
+
     private String normalizeUser(String subject) {
-        // thử tìm theo username trước
         String sqlU = "SELECT username FROM users WHERE username = ? LIMIT 1";
         String sqlI = "SELECT username FROM users WHERE CAST(id AS TEXT) = ? LIMIT 1";
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
+        java.sql.Connection con = null;
+        java.sql.PreparedStatement ps = null;
+        java.sql.ResultSet rs = null;
         try {
-            con = DBUtil.getConnection();
+            con = utils.DBUtil.getConnection();
+
             ps = con.prepareStatement(sqlU);
             ps.setString(1, subject);
             rs = ps.executeQuery();
             if (rs.next()) return rs.getString(1);
-            rs.close(); ps.close();
+            try { rs.close(); } catch (Exception ignore) {}
+            try { ps.close(); } catch (Exception ignore) {}
 
             ps = con.prepareStatement(sqlI);
             ps.setString(1, subject);
             rs = ps.executeQuery();
             if (rs.next()) return rs.getString(1);
 
-            // không tìm thấy thì trả null
-            return null;
-        } catch (Exception ignore) {
-            return subject; // fallback an toàn
+            return subject;
+        } catch (Exception e) {
+            return subject;
         } finally {
-            try { if (rs != null) rs.close(); } catch (Exception ignored) {}
-            try { if (ps != null) ps.close(); } catch (Exception ignored) {}
-            try { if (con != null) con.close(); } catch (Exception ignored) {}
+            try { if (rs != null) rs.close(); } catch (Exception ignore) {}
+            try { if (ps != null) ps.close(); } catch (Exception ignore) {}
+            try { if (con != null) con.close(); } catch (Exception ignore) {}
         }
     }
+
 
     private String normalizedPath(HttpServletRequest req) {
         String p = req.getPathInfo();
