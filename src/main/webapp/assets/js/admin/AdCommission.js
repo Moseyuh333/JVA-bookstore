@@ -190,4 +190,183 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Init
     loadCommissions();
+    // Modal wiring
+    const modalOverlay = document.getElementById('commissionModalOverlay');
+    const modalBox = document.getElementById('commissionModalBox');
+    const modalTitle = document.getElementById('commissionModalTitle');
+    const modalClose = document.getElementById('commissionModalClose');
+    const commissionForm = document.getElementById('commissionForm');
+    const commissionId = document.getElementById('commissionId');
+    const commissionName = document.getElementById('commissionName');
+    const commissionType = document.getElementById('commissionType');
+    const commissionMinRevenue = document.getElementById('commissionMinRevenue');
+    const commissionMaxRevenue = document.getElementById('commissionMaxRevenue');
+    const commissionRate = document.getElementById('commissionRate');
+    const commissionStatus = document.getElementById('commissionStatus');
+    const commissionFeedback = document.getElementById('commissionFeedback');
+
+    const openModal = (mode = 'create') => {
+        commissionFeedback.className = 'form-feedback';
+        commissionFeedback.style.display = 'none';
+        if (mode === 'create') {
+            modalTitle.textContent = 'Thêm chính sách chiết khấu';
+            commissionForm.reset();
+            commissionId.value = '';
+        } else {
+            modalTitle.textContent = 'Chỉnh sửa chính sách chiết khấu';
+        }
+        modalOverlay.classList.add('active');
+        modalBox.classList.add('active');
+    };
+
+    const closeModal = () => {
+        modalOverlay.classList.remove('active');
+        modalBox.classList.remove('active');
+    };
+
+    modalClose?.addEventListener('click', closeModal);
+    document.getElementById('commissionCancel')?.addEventListener('click', closeModal);
+    modalOverlay?.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+
+    // API helpers for CRUD
+    api.getCommission = (id) => {
+        const token = localStorage.getItem('admin_token');
+        return fetch(`${window.appConfig?.contextPath || ''}/api/admin/commissions?action=get&id=${encodeURIComponent(id)}`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        }).then(r => r.json());
+    };
+
+    api.createCommission = (data) => {
+        const token = localStorage.getItem('admin_token');
+        const params = new URLSearchParams(Object.entries(data));
+        return fetch(`${window.appConfig?.contextPath || ''}/api/admin/commissions?action=create`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
+        }).then(r => r.json().catch(() => ({ message: 'OK' })));
+    };
+
+    api.updateCommission = (data) => {
+        const token = localStorage.getItem('admin_token');
+        const params = new URLSearchParams(Object.entries(data));
+        return fetch(`${window.appConfig?.contextPath || ''}/api/admin/commissions?action=update`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
+        }).then(r => r.json().catch(() => ({ message: 'OK' })));
+    };
+
+    api.deleteCommission = (id) => {
+        const token = localStorage.getItem('admin_token');
+        const params = new URLSearchParams({ id });
+        return fetch(`${window.appConfig?.contextPath || ''}/api/admin/commissions?action=delete`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
+        }).then(r => r.json().catch(() => ({ message: 'OK' })));
+    };
+
+    // Hook up Add button (we added id openCreateCommissionBtn in JSP)
+    document.getElementById('openCreateCommissionBtn')?.addEventListener('click', () => openModal('create'));
+
+    // Handle form submit for create/update
+    commissionForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = commissionId.value && commissionId.value.trim() ? commissionId.value.trim() : null;
+        const payload = {
+            name: commissionName.value.trim(),
+            type: commissionType.value.trim(),
+            min_revenue: commissionMinRevenue.value || '',
+            max_revenue: commissionMaxRevenue.value || '',
+            rate: commissionRate.value,
+            status: commissionStatus.value
+        };
+
+        try {
+            commissionFeedback.style.display = 'none';
+            if (!payload.name || !payload.rate) {
+                commissionFeedback.className = 'form-feedback error';
+                commissionFeedback.textContent = 'Tên và tỷ lệ là bắt buộc.';
+                commissionFeedback.style.display = 'block';
+                return;
+            }
+
+            if (id) {
+                payload.id = id;
+                const res = await api.updateCommission(payload);
+                if (res && res.message) {
+                    commissionFeedback.className = 'form-feedback success';
+                    commissionFeedback.textContent = res.message;
+                    commissionFeedback.style.display = 'block';
+                    loadCommissions();
+                    setTimeout(closeModal, 800);
+                } else if (res && res.error) {
+                    commissionFeedback.className = 'form-feedback error';
+                    commissionFeedback.textContent = res.error;
+                    commissionFeedback.style.display = 'block';
+                }
+            } else {
+                const res = await api.createCommission(payload);
+                if (res && (res.id || res.message)) {
+                    commissionFeedback.className = 'form-feedback success';
+                    commissionFeedback.textContent = res.message || 'Created';
+                    commissionFeedback.style.display = 'block';
+                    // If backend returned id, set it (useful for immediate editing)
+                    if (res.id) commissionId.value = res.id;
+                    loadCommissions();
+                    setTimeout(closeModal, 800);
+                } else if (res && res.error) {
+                    commissionFeedback.className = 'form-feedback error';
+                    commissionFeedback.textContent = res.error;
+                    commissionFeedback.style.display = 'block';
+                }
+            }
+        } catch (err) {
+            console.error('Error saving commission', err);
+            commissionFeedback.className = 'form-feedback error';
+            commissionFeedback.textContent = 'Lỗi khi lưu dữ liệu.';
+            commissionFeedback.style.display = 'block';
+        }
+    });
+
+    // Delegate edit/delete button clicks
+    tableBody.addEventListener('click', async (ev) => {
+        const editBtn = ev.target.closest('.btn-warning, .edit-btn');
+        const delBtn = ev.target.closest('.btn-danger, .delete-btn');
+        if (editBtn) {
+            const tr = editBtn.closest('tr');
+            const idCell = tr.querySelector('td');
+            const id = idCell ? idCell.textContent.trim() : null;
+            if (!id) return;
+            try {
+                const data = await api.getCommission(id);
+                if (data && data.id) {
+                    commissionId.value = data.id;
+                    commissionName.value = data.name || '';
+                    commissionType.value = data.type || '';
+                    commissionMinRevenue.value = data.min_revenue || '';
+                    commissionMaxRevenue.value = data.max_revenue || '';
+                    commissionRate.value = data.rate || '';
+                    commissionStatus.value = data.status || 'active';
+                    openModal('edit');
+                } else {
+                    alert('Không thể tải dữ liệu chiết khấu.');
+                }
+            } catch (err) { console.error(err); alert('Lỗi khi tải dữ liệu.'); }
+        } else if (delBtn) {
+            const tr = delBtn.closest('tr');
+            const idCell = tr.querySelector('td');
+            const id = idCell ? idCell.textContent.trim() : null;
+            if (!id) return;
+            if (!confirm('Bạn có chắc muốn xóa chính sách này?')) return;
+            try {
+                const res = await api.deleteCommission(id);
+                if (res && res.message) {
+                    loadCommissions();
+                } else if (res && res.error) {
+                    alert('Xóa thất bại: ' + res.error);
+                }
+            } catch (err) { console.error(err); alert('Lỗi khi xóa.'); }
+        }
+    });
 });

@@ -153,6 +153,20 @@
             background: #d1d5db;
         }
 
+        /* Reuse user-management create button style for consistency */
+        .btn-create {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-create:hover {
+            background: #15803d;
+        }
+
+        #openCreateProductBtn {
+            margin-left: auto;
+        }
+
         /* Stats */
         .stats-container {
             display: flex;
@@ -301,10 +315,6 @@
                 <div class="card-custom">
                     <div class="card-header-custom">
                         <h2>Danh sách sản phẩm</h2>
-                        <button class="btn-add" onclick="openAddModal()">
-                            <i class="fas fa-plus"></i>
-                            <span>Thêm sản phẩm</span>
-                        </button>
                     </div>
 
                     <div class="filter-bar">
@@ -327,6 +337,10 @@
                             <button class="btn-custom btn-reset" id="btnReset">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
+                            </button>
+                            <button class="btn-custom btn-create" type="button" id="openCreateProductBtn" onclick="openAddModal()">
+                                <i class="fas fa-plus"></i>
+                                <span>Thêm sản phẩm</span>
                             </button>
                         </div>
                     </div>

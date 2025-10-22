@@ -169,6 +169,20 @@
             background: #78350f;
         }
 
+        /* Reuse user-management create button style for consistency */
+        .btn-create {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-create:hover {
+            background: #15803d;
+        }
+
+        #openCreatePromotionBtn {
+            margin-left: auto;
+        }
+
         .filter-bar {
             padding: 20px 24px;
             background: #fafafa;
@@ -467,10 +481,6 @@
                 <div class="card-custom">
                     <div class="card-header-custom">
                         <h2>Danh sách khuyến mãi</h2>
-                        <button class="btn-add" onclick="openAddModal()">
-                            <i class="fas fa-plus"></i>
-                            <span>Thêm khuyến mãi</span>
-                        </button>
                     </div>
 
                     <div class="filter-bar">
@@ -493,6 +503,10 @@
                             <button class="btn-custom btn-reset" onclick="resetFilters()">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
+                            </button>
+                            <button class="btn-custom btn-create" type="button" id="openCreatePromotionBtn" onclick="openAddModal()">
+                                <i class="fas fa-plus"></i>
+                                <span>Thêm khuyến mãi</span>
                             </button>
                         </div>
                     </div>

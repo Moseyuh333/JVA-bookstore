@@ -206,7 +206,7 @@ public class AdminCommissionsServlet extends HttpServlet {
         BigDecimal rate = new BigDecimal(rateStr);
         if (status == null) status = "active";
 
-        String sql = "INSERT INTO commissions (name, type, min_revenue, max_revenue, rate, status) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO commissions (name, type, min_revenue, max_revenue, rate, status) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, created_at";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -221,10 +221,15 @@ public class AdminCommissionsServlet extends HttpServlet {
             pstmt.setBigDecimal(5, rate);
             pstmt.setString(6, status);
 
-            int rows = pstmt.executeUpdate();
-            out.write(rows > 0
-                ? "{\"message\":\"Commission created successfully\"}"
-                : "{\"error\":\"Failed to create commission\"}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int newId = rs.getInt("id");
+                    Timestamp createdAt = rs.getTimestamp("created_at");
+                    out.write("{\"id\":" + newId + ",\"created_at\":\"" + createdAt + "\",\"message\":\"Commission created successfully\"}");
+                } else {
+                    out.write("{\"error\":\"Failed to create commission\"}");
+                }
+            }
         }
     }
 
