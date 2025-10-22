@@ -455,7 +455,7 @@
                                 <option value="all">Tất cả</option>
                                 <option value="title">Tên sách</option>
                                 <option value="author">Tác giả</option>
-                                <option value="isbn">ISBN</option>
+                                <option value="category">Thể loại</option>
                                 <option value="shop_name">Tên shop</option>
                             </select>
                             <div class="search-box">
