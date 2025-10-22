@@ -86,23 +86,23 @@ public class AdminPromotionsServlet extends HttpServlet {
         // Add search conditions
         if (search != null && !search.trim().isEmpty()) {
             if ("all".equals(searchType) || searchType == null) {
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_type ILIKE ?)");
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ?)");
             } else if ("code".equals(searchType)) {
                 sql.append(" AND code ILIKE ?");
             } else if ("description".equals(searchType)) {
                 sql.append(" AND description ILIKE ?");
-            } else if ("type".equals(searchType)) {
-                sql.append(" AND discount_type ILIKE ?");
+            } else if ("kind".equals(searchType)) {
+                sql.append(" AND discount_scope ILIKE ?");
             } else if ("status".equals(searchType)) {
                 sql.append(" AND status = ?");
             } else {
                 // Default to all if invalid searchType
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_type ILIKE ?)");
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ?)");
             }
         }
 
 
-        sql.append(" ORDER BY id DESC");
+        sql.append(" ORDER BY id ASC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"promotions\":[");
