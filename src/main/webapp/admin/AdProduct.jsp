@@ -477,7 +477,7 @@
                         </div>
                     </div>
 
-                    <div class="table-wrapper">
+                    <div class="table-wrapper" id="tableContainer">
                         <div id="loadingState" class="loading-state" style="display: none;">
                             <div class="spinner"></div>
                             <p>Đang tải dữ liệu...</p>
