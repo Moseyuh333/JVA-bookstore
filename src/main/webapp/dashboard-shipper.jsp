@@ -9,7 +9,7 @@
   <meta charset="UTF-8">
   <title>Shipper Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Đồng bộ “vibe” trang chủ, không dùng header.jsp -->
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/feather-icons"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -98,12 +98,15 @@
 
 <script>
   const ctx = '<%=ctx%>';
+
+  // Bảo vệ role shipper (client-side)
   function guardRole(){
-    const role = localStorage.getItem('auth_role')||'';
-    if(role.toLowerCase()!=='shipper'){ location.href = ctx+'/login.jsp'; }
+    const role = (localStorage.getItem('auth_role')||'').toLowerCase();
+    if (role !== 'shipper') location.href = ctx + '/login.jsp';
   }
   guardRole();
 
+  // fetch có kèm Bearer và xử lý lỗi chuẩn
   async function authFetch(url,opt={}){
     const token = localStorage.getItem('auth_token')||'';
     const headers = new Headers(opt.headers||{});
@@ -111,6 +114,8 @@
     const res = await fetch(url,{...opt, headers});
     const ct = res.headers.get('content-type')||'';
     if (!res.ok) {
+      // nếu hết hạn/không hợp lệ → về login
+      if (res.status === 401) { localStorage.clear(); location.href = ctx + '/login.jsp'; return; }
       const body = await res.text();
       throw new Error(`HTTP ${res.status} – ${ct.includes('json')? body : 'Non-JSON: ' + body.slice(0,120)}`);
     }
@@ -123,6 +128,15 @@
 
   const apiBase = ctx + '/api/shipper';
   let chart;
+
+  function statusBadge(status){
+    const s = (status||'').toUpperCase();
+    let cls = 'bg-gray-100 text-gray-700';
+    if (s === 'DELIVERED') cls = 'bg-green-100 text-green-700';
+    else if (s === 'FAILED_DELIVERY') cls = 'bg-red-100 text-red-700';
+    else if (['ASSIGNED','PICKED_UP','IN_TRANSIT','OUT_FOR_DELIVERY'].includes(s)) cls = 'bg-amber-100 text-amber-700';
+    return `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}">${status??'-'}</span>`;
+  }
 
   async function reload(){
     try{
@@ -144,33 +158,44 @@
         }
       });
 
-      // Recent
+      // Recent: mặc định lấy 10 mới nhất (không filter status)
       const list = await authFetch(apiBase + '/shipments?size=10&page=1');
       const tbody = document.getElementById('recent-shipments');
+      const items = list.items || [];
+
       tbody.innerHTML = '';
-      (list.items||[]).forEach(it=>{
-        const lastEvt = (it.lastEventAt || it.updatedAt || it.createdAt || '').toString();
-        const last = lastEvt ? new Date(lastEvt).toLocaleString('vi-VN') : '-';
-        const badge = `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">${it.status??'-'}</span>`;
-        tbody.insertAdjacentHTML('beforeend', `
-          <tr class="hover:bg-gray-50">
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.id}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.orderCode||'-'}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.receiverName||'-'}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${badge}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${last}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-              <button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm"
-                      onclick="location.href='${ctx}/shipment-detail.jsp?id=${it.id}'">
-                Chi tiết
-              </button>
-            </td>
-          </tr>`);
-      });
+      if (items.length === 0) {
+        tbody.insertAdjacentHTML('beforeend',
+          `<tr><td colspan="6" class="px-3 py-4 text-center text-gray-500">Không có vận đơn nào.</td></tr>`);
+      } else {
+        items.forEach(it=>{
+          // Sửa điểm chính: dùng đúng trường lastUpdateAt do API trả về
+          const lastRaw = (it.lastUpdateAt || '').toString();
+          const last = lastRaw ? new Date(lastRaw).toLocaleString('vi-VN') : '-';
+          const badge = statusBadge(it.status);
+
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr class="hover:bg-gray-50">
+              <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.id}</td>
+              <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.orderCode||'-'}</td>
+              <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.receiverName||'-'}</td>
+              <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${badge}</td>
+              <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${last}</td>
+              <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
+                <button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm"
+                        onclick="location.href='${ctx}/shipment-detail.jsp?id=${it.id}'">
+                  Chi tiết
+                </button>
+              </td>
+            </tr>`);
+        });
+      }
+      document.getElementById('err').textContent = '';
     }catch(e){
       document.getElementById('err').textContent = e.message;
     }
   }
+
   reload();
 </script>
 </body>

@@ -32,26 +32,31 @@ public class ShipperApiServlet extends HttpServlet {
         this.shipmentDAO = new ShipmentDAO();
     }
 
-    // --------------- routing ---------------
+    // ========================= ROUTING =========================
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String user = currentUsername(req);
-        if (user == null) { writeJson(resp, 401, err("UNAUTHORIZED", "Missing/invalid token")); return; }
+        if (user == null) { writeJson(resp, 401, err("UNAUTHORIZED", "Missing/invalid login")); return; }
 
-        String path = pathInfo(req);
+        String path = normalizedPath(req);
+
         try {
-            if (path.equals("") || path.equals("/")) {
+            // /api/shipper  or /api/shipper/
+            if (path.equals("")) {
                 writeJson(resp, 200, mapOf("ok", true, "service", "shipper-api"));
                 return;
             }
 
+            // /api/shipper/shipments
             if (path.equals("/shipments")) {
-                String status = opt(req.getParameter("status"));
-                int page = parseInt(req.getParameter("page"), 1);
+                String raw = opt(req.getParameter("status"));
+                String status = normalizeStatusForDb(raw); // null => không filter
+                int page = clamp(parseInt(req.getParameter("page"), 1), 1, 1_000_000);
                 int size = clamp(parseInt(req.getParameter("size"), 20), 1, 100);
 
-                List<Shipment> items = shipmentDAO.findByShipper(user, status, page, size);
-                int total = countByShipper(user, status); // count nhanh-gn
+                List<Shipment> items = shipmentDAO.findByShipper(user, status == null ? "" : status, page, size);
+                int total = countByShipper(user, status == null ? "" : status);
+
                 Map<String, Object> out = new LinkedHashMap<>();
                 out.put("items", items);
                 out.put("page", page);
@@ -61,6 +66,7 @@ public class ShipperApiServlet extends HttpServlet {
                 return;
             }
 
+            // /api/shipper/shipments/{id}
             if (path.startsWith("/shipments/")) {
                 String[] seg = path.split("/");
                 if (seg.length == 3) {
@@ -79,17 +85,18 @@ public class ShipperApiServlet extends HttpServlet {
                 }
             }
 
+            // /api/shipper/stats
             if (path.equals("/stats")) {
                 Map<String, Integer> st = shipmentDAO.getStats(user);
-                // Bảo đảm 3 field bắt buộc cho pie chart
                 Map<String, Object> out = new LinkedHashMap<>();
-                out.put("inProgress", st.getOrDefault("inProgress", 0));
-                out.put("delivered", st.getOrDefault("delivered", 0));
-                out.put("failed", st.getOrDefault("failed", 0));
-                // bonus KPI
-                int d = st.getOrDefault("delivered", 0);
-                int f = st.getOrDefault("failed", 0);
-                double rate = (d + f) == 0 ? 0.0 : (double) d / (double) (d + f);
+                int inProgress = nz(st.get("inProgress"));
+                int delivered  = nz(st.get("delivered"));
+                int failed     = nz(st.get("failed"));
+                out.put("inProgress", inProgress);
+                out.put("delivered", delivered);
+                out.put("failed", failed);
+
+                double rate = (delivered + failed) == 0 ? 0.0 : (double) delivered / (delivered + failed);
                 out.put("successRate", rate);
                 out.put("raw", st);
                 writeJson(resp, 200, out);
@@ -106,10 +113,12 @@ public class ShipperApiServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String user = currentUsername(req);
-        if (user == null) { writeJson(resp, 401, err("UNAUTHORIZED", "Missing/invalid token")); return; }
+        if (user == null) { writeJson(resp, 401, err("UNAUTHORIZED", "Missing/invalid login")); return; }
 
-        String path = pathInfo(req);
+        String path = normalizedPath(req);
+
         try {
+            // /api/shipper/shipments/{id}/events
             if (path.startsWith("/shipments/") && path.endsWith("/events")) {
                 String[] seg = path.split("/");
                 if (seg.length == 4) {
@@ -135,6 +144,7 @@ public class ShipperApiServlet extends HttpServlet {
                     return;
                 }
             }
+
             writeJson(resp, 404, err("NOT_FOUND", "Unknown endpoint: " + path));
         } catch (Exception e) {
             e.printStackTrace();
@@ -145,10 +155,12 @@ public class ShipperApiServlet extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String user = currentUsername(req);
-        if (user == null) { writeJson(resp, 401, err("UNAUTHORIZED", "Missing/invalid token")); return; }
+        if (user == null) { writeJson(resp, 401, err("UNAUTHORIZED", "Missing/invalid login")); return; }
 
-        String path = pathInfo(req);
+        String path = normalizedPath(req);
+
         try {
+            // /api/shipper/shipments/{id}/deliver
             if (path.startsWith("/shipments/") && path.endsWith("/deliver")) {
                 String[] seg = path.split("/");
                 if (seg.length == 4) {
@@ -179,6 +191,7 @@ public class ShipperApiServlet extends HttpServlet {
                     return;
                 }
             }
+
             writeJson(resp, 404, err("NOT_FOUND", "Unknown endpoint: " + path));
         } catch (Exception e) {
             e.printStackTrace();
@@ -186,18 +199,26 @@ public class ShipperApiServlet extends HttpServlet {
         }
     }
 
-    // --------------- helpers ---------------
-    private String currentUsername(HttpServletRequest req) {
-        // 1) nếu filter có set attribute
-        Object v = req.getAttribute("username");
-        if (v != null && !v.toString().trim().isEmpty()) return v.toString().trim();
+    // ========================= HELPERS =========================
 
-        // 2) lấy token từ cookie "token" hoặc header Authorization
+    /** Ưu tiên session → fallback JWT cookie/header. */
+    private String currentUsername(HttpServletRequest req) {
+        // 0) Filter có set sẵn?
+        Object f = req.getAttribute("username");
+        if (f != null && !String.valueOf(f).trim().isEmpty()) return String.valueOf(f).trim();
+
+        // 1) HttpSession
+        HttpSession sess = req.getSession(false);
+        if (sess != null) {
+            Object u = sess.getAttribute("username");
+            if (u != null && !String.valueOf(u).trim().isEmpty()) return String.valueOf(u).trim();
+        }
+
+        // 2) JWT cookie/header
         String token = null;
-        if (req.getCookies() != null) {
-            for (Cookie c : req.getCookies()) {
-                if ("token".equalsIgnoreCase(c.getName())) { token = c.getValue(); break; }
-            }
+        Cookie[] cs = req.getCookies();
+        if (cs != null) {
+            for (Cookie c : cs) if ("token".equalsIgnoreCase(c.getName())) { token = c.getValue(); break; }
         }
         if (token == null || token.isEmpty()) {
             String auth = req.getHeader("Authorization");
@@ -205,7 +226,6 @@ public class ShipperApiServlet extends HttpServlet {
         }
         if (token == null || token.isEmpty()) return null;
 
-        // 3) decode JWT → lấy subject = username
         try {
             String user = JwtUtil.validateToken(token);
             return (user != null && !user.isBlank()) ? user : null;
@@ -214,17 +234,18 @@ public class ShipperApiServlet extends HttpServlet {
         }
     }
 
-    private String pathInfo(HttpServletRequest req) {
+    private String normalizedPath(HttpServletRequest req) {
         String p = req.getPathInfo();
-        return p == null ? "" : p.trim();
+        if (p == null) return "";
+        p = p.replaceAll("/{2,}", "/");
+        if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
+        return p.trim();
     }
 
     private void writeJson(HttpServletResponse resp, int status, Object body) throws IOException {
         resp.setStatus(status);
         resp.setContentType("application/json;charset=UTF-8");
-        try (PrintWriter out = resp.getWriter()) {
-            out.print(gson.toJson(body));
-        }
+        try (PrintWriter out = resp.getWriter()) { out.print(gson.toJson(body)); }
     }
 
     private Map<String, Object> err(String code, String msg) {
@@ -242,9 +263,7 @@ public class ShipperApiServlet extends HttpServlet {
 
     private JsonObject readJson(HttpServletRequest req) throws IOException {
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = req.getReader()) {
-            String line; while ((line = br.readLine()) != null) sb.append(line);
-        }
+        try (BufferedReader br = req.getReader()) { String line; while ((line = br.readLine()) != null) sb.append(line); }
         if (sb.length() == 0) return new JsonObject();
         return JsonParser.parseString(sb.toString()).getAsJsonObject();
     }
@@ -252,7 +271,6 @@ public class ShipperApiServlet extends HttpServlet {
     private String opt(String s) { return s == null ? "" : s.trim(); }
     private int parseInt(String s, int def) { try { return Integer.parseInt(s); } catch (Exception e) { return def; } }
     private int clamp(int v, int min, int max) { return Math.max(min, Math.min(max, v)); }
-
     private String getString(JsonObject o, String key) {
         return (o.has(key) && !o.get(key).isJsonNull()) ? o.get(key).getAsString() : null;
     }
@@ -260,19 +278,38 @@ public class ShipperApiServlet extends HttpServlet {
         try { return (o.has(key) && !o.get(key).isJsonNull()) ? o.get(key).getAsBoolean() : def; }
         catch (Exception e){ return def; }
     }
+    private int nz(Integer x){ return x==null?0:x; }
 
-    // -------- count helper (nhẹ nhàng) --------
+
+    private String normalizeStatusForDb(String raw) {
+        if (raw == null) return null;
+        String s = raw.trim();
+        if (s.isEmpty() || "all".equalsIgnoreCase(s)) return null;
+
+        switch (s.toLowerCase()) {
+            case "pending":    return "ASSIGNED";
+            case "delivering": return "OUT_FOR_DELIVERY";
+            case "done":       return "DELIVERED";
+            case "failed":     return "FAILED_DELIVERY";
+        }
+
+        Set<String> valid = Set.of("ASSIGNED","PICKED_UP","IN_TRANSIT","OUT_FOR_DELIVERY",
+                                   "DELIVERED","FAILED_DELIVERY");
+        String up = s.toUpperCase();
+        return valid.contains(up) ? up : null;
+    }
+
     private int countByShipper(String username, String status) throws SQLException {
-        // cách nhẹ: dùng cùng connection trong DBUtil mỗi lần gọi — đủ dùng cho trang list
         String base = "SELECT COUNT(*) FROM shipments WHERE shipper_user_id=? ";
-        String sql = base + (status != null && !status.isEmpty() ? "AND status=?" : "");
+        String sql = base + (status != null && !status.isBlank() ? "AND status=?" : "");
         try (java.sql.Connection con = DBUtil.getConnection();
              java.sql.PreparedStatement ps = con.prepareStatement(sql)) {
             int i = 1;
             ps.setString(i++, username);
-            if (status != null && !status.isEmpty()) ps.setString(i++, status);
-            java.sql.ResultSet rs = ps.executeQuery();
-            return rs.next() ? rs.getInt(1) : 0;
+            if (status != null && !status.isBlank()) ps.setString(i++, status);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
         }
     }
 }
