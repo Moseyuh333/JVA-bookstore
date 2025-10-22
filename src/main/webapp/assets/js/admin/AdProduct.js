@@ -46,13 +46,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (emptyState) emptyState.style.display = "block";
         const tableBox = document.querySelector(".table-container");
         if (tableBox) tableBox.style.display = "none";
+        const pagination = document.getElementById("pagination");
+        if (pagination) pagination.style.display = "none";
     };
-
 
     const hideEmpty = () => {
         if (emptyState) emptyState.style.display = "none";
         const tableBox = document.querySelector(".table-container");
         if (tableBox) tableBox.style.display = "block";
+        const pagination = document.getElementById("pagination");
+        if (pagination) pagination.style.display = "flex"; // để hiện lại bình thường
     };
 
     // ===== Render Table =====

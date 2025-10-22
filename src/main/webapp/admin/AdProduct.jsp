@@ -546,7 +546,7 @@
                         <div id="emptyState" class="empty-state" style="display: none;">
                             <i class="fas fa-inbox"></i>
                             <h3>Không tìm thấy dữ liệu</h3>
-                            <p>Không có nhà vận chuyển nào phù hợp với tiêu chí tìm kiếm</p>
+                            <p>Không có sản phẩm nào phù hợp với tiêu chí tìm kiếm</p>
                         </div>
                     </div>
                 </div>
