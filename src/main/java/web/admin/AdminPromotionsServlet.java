@@ -14,6 +14,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @WebServlet(name = "AdminPromotionsServlet", urlPatterns = {"/api/admin/promotions"})
 public class AdminPromotionsServlet extends HttpServlet {
@@ -254,8 +257,11 @@ public class AdminPromotionsServlet extends HttpServlet {
             pstmt.setString(4, type);
             pstmt.setString(5, kind);
             pstmt.setBigDecimal(6, discountValue);
-            pstmt.setString(7, startAt);
-            pstmt.setString(8, endAt);
+            Timestamp startTimestamp = parseToTimestamp(startAt);
+            Timestamp endTimestamp = parseToTimestamp(endAt);
+            pstmt.setTimestamp(7, startTimestamp);
+            pstmt.setTimestamp(8, endTimestamp);
+
             pstmt.setBoolean(9, active);
             if (shopId != null) {
                 pstmt.setInt(10, shopId);
@@ -309,8 +315,11 @@ public class AdminPromotionsServlet extends HttpServlet {
             pstmt.setString(4, type);
             pstmt.setString(5, kind);
             pstmt.setBigDecimal(6, discountValue);
-            pstmt.setString(7, startAt);
-            pstmt.setString(8, endAt);
+            Timestamp startTimestamp = parseToTimestamp(startAt);
+            Timestamp endTimestamp = parseToTimestamp(endAt);
+            pstmt.setTimestamp(7, startTimestamp);
+            pstmt.setTimestamp(8, endTimestamp);
+
             pstmt.setBoolean(9, active);
             if (shopId != null) {
                 pstmt.setInt(10, shopId);
@@ -351,6 +360,28 @@ public class AdminPromotionsServlet extends HttpServlet {
                 out.write("{\"error\":\"Promotion not found\"}");
             }
         }
+    }
+
+    private Timestamp parseToTimestamp(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) return null;
+
+        // Thử parse theo nhiều định dạng có thể có
+        String[] patterns = {
+            "dd/MM/yyyy hh:mm a",  // 22/10/2025 02:45 PM (AM/PM)
+            "dd/MM/yyyy HH:mm",    // 22/10/2025 14:45 (24h format)
+            "yyyy-MM-dd'T'HH:mm"   // 2025-10-22T14:45 (from datetime-local input)
+        };
+
+        for (String pattern : patterns) {
+            try {
+                DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
+                LocalDateTime dt = LocalDateTime.parse(dateStr.trim(), fmt);
+                return Timestamp.valueOf(dt);
+            } catch (Exception ignored) {}
+        }
+
+        System.err.println("⚠️ [parseToTimestamp] Unrecognized format: " + dateStr);
+        return null;
     }
 
     private String escapeJson(String str) {
