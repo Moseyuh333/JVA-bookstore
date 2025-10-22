@@ -230,7 +230,6 @@ public class ShipmentDAO {
         final String pickSql =
             "SELECT u.username " +
             "FROM users u " +
-            "JOIN user_roles ur ON ur.user_id = u.id " +
             "WHERE role = 'shipper'::user_role " +
             "ORDER BY random() " +
             "LIMIT 1";
