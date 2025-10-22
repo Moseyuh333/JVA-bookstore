@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingState = document.getElementById("loadingState");
     const emptyState = document.getElementById("emptyState");
     const tableContainer = document.getElementById("tableContainer");
-    const tableWrapper = document.querySelector(".table-container"); 
     const totalEl = document.getElementById("totalProducts");
     const inStockEl = document.getElementById("inStock");
     const outOfStockEl = document.getElementById("outOfStock");
@@ -44,14 +43,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const showEmpty = () => {
         emptyState?.classList.remove("hidden");
-        tableWrapper?.classList.add("hidden");
+        tableContainer?.classList.add("hidden");
     };
 
     const hideEmpty = () => {
         emptyState?.classList.add("hidden");
-        tableWrapper?.classList.remove("hidden");
+        tableContainer?.classList.remove("hidden");
     };
-
 
     // ===== Render Table =====
     const renderTable = (list) => {
