@@ -85,7 +85,20 @@ public class AdminPromotionsServlet extends HttpServlet {
 
         // Add search conditions
         if (search != null && !search.trim().isEmpty()) {
-            sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+            if ("all".equals(searchType) || searchType == null) {
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+            } else if ("code".equals(searchType)) {
+                sql.append(" AND code ILIKE ?");
+            } else if ("description".equals(searchType)) {
+                sql.append(" AND description ILIKE ?");
+            } else if ("kind".equals(searchType)) {
+                sql.append(" AND discount_scope ILIKE ?");
+            } else if ("type".equals(searchType)) {
+                sql.append(" AND discount_type ILIKE ?");
+            } else {
+                // Default to all if invalid searchType
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+            }
         }
 
 
@@ -104,7 +117,12 @@ public class AdminPromotionsServlet extends HttpServlet {
             int paramIndex = 1;
             if (search != null && !search.trim().isEmpty()) {
                 String pattern = "%" + search.trim() + "%";
-                for (int i = 0; i < 4; i++) {
+                if ("all".equals(searchType) || searchType == null) {
+                    for (int i = 0; i < 4; i++) {
+                        pstmt.setString(paramIndex++, pattern);
+                    }
+                } else {
+                    // For specific search types, only one parameter
                     pstmt.setString(paramIndex++, pattern);
                 }
             }
