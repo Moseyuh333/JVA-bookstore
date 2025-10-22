@@ -199,6 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
         renderTable(filteredPromotions);
     };
 
+    // Expose for inline onclick fallback from JSP
+    window.resetFilters = resetFilters;
+
     // Event listeners
     if (searchInput) {
         searchInput.addEventListener("input", applyFilters);
