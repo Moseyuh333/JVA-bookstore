@@ -44,13 +44,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const showEmpty = () => {
         if (emptyState) emptyState.style.display = "block";
-        if (tableWrapper) tableWrapper.style.display = "none";
+        if (tableContainer) tableContainer.style.display = "none"; 
     };
 
     const hideEmpty = () => {
         if (emptyState) emptyState.style.display = "none";
-        if (tableWrapper) tableWrapper.style.display = "block";
+        if (tableContainer) tableContainer.style.display = "block"; 
     };
+
 
     // ===== Render Table =====
     const renderTable = (list) => {
