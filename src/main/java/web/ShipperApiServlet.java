@@ -18,7 +18,6 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.*;
 
-
 @WebServlet(name = "ShipperApiServlet", urlPatterns = {"/api/shipper/*"})
 public class ShipperApiServlet extends HttpServlet {
 
@@ -32,7 +31,6 @@ public class ShipperApiServlet extends HttpServlet {
         this.shipmentDAO = new ShipmentDAO();
     }
 
-    // ========================= ROUTING =========================
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String user = currentUsername(req);
@@ -41,13 +39,16 @@ public class ShipperApiServlet extends HttpServlet {
         String path = normalizedPath(req);
 
         try {
-            // /api/shipper  or /api/shipper/
             if (path.equals("")) {
                 writeJson(resp, 200, mapOf("ok", true, "service", "shipper-api"));
                 return;
             }
 
-            // /api/shipper/shipments
+            if (path.equals("/whoami")) { // tiện chẩn đoán
+                writeJson(resp, 200, mapOf("username", user));
+                return;
+            }
+
             if (path.equals("/shipments")) {
                 String raw = opt(req.getParameter("status"));
                 String status = normalizeStatusForDb(raw); // null => không filter
@@ -66,13 +67,12 @@ public class ShipperApiServlet extends HttpServlet {
                 return;
             }
 
-            // /api/shipper/shipments/{id}
             if (path.startsWith("/shipments/")) {
                 String[] seg = path.split("/");
                 if (seg.length == 3) {
                     long id = Long.parseLong(seg[2]);
-                    Shipment s = shipmentDAO.findById(id);
-                    if (s == null || !user.equals(s.getShipperUserId())) {
+                    Shipment s = shipmentDAO.findByIdOwned(id, user); // CHECK quyền ngay SQL
+                    if (s == null) {
                         writeJson(resp, 404, err("NOT_FOUND", "Shipment not found or not yours"));
                         return;
                     }
@@ -85,7 +85,6 @@ public class ShipperApiServlet extends HttpServlet {
                 }
             }
 
-            // /api/shipper/stats
             if (path.equals("/stats")) {
                 Map<String, Integer> st = shipmentDAO.getStats(user);
                 Map<String, Object> out = new LinkedHashMap<>();
@@ -118,14 +117,13 @@ public class ShipperApiServlet extends HttpServlet {
         String path = normalizedPath(req);
 
         try {
-            // /api/shipper/shipments/{id}/events
             if (path.startsWith("/shipments/") && path.endsWith("/events")) {
                 String[] seg = path.split("/");
                 if (seg.length == 4) {
                     long id = Long.parseLong(seg[2]);
 
-                    Shipment s = shipmentDAO.findById(id);
-                    if (s == null || !user.equals(s.getShipperUserId())) {
+                    Shipment s = shipmentDAO.findByIdOwned(id, user);
+                    if (s == null) {
                         writeJson(resp, 404, err("NOT_FOUND", "Shipment not found or not yours"));
                         return;
                     }
@@ -160,14 +158,13 @@ public class ShipperApiServlet extends HttpServlet {
         String path = normalizedPath(req);
 
         try {
-            // /api/shipper/shipments/{id}/deliver
             if (path.startsWith("/shipments/") && path.endsWith("/deliver")) {
                 String[] seg = path.split("/");
                 if (seg.length == 4) {
                     long id = Long.parseLong(seg[2]);
 
-                    Shipment s = shipmentDAO.findById(id);
-                    if (s == null || !user.equals(s.getShipperUserId())) {
+                    Shipment s = shipmentDAO.findByIdOwned(id, user);
+                    if (s == null) {
                         writeJson(resp, 404, err("NOT_FOUND", "Shipment not found or not yours"));
                         return;
                     }
@@ -199,27 +196,20 @@ public class ShipperApiServlet extends HttpServlet {
         }
     }
 
-    // ========================= HELPERS =========================
-
-    /** Ưu tiên session → fallback JWT cookie/header. */
+    // -------------------- helpers --------------------
     private String currentUsername(HttpServletRequest req) {
-        // 0) Filter có set sẵn?
         Object f = req.getAttribute("username");
         if (f != null && !String.valueOf(f).trim().isEmpty()) return String.valueOf(f).trim();
 
-        // 1) HttpSession
         HttpSession sess = req.getSession(false);
         if (sess != null) {
             Object u = sess.getAttribute("username");
             if (u != null && !String.valueOf(u).trim().isEmpty()) return String.valueOf(u).trim();
         }
 
-        // 2) JWT cookie/header
         String token = null;
         Cookie[] cs = req.getCookies();
-        if (cs != null) {
-            for (Cookie c : cs) if ("token".equalsIgnoreCase(c.getName())) { token = c.getValue(); break; }
-        }
+        if (cs != null) for (Cookie c : cs) if ("token".equalsIgnoreCase(c.getName())) { token = c.getValue(); break; }
         if (token == null || token.isEmpty()) {
             String auth = req.getHeader("Authorization");
             if (auth != null && auth.startsWith("Bearer ")) token = auth.substring(7).trim();
@@ -280,7 +270,6 @@ public class ShipperApiServlet extends HttpServlet {
     }
     private int nz(Integer x){ return x==null?0:x; }
 
-
     private String normalizeStatusForDb(String raw) {
         if (raw == null) return null;
         String s = raw.trim();
@@ -300,8 +289,12 @@ public class ShipperApiServlet extends HttpServlet {
     }
 
     private int countByShipper(String username, String status) throws SQLException {
-        String base = "SELECT COUNT(*) FROM shipments WHERE shipper_user_id=? ";
-        String sql = base + (status != null && !status.isBlank() ? "AND status=?" : "");
+        String base =
+            "SELECT COUNT(*) " +
+            "FROM shipments s " +
+            "JOIN users u ON (u.username = s.shipper_user_id OR CAST(u.id AS TEXT) = CAST(s.shipper_user_id AS TEXT)) " +
+            "WHERE u.username = ? ";
+        String sql = base + (status != null && !status.isBlank() ? "AND s.status = ?" : "");
         try (java.sql.Connection con = DBUtil.getConnection();
              java.sql.PreparedStatement ps = con.prepareStatement(sql)) {
             int i = 1;

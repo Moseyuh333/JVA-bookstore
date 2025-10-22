@@ -1,4 +1,3 @@
-// dao/ShipmentDAO.java
 package dao;
 
 import java.sql.*;
@@ -29,7 +28,8 @@ public class ShipmentDAO {
             "  CASE WHEN o.payment_method = 'cod' THEN o.total_amount ELSE 0 END AS cod_amount " +
             "FROM shipments s " +
             "JOIN orders o ON o.id = s.order_id " +
-            "WHERE s.shipper_user_id = ? " +
+            "JOIN users u ON (u.username = s.shipper_user_id OR CAST(u.id AS TEXT) = CAST(s.shipper_user_id AS TEXT)) " +
+            "WHERE u.username = ? " +
             (filterStatus ? "AND s.status = ? " : "") +
             "ORDER BY s.last_update_at DESC " +
             "LIMIT ? OFFSET ?";
@@ -50,12 +50,44 @@ public class ShipmentDAO {
         return list;
     }
 
+    public Shipment findByIdOwned(long id, String username) throws SQLException {
+        String sql =
+            "SELECT " +
+            "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
+            "  o.code AS order_code, " +
+            "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " + 
+            "  (o.shipping_snapshot->>'phone')         AS receiver_phone, " +
+            "  NULLIF(CONCAT_WS(', ', " +
+            "      NULLIF(o.shipping_snapshot->>'line1',''), " +
+            "      NULLIF(o.shipping_snapshot->>'line2',''), " +
+            "      NULLIF(o.shipping_snapshot->>'ward',''), " +
+            "      NULLIF(o.shipping_snapshot->>'district',''), " +
+            "      NULLIF(o.shipping_snapshot->>'city',''), " +
+            "      NULLIF(o.shipping_snapshot->>'province','')" +
+            "  ), '') AS receiver_address, " +
+            "  CASE WHEN o.payment_method = 'cod' THEN o.total_amount ELSE 0 END AS cod_amount " +
+            "FROM shipments s " +
+            "JOIN orders o ON o.id = s.order_id " +
+            "JOIN users u ON (u.username = s.shipper_user_id OR CAST(u.id AS TEXT) = CAST(s.shipper_user_id AS TEXT)) " +
+            "WHERE s.id = ? AND u.username = ?";
+
+        try (Connection con = DBUtil.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            ps.setString(2, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapShipmentJoinedV2(rs);
+            }
+        }
+        return null;
+    }
+
     public Shipment findById(long id) throws SQLException {
         String sql =
             "SELECT " +
             "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
             "  o.code AS order_code, " +
-            "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " +
+            "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " + 
             "  (o.shipping_snapshot->>'phone')         AS receiver_phone, " +
             "  NULLIF(CONCAT_WS(', ', " +
             "      NULLIF(o.shipping_snapshot->>'line1',''), " +
@@ -78,55 +110,6 @@ public class ShipmentDAO {
             }
         }
         return null;
-    }
-
-    public Shipment findByIdOwned(long id, String username) throws SQLException {
-        String sql =
-            "SELECT " +
-            "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
-            "  o.code AS order_code, " +
-            "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " +
-            "  (o.shipping_snapshot->>'phone')         AS receiver_phone, " +
-            "  NULLIF(CONCAT_WS(', ', " +
-            "      NULLIF(o.shipping_snapshot->>'line1',''), " +
-            "      NULLIF(o.shipping_snapshot->>'line2',''), " +
-            "      NULLIF(o.shipping_snapshot->>'ward',''), " +
-            "      NULLIF(o.shipping_snapshot->>'district',''), " +
-            "      NULLIF(o.shipping_snapshot->>'city',''), " +
-            "      NULLIF(o.shipping_snapshot->>'province','')" +
-            "  ), '') AS receiver_address, " +
-            "  CASE WHEN o.payment_method = 'cod' THEN o.total_amount ELSE 0 END AS cod_amount " +
-            "FROM shipments s " +
-            "JOIN orders o ON o.id = s.order_id " +
-            "WHERE s.id = ? AND s.shipper_user_id = ?";
-
-        try (Connection con = DBUtil.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setLong(1, id);
-            ps.setString(2, username);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapShipmentJoinedV2(rs);
-            }
-        }
-        return null;
-    }
-
-    private Shipment mapShipmentJoinedV2(ResultSet rs) throws SQLException {
-        Shipment s = new Shipment();
-        s.setId(rs.getLong("id"));
-        s.setOrderId(rs.getLong("order_id"));
-        s.setShipperUserId(rs.getString("shipper_user_id"));
-        s.setStatus(rs.getString("status"));
-        s.setLastUpdateAt(rs.getTimestamp("last_update_at"));
-
-        s.setOrderCode(rs.getString("order_code"));
-        s.setReceiverName(rs.getString("receiver_name"));
-        s.setReceiverPhone(rs.getString("receiver_phone"));
-        s.setReceiverAddress(rs.getString("receiver_address"));
-
-        s.setCodAmount(rs.getDouble("cod_amount"));
-        s.setCodCollected(false);
-        return s;
     }
 
     public List<ShipmentEvent> findEvents(long shipmentId) throws SQLException {
@@ -214,7 +197,12 @@ public class ShipmentDAO {
 
     public Map<String, Integer> getStats(String username) throws SQLException {
         Map<String, Integer> map = new HashMap<>();
-        String sql = "SELECT status, COUNT(*) AS c FROM shipments WHERE shipper_user_id=? GROUP BY status";
+        String sql =
+            "SELECT s.status, COUNT(*) AS c " +
+            "FROM shipments s " +
+            "JOIN users u ON (u.username = s.shipper_user_id OR CAST(u.id AS TEXT) = CAST(s.shipper_user_id AS TEXT)) " +
+            "WHERE u.username = ? " +
+            "GROUP BY s.status";
         try (Connection con = DBUtil.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, username);
@@ -234,6 +222,22 @@ public class ShipmentDAO {
         return map;
     }
 
+    private Shipment mapShipmentJoinedV2(ResultSet rs) throws SQLException {
+        Shipment s = new Shipment();
+        s.setId(rs.getLong("id"));
+        s.setOrderId(rs.getLong("order_id"));
+        s.setShipperUserId(rs.getString("shipper_user_id"));
+        s.setStatus(rs.getString("status"));
+        s.setLastUpdateAt(rs.getTimestamp("last_update_at"));
+        s.setOrderCode(rs.getString("order_code"));
+        s.setReceiverName(rs.getString("receiver_name"));
+        s.setReceiverPhone(rs.getString("receiver_phone"));
+        s.setReceiverAddress(rs.getString("receiver_address"));
+        s.setCodAmount(rs.getDouble("cod_amount"));
+        s.setCodCollected(false);
+        return s;
+    }
+
     private ShipmentEvent mapEvent(ResultSet rs) throws SQLException {
         ShipmentEvent e = new ShipmentEvent();
         e.setId(rs.getLong("id"));
@@ -244,45 +248,5 @@ public class ShipmentDAO {
         e.setCreatedAt(rs.getTimestamp("created_at"));
         e.setCreatedBy(rs.getString("created_by"));
         return e;
-    }
-
-    // seeding cho order mới (đúng thiết kế: shipper_user_id = username)
-    public void createForNewOrderRandomShipper(Connection con, long orderId) throws SQLException {
-        final String pickSql =
-            "SELECT u.username FROM users u WHERE role = 'shipper'::user_role ORDER BY random() LIMIT 1";
-
-        String shipperUser = null;
-        try (PreparedStatement ps = con.prepareStatement(pickSql);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) shipperUser = rs.getString(1);
-        }
-        if (shipperUser == null || shipperUser.isEmpty()) {
-            throw new SQLException("No shipper user found. Please seed at least one SHIPPER account.");
-        }
-
-        final String insSql =
-            "INSERT INTO shipments (order_id, shipper_user_id, assigned_at, last_update_at) " +
-            "VALUES (?, ?, NOW(), NOW())";
-
-        try (PreparedStatement ps = con.prepareStatement(insSql)) {
-            ps.setLong(1, orderId);
-            ps.setString(2, shipperUser);
-            ps.executeUpdate();
-        }
-    }
-
-    public void createForNewOrderRandomShipper(long orderId) throws SQLException {
-        try (Connection con = DBUtil.getConnection()) {
-            con.setAutoCommit(false);
-            try {
-                createForNewOrderRandomShipper(con, orderId);
-                con.commit();
-            } catch (SQLException ex) {
-                con.rollback();
-                throw ex;
-            } finally {
-                con.setAutoCommit(true);
-            }
-        }
     }
 }
