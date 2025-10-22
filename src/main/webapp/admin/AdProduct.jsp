@@ -231,7 +231,7 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 2147483646;
             display: none;
-            pointer-events: auto;
+            pointer-events: auto !important;
         }
 
         .modal-box {
@@ -248,7 +248,7 @@
             max-width: 90vw;
             max-height: 85vh;
             overflow: auto;
-            pointer-events: auto;
+            pointer-events: auto !important;
         }
 
         /* Prevent background scroll when modal is open */
