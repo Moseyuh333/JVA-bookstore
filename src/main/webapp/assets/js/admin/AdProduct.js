@@ -214,6 +214,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (searchInput) {
+        searchInput.addEventListener("input", () => {
+            const searchValue = searchInput.value.trim();
+            const type = searchType ? searchType.value : "all";
+            currentSearch = searchValue;
+            currentSearchType = type;
+            currentPage = 1;
+            loadProducts(currentPage, currentSearch, currentSearchType);
+        });
         searchInput.addEventListener("keypress", (e) => {
             if (e.key === "Enter") {
                 const searchValue = searchInput.value.trim();
