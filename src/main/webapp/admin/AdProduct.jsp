@@ -466,7 +466,7 @@
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>
                             </button>
-                            <button type="button" class="btn-custom btn-reset" id="btnReset" onclick="resetProductFilters()">
+                            <button type="button" class="btn-custom btn-reset" id="btnReset">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
                             </button>
