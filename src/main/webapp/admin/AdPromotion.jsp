@@ -571,7 +571,7 @@
 <div id="promoModalOverlay" class="modal-overlay" style="display:none"></div>
 <div id="promoModalBox" class="modal-box" style="display:none; z-index:10000;">
     <div class="modal-header">
-        <h3 id="promoModalTitle">Thêm khuyến mãi</h3>
+        <div id="promoModalTitle" class="modal-title">Thêm khuyến mãi</div>
         <button id="promoModalClose" class="modal-close" aria-label="Đóng">&times;</button>
     </div>
     <form id="promoForm" class="modal-body" autocomplete="off">
@@ -642,7 +642,7 @@
 <div id="promoDeleteOverlay" class="modal-overlay" style="display:none"></div>
 <div id="promoDeleteBox" class="modal-box" style="display:none; z-index:10001; width:420px;">
     <div class="modal-header">
-        <h3>Xóa khuyến mãi</h3>
+        <div class="modal-title">Xóa khuyến mãi</div>
         <button id="promoDeleteClose" class="modal-close" aria-label="Đóng">&times;</button>
     </div>
     <div class="modal-body">

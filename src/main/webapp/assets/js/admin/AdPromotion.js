@@ -246,6 +246,21 @@ async function openEditPromo(id){
 document.getElementById('promoModalClose')?.addEventListener('click', ()=>{ hide(promoOverlay); hide(promoBox); });
 document.getElementById('promoCancel')?.addEventListener('click', ()=>{ hide(promoOverlay); hide(promoBox); });
 
+// Close when clicking outside the modal (overlay)
+promoOverlay?.addEventListener('click', (e)=>{ if(e.target===promoOverlay){ hide(promoOverlay); hide(promoBox); } });
+
+// Close delete modal by clicking overlay
+const promoDeleteOverlayEl = document.getElementById('promoDeleteOverlay');
+promoDeleteOverlayEl?.addEventListener('click', (e)=>{ if(e.target===promoDeleteOverlayEl){ hide(promoDeleteOverlayEl); hide(document.getElementById('promoDeleteBox')); deletingPromo=null; } });
+
+// Close modals on Escape
+document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+        if(promoBox && promoBox.style.display==='block'){ hide(promoOverlay); hide(promoBox); }
+        if(promoDeleteBox && promoDeleteBox.style.display==='block'){ hide(promoDeleteOverlay); hide(promoDeleteBox); deletingPromo=null; }
+    }
+});
+
 promoForm?.addEventListener('submit', async (e)=>{
     e.preventDefault();
     const id = promoIdInput.value;
