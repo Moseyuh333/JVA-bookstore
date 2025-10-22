@@ -11,6 +11,7 @@ import utils.DBUtil;
 
 public class ShipmentDAO {
 
+    // ---------- LIST BY SHIPPER ----------
     public List<Shipment> findByShipper(String username, String status, int page, int size) throws SQLException {
         List<Shipment> list = new ArrayList<Shipment>();
         boolean filterStatus = status != null && !status.isEmpty() && !"all".equalsIgnoreCase(status);
@@ -51,9 +52,7 @@ public class ShipmentDAO {
             ps.setInt(i, (page - 1) * size);
 
             rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapShipmentJoinedV2(rs));
-            }
+            while (rs.next()) list.add(mapShipmentJoinedV2(rs));
         } finally {
             if (rs != null) try { rs.close(); } catch (Exception ignore) {}
             if (ps != null) try { ps.close(); } catch (Exception ignore) {}
@@ -62,6 +61,7 @@ public class ShipmentDAO {
         return list;
     }
 
+    // ---------- FIND BY ID (OWNED) ----------
     public Shipment findByIdOwned(long id, String username) throws SQLException {
         String sql =
             "SELECT " +
@@ -100,6 +100,7 @@ public class ShipmentDAO {
         }
     }
 
+    // ---------- FIND BY ID (plain) ----------
     public Shipment findById(long id) throws SQLException {
         String sql =
             "SELECT " +
@@ -137,22 +138,7 @@ public class ShipmentDAO {
         }
     }
 
-    private Shipment mapShipmentJoinedV2(ResultSet rs) throws SQLException {
-        Shipment s = new Shipment();
-        s.setId(rs.getLong("id"));
-        s.setOrderId(rs.getLong("order_id"));
-        s.setShipperUserId(rs.getString("shipper_user_id"));
-        s.setStatus(rs.getString("status"));
-        s.setLastUpdateAt(rs.getTimestamp("last_update_at"));
-        s.setOrderCode(rs.getString("order_code"));
-        s.setReceiverName(rs.getString("receiver_name"));
-        s.setReceiverPhone(rs.getString("receiver_phone"));
-        s.setReceiverAddress(rs.getString("receiver_address"));
-        s.setCodAmount(rs.getDouble("cod_amount"));
-        s.setCodCollected(false);
-        return s;
-    }
-
+    // ---------- EVENTS ----------
     public List<ShipmentEvent> findEvents(long shipmentId) throws SQLException {
         List<ShipmentEvent> list = new ArrayList<ShipmentEvent>();
         Connection con = null;
@@ -249,6 +235,7 @@ public class ShipmentDAO {
         }
     }
 
+    // ---------- STATS ----------
     public Map<String, Integer> getStats(String username) throws SQLException {
         Map<String, Integer> map = new HashMap<String, Integer>();
         String sql = "SELECT status, COUNT(*) AS c FROM shipments WHERE shipper_user_id=? GROUP BY status";
@@ -276,6 +263,78 @@ public class ShipmentDAO {
         map.put("failed", failed);
         map.put("inProgress", inProgress);
         return map;
+    }
+
+    // ---------- SEEDING FOR NEW ORDER (restored) ----------
+    public void createForNewOrderRandomShipper(Connection con, long orderId) throws SQLException {
+        // 1) pick a random shipper username
+        final String pickSql =
+            "SELECT u.username " +
+            "FROM users u " +
+            "WHERE role = 'shipper'::user_role " +
+            "ORDER BY random() " +
+            "LIMIT 1";
+
+        String shipperUser = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            ps = con.prepareStatement(pickSql);
+            rs = ps.executeQuery();
+            if (rs.next()) shipperUser = rs.getString(1);
+        } finally {
+            if (rs != null) try { rs.close(); } catch (Exception ignore) {}
+            if (ps != null) try { ps.close(); } catch (Exception ignore) {}
+        }
+        if (shipperUser == null || shipperUser.isEmpty()) {
+            throw new SQLException("No shipper user found. Please seed at least one SHIPPER account.");
+        }
+
+        // 2) insert shipment
+        final String insSql =
+            "INSERT INTO shipments (order_id, shipper_user_id, assigned_at, last_update_at) " +
+            "VALUES (?, ?, NOW(), NOW())";
+        try {
+            ps = con.prepareStatement(insSql);
+            ps.setLong(1, orderId);
+            ps.setString(2, shipperUser);
+            ps.executeUpdate();
+        } finally {
+            if (ps != null) try { ps.close(); } catch (Exception ignore) {}
+        }
+    }
+
+    public void createForNewOrderRandomShipper(long orderId) throws SQLException {
+        Connection con = null;
+        try {
+            con = DBUtil.getConnection();
+            con.setAutoCommit(false);
+            createForNewOrderRandomShipper(con, orderId);
+            con.commit();
+        } catch (SQLException ex) {
+            if (con != null) try { con.rollback(); } catch (Exception ignore) {}
+            throw ex;
+        } finally {
+            if (con != null) try { con.setAutoCommit(true); } catch (Exception ignore) {}
+            if (con != null) try { con.close(); } catch (Exception ignore) {}
+        }
+    }
+
+    // ---------- MAPPERS ----------
+    private Shipment mapShipmentJoinedV2(ResultSet rs) throws SQLException {
+        Shipment s = new Shipment();
+        s.setId(rs.getLong("id"));
+        s.setOrderId(rs.getLong("order_id"));
+        s.setShipperUserId(rs.getString("shipper_user_id"));
+        s.setStatus(rs.getString("status"));
+        s.setLastUpdateAt(rs.getTimestamp("last_update_at"));
+        s.setOrderCode(rs.getString("order_code"));
+        s.setReceiverName(rs.getString("receiver_name"));
+        s.setReceiverPhone(rs.getString("receiver_phone"));
+        s.setReceiverAddress(rs.getString("receiver_address"));
+        s.setCodAmount(rs.getDouble("cod_amount"));
+        s.setCodCollected(false);
+        return s;
     }
 
     private ShipmentEvent mapEvent(ResultSet rs) throws SQLException {
