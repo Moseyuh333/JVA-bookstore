@@ -8,7 +8,8 @@ import utils.DBUtil;
 public class ShipmentDAO {
 
     public List<Shipment> findByShipper(String username, String status, int page, int size) throws SQLException {
-    List<Shipment> list = new ArrayList<>();
+        List<Shipment> list = new ArrayList<>();
+        boolean filterStatus = status != null && !status.isEmpty() && !"all".equalsIgnoreCase(status);
 
         String sql =
             "SELECT " +
@@ -28,7 +29,7 @@ public class ShipmentDAO {
             "FROM shipments s " +
             "JOIN orders o ON o.id = s.order_id " +
             "WHERE s.shipper_user_id = ? " +
-            (status != null && !status.isEmpty() ? "AND s.status = ? " : "") +
+            (filterStatus ? "AND s.status = ? " : "") +
             "ORDER BY s.last_update_at DESC " +
             "LIMIT ? OFFSET ?";
 
@@ -37,7 +38,7 @@ public class ShipmentDAO {
 
             int i = 1;
             ps.setString(i++, username);
-            if (status != null && !status.isEmpty()) ps.setString(i++, status);
+            if (filterStatus) ps.setString(i++, status);
             ps.setInt(i++, size);
             ps.setInt(i, (page - 1) * size);
 
