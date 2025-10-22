@@ -228,8 +228,8 @@ const productForm = document.getElementById('productForm');
 const productIdInput = document.getElementById('productId');
 const productTitleEl = document.getElementById('productModalTitle');
 
-function showEl(el){ if(el) el.style.display='block'; }
-function hideEl(el){ if(el) el.style.display='none'; }
+function showEl(el){ el?.classList.add('active'); }
+function hideEl(el){ el?.classList.remove('active'); }
 
 function populateProductForm(data) {
     productIdInput.value = data.id || '';
@@ -251,7 +251,6 @@ function openAddProduct(){
     hideEl(document.getElementById('productFeedback'));
     showEl(productOverlay); 
     showEl(productBox);
-    document.body.classList.add('modal-open');
 }
 
 async function openEditProduct(id){
@@ -274,7 +273,6 @@ async function openEditProduct(id){
     hideEl(document.getElementById('productFeedback'));
     showEl(productOverlay); 
     showEl(productBox);
-    document.body.classList.add('modal-open');
     }catch(err){ 
         console.error(err); 
         const fb = document.getElementById('productFeedback');
@@ -286,12 +284,10 @@ async function openEditProduct(id){
 document.getElementById('productModalClose')?.addEventListener('click', ()=>{ 
     hideEl(productOverlay); 
     hideEl(productBox); 
-    document.body.classList.remove('modal-open');
 });
 document.getElementById('productCancel')?.addEventListener('click', ()=>{ 
     hideEl(productOverlay); 
     hideEl(productBox); 
-    document.body.classList.remove('modal-open');
 });
 
 productForm?.addEventListener('submit', async (e)=>{
@@ -376,7 +372,6 @@ productOverlay?.addEventListener('click', (e)=>{
     if(e.target===productOverlay){ 
         hideEl(productOverlay); 
         hideEl(productBox); 
-        document.body.classList.remove('modal-open');
     } 
 });
 productDeleteOverlay?.addEventListener('click', (e)=>{ if(e.target===productDeleteOverlay){ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; } });
@@ -384,11 +379,10 @@ productDeleteOverlay?.addEventListener('click', (e)=>{ if(e.target===productDele
 // Close on Escape
 document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape'){
-        if(productBox && productBox.style.display==='block'){ 
+        if(productBox && productBox.classList.contains('active')){ 
             hideEl(productOverlay); 
             hideEl(productBox); 
             hideEl(document.getElementById('productFeedback'));
-            document.body.classList.remove('modal-open');
         }
         if(productDeleteBox && productDeleteBox.style.display==='block'){ 
             hideEl(productDeleteOverlay); 
