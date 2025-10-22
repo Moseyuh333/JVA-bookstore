@@ -570,50 +570,57 @@
     <form id="promoForm" class="modal-body" autocomplete="off">
         <input type="hidden" id="promoId" name="id" />
         <div class="form-grid">
-            <div class="form-group">
-                <label for="promoName">Tên chương trình *</label>
-                <input class="modal-input" type="text" id="promoName" name="name" required />
+            <input type="hidden" id="promoId" name="id" />
+            <div class="modal-row">
+                <div class="modal-label">Tên chương trình <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="promoName" name="name" class="modal-input" type="text" placeholder="Tên chương trình" required /></div>
             </div>
-            <div class="form-group">
-                <label for="promoCode">Mã code *</label>
-                <input class="modal-input" type="text" id="promoCode" name="code" required />
+            <div class="modal-row">
+                <div class="modal-label">Mã code <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="promoCode" name="code" class="modal-input" type="text" placeholder="Mã code (ví dụ: BOOK20)" required /></div>
             </div>
-            <div class="form-group">
-                <label for="promoType">Loại giảm</label>
-                <select class="modal-input" id="promoType" name="type">
-                    <option value="percent">Phần trăm</option>
-                    <option value="amount">Số tiền</option>
-                </select>
+            <div class="modal-row">
+                <div class="modal-label">Loại giảm</div>
+                <div style="flex:1">
+                    <select id="promoType" name="type" class="modal-input">
+                        <option value="percent">Phần trăm</option>
+                        <option value="amount">Số tiền</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="promoKind">Phạm vi</label>
-                <select class="modal-input" id="promoKind" name="kind">
-                    <option value="product">Sản phẩm</option>
-                    <option value="shipping">Phí vận chuyển</option>
-                </select>
+            <div class="modal-row">
+                <div class="modal-label">Phạm vi</div>
+                <div style="flex:1">
+                    <select id="promoKind" name="kind" class="modal-input">
+                        <option value="product">Sản phẩm</option>
+                        <option value="shipping">Phí vận chuyển</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="promoValue">Giá trị giảm *</label>
-                <input class="modal-input" type="number" id="promoValue" name="discount_value" step="0.01" required />
+            <div class="modal-row">
+                <div class="modal-label">Giá trị giảm <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="promoValue" name="discount_value" class="modal-input" type="number" step="0.01" placeholder="Ví dụ: 20" required /></div>
             </div>
-            <div class="form-group">
-                <label for="promoStart">Bắt đầu</label>
-                <input class="modal-input" type="datetime-local" id="promoStart" name="start_at" />
+            <div class="modal-row">
+                <div class="modal-label">Bắt đầu</div>
+                <div style="flex:1"><input id="promoStart" name="start_at" class="modal-input" type="datetime-local" /></div>
             </div>
-            <div class="form-group">
-                <label for="promoEnd">Kết thúc</label>
-                <input class="modal-input" type="datetime-local" id="promoEnd" name="end_at" />
+            <div class="modal-row">
+                <div class="modal-label">Kết thúc</div>
+                <div style="flex:1"><input id="promoEnd" name="end_at" class="modal-input" type="datetime-local" /></div>
             </div>
-            <div class="form-group full-width">
-                <label for="promoDescription">Mô tả</label>
-                <input class="modal-input" type="text" id="promoDescription" name="description" />
+            <div class="modal-row">
+                <div class="modal-label">Mô tả</div>
+                <div style="flex:1"><input id="promoDescription" name="description" class="modal-input" type="text" placeholder="Mô tả ngắn" /></div>
             </div>
-            <div class="form-group">
-                <label for="promoActive">Trạng thái</label>
-                <select class="modal-input" id="promoActive" name="active">
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                </select>
+            <div class="modal-row">
+                <div class="modal-label">Trạng thái</div>
+                <div style="flex:1">
+                    <select id="promoActive" name="active" class="modal-input">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
             </div>
         </div>
         <div id="promoFeedback" class="form-feedback" role="alert" style="display:none"></div>
