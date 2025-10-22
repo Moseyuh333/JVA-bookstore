@@ -203,6 +203,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Expose a global fallback function for inline onclick
+    window.resetProductFilters = function() {
+        if (searchInput) searchInput.value = "";
+        if (searchType) searchType.value = "all";
+        currentSearch = "";
+        currentSearchType = "all";
+        currentPage = 1;
+        loadProducts(currentPage, currentSearch, currentSearchType);
+    }
+
     if (searchInput) {
         searchInput.addEventListener("keypress", (e) => {
             if (e.key === "Enter") {

@@ -462,11 +462,11 @@
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="searchInput" placeholder="Tìm kiếm...">
                             </div>
-                            <button class="btn-custom btn-search" id="searchBtn">
+                            <button type="button" class="btn-custom btn-search" id="searchBtn">
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>
                             </button>
-                            <button class="btn-custom btn-reset" id="btnReset">
+                            <button type="button" class="btn-custom btn-reset" id="btnReset" onclick="resetProductFilters()">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
                             </button>
