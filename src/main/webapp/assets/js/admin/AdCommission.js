@@ -173,8 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (searchInput) searchInput.value = '';
         if (searchTypeSelect) searchTypeSelect.value = 'all';
         currentSearchType = "all";
-        filteredCommissions = [...commissions];
-        renderTable(filteredCommissions);
+        loadCommissions();
     };
 
     // Expose for inline onclick fallback from JSP
