@@ -228,8 +228,8 @@ const productForm = document.getElementById('productForm');
 const productIdInput = document.getElementById('productId');
 const productTitleEl = document.getElementById('productModalTitle');
 
-function showEl(el){ el?.classList.add('active'); }
-function hideEl(el){ el?.classList.remove('active'); }
+function showEl(el){ if(el) el.style.display='block'; }
+function hideEl(el){ if(el) el.style.display='none'; }
 
 function populateProductForm(data) {
     productIdInput.value = data.id || '';
