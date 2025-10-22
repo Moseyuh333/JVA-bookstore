@@ -81,12 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
         list.forEach(p => {
             const vnd = n => Number(n).toLocaleString('vi-VN');
             const type = p.type || "-";             // percent / amount
-            const scope = p.scope || "-";           // product / shipping
+            const kind = p.kind || p.scope || "-";           // product / shipping
 
             // Xác định nhãn loại khuyến mãi (hiển thị dễ hiểu hơn)
             const typeLabel =
-                scope === "shipping" ? "Giảm phí vận chuyển" :
-                scope === "product"  ? "Giảm giá sản phẩm" :
+                kind === "shipping" ? "Giảm phí vận chuyển" :
+                kind === "product"  ? "Giảm giá sản phẩm" :
                 "-";
 
             // Xử lý giá trị giảm

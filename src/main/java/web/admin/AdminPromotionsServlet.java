@@ -76,7 +76,7 @@ public class AdminPromotionsServlet extends HttpServlet {
 
         StringBuilder sql = new StringBuilder(
             "SELECT id, name, code, description, " +
-            "discount_scope AS scope, " +               // product / shipping
+            "discount_scope AS kind, " +               // product / shipping
             "discount_type AS type, " +                 // percent / amount
             "discount_value, max_discount_value, min_order_value, " +
             "start_date AS start_at, end_date AS end_at, status AS active " +
@@ -127,7 +127,7 @@ public class AdminPromotionsServlet extends HttpServlet {
                         .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
                         .append("\"code\":\"").append(escapeJson(rs.getString("code"))).append("\",")
                         .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
-                        .append("\"scope\":\"").append(escapeJson(rs.getString("scope"))).append("\",")
+                        .append("\"kind\":\"").append(escapeJson(rs.getString("kind"))).append("\",")
                         .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
                         .append("\"discount_value\":").append(rs.getBigDecimal("discount_value") != null ? rs.getBigDecimal("discount_value") : 0).append(",")
                         .append("\"max_discount_value\":").append(rs.getBigDecimal("max_discount_value") != null ? rs.getBigDecimal("max_discount_value") : 0).append(",")
@@ -154,9 +154,9 @@ public class AdminPromotionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "SELECT id, name, code, description, " +
-                     "       discount_type AS type, " +
-                     "       discount_kind AS kind, " +
+    String sql = "SELECT id, name, code, description, " +
+             "       discount_type AS type, " +
+             "       discount_scope AS kind, " +
                      "       discount_value, " +
                      "       start_date AS start_at, end_date AS end_at, " +
                      "       status AS active, shop_id " +
@@ -211,7 +211,7 @@ public class AdminPromotionsServlet extends HttpServlet {
         boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
         Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
 
-        String sql = "INSERT INTO promotions (name, code, description, discount_type, discount_kind, discount_value, start_date, end_date, status, shop_id) " +
+    String sql = "INSERT INTO promotions (name, code, description, discount_type, discount_scope, discount_value, start_date, end_date, status, shop_id) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, start_date AS created_at";
 
         try (Connection conn = DBUtil.getConnection();
@@ -267,7 +267,7 @@ public class AdminPromotionsServlet extends HttpServlet {
         boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
         Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
 
-        String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_type = ?, discount_kind = ?, discount_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
+    String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_type = ?, discount_scope = ?, discount_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
