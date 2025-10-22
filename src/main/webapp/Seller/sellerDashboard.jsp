@@ -426,6 +426,48 @@
             
             console.log('Token found, page loaded successfully');
         });
+
+
+        
+async function loadStoreInfo() {
+  const res = await fetch("/api/vendor/store");
+  const data = await res.json();
+
+  const infoDiv = document.getElementById("store-info");
+  if (data.name) {
+    infoDiv.innerHTML = `
+      <h3>${data.name}</h3>
+      <p>Địa chỉ: ${data.address}</p>
+      <p>Mô tả: ${data.description}</p>
+    `;
+  } else {
+    infoDiv.innerHTML = `
+      <p>Bạn chưa tạo cửa hàng nào.</p>
+      <button onclick="createStore()">Tạo ngay</button>
+    `;
+  }
+}
+
+async function createStore() {
+  const name = prompt("Tên cửa hàng:");
+  const address = prompt("Địa chỉ:");
+  const description = prompt("Mô tả:");
+
+  await fetch("/api/vendor/store", {
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+    body: `name=${name}&address=${address}&description=${description}`
+  });
+  alert("Đã tạo/ cập nhật cửa hàng!");
+  loadStoreInfo();
+}
+
+document.addEventListener("DOMContentLoaded", loadStoreInfo);
+
+
+
     </script>
+    <div id="store-info" class="p-3"></div>
+
 </body>
 </html>
