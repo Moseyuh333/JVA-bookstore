@@ -45,8 +45,7 @@ public class SellerDashboardServlet extends HttpServlet {
         }
         */
 
-        // DÙNG DỮ LIỆU TẠM THỜI cho JSP để đảm bảo hiển thị
-        // Nếu không có User Object, dùng Seller token từ localStorage (đã có ở client)
+        
         if (username == null) {
             // Trong môi trường thực tế, bạn cần lấy User Object từ Session/Token
             username = "Seller_Account"; 
