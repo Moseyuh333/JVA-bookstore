@@ -536,7 +536,7 @@
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
                             </button>
-                            <button class="btn-custom btn-create" type="button" id="openCreateShipperBtn" onclick="openAddModal()">
+                            <button class="btn-custom btn-create" type="button" id="openCreateShipperBtn" onclick="openAddShipper()">
                                 <i class="fas fa-plus"></i>
                                 <span>Thêm nhà vận chuyển</span>
                             </button>
