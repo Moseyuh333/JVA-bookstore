@@ -500,14 +500,14 @@
                             </table>
                             <!-- ⚙️ Phân trang -->
                             <div id="pagination" class="flex justify-center items-center gap-2 mt-4"></div>
-                            <div id="emptyState" class="text-center py-5 hidden">
-                                <i class="fas fa-box-open text-gray-400" style="font-size: 48px; margin-bottom: 12px;"></i>
-                                <p class="font-weight-bold text-gray-700 mb-1">Không tìm thấy dữ liệu</p>
-                                <p class="text-muted" style="font-size: 14px;">
-                                    Không có sản phẩm nào phù hợp với tiêu chí tìm kiếm
-                                </p>
-                            </div>
                         </div>
+                    </div>
+                    <div id="emptyState" class="text-center py-5 hidden">
+                        <i class="fas fa-box-open text-gray-400" style="font-size: 48px; margin-bottom: 12px;"></i>
+                        <p class="font-weight-bold text-gray-700 mb-1">Không tìm thấy dữ liệu</p>
+                        <p class="text-muted" style="font-size: 14px;">
+                            Không có sản phẩm nào phù hợp với tiêu chí tìm kiếm
+                        </p>
                     </div>
                 </div>
             </div>
