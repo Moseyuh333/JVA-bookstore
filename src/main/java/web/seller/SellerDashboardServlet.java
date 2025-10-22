@@ -1,6 +1,6 @@
 package web.seller;
 import javax.servlet.ServletException;
-//import javax.servlet.annotation.WebServlet;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -9,7 +9,7 @@ import utils.DBUtil;
 import java.io.IOException;
 import java.sql.SQLException;
 
-//@WebServlet("/seller-dashboard")
+@WebServlet("/seller-dashboard")
 public class SellerDashboardServlet extends HttpServlet {
     
     @Override

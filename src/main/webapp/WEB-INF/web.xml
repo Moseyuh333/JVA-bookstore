@@ -85,15 +85,7 @@
         <url-pattern>/api/health</url-pattern>
     </servlet-mapping>
 
-    <!-- Seller Dashboard Servlet -->
-    <servlet>
-        <servlet-name>SellerDashboardServlet</servlet-name>
-        <servlet-class>web.seller.SellerDashboardServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>SellerDashboardServlet</servlet-name>
-        <url-pattern>/seller-dashboard</url-pattern>
-    </servlet-mapping>
-
+    
+    
 
 </web-app>
