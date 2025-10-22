@@ -440,16 +440,23 @@
                 min-width: 800px;
             }
         }
-        /* Modal styles (same as category) */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9998; }
-        .modal-overlay.active { display: block; }
-        .modal-box { display: none; position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 680px; max-width: 95%; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-        .modal-box.active { display: block; }
-        .modal-header { padding: 18px 22px; border-bottom: 1px solid #eef2f6; display:flex; justify-content:space-between; align-items:center; }
-        .modal-body { padding: 18px 22px; }
-        .modal-actions { padding: 14px 22px; border-top: 1px solid #eef2f6; text-align: right; }
-        .modal-close { background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280 }
-        .form-feedback { font-size:13px; color:#991b1b; background:#fff1f2; padding:8px 12px; border-radius:6px; margin-bottom:12px; display:none; }
+    /* Modal styles (copied from AdCommission.jsp for exact parity) */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9998; }
+    .modal-overlay.active { display: block; }
+    .modal-box { display: none; position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 680px; max-width: 95%; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+    .modal-box.active { display: block; }
+    .modal-header { padding: 18px 22px; border-bottom: 1px solid #eef2f6; display:flex; justify-content:space-between; align-items:center; }
+    .modal-title { font-size:18px; font-weight:700; color:#1a202c; }
+    .modal-body { padding: 18px 22px; }
+    .modal-footer { padding: 14px 22px; border-top: 1px solid #eef2f6; text-align: right; }
+    .modal-input { width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; }
+    .btn-primary-modal { background:#92400e; color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer; }
+    .btn-secondary-modal { background:#e5e7eb; color:#374151; border:none; padding:10px 16px; border-radius:8px; margin-right:8px; cursor:pointer; }
+    .modal-row { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+    .modal-label { width:160px; font-size:14px; color:#374151; }
+    .form-feedback { margin-top:12px; padding:10px 12px; border-radius:8px; display:none; }
+    .form-feedback.success { display:block; background:#dcfce7; color:#166534; }
+    .form-feedback.error { display:block; background:#fee2e2; color:#991b1b; }
     </style>
 </head>
 <body>
