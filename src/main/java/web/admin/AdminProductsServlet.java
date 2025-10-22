@@ -136,7 +136,7 @@ public class AdminProductsServlet extends HttpServlet {
             countSql.append(" AND s.owner_id = ?");
         }
 
-        sql.append(" ORDER BY b.created_at DESC LIMIT ? OFFSET ?");
+        sql.append(" ORDER BY b.id ASC LIMIT ? OFFSET ?");
 
         try (Connection conn = DBUtil.getConnection()) {
             int total = 0;
