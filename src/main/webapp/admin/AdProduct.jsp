@@ -550,7 +550,10 @@
             </div>
             <div class="modal-row">
                 <div class="modal-label">Ảnh (URL)</div>
-                <div style="flex:1"><input id="prodImage" name="image_url" class="modal-input" type="text" placeholder="URL ảnh" /></div>
+                <div style="flex:1">
+                    <input id="prodImage" name="image_url" class="modal-input" type="url" placeholder="URL ảnh" />
+                    <div id="prodImagePreview" style="margin-top:8px; min-height:40px;"></div>
+                </div>
             </div>
             <div class="modal-row">
                 <div class="modal-label">Shop ID <span style="color:#ef4444">*</span></div>
