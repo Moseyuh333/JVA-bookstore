@@ -197,6 +197,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (searchInput) searchInput.value = '';
         filteredPromotions = [...promotions];
         renderTable(filteredPromotions);
+
+        // Update stats
+        const totalPromoEl = document.getElementById("totalPromo");
+        const activePromoEl = document.getElementById("activePromo");
+        if (totalPromoEl) totalPromoEl.textContent = promotions.length;
+        if (activePromoEl) activePromoEl.textContent = promotions.filter(p => p.active).length;
     };
 
     // Expose for inline onclick fallback from JSP
