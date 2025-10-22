@@ -10,7 +10,7 @@ import utils.DBUtil;
 import java.io.IOException;
 import java.sql.SQLException;
 
-@WebServlet("/seller-dashboard")
+//@WebServlet("/seller-dashboard")
 public class SellerDashboardServlet extends HttpServlet {
     
     @Override
