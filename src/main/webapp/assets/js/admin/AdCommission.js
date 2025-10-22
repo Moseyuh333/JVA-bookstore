@@ -177,6 +177,9 @@ document.addEventListener("DOMContentLoaded", () => {
         renderTable(filteredCommissions);
     };
 
+    // Expose for inline onclick fallback from JSP
+    window.resetFilters = resetFilters;
+
     // Event listeners
     if (searchInput) {
         searchInput.addEventListener("input", loadCommissions);
