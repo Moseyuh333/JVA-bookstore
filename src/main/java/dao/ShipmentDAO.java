@@ -12,8 +12,7 @@ public class ShipmentDAO {
 
         String sql =
             "SELECT " +
-            "  s.id, s.order_id, s.shipper_user_id, s.status, s.cod_amount, s.cod_collected, " +
-            "  s.pickup_at, s.delivered_at, s.proof_image_url, s.last_update_at, " +
+            "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
             "  o.code AS order_code, " +
             "  (o.shipping_snapshot->>'recipient_name') AS receiver_name, " +
             "  (o.shipping_snapshot->>'phone')          AS receiver_phone, " +
@@ -24,7 +23,8 @@ public class ShipmentDAO {
             "      NULLIF(o.shipping_snapshot->>'district',''), " +
             "      NULLIF(o.shipping_snapshot->>'city',''), " +
             "      NULLIF(o.shipping_snapshot->>'province','')" +
-            "  ), '') AS receiver_address " +
+            "  ), '') AS receiver_address, " +
+            "  CASE WHEN o.payment_method = 'cod' THEN o.total_amount ELSE 0 END AS cod_amount " +
             "FROM shipments s " +
             "JOIN orders o ON o.id = s.order_id " +
             "WHERE s.shipper_user_id = ? " +
@@ -43,7 +43,7 @@ public class ShipmentDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(mapShipmentJoined(rs));
+                    list.add(mapShipmentJoinedV2(rs));
                 }
             }
         }
@@ -54,8 +54,7 @@ public class ShipmentDAO {
     public Shipment findById(long id) throws SQLException {
         String sql =
             "SELECT " +
-            "  s.id, s.order_id, s.shipper_user_id, s.status, s.cod_amount, s.cod_collected, " +
-            "  s.pickup_at, s.delivered_at, s.proof_image_url, s.last_update_at, " +
+            "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
             "  o.code AS order_code, " +
             "  (o.shipping_snapshot->>'recipient_name') AS receiver_name, " +
             "  (o.shipping_snapshot->>'phone')          AS receiver_phone, " +
@@ -66,7 +65,8 @@ public class ShipmentDAO {
             "      NULLIF(o.shipping_snapshot->>'district',''), " +
             "      NULLIF(o.shipping_snapshot->>'city',''), " +
             "      NULLIF(o.shipping_snapshot->>'province','')" +
-            "  ), '') AS receiver_address " +
+            "  ), '') AS receiver_address, " +
+            "  CASE WHEN o.payment_method = 'cod' THEN o.total_amount ELSE 0 END AS cod_amount " +
             "FROM shipments s " +
             "JOIN orders o ON o.id = s.order_id " +
             "WHERE s.id = ?";
@@ -75,32 +75,33 @@ public class ShipmentDAO {
             PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapShipmentJoined(rs);
+                if (rs.next()) return mapShipmentJoinedV2(rs);
             }
         }
         return null;
     }
 
-    private Shipment mapShipmentJoined(ResultSet rs) throws SQLException {
+    private Shipment mapShipmentJoinedV2(ResultSet rs) throws SQLException {
         Shipment s = new Shipment();
         s.setId(rs.getLong("id"));
         s.setOrderId(rs.getLong("order_id"));
         s.setShipperUserId(rs.getString("shipper_user_id"));
         s.setStatus(rs.getString("status"));
-        s.setCodAmount(rs.getDouble("cod_amount"));
-        s.setCodCollected(rs.getBoolean("cod_collected"));
-        s.setPickupAt(rs.getTimestamp("pickup_at"));
-        s.setDeliveredAt(rs.getTimestamp("delivered_at"));
-        s.setProofImageUrl(rs.getString("proof_image_url"));
         s.setLastUpdateAt(rs.getTimestamp("last_update_at"));
 
-        // joined fields from orders
+        // joined from orders
         s.setOrderCode(rs.getString("order_code"));
         s.setReceiverName(rs.getString("receiver_name"));
         s.setReceiverPhone(rs.getString("receiver_phone"));
         s.setReceiverAddress(rs.getString("receiver_address"));
+
+        // derive COD from orders
+        s.setCodAmount(rs.getDouble("cod_amount"));
+        s.setCodCollected(false);
+
         return s;
     }
+
 
     public List<ShipmentEvent> findEvents(long shipmentId) throws SQLException {
         List<ShipmentEvent> list = new ArrayList<>();
