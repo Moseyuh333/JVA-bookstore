@@ -44,14 +44,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const showEmpty = () => {
         if (emptyState) emptyState.style.display = "block";
-        if (tableContainer) tableContainer.style.display = "none"; 
+        const tableBox = document.querySelector(".table-container");
+        if (tableBox) tableBox.style.display = "none";
     };
+
 
     const hideEmpty = () => {
         if (emptyState) emptyState.style.display = "none";
-        if (tableContainer) tableContainer.style.display = "block"; 
+        const tableBox = document.querySelector(".table-container");
+        if (tableBox) tableBox.style.display = "block";
     };
-
 
     // ===== Render Table =====
     const renderTable = (list) => {
