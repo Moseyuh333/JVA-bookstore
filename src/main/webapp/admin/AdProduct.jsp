@@ -529,10 +529,6 @@
                 <div style="flex:1"><input id="prodAuthor" name="author" class="modal-input" type="text" placeholder="Tác giả" /></div>
             </div>
             <div class="modal-row">
-                <div class="modal-label">ISBN</div>
-                <div style="flex:1"><input id="prodISBN" name="isbn" class="modal-input" type="text" placeholder="ISBN" /></div>
-            </div>
-            <div class="modal-row">
                 <div class="modal-label">Giá <span style="color:#ef4444">*</span></div>
                 <div style="flex:1"><input id="prodPrice" name="price" class="modal-input" type="number" step="0.01" required placeholder="Giá" /></div>
             </div>
@@ -546,7 +542,7 @@
             </div>
             <div class="modal-row">
                 <div class="modal-label">Mô tả</div>
-                <div style="flex:1"><input id="prodDescription" name="description" class="modal-input" type="text" placeholder="Mô tả" /></div>
+                <div style="flex:1"><textarea id="prodDescription" name="description" class="modal-input" rows="6" placeholder="Mô tả (hiển thị văn bản thuần)" /></textarea></div>
             </div>
             <div class="modal-row">
                 <div class="modal-label">Ảnh (URL)</div>
