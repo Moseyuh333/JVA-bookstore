@@ -30,9 +30,9 @@ public class ShipmentDAO {
             "      NULLIF(o.shipping_snapshot->>'province','')" +
             "  ), '') AS receiver_address, " +
             "  CASE WHEN o.payment_method = 'cod' THEN o.total_amount ELSE 0 END AS cod_amount, " +
-            "  COALESCE(NULLIF(o.customer_name,''), (o.shipping_snapshot->>'recipientName')) AS customer_name " +
+            "  (o.shipping_snapshot->>'recipientName') AS customer_name " +
             "FROM shipments s " +
-            "LEFT JOIN orders o ON o.id = s.order_id " + // LEFT JOIN để không rớt shipment
+            "LEFT JOIN orders o ON o.id = s.order_id " +
             "WHERE ( s.shipper_user_id = ? " +
             "        OR s.shipper_user_id = (SELECT CAST(u.id AS TEXT) FROM users u WHERE u.username = ? LIMIT 1) ) " +
             (filterStatus ? "AND s.status = ? " : "") +
@@ -63,7 +63,7 @@ public class ShipmentDAO {
         return list;
     }
 
-    // ========= FIND one (owned) =========
+    // ======== FIND one (owned) ========
     public Shipment findByIdOwned(long id, String username) throws SQLException {
         String sql =
             "SELECT " +
@@ -80,7 +80,7 @@ public class ShipmentDAO {
             "      NULLIF(o.shipping_snapshot->>'province','')" +
             "  ), '') AS receiver_address, " +
             "  CASE WHEN o.payment_method = 'cod' THEN o.total_amount ELSE 0 END AS cod_amount, " +
-            "  COALESCE(NULLIF(o.customer_name,''), (o.shipping_snapshot->>'recipientName')) AS customer_name " +
+            "  (o.shipping_snapshot->>'recipientName') AS customer_name " +
             "FROM shipments s " +
             "LEFT JOIN orders o ON o.id = s.order_id " +
             "WHERE s.id = ? AND ( s.shipper_user_id = ? " +
@@ -105,7 +105,7 @@ public class ShipmentDAO {
         }
     }
 
-    // ========= FIND by id (plain) =========
+    // ======== FIND by id (plain) ========
     public Shipment findById(long id) throws SQLException {
         String sql =
             "SELECT " +
@@ -122,7 +122,7 @@ public class ShipmentDAO {
             "      NULLIF(o.shipping_snapshot->>'province','')" +
             "  ), '') AS receiver_address, " +
             "  CASE WHEN o.payment_method = 'cod' THEN o.total_amount ELSE 0 END AS cod_amount, " +
-            "  COALESCE(NULLIF(o.customer_name,''), (o.shipping_snapshot->>'recipientName')) AS customer_name " +
+            "  (o.shipping_snapshot->>'recipientName') AS customer_name " +
             "FROM shipments s " +
             "LEFT JOIN orders o ON o.id = s.order_id " +
             "WHERE s.id = ?";
@@ -144,6 +144,7 @@ public class ShipmentDAO {
         }
     }
 
+    // ======== Events / Updates ========
     public List<ShipmentEvent> findEvents(long shipmentId) throws SQLException {
         List<ShipmentEvent> list = new ArrayList<ShipmentEvent>();
         Connection con = null; PreparedStatement ps = null; ResultSet rs = null;
@@ -171,13 +172,19 @@ public class ShipmentDAO {
             ps.setLong(1, shipmentId); ps.setString(2, status); ps.setString(3, note);
             ps.setString(4, evidenceUrl); ps.setString(5, createdBy);
             ps.executeUpdate();
-        } finally { if (ps != null) try { ps.close(); } catch (Exception ignore) {} if (con != null) try { con.close(); } catch (Exception ignore) {} }
+        } finally {
+            if (ps != null) try { ps.close(); } catch (Exception ignore) {}
+            if (con != null) try { con.close(); } catch (Exception ignore) {}
+        }
 
         try {
             con = DBUtil.getConnection();
             ps = con.prepareStatement("UPDATE shipments SET status=?, last_update_at=NOW() WHERE id=?");
             ps.setString(1, status); ps.setLong(2, shipmentId); ps.executeUpdate();
-        } finally { if (ps != null) try { ps.close(); } catch (Exception ignore) {} if (con != null) try { con.close(); } catch (Exception ignore) {} }
+        } finally {
+            if (ps != null) try { ps.close(); } catch (Exception ignore) {}
+            if (con != null) try { con.close(); } catch (Exception ignore) {}
+        }
     }
 
     public void markDelivered(long shipmentId, boolean codCollected, String evidenceUrl,
@@ -215,6 +222,7 @@ public class ShipmentDAO {
         }
     }
 
+    // ======== Stats ========
     public Map<String, Integer> getStats(String username) throws SQLException {
         Map<String, Integer> map = new HashMap<String, Integer>();
         String sql =
@@ -268,7 +276,7 @@ public class ShipmentDAO {
         finally { if (con != null) try { con.setAutoCommit(true); } catch (Exception ignore) {} if (con != null) try { con.close(); } catch (Exception ignore) {} }
     }
 
-    // ========= Mappers =========
+    // ======== Mappers ========
     private Shipment mapShipmentJoinedV2(ResultSet rs) throws SQLException {
         Shipment s = new Shipment();
         s.setId(rs.getLong("id"));
@@ -281,7 +289,6 @@ public class ShipmentDAO {
         s.setReceiverPhone(rs.getString("receiver_phone"));
         s.setReceiverAddress(rs.getString("receiver_address"));
         s.setCodAmount(rs.getDouble("cod_amount"));
-        // Nếu bạn đã thêm field customerName trong model Shipment, hãy set luôn:
         try { s.getClass().getMethod("setCustomerName", String.class).invoke(s, rs.getString("customer_name")); } catch (Exception ignore) {}
         s.setCodCollected(false);
         return s;
