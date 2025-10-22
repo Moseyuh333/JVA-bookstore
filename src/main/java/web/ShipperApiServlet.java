@@ -19,9 +19,8 @@ import javax.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,9 +51,14 @@ public class ShipperApiServlet extends HttpServlet {
                 return;
             }
 
+            if (path.equals("/whoami")) {
+                writeJson(resp, 200, mapOf("username", user));
+                return;
+            }
+
             if (path.equals("/shipments")) {
                 String raw = opt(req.getParameter("status"));
-                String status = normalizeStatusForDb(raw); // null => không filter
+                String status = normalizeStatusForDb(raw);
                 int page = clamp(parseInt(req.getParameter("page"), 1), 1, 1000000);
                 int size = clamp(parseInt(req.getParameter("size"), 20), 1, 100);
 
@@ -74,7 +78,7 @@ public class ShipperApiServlet extends HttpServlet {
                 String[] seg = path.split("/");
                 if (seg.length == 3) {
                     long id = Long.parseLong(seg[2]);
-                    Shipment s = shipmentDAO.findByIdOwned(id, user); // check quyền ngay SQL
+                    Shipment s = shipmentDAO.findByIdOwned(id, user);
                     if (s == null) {
                         writeJson(resp, 404, err("NOT_FOUND", "Shipment not found or not yours"));
                         return;
@@ -201,15 +205,17 @@ public class ShipperApiServlet extends HttpServlet {
 
     // -------------------- helpers --------------------
     private String currentUsername(HttpServletRequest req) {
+        // 1) filter/session
         Object f = req.getAttribute("username");
-        if (f != null && !String.valueOf(f).trim().isEmpty()) return String.valueOf(f).trim();
+        if (f != null && !String.valueOf(f).trim().isEmpty()) return normalizeUser(String.valueOf(f).trim());
 
         HttpSession sess = req.getSession(false);
         if (sess != null) {
             Object u = sess.getAttribute("username");
-            if (u != null && !String.valueOf(u).trim().isEmpty()) return String.valueOf(u).trim();
+            if (u != null && !String.valueOf(u).trim().isEmpty()) return normalizeUser(String.valueOf(u).trim());
         }
 
+        // 2) cookie/header token
         String token = null;
         Cookie[] cs = req.getCookies();
         if (cs != null) {
@@ -223,11 +229,45 @@ public class ShipperApiServlet extends HttpServlet {
         }
         if (token == null || token.isEmpty()) return null;
 
+        // 3) decode -> subject có thể là username HOẶC id
         try {
-            String user = JwtUtil.validateToken(token);
-            return (user != null && !user.isEmpty()) ? user : null;
+            String sub = JwtUtil.validateToken(token);
+            if (sub == null || sub.isEmpty()) return null;
+            return normalizeUser(sub.trim());
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    // Nếu subject là id → chuyển ra username; nếu là username hợp lệ → giữ nguyên
+    private String normalizeUser(String subject) {
+        // thử tìm theo username trước
+        String sqlU = "SELECT username FROM users WHERE username = ? LIMIT 1";
+        String sqlI = "SELECT username FROM users WHERE CAST(id AS TEXT) = ? LIMIT 1";
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            con = DBUtil.getConnection();
+            ps = con.prepareStatement(sqlU);
+            ps.setString(1, subject);
+            rs = ps.executeQuery();
+            if (rs.next()) return rs.getString(1);
+            rs.close(); ps.close();
+
+            ps = con.prepareStatement(sqlI);
+            ps.setString(1, subject);
+            rs = ps.executeQuery();
+            if (rs.next()) return rs.getString(1);
+
+            // không tìm thấy thì trả null
+            return null;
+        } catch (Exception ignore) {
+            return subject; // fallback an toàn
+        } finally {
+            try { if (rs != null) rs.close(); } catch (Exception ignored) {}
+            try { if (ps != null) ps.close(); } catch (Exception ignored) {}
+            try { if (con != null) con.close(); } catch (Exception ignored) {}
         }
     }
 
@@ -266,9 +306,7 @@ public class ShipperApiServlet extends HttpServlet {
         try {
             String line;
             while ((line = br.readLine()) != null) sb.append(line);
-        } finally {
-            br.close();
-        }
+        } finally { br.close(); }
         if (sb.length() == 0) return new JsonObject();
         return JsonParser.parseString(sb.toString()).getAsJsonObject();
     }
@@ -302,11 +340,10 @@ public class ShipperApiServlet extends HttpServlet {
     }
 
     private int countByShipper(String username, String status) throws SQLException {
-        String base = "SELECT COUNT(*) FROM shipments WHERE shipper_user_id=? ";
-        String sql = base + (status != null && !status.isEmpty() ? "AND status=?" : "");
-        java.sql.Connection con = null;
-        java.sql.PreparedStatement ps = null;
-        java.sql.ResultSet rs = null;
+        String base = "SELECT COUNT(*) FROM shipments s WHERE s.shipper_user_id = ? ";
+        String sql = base + ((status != null && !status.isEmpty()) ? "AND s.status=?" : "");
+
+        Connection con = null; PreparedStatement ps = null; ResultSet rs = null;
         try {
             con = DBUtil.getConnection();
             ps = con.prepareStatement(sql);
@@ -316,9 +353,9 @@ public class ShipperApiServlet extends HttpServlet {
             rs = ps.executeQuery();
             return rs.next() ? rs.getInt(1) : 0;
         } finally {
-            if (rs != null) try { rs.close(); } catch (Exception ignore) {}
-            if (ps != null) try { ps.close(); } catch (Exception ignore) {}
-            if (con != null) try { con.close(); } catch (Exception ignore) {}
+            try { if (rs != null) rs.close(); } catch (Exception ignored) {}
+            try { if (ps != null) ps.close(); } catch (Exception ignored) {}
+            try { if (con != null) con.close(); } catch (Exception ignored) {}
         }
     }
 }
