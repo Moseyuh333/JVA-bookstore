@@ -169,6 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
             hideLoading();
         }
     };
+    window.loadProducts = loadProducts;
 
     const loadStats = async () => {
         try {
