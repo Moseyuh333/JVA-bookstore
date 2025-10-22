@@ -130,8 +130,8 @@ public class AdminProductsServlet extends HttpServlet {
                 countSql.append(" AND s.name ILIKE ?");
             } else {
                 // Default "all"
-                sql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.category ILIKE ? OR s.name ILIKE ?)");
-                countSql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.category ILIKE ? OR s.name ILIKE ?)");
+                sql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.category ILIKE ? OR s.name ILIKE ? OR CAST(b.id AS TEXT) ILIKE ?)");
+                countSql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.category ILIKE ? OR s.name ILIKE ? OR CAST(b.id AS TEXT) ILIKE ?)");
             }
         }
         if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
@@ -144,28 +144,29 @@ public class AdminProductsServlet extends HttpServlet {
         try (Connection conn = DBUtil.getConnection()) {
             int total = 0;
             try (PreparedStatement psCount = conn.prepareStatement(countSql.toString())) {
-                int param = 1;
+                int paramCount = 1;
                 if (shopId != null && !shopId.trim().isEmpty())
-                    psCount.setInt(param++, Integer.parseInt(shopId));
+                    psCount.setInt(paramCount++, Integer.parseInt(shopId));
                 if (category != null && !category.trim().isEmpty())
-                    psCount.setString(param++, "%" + category + "%");
+                    psCount.setString(paramCount++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
                     if ("id".equals(searchType)) {
-                        psCount.setInt(param++, Integer.parseInt(search.trim()));
+                        psCount.setInt(paramCount++, Integer.parseInt(search.trim()));
                     } else {
                         String pattern = search.trim() + "%";
                         if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
-                            psCount.setString(param++, pattern);
+                            psCount.setString(paramCount++, pattern);
                         } else {
-                            psCount.setString(param++, pattern);
-                            psCount.setString(param++, pattern);
-                            psCount.setString(param++, pattern);
-                            psCount.setString(param++, pattern);
+                            psCount.setString(paramCount++, pattern);
+                            psCount.setString(paramCount++, pattern);
+                            psCount.setString(paramCount++, pattern);
+                            psCount.setString(paramCount++, pattern);
+                            psCount.setString(paramCount++, pattern);
                         }
                     }
                 }
                 if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
-                    psCount.setInt(param++, ownerId);
+                    psCount.setInt(paramCount++, ownerId);
 
                 try (ResultSet rs = psCount.executeQuery()) {
                     if (rs.next()) total = rs.getInt(1);
@@ -176,30 +177,31 @@ public class AdminProductsServlet extends HttpServlet {
             StringBuilder json = new StringBuilder("{\"products\":");
             boolean hasProducts = false;
             try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-                int param = 1;
+                int paramIndex = 1;
                 if (shopId != null && !shopId.trim().isEmpty())
-                    ps.setInt(param++, Integer.parseInt(shopId));
+                    ps.setInt(paramIndex++, Integer.parseInt(shopId));
                 if (category != null && !category.trim().isEmpty())
-                    ps.setString(param++, "%" + category + "%");
+                    ps.setString(paramIndex++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
                     if ("id".equals(searchType)) {
-                        ps.setInt(param++, Integer.parseInt(search.trim()));
+                        ps.setInt(paramIndex++, Integer.parseInt(search.trim()));
                     } else {
                         String pattern = search.trim() + "%";
                         if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
-                            ps.setString(param++, pattern);
+                            ps.setString(paramIndex++, pattern);
                         } else {
-                            ps.setString(param++, pattern);
-                            ps.setString(param++, pattern);
-                            ps.setString(param++, pattern);
-                            ps.setString(param++, pattern);
+                            ps.setString(paramIndex++, pattern);
+                            ps.setString(paramIndex++, pattern);
+                            ps.setString(paramIndex++, pattern);
+                            ps.setString(paramIndex++, pattern);
+                            ps.setString(paramIndex++, pattern);
                         }
                     }
                 }
                 if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
-                    ps.setInt(param++, ownerId);
-                ps.setInt(param++, limit);
-                ps.setInt(param++, offset);
+                    ps.setInt(paramIndex++, ownerId);
+                ps.setInt(paramIndex++, limit);
+                ps.setInt(paramIndex++, offset);
 
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
