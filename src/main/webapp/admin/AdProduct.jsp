@@ -495,6 +495,7 @@
                         <div class="filter-form">
                             <select id="searchType" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
                                 <option value="all">Tất cả</option>
+                                <option value="id">ID</option>
                                 <option value="title">Tên sách</option>
                                 <option value="author">Tác giả</option>
                                 <option value="category">Thể loại</option>

@@ -113,7 +113,10 @@ public class AdminProductsServlet extends HttpServlet {
             countSql.append(" AND b.category ILIKE ?");
         }
         if (search != null && !search.trim().isEmpty()) {
-            if ("title".equals(searchType)) {
+            if ("id".equals(searchType)) {
+                sql.append(" AND b.id = ?");
+                countSql.append(" AND b.id = ?");
+            } else if ("title".equals(searchType)) {
                 sql.append(" AND b.title ILIKE ?");
                 countSql.append(" AND b.title ILIKE ?");
             } else if ("author".equals(searchType)) {
@@ -147,14 +150,18 @@ public class AdminProductsServlet extends HttpServlet {
                 if (category != null && !category.trim().isEmpty())
                     psCount.setString(param++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
-                    String pattern = search.trim() + "%";
-                    if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
-                        psCount.setString(param++, pattern);
+                    if ("id".equals(searchType)) {
+                        psCount.setInt(param++, Integer.parseInt(search.trim()));
                     } else {
-                        psCount.setString(param++, pattern);
-                        psCount.setString(param++, pattern);
-                        psCount.setString(param++, pattern);
-                        psCount.setString(param++, pattern);
+                        String pattern = search.trim() + "%";
+                        if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
+                            psCount.setString(param++, pattern);
+                        } else {
+                            psCount.setString(param++, pattern);
+                            psCount.setString(param++, pattern);
+                            psCount.setString(param++, pattern);
+                            psCount.setString(param++, pattern);
+                        }
                     }
                 }
                 if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
@@ -175,14 +182,18 @@ public class AdminProductsServlet extends HttpServlet {
                 if (category != null && !category.trim().isEmpty())
                     ps.setString(param++, "%" + category + "%");
                 if (search != null && !search.trim().isEmpty()) {
-                    String pattern = search.trim() + "%";
-                    if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
-                        ps.setString(param++, pattern);
+                    if ("id".equals(searchType)) {
+                        ps.setInt(param++, Integer.parseInt(search.trim()));
                     } else {
-                        ps.setString(param++, pattern);
-                        ps.setString(param++, pattern);
-                        ps.setString(param++, pattern);
-                        ps.setString(param++, pattern);
+                        String pattern = search.trim() + "%";
+                        if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
+                            ps.setString(param++, pattern);
+                        } else {
+                            ps.setString(param++, pattern);
+                            ps.setString(param++, pattern);
+                            ps.setString(param++, pattern);
+                            ps.setString(param++, pattern);
+                        }
                     }
                 }
                 if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
