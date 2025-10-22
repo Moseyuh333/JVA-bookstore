@@ -227,6 +227,27 @@ const productBox = document.getElementById('productModalBox');
 const productForm = document.getElementById('productForm');
 const productIdInput = document.getElementById('productId');
 const productTitleEl = document.getElementById('productModalTitle');
+const prodImageInput = document.getElementById('prodImage');
+const prodImagePreview = document.getElementById('prodImagePreview');
+
+function updateImagePreview(url) {
+    if (!prodImagePreview) return;
+    prodImagePreview.innerHTML = '';
+    if (url && url.trim()) {
+        // Basic URL validation
+        if (/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(url.trim())) {
+            prodImagePreview.innerHTML = `<img src="${url.trim()}" alt="Ảnh sản phẩm" style="max-width:120px;max-height:80px;border-radius:6px;border:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.06);" />`;
+        } else {
+            prodImagePreview.innerHTML = `<span style="color:#9ca3af;font-size:13px;">URL không hợp lệ hoặc không phải ảnh</span>`;
+        }
+    } else {
+        prodImagePreview.innerHTML = `<span style="color:#9ca3af;font-size:13px;">Chưa có ảnh</span>`;
+    }
+}
+
+prodImageInput?.addEventListener('input', (e) => {
+    updateImagePreview(e.target.value);
+});
 
 function showEl(el){ if(el) el.style.display='block'; }
 function hideEl(el){ if(el) el.style.display='none'; }
@@ -241,6 +262,7 @@ function populateProductForm(data) {
     document.getElementById('prodCategory').value = data.category || '';
     document.getElementById('prodDescription').value = data.description || '';
     document.getElementById('prodImage').value = data.image_url || '';
+    updateImagePreview(data.image_url || '');
     document.getElementById('prodShopId').value = data.shop_id || '';
 }
 
