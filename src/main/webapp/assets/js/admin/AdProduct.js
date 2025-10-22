@@ -270,10 +270,21 @@ productForm?.addEventListener('submit', async (e)=>{
         if(data.error){ const fb=document.getElementById('productFeedback'); fb.textContent = data.error; fb.style.display='block'; return; }
         // If create returned id, use it (helpful for immediate edit or navigation)
         if(!id && data.id){
-            // Optionally open edit view or just inform
-            hideEl(productOverlay); hideEl(productBox);
-            loadProducts();
-            alert('Sản phẩm đã được tạo (ID: ' + data.id + ')');
+            // Open the edit modal populated with returned product object (data)
+            productIdInput.value = data.id || '';
+            document.getElementById('prodTitle').value = data.title || '';
+            document.getElementById('prodAuthor').value = data.author || '';
+            document.getElementById('prodISBN').value = data.isbn || '';
+            document.getElementById('prodPrice').value = data.price || '';
+            document.getElementById('prodStock').value = data.stock || '';
+            document.getElementById('prodCategory').value = data.category || '';
+            document.getElementById('prodDescription').value = data.description || '';
+            document.getElementById('prodImage').value = data.image_url || '';
+            document.getElementById('prodShopId').value = data.shop_id || '';
+            productTitleEl.textContent='Chỉnh sửa sản phẩm'; hideEl(document.getElementById('productFeedback'));
+            loadProducts(); // refresh table
+            showEl(productOverlay); showEl(productBox);
+            alert('Sản phẩm đã được tạo và đang chỉnh sửa (ID: ' + data.id + ')');
             return;
         }
         hideEl(productOverlay); hideEl(productBox); loadProducts(); alert(data.message || 'Thành công');

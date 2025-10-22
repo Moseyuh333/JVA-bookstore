@@ -255,15 +255,14 @@ public class AdminProductsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-    String sql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, " +
-        "b.stock, b.image_url, b.shop_id, b.created_at, b.updated_at, " +
-        "COALESCE(s.name, 'Unknown Shop') as shop_name " +
-        "FROM books b " +
-        "LEFT JOIN shops s ON b.shop_id = s.id " +
-        "WHERE b.id = ?";
+        // Use the same join and fields as listProducts for consistency
+        String sql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, " +
+                "b.description, b.image_url, b.shop_id, b.created_at, b.updated_at, " +
+                "COALESCE(s.name, 'Unknown Shop') as shop_name, s.commission_rate " +
+                "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE b.id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
 
@@ -277,17 +276,15 @@ public class AdminProductsServlet extends HttpServlet {
                     j.append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",");
                     j.append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",");
                     j.append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",");
-                    j.append("\"price\":").append(rs.getBigDecimal("price")).append(",");
-                    j.append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",");
-                    j.append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",");
+                    j.append("\"price\":").append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : 0).append(",");
                     j.append("\"stock\":").append(rs.getInt("stock")).append(",");
-                    // shop_id may be null
-                    Object shopObj = rs.getObject("shop_id");
-                    j.append("\"shop_id\":");
-                    if (shopObj != null) j.append(rs.getInt("shop_id")); else j.append("null");
-                    j.append(",");
+                    j.append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",");
+                    j.append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",");
                     j.append("\"image_url\":\"").append(escapeJson(rs.getString("image_url"))).append("\",");
+                    Object shopObj = rs.getObject("shop_id");
+                    j.append("\"shop_id\":"); if (shopObj != null) j.append(rs.getInt("shop_id")); else j.append("null"); j.append(",");
                     j.append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",");
+                    j.append("\"commission_rate\":").append(rs.getObject("commission_rate") != null ? rs.getObject("commission_rate") : "null").append(",");
                     j.append("\"created_at\":\"")
                             .append(rs.getTimestamp("created_at") != null ? sdf.format(rs.getTimestamp("created_at")) : "")
                             .append("\",");
@@ -357,12 +354,11 @@ public class AdminProductsServlet extends HttpServlet {
         int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
         int shopId = Integer.parseInt(shopIdStr);
 
-        String sql = "INSERT INTO books (title, author, isbn, price, description, category, stock, image_url, shop_id) "
-                +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at";
+        String insertSql = "INSERT INTO books (title, author, isbn, price, description, category, stock, image_url, shop_id) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
 
             pstmt.setString(1, title.trim());
             pstmt.setString(2, author != null ? author.trim() : null);
@@ -377,8 +373,44 @@ public class AdminProductsServlet extends HttpServlet {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     int newId = rs.getInt("id");
-                    Timestamp createdAt = rs.getTimestamp("created_at");
-                    out.write("{\"id\":" + newId + ",\"created_at\":\"" + createdAt + "\"}");
+                    // fetch the product row with the same join used by listProducts
+                    String fetchSql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, " +
+                            "b.description, b.image_url, b.shop_id, b.created_at, b.updated_at, " +
+                            "COALESCE(s.name, 'Unknown Shop') AS shop_name, s.commission_rate " +
+                            "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE b.id = ?";
+                    try (PreparedStatement ps2 = conn.prepareStatement(fetchSql)) {
+                        ps2.setInt(1, newId);
+                        try (ResultSet rs2 = ps2.executeQuery()) {
+                            if (rs2.next()) {
+                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                                StringBuilder j = new StringBuilder();
+                                j.append("{");
+                                j.append("\"id\":").append(rs2.getInt("id")).append(",");
+                                j.append("\"title\":\"").append(escapeJson(rs2.getString("title"))).append("\",");
+                                j.append("\"author\":\"").append(escapeJson(rs2.getString("author"))).append("\",");
+                                j.append("\"isbn\":\"").append(escapeJson(rs2.getString("isbn"))).append("\",");
+                                j.append("\"price\":").append(rs2.getBigDecimal("price") != null ? rs2.getBigDecimal("price") : 0).append(",");
+                                j.append("\"stock\":").append(rs2.getInt("stock")).append(",");
+                                j.append("\"category\":\"").append(escapeJson(rs2.getString("category"))).append("\",");
+                                j.append("\"description\":\"").append(escapeJson(rs2.getString("description"))).append("\",");
+                                j.append("\"image_url\":\"").append(escapeJson(rs2.getString("image_url"))).append("\",");
+                                Object shopObj = rs2.getObject("shop_id");
+                                j.append("\"shop_id\":"); if (shopObj != null) j.append(rs2.getInt("shop_id")); else j.append("null"); j.append(",");
+                                j.append("\"shop_name\":\"").append(escapeJson(rs2.getString("shop_name"))).append("\",");
+                                j.append("\"commission_rate\":").append(rs2.getObject("commission_rate") != null ? rs2.getObject("commission_rate") : "null").append(",");
+                                j.append("\"created_at\":\"")
+                                        .append(rs2.getTimestamp("created_at") != null ? sdf.format(rs2.getTimestamp("created_at")) : "")
+                                        .append("\",");
+                                j.append("\"updated_at\":\"")
+                                        .append(rs2.getTimestamp("updated_at") != null ? sdf.format(rs2.getTimestamp("updated_at")) : "")
+                                        .append("\"");
+                                j.append("}");
+                                out.write(j.toString());
+                            } else {
+                                out.write("{\"error\":\"Failed to fetch created product\"}");
+                            }
+                        }
+                    }
                 } else {
                     out.write("{\"error\":\"Failed to create product\"}");
                 }
@@ -432,7 +464,44 @@ public class AdminProductsServlet extends HttpServlet {
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                out.write("{\"message\":\"Product updated successfully\"}");
+                // fetch and return updated row using same join as listProducts
+                String fetchSql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, " +
+                        "b.description, b.image_url, b.shop_id, b.created_at, b.updated_at, " +
+                        "COALESCE(s.name, 'Unknown Shop') AS shop_name, s.commission_rate " +
+                        "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE b.id = ?";
+                try (PreparedStatement ps2 = conn.prepareStatement(fetchSql)) {
+                    ps2.setInt(1, id);
+                    try (ResultSet rs2 = ps2.executeQuery()) {
+                        if (rs2.next()) {
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            StringBuilder j = new StringBuilder();
+                            j.append("{");
+                            j.append("\"id\":").append(rs2.getInt("id")).append(",");
+                            j.append("\"title\":\"").append(escapeJson(rs2.getString("title"))).append("\",");
+                            j.append("\"author\":\"").append(escapeJson(rs2.getString("author"))).append("\",");
+                            j.append("\"isbn\":\"").append(escapeJson(rs2.getString("isbn"))).append("\",");
+                            j.append("\"price\":").append(rs2.getBigDecimal("price") != null ? rs2.getBigDecimal("price") : 0).append(",");
+                            j.append("\"stock\":").append(rs2.getInt("stock")).append(",");
+                            j.append("\"category\":\"").append(escapeJson(rs2.getString("category"))).append("\",");
+                            j.append("\"description\":\"").append(escapeJson(rs2.getString("description"))).append("\",");
+                            j.append("\"image_url\":\"").append(escapeJson(rs2.getString("image_url"))).append("\",");
+                            Object shopObj2 = rs2.getObject("shop_id");
+                            j.append("\"shop_id\":"); if (shopObj2 != null) j.append(rs2.getInt("shop_id")); else j.append("null"); j.append(",");
+                            j.append("\"shop_name\":\"").append(escapeJson(rs2.getString("shop_name"))).append("\",");
+                            j.append("\"commission_rate\":").append(rs2.getObject("commission_rate") != null ? rs2.getObject("commission_rate") : "null").append(",");
+                            j.append("\"created_at\":\"")
+                                    .append(rs2.getTimestamp("created_at") != null ? sdf.format(rs2.getTimestamp("created_at")) : "")
+                                    .append("\",");
+                            j.append("\"updated_at\":\"")
+                                    .append(rs2.getTimestamp("updated_at") != null ? sdf.format(rs2.getTimestamp("updated_at")) : "")
+                                    .append("\"");
+                            j.append("}");
+                            out.write(j.toString());
+                        } else {
+                            out.write("{\"error\":\"Product not found after update\"}");
+                        }
+                    }
+                }
             } else {
                 out.write("{\"error\":\"Product not found\"}");
             }
