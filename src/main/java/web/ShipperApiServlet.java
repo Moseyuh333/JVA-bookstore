@@ -6,8 +6,8 @@ import com.google.gson.JsonParser;
 import dao.ShipmentDAO;
 import models.Shipment;
 import models.ShipmentEvent;
-import utils.DBUtil; // chỉ để chắc chắn classpath sẵn utils
-import utils.JwtUtil; // dùng để rút username từ JWT
+import utils.DBUtil;
+import utils.JwtUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -18,18 +18,7 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.*;
 
-/**
- * REST API cho SHIPPER
- *
- * Base: /api/shipper/*
- *
- * Endpoints:
- *  GET  /api/shipper/shipments?status=&page=&size=
- *  GET  /api/shipper/shipments/{id}
- *  POST /api/shipper/shipments/{id}/events          body: {status, note?, evidenceUrl?}
- *  PUT  /api/shipper/shipments/{id}/deliver         body: {codCollected, evidenceUrl, note?}
- *  GET  /api/shipper/stats                          -> trả thêm inProgress / delivered / failed để vẽ biểu đồ tròn
- */
+
 @WebServlet(name = "ShipperApiServlet", urlPatterns = {"/api/shipper/*"})
 public class ShipperApiServlet extends HttpServlet {
 
@@ -102,7 +91,7 @@ public class ShipperApiServlet extends HttpServlet {
                 int f = st.getOrDefault("failed", 0);
                 double rate = (d + f) == 0 ? 0.0 : (double) d / (double) (d + f);
                 out.put("successRate", rate);
-                out.put("raw", st); // trả luôn map gốc nếu cần hiển thị chi tiết
+                out.put("raw", st);
                 writeJson(resp, 200, out);
                 return;
             }
