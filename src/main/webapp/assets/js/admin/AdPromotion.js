@@ -1,11 +1,15 @@
 // ========== ADPROMOTION.JS ==========
 // Quản lý chương trình khuyến mãi
 
+let searchInput;
+let searchTypeSelect;
+
 document.addEventListener("DOMContentLoaded", () => {
     if (typeof feather !== "undefined") feather.replace();
 
     const tableBody = document.getElementById("promotionTable");
-    const searchInput = document.getElementById("promotionSearchInput");
+    searchInput = document.getElementById("promotionSearchInput");
+    searchTypeSelect = document.getElementById("searchType");
     const loadingState = document.getElementById("loadingState");
     const emptyState = document.getElementById("emptyState");
     const tableContainer = document.getElementById("tableContainer");
