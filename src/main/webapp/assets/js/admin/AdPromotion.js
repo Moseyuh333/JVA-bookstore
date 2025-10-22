@@ -205,6 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Expose for inline onclick fallback from JSP
     window.resetFilters = resetFilters;
+    window.applyFilters = applyFilters;
 
     // Event listeners
     if (searchInput) {
