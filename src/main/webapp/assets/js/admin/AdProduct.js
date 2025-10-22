@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingState = document.getElementById("loadingState");
     const emptyState = document.getElementById("emptyState");
     const tableContainer = document.getElementById("tableContainer");
+    const tableWrapper = document.querySelector(".table-container"); 
     const totalEl = document.getElementById("totalProducts");
     const inStockEl = document.getElementById("inStock");
     const outOfStockEl = document.getElementById("outOfStock");
@@ -31,25 +32,26 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const showLoading = () => {
-        loadingState?.classList.remove("hidden");
-        tableContainer?.classList.add("hidden");
-        emptyState?.classList.add("hidden");
-    };
+            loadingState?.classList.remove("hidden");
+            tableContainer?.classList.add("hidden");
+            emptyState?.classList.add("hidden");
+        };
 
-    const hideLoading = () => {
-        loadingState?.classList.add("hidden");
-        tableContainer?.classList.remove("hidden");
-    };
+        const hideLoading = () => {
+            loadingState?.classList.add("hidden");
+            tableContainer?.classList.remove("hidden");
+        };
 
-    const showEmpty = () => {
-        emptyState?.classList.remove("hidden");
-        tableContainer?.classList.add("hidden");
-    };
+        const showEmpty = () => {
+            emptyState?.classList.remove("hidden");
+            tableWrapper?.classList.add("hidden");
+        };
 
-    const hideEmpty = () => {
-        emptyState?.classList.add("hidden");
-        tableContainer?.classList.remove("hidden");
-    };
+        const hideEmpty = () => {
+            emptyState?.classList.add("hidden");
+            tableWrapper?.classList.remove("hidden");
+        };
+
 
     // ===== Render Table =====
     const renderTable = (list) => {
