@@ -231,27 +231,54 @@ const productTitleEl = document.getElementById('productModalTitle');
 function showEl(el){ if(el) el.style.display='block'; }
 function hideEl(el){ if(el) el.style.display='none'; }
 
+function populateProductForm(data) {
+    productIdInput.value = data.id || '';
+    document.getElementById('prodTitle').value = data.title || '';
+    document.getElementById('prodAuthor').value = data.author || '';
+    document.getElementById('prodISBN').value = data.isbn || '';
+    document.getElementById('prodPrice').value = data.price || '';
+    document.getElementById('prodStock').value = data.stock || '';
+    document.getElementById('prodCategory').value = data.category || '';
+    document.getElementById('prodDescription').value = data.description || '';
+    document.getElementById('prodImage').value = data.image_url || '';
+    document.getElementById('prodShopId').value = data.shop_id || '';
+}
+
 function openAddProduct(){
-    productForm.reset(); productIdInput.value=''; productTitleEl.textContent='Thêm sản phẩm'; hideEl(document.getElementById('productFeedback')); showEl(productOverlay); showEl(productBox);
+    productForm.reset(); 
+    productIdInput.value = ''; 
+    productTitleEl.textContent = 'Thêm sản phẩm'; 
+    hideEl(document.getElementById('productFeedback')); 
+    showEl(productOverlay); 
+    showEl(productBox);
 }
 
 async function openEditProduct(id){
     try{
         const token = localStorage.getItem('admin_token');
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=get&id=${id}`,{headers:{'Authorization':`Bearer ${token}`}});
-        const data = await res.json(); if(data.error){ alert(data.error); return; }
-        productIdInput.value = data.id || '';
-        document.getElementById('prodTitle').value = data.title || '';
-        document.getElementById('prodAuthor').value = data.author || '';
-        document.getElementById('prodISBN').value = data.isbn || '';
-        document.getElementById('prodPrice').value = data.price || '';
-        document.getElementById('prodStock').value = data.stock || '';
-        document.getElementById('prodCategory').value = data.category || '';
-        document.getElementById('prodDescription').value = data.description || '';
-        document.getElementById('prodImage').value = data.image_url || '';
-        document.getElementById('prodShopId').value = data.shop_id || '';
-        productTitleEl.textContent='Chỉnh sửa sản phẩm'; hideEl(document.getElementById('productFeedback')); showEl(productOverlay); showEl(productBox);
-    }catch(err){ console.error(err); alert('Lỗi khi lấy sản phẩm'); }
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=get&id=${id}`,{
+            headers:{
+                'Authorization':`Bearer ${token}`
+            }
+        });
+        const data = await res.json(); 
+        if(data.error){ 
+            const fb = document.getElementById('productFeedback');
+            fb.textContent = data.error;
+            showEl(fb);
+            return; 
+        }
+        populateProductForm(data);
+        productTitleEl.textContent = 'Chỉnh sửa sản phẩm'; 
+        hideEl(document.getElementById('productFeedback')); 
+        showEl(productOverlay); 
+        showEl(productBox);
+    }catch(err){ 
+        console.error(err); 
+        const fb = document.getElementById('productFeedback');
+        fb.textContent = 'Lỗi khi lấy thông tin sản phẩm';
+        showEl(fb);
+    }
 }
 
 document.getElementById('productModalClose')?.addEventListener('click', ()=>{ hideEl(productOverlay); hideEl(productBox); });
@@ -261,34 +288,51 @@ productForm?.addEventListener('submit', async (e)=>{
     e.preventDefault();
     const id = productIdInput.value;
     const fd = new FormData(productForm);
-    const params = new URLSearchParams(); for(const [k,v] of fd.entries()) params.append(k,v);
+    const params = new URLSearchParams(); 
+    for(const [k,v] of fd.entries()) params.append(k,v);
     const token = localStorage.getItem('admin_token');
+    const fb = document.getElementById('productFeedback');
+    hideEl(fb);
+
     try{
-        const action = id ? 'update' : 'create'; if(id) params.append('id', id);
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=${action}`,{ method:'POST', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString() });
+        const action = id ? 'update' : 'create'; 
+        if(id) params.append('id', id);
+        
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=${action}`,{ 
+            method:'POST', 
+            headers:{ 
+                'Authorization':`Bearer ${token}`, 
+                'Content-Type':'application/x-www-form-urlencoded'
+            }, 
+            body: params.toString() 
+        });
+        
         const data = await res.json();
-        if(data.error){ const fb=document.getElementById('productFeedback'); fb.textContent = data.error; fb.style.display='block'; return; }
-        // If create returned id, use it (helpful for immediate edit or navigation)
-        if(!id && data.id){
-            // Open the edit modal populated with returned product object (data)
-            productIdInput.value = data.id || '';
-            document.getElementById('prodTitle').value = data.title || '';
-            document.getElementById('prodAuthor').value = data.author || '';
-            document.getElementById('prodISBN').value = data.isbn || '';
-            document.getElementById('prodPrice').value = data.price || '';
-            document.getElementById('prodStock').value = data.stock || '';
-            document.getElementById('prodCategory').value = data.category || '';
-            document.getElementById('prodDescription').value = data.description || '';
-            document.getElementById('prodImage').value = data.image_url || '';
-            document.getElementById('prodShopId').value = data.shop_id || '';
-            productTitleEl.textContent='Chỉnh sửa sản phẩm'; hideEl(document.getElementById('productFeedback'));
-            loadProducts(); // refresh table
-            showEl(productOverlay); showEl(productBox);
-            alert('Sản phẩm đã được tạo và đang chỉnh sửa (ID: ' + data.id + ')');
-            return;
+        if(data.error){ 
+            fb.textContent = data.error; 
+            showEl(fb); 
+            return; 
         }
-        hideEl(productOverlay); hideEl(productBox); loadProducts(); alert(data.message || 'Thành công');
-    }catch(err){ console.error(err); alert('Lỗi khi lưu sản phẩm'); }
+
+        loadProducts(); // refresh table first
+
+        // If create returned id, use it for auto-open edit
+        if(!id && data.id){
+            populateProductForm(data);
+            productTitleEl.textContent = 'Chỉnh sửa sản phẩm'; 
+            hideEl(fb);
+            return; // keep modal open
+        }
+
+        // For updates, close modal and show success
+        hideEl(productOverlay); 
+        hideEl(productBox); 
+        alert(data.message || 'Thành công');
+    }catch(err){ 
+        console.error(err); 
+        fb.textContent = 'Lỗi khi lưu sản phẩm';
+        showEl(fb);
+    }
 });
 
 // Hook add button
@@ -324,7 +368,16 @@ productDeleteOverlay?.addEventListener('click', (e)=>{ if(e.target===productDele
 // Close on Escape
 document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape'){
-        if(productBox && productBox.style.display==='block'){ hideEl(productOverlay); hideEl(productBox); }
-        if(productDeleteBox && productDeleteBox.style.display==='block'){ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; }
+        if(productBox && productBox.style.display==='block'){ 
+            hideEl(productOverlay); 
+            hideEl(productBox); 
+            hideEl(document.getElementById('productFeedback'));
+        }
+        if(productDeleteBox && productDeleteBox.style.display==='block'){ 
+            hideEl(productDeleteOverlay); 
+            hideEl(productDeleteBox); 
+            hideEl(document.getElementById('productDeleteFeedback'));
+            deletingProduct=null; 
+        }
     }
 });
