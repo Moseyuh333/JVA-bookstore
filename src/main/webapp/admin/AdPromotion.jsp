@@ -506,7 +506,8 @@
                                 <option value="all">Tất cả</option>
                                 <option value="code">Mã code</option>
                                 <option value="description">Mô tả</option>
-                                <option value="kind">Loại giảm giá</option>
+                                <option value="kind">Loại khuyến mãi</option>
+                                <option value="type">Loại giảm giá</option>
                                 <option value="status">Trạng thái</option>
                             </select>
                             <div class="search-box">

@@ -86,18 +86,20 @@ public class AdminPromotionsServlet extends HttpServlet {
         // Add search conditions
         if (search != null && !search.trim().isEmpty()) {
             if ("all".equals(searchType) || searchType == null) {
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ?)");
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
             } else if ("code".equals(searchType)) {
                 sql.append(" AND code ILIKE ?");
             } else if ("description".equals(searchType)) {
                 sql.append(" AND description ILIKE ?");
             } else if ("kind".equals(searchType)) {
-                sql.append(" AND discount_scope ILIKE ?");
+                sql.append(" AND (discount_scope ILIKE ? OR discount_scope = CASE WHEN LOWER(?) = 'giảm phí vận chuyển' THEN 'shipping' WHEN LOWER(?) = 'giảm giá sản phẩm' THEN 'product' END)");
+            } else if ("type".equals(searchType)) {
+                sql.append(" AND discount_type ILIKE ?");
             } else if ("status".equals(searchType)) {
                 sql.append(" AND status = ?");
             } else {
                 // Default to all if invalid searchType
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ?)");
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
             }
         }
 
@@ -118,9 +120,15 @@ public class AdminPromotionsServlet extends HttpServlet {
             if (search != null && !search.trim().isEmpty()) {
                 if ("all".equals(searchType) || searchType == null) {
                     String pattern = "%" + search.trim() + "%";
-                    for (int i = 0; i < 3; i++) {
+                    for (int i = 0; i < 4; i++) {
                         pstmt.setString(paramIndex++, pattern);
                     }
+                } else if ("kind".equals(searchType)) {
+                    // For kind, search both ILIKE and exact match for Vietnamese labels
+                    String pattern = "%" + search.trim() + "%";
+                    pstmt.setString(paramIndex++, pattern);
+                    pstmt.setString(paramIndex++, search.trim());
+                    pstmt.setString(paramIndex++, search.trim());
                 } else if ("status".equals(searchType)) {
                     // For status, convert search to boolean
                     boolean statusValue = "true".equalsIgnoreCase(search.trim()) || "active".equalsIgnoreCase(search.trim()) || "1".equals(search.trim());
