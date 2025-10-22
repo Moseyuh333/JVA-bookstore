@@ -97,25 +97,27 @@ public class AuthServlet extends HttpServlet {
             String token = JwtUtil.generateToken(subject);
             System.out.println("DEBUG Login - Token generated: " + (token != null));
 
-            // Check user role for admin redirect
-            // String role = DBUtil.getUserRole(username);
-            // String response;
-            // if ("admin".equals(role)) {
-            //     response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/admin-dashboard\"}";
-            // } else {
-            //     response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
-            // }
+                // Check user role for admin redirect
+                // String role = DBUtil.getUserRole(username);
+                // String response;
+                // if ("admin".equals(role)) {
+                //     response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/admin-dashboard\"}";
+                // } else {
+                //     response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
+                // }
 
-                String role = DBUtil.getUserRole(username);
-                String response;
-
-                if ("admin".equals(role)) {
-                    response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/admin-dashboard\"}";
-                } else if ("seller".equals(role)) {
-                    response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/seller-dashboard\"}";
-                } else {
-                    response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/home\"}";
-                }
+                // Check user role for redirect
+            String role = DBUtil.getUserRole(username);
+            System.out.println("DEBUG Login - User role: " + role);
+            
+            String response;
+            if ("admin".equals(role)) {
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"admin\", \"redirect\":\"/admin-dashboard\"}";
+            } else if ("seller".equals(role)) {
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"seller\", \"redirect\":\"/seller-dashboard\"}";
+            } else {
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"user\"}";
+            }
 
             System.out.println("DEBUG Login - Response: " + response);
             out.write(response);
