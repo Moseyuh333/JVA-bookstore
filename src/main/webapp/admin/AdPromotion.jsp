@@ -504,7 +504,7 @@
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
                             </button>
-                            <button class="btn-custom btn-create" type="button" id="openCreatePromotionBtn" onclick="openAddModal()">
+                            <button class="btn-custom btn-create" type="button" id="openCreatePromotionBtn">
                                 <i class="fas fa-plus"></i>
                                 <span>Thêm khuyến mãi</span>
                             </button>
@@ -550,10 +550,6 @@
         <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
-<script src ="${pageContext.request.contextPath}/assets/js/admin/AdPromotion.js"></script>
-</body>
-</html>
-
 <!-- Promotion modals -->
 <div id="promoModalOverlay" class="modal-overlay" style="display:none"></div>
 <div id="promoModalBox" class="modal-box" style="display:none; z-index:10000;">
@@ -636,3 +632,7 @@
         </div>
     </div>
 </div>
+
+<script src ="${pageContext.request.contextPath}/assets/js/admin/AdPromotion.js"></script>
+</body>
+</html>
