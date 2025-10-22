@@ -49,8 +49,20 @@
 
 <%@ include file="/WEB-INF/includes/footer.jsp" %>
 <script>
+  const contextPath = '<%= request.getContextPath() %>';
+
   (function () {
-    const contextPath = '<%= request.getContextPath() %>';
+    const token = localStorage.getItem('auth_token');
+    const role  = (localStorage.getItem('auth_role') || '').toLowerCase();
+    if (token && role) {
+      let target = contextPath + '/';
+      if (role === 'seller') target = contextPath + '/dashboard-seller.jsp';
+      else if (role === 'admin') target = contextPath + '/admin-orders.jsp';
+      window.location.replace(target);
+    }
+  })();
+
+  (function () {
     const form = document.getElementById('loginForm');
     const feedback = document.getElementById('loginFeedback');
     const submitBtn = document.getElementById('loginSubmit');
@@ -101,45 +113,35 @@
 
         if (response.ok && data && data.token) {
           const enteredUsername = (formData.get('username') || '').trim();
-          const isAdmin = data.redirect === '/admin-dashboard';
-          // *** THÊM LOGIC NÀY ***
-          const isSeller = data.redirect === '/seller-dashboard';
-
-          if (isAdmin) {
-            localStorage.setItem('admin_token', data.token);
-            if (enteredUsername.length > 0) {
-              localStorage.setItem('admin_username', enteredUsername);
-            } else {
-              localStorage.removeItem('admin_username');
-            }
-          } else if (isSeller) {
-            // *** THÊM PHẦN NÀY CHO SELLER ***
-            localStorage.setItem('seller_token', data.token);
-            if (enteredUsername.length > 0) {
-              localStorage.setItem('seller_username', enteredUsername);
-            } else {
-              localStorage.removeItem('seller_username');
-            }
-            
+          localStorage.setItem('auth_token', data.token);
+          if (enteredUsername.length > 0) {
+            localStorage.setItem('auth_username', enteredUsername);
           } else {
-            localStorage.setItem('auth_token', data.token);
-            if (enteredUsername.length > 0) {
-              localStorage.setItem('auth_username', enteredUsername);
-            } else {
-              localStorage.removeItem('auth_username');
-            }
+            localStorage.removeItem('auth_username');
           }
+
+          const role = (data.role || '').toLowerCase();
+          localStorage.setItem('auth_role', role);
+
+          let target = contextPath + '/';
+          if (role === 'seller') {
+            target = contextPath + '/dashboard-seller.jsp';
+          } else if (role === 'admin') {
+            target = contextPath + '/admin-orders.jsp';
+          }
+
           showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
           setTimeout(function () {
-            const redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/';
-            window.location.href = redirectUrl;
-          }, 1200);
+            window.location.href = target;
+          }, 500);
         } else {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('auth_username');
+          localStorage.removeItem('auth_role'); // dọn luôn role khi fail
           const errorMsg = data && data.error ? data.error : (text || 'Đăng nhập thất bại.');
           showMessage('danger', '❌ ' + errorMsg);
         }
+
       } catch (error) {
         console.error('Login error', error);
         localStorage.removeItem('auth_token');
