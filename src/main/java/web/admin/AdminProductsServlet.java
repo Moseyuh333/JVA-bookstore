@@ -221,7 +221,7 @@ public class AdminProductsServlet extends HttpServlet {
                         }
                         json.append("]");
                     } else {
-                        json.append("null");
+                        json.append("[]");
                     }
                 }
             }
