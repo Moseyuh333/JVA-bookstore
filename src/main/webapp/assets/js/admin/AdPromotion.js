@@ -254,8 +254,16 @@ promoForm?.addEventListener('submit', async (e)=>{
     const token = localStorage.getItem('admin_token');
     try{
         const action = id ? 'update' : 'create'; if(id) params.append('id', id);
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=${action}`,{ method:'POST', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString() });
-        const data = await res.json(); if(data.error){ const fb=document.getElementById('promoFeedback'); fb.textContent = data.error; fb.style.display='block'; return; }
+        console.log('[Promotions] submitting', action, params.toString());
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=${action}`,{ method:'POST', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/x-www-form-urlencoded', 'Accept':'application/json'}, body: params.toString() });
+        console.log('[Promotions] response status', res.status);
+        const text = await res.text();
+        let data = {};
+        try{ data = JSON.parse(text); } catch(err){ console.warn('Could not parse JSON response for promotions:', text); }
+        console.log('[Promotions] response json', data);
+        if(data.error){ const fb=document.getElementById('promoFeedback'); fb.textContent = data.error; fb.style.display='block'; return; }
+        // success
+        const fb=document.getElementById('promoFeedback'); if(fb){ fb.style.display='none'; }
         hide(promoOverlay); hide(promoBox); loadPromotions(); alert(data.message || 'Thành công');
     }catch(err){ console.error(err); alert('Lỗi khi lưu khuyến mãi'); }
 });
@@ -279,3 +287,28 @@ document.getElementById('promoDeleteClose')?.addEventListener('click', ()=>{ hid
 document.getElementById('promoDeleteConfirm')?.addEventListener('click', async ()=>{
     if(!deletingPromo) return; const token=localStorage.getItem('admin_token'); try{ const res=await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=delete&id=${deletingPromo}`,{method:'POST', headers:{'Authorization':`Bearer ${token}`}}); const data=await res.json(); if(data.error){ document.getElementById('promoDeleteFeedback').textContent=data.error; document.getElementById('promoDeleteFeedback').style.display='block'; return; } hide(promoDeleteOverlay); hide(promoDeleteBox); deletingPromo=null; loadPromotions(); alert(data.message||'Đã xóa'); }catch(err){ console.error(err); alert('Lỗi khi xóa'); }
 });
+
+// Improve openEditPromo logging
+async function openEditPromo(id){
+    try{
+        const token = localStorage.getItem('admin_token');
+        console.log('[Promotions] fetch get id=', id);
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=get&id=${id}`,{headers:{'Authorization':`Bearer ${token}`, 'Accept':'application/json'}});
+        console.log('[Promotions] get status', res.status);
+        const text = await res.text();
+        let data = {};
+        try{ data = JSON.parse(text); } catch(err){ console.warn('Could not parse JSON get response:', text); }
+        if(data.error){ alert(data.error); return; }
+        promoIdInput.value = data.id || '';
+        document.getElementById('promoName').value = data.name || '';
+        document.getElementById('promoCode').value = data.code || '';
+        document.getElementById('promoDescription').value = data.description || '';
+        document.getElementById('promoType').value = data.type || 'percent';
+        document.getElementById('promoKind').value = data.kind || 'product';
+        document.getElementById('promoValue').value = data.discount_value || '';
+        if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);
+        if(data.end_at) document.getElementById('promoEnd').value = (new Date(data.end_at)).toISOString().slice(0,16);
+        document.getElementById('promoActive').value = data.active ? 'true' : 'false';
+        promoTitleEl.textContent='Chỉnh sửa khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
+    }catch(err){ console.error(err); alert('Lỗi khi lấy khuyến mãi'); }
+}
