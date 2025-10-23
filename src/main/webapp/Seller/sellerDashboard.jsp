@@ -351,28 +351,28 @@
                         <i data-feather="package" style="width: 14px; height: 14px; vertical-align: middle;"></i>
                         Tổng sản phẩm
                     </h3>
-                    <div class="value">0</div>
+                    <div class="value">${totalProducts}</div>
                 </div>
                 <div class="stat-card">
                     <h3>
                         <i data-feather="bell" style="width: 14px; height: 14px; vertical-align: middle;"></i>
                         Đơn hàng mới
                     </h3>
-                    <div class="value">0</div>
+                    <div class="value">${newOrders}</div>
                 </div>
                 <div class="stat-card">
                     <h3>
                         <i data-feather="dollar-sign" style="width: 14px; height: 14px; vertical-align: middle;"></i>
                         Doanh thu tháng này
                     </h3>
-                    <div class="value">0đ</div>
+                    <div class="value">${monthlyRevenue}</div>
                 </div>
                 <div class="stat-card">
                     <h3>
                         <i data-feather="star" style="width: 14px; height: 14px; vertical-align: middle;"></i>
                         Đánh giá TB
                     </h3>
-                    <div class="value">0.0 ⭐</div>
+                    <div class="value">${avgRating} ⭐</div>
                 </div>
             </div>
             
