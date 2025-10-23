@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <button class="btn-icon btn-delete" title="Xóa" data-id="${p.id}">
                         <i class="fas fa-trash"></i>
                     </button>
-                </td>;
+                </td>
             </tr>`;
             tableBody.appendChild(tr);
         });
