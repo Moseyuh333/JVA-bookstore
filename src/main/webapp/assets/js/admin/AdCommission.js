@@ -90,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
+            <tr>
                 <td>${escapeHtml(c.id.toString())}</td>
                 <td>${escapeHtml(c.name)}</td>
                 <td>${escapeHtml(type)}</td>
@@ -99,11 +100,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${status}</td>
                 <td>${createdAt}</td>
                 <td>${updatedAt}</td>
-                <td>
-                    <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                <td class="actions">
+                    <button class="btn-icon btn-edit" title="Sửa" data-id="${c.id}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-icon btn-delete" title="Xóa" data-id="${c.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </td>
-            `;
+            </tr>`;
             tableBody.appendChild(tr);
         });
     };

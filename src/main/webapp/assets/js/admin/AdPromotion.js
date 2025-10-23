@@ -114,6 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
+            <tr>
                 <td>${escapeHtml(p.id.toString())}</td>
                 <td>${escapeHtml(code)}</td>
                 <td>${escapeHtml(description)}</td>
@@ -121,15 +122,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${discount}</td>
                 <td>${valid}</td>
                 <td>${active}</td>
-                <td>
-                    <button class="btn btn-sm btn-warning mr-1 edit-btn" data-id="${p.id}">
+                <td class="actions">
+                    <button class="btn-icon btn-edit" title="Sửa" data-id="${c.id}">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-sm btn-danger delete-btn" data-id="${p.id}">
+                    <button class="btn-icon btn-delete" title="Xóa" data-id="${c.id}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
-            `;
+            </tr>`;
             tableBody.appendChild(tr);
         });
 
