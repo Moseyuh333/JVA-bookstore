@@ -103,6 +103,9 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
         System.out.println("DEBUG: monthlyRevenue=" + stats.get("monthlyRevenue"));
         System.out.println("DEBUG: avgRating=" + stats.get("avgRating"));
 
+        System.out.println("FORWARDING >>> /Seller/sellerDashboard.jsp");
+        System.out.println("ATTRIBUTES CHECK >>> totalProducts=" + request.getAttribute("totalProducts"));
+
         request.getRequestDispatcher("/Seller/sellerDashboard.jsp").forward(request, response);
 
     } catch (SQLException e) {
