@@ -92,7 +92,7 @@ public class ShipperApiServlet extends HttpServlet {
                     return;
                 }
 
-                // NEW: GET /shipments/{id}/events  -> trả về mảng events thuần
+                // GET /shipments/{id}/events  -> trả về mảng events thuần
                 if (seg.length == 4 && "events".equals(seg[3])) {
                     long id = Long.parseLong(seg[2]);
                     Shipment s = shipmentDAO.findByIdOwned(id, user);
@@ -101,7 +101,7 @@ public class ShipperApiServlet extends HttpServlet {
                         return;
                     }
                     List<ShipmentEvent> events = shipmentDAO.findEvents(id);
-                    writeJson(resp, 200, events); // trả array để frontend dùng trực tiếp
+                    writeJson(resp, 200, events); // array
                     return;
                 }
             }
@@ -138,6 +138,7 @@ public class ShipperApiServlet extends HttpServlet {
         String path = normalizedPath(req);
 
         try {
+            // POST /shipments/{id}/events  -> ghi event + (DAO sẽ cập nhật luôn shipments.status)
             if (path.startsWith("/shipments/") && path.endsWith("/events")) {
                 String[] seg = path.split("/");
                 if (seg.length == 4) {
@@ -150,16 +151,18 @@ public class ShipperApiServlet extends HttpServlet {
                     }
 
                     JsonObject body = readJson(req);
-                    String status = opt(getString(body, "status"));
-                    String note = opt(getString(body, "note"));
-                    String evidenceUrl = opt(getString(body, "evidenceUrl"));
-                    if (status.isEmpty()) {
-                        writeJson(resp, 400, err("BAD_REQUEST", "status is required"));
+                    String rawStatus  = opt(getString(body, "status"));
+                    String status     = normalizeStatusForDb(rawStatus);  // <<— CHUẨN HOÁ Ở ĐÂY
+                    String note       = opt(getString(body, "note"));
+                    String evidenceUrl= opt(getString(body, "evidenceUrl"));
+
+                    if (status == null || status.isEmpty()) {
+                        writeJson(resp, 400, err("BAD_REQUEST", "status is required or invalid"));
                         return;
                     }
 
                     shipmentDAO.addEvent(id, status, note, evidenceUrl, user);
-                    writeJson(resp, 200, mapOf("ok", true));
+                    writeJson(resp, 200, mapOf("ok", true, "status", status));
                     return;
                 }
             }

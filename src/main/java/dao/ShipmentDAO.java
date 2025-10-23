@@ -166,24 +166,57 @@ public class ShipmentDAO {
         return list;
     }
 
+    /**
+     * Ghi sự kiện cho shipment và CẬP NHẬT trạng thái shipment tương ứng.
+     * - Chạy trong 1 transaction.
+     * - Cast enum an toàn bằng ?::shipment_status (PostgreSQL).
+     * - Cập nhật last_update_at.
+     */
     public void addEvent(long shipmentId, String status, String note, String evidenceUrl, String createdBy)
             throws SQLException {
-        try (Connection con = DBUtil.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                 "INSERT INTO shipment_events (shipment_id,status,note,evidence_url,created_by) VALUES (?,?,?,?,?)")) {
-            ps.setLong(1, shipmentId);
-            ps.setString(2, status);
-            ps.setString(3, note);
-            ps.setString(4, evidenceUrl);
-            ps.setString(5, createdBy);
-            ps.executeUpdate();
-        }
-        try (Connection con = DBUtil.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                 "UPDATE shipments SET status=?, last_update_at=NOW() WHERE id=?")) {
-            ps.setString(1, status);
-            ps.setLong(2, shipmentId);
-            ps.executeUpdate();
+
+        final String insertEventSql =
+            "INSERT INTO shipment_events (shipment_id, status, note, evidence_url, created_by, created_at) " +
+            "VALUES (?, ?::shipment_status, ?, ?, ?, NOW())";
+
+        final String updateShipmentSql =
+            "UPDATE shipments SET status = ?::shipment_status, last_update_at = NOW() WHERE id = ?";
+
+        Connection con = null;
+        try {
+            con = DBUtil.getConnection();
+            con.setAutoCommit(false);
+
+            try (PreparedStatement psIns = con.prepareStatement(insertEventSql)) {
+                psIns.setLong(1, shipmentId);
+                psIns.setString(2, status); // cast sang enum ở SQL
+                psIns.setString(3, note);
+                if (evidenceUrl == null || evidenceUrl.isEmpty()) {
+                    psIns.setNull(4, Types.VARCHAR);
+                } else {
+                    psIns.setString(4, evidenceUrl);
+                }
+                if (createdBy == null || createdBy.isEmpty()) {
+                    psIns.setNull(5, Types.VARCHAR);
+                } else {
+                    psIns.setString(5, createdBy);
+                }
+                psIns.executeUpdate();
+            }
+
+            try (PreparedStatement psUpd = con.prepareStatement(updateShipmentSql)) {
+                psUpd.setString(1, status); // cast sang enum ở SQL
+                psUpd.setLong(2, shipmentId);
+                psUpd.executeUpdate();
+            }
+
+            con.commit();
+        } catch (SQLException e) {
+            if (con != null) try { con.rollback(); } catch (Exception ignore) {}
+            throw e;
+        } finally {
+            if (con != null) try { con.setAutoCommit(true); } catch (Exception ignore) {}
+            if (con != null) try { con.close(); } catch (Exception ignore) {}
         }
     }
 
