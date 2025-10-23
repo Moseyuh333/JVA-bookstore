@@ -7,6 +7,7 @@ import utils.DBUtil;
 
 public class ShipmentDAO {
 
+    // ================= FIND BY SHIPPER =================
     public List<Shipment> findByShipper(String username, String status, int page, int size) throws SQLException {
         List<Shipment> list = new ArrayList<>();
         boolean filterStatus = status != null && !status.isEmpty() && !"all".equalsIgnoreCase(status);
@@ -51,12 +52,14 @@ public class ShipmentDAO {
             ps.setInt(i++, size);
             ps.setInt(i, (page - 1) * size);
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) list.add(mapShipmentJoinedV2(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapShipmentJoinedV2(rs));
+            }
         }
         return list;
     }
 
+    // ================= FIND ONE BY ID & SHIPPER =================
     public Shipment findByIdOwned(long id, String username) throws SQLException {
         String sql =
             "SELECT s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
@@ -91,12 +94,14 @@ public class ShipmentDAO {
             ps.setString(3, username);
             ps.setString(4, username);
 
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapShipmentJoinedV2(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapShipmentJoinedV2(rs);
+            }
         }
         return null;
     }
 
+    // ================= FIND BY ID =================
     public Shipment findById(long id) throws SQLException {
         String sql =
             "SELECT s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
@@ -118,12 +123,96 @@ public class ShipmentDAO {
         try (Connection con = DBUtil.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setLong(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapShipmentJoinedV2(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapShipmentJoinedV2(rs);
+            }
         }
         return null;
     }
 
+    // ================= EVENTS (RESTORED) =================
+    public List<ShipmentEvent> findEvents(long shipmentId) throws SQLException {
+        List<ShipmentEvent> list = new ArrayList<>();
+        String sql = "SELECT * FROM shipment_events WHERE shipment_id=? ORDER BY created_at DESC";
+        try (Connection con = DBUtil.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setLong(1, shipmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapEvent(rs));
+            }
+        }
+        return list;
+    }
+
+    public void addEvent(long shipmentId, String status, String note, String evidenceUrl, String createdBy)
+            throws SQLException {
+        try (Connection con = DBUtil.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                 "INSERT INTO shipment_events (shipment_id,status,note,evidence_url,created_by) VALUES (?,?,?,?,?)")) {
+            ps.setLong(1, shipmentId);
+            ps.setString(2, status);
+            ps.setString(3, note);
+            ps.setString(4, evidenceUrl);
+            ps.setString(5, createdBy);
+            ps.executeUpdate();
+        }
+        try (Connection con = DBUtil.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                 "UPDATE shipments SET status=?, last_update_at=NOW() WHERE id=?")) {
+            ps.setString(1, status);
+            ps.setLong(2, shipmentId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void markDelivered(long shipmentId, boolean codCollected, String evidenceUrl,
+                              String note, String createdBy) throws SQLException {
+        Connection con = null;
+        try {
+            con = DBUtil.getConnection();
+            con.setAutoCommit(false);
+
+            PreparedStatement ps1 = con.prepareStatement(
+                "UPDATE shipments SET status='DELIVERED', cod_collected=?, proof_image_url=?, " +
+                "delivered_at=NOW(), last_update_at=NOW() WHERE id=?");
+            ps1.setBoolean(1, codCollected);
+            ps1.setString(2, evidenceUrl);
+            ps1.setLong(3, shipmentId);
+            ps1.executeUpdate();
+
+            PreparedStatement ps2 = con.prepareStatement(
+                "INSERT INTO shipment_events (shipment_id,status,note,evidence_url,created_by) VALUES (?,?,?,?,?)");
+            ps2.setLong(1, shipmentId);
+            ps2.setString(2, "DELIVERED");
+            ps2.setString(3, note);
+            ps2.setString(4, evidenceUrl);
+            ps2.setString(5, createdBy);
+            ps2.executeUpdate();
+
+            PreparedStatement ps3 = con.prepareStatement(
+                "UPDATE orders SET status='DELIVERED_WAITING_CONFIRM' " +
+                "WHERE id=(SELECT order_id FROM shipments WHERE id=?)");
+            ps3.setLong(1, shipmentId);
+            ps3.executeUpdate();
+
+            PreparedStatement ps4 = con.prepareStatement(
+                "INSERT INTO order_events (order_id,status,created_by) " +
+                "SELECT order_id,'DELIVERED_WAITING_CONFIRM',? FROM shipments WHERE id=?");
+            ps4.setString(1, createdBy);
+            ps4.setLong(2, shipmentId);
+            ps4.executeUpdate();
+
+            con.commit();
+        } catch (Exception e) {
+            if (con != null) con.rollback();
+            throw e;
+        } finally {
+            if (con != null) try { con.setAutoCommit(true); } catch (Exception ignore) {}
+            if (con != null) try { con.close(); } catch (Exception ignore) {}
+        }
+    }
+
+    // ================= GET STATS =================
     public Map<String, Integer> getStats(String username) throws SQLException {
         Map<String, Integer> map = new HashMap<>();
         String sql =
@@ -139,8 +228,9 @@ public class ShipmentDAO {
             ps.setString(1, username);
             ps.setString(2, username);
             ps.setString(3, username);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) map.put(rs.getString("status"), rs.getInt("c"));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) map.put(rs.getString("status"), rs.getInt("c"));
+            }
         }
 
         int delivered = map.getOrDefault("DELIVERED", 0);
@@ -156,6 +246,7 @@ public class ShipmentDAO {
         return map;
     }
 
+    // ================= MAPPERS =================
     private Shipment mapShipmentJoinedV2(ResultSet rs) throws SQLException {
         Shipment s = new Shipment();
         s.setId(rs.getLong("id"));
@@ -173,6 +264,19 @@ public class ShipmentDAO {
         return s;
     }
 
+    private ShipmentEvent mapEvent(ResultSet rs) throws SQLException {
+        ShipmentEvent e = new ShipmentEvent();
+        e.setId(rs.getLong("id"));
+        e.setShipmentId(rs.getLong("shipment_id"));
+        e.setStatus(rs.getString("status"));
+        e.setNote(rs.getString("note"));
+        e.setEvidenceUrl(rs.getString("evidence_url"));
+        e.setCreatedAt(rs.getTimestamp("created_at"));
+        e.setCreatedBy(rs.getString("created_by"));
+        return e;
+    }
+
+    // ================= SEED RANDOM SHIPPER
     public void createForNewOrderRandomShipper(Connection con, long orderId) throws SQLException {
         final String pickSql = "SELECT u.username FROM users u WHERE role='shipper'::user_role ORDER BY random() LIMIT 1";
         String shipperUser = null;
