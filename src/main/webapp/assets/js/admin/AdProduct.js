@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingState = document.getElementById("loadingState");
     const emptyState = document.getElementById("emptyState");
     const tableContainer = document.getElementById("tableContainer");
-    const tableWrapper = document.querySelector(".table-container"); 
+    const tableWrapper = document.querySelector(".table-container");
     const totalEl = document.getElementById("totalProducts");
     const inStockEl = document.getElementById("inStock");
     const outOfStockEl = document.getElementById("outOfStock");
@@ -84,8 +84,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${stock}</td>
                 <td>${escapeHtml(shop)}</td>
                 <td>
-                <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                <td class="actions">
+                    <button class="btn-icon btn-edit" title="Sửa" data-id="${p.id}">
+                    <i class="fas fa-edit"></i>
+                    </button>
+                        <button class="btn-icon btn-delete" title="Xóa" data-id="${p.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
                 </td>`;
             tableBody.appendChild(tr);
         });
@@ -152,10 +158,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await res.json();
 
             if (!data.products || data.products.length === 0) {
-                tableBody.innerHTML = "";  
-                showEmpty();           
+                tableBody.innerHTML = "";
+                showEmpty();
             } else {
-                hideEmpty();        
+                hideEmpty();
                 products = data.products;
                 renderTable(products);
                 updateStats(data);
@@ -175,10 +181,10 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const token = localStorage.getItem("admin_token"); // ✅ lấy token đã lưu
             const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=stats`, {
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            }
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
             });
             if (!res.ok) throw new Error("Unauthorized or failed request");
 
@@ -271,8 +277,8 @@ prodImageInput?.addEventListener('input', (e) => {
     updateImagePreview(e.target.value);
 });
 
-function showEl(el){ if(el) el.style.display='block'; }
-function hideEl(el){ if(el) el.style.display='none'; }
+function showEl(el) { if (el) el.style.display = 'block'; }
+function hideEl(el) { if (el) el.style.display = 'none'; }
 
 function populateProductForm(data) {
     productIdInput.value = data.id || '';
@@ -290,98 +296,98 @@ function populateProductForm(data) {
     document.getElementById('prodShopId').value = data.shop_id || '';
 }
 
-function openAddProduct(){
-    productForm.reset(); 
-    productIdInput.value = ''; 
-    productTitleEl.textContent = 'Thêm sản phẩm'; 
+function openAddProduct() {
+    productForm.reset();
+    productIdInput.value = '';
+    productTitleEl.textContent = 'Thêm sản phẩm';
     hideEl(document.getElementById('productFeedback'));
-    showEl(productOverlay); 
+    showEl(productOverlay);
     showEl(productBox);
 }
 
-async function openEditProduct(id){
-    try{
+async function openEditProduct(id) {
+    try {
         const token = localStorage.getItem('admin_token');
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=get&id=${id}`,{
-            headers:{
-                'Authorization':`Bearer ${token}`
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=get&id=${id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
         });
-        const data = await res.json(); 
-        if(data.error){ 
+        const data = await res.json();
+        if (data.error) {
             const fb = document.getElementById('productFeedback');
             fb.textContent = data.error;
             showEl(fb);
-            return; 
+            return;
         }
-    populateProductForm(data);
-    productTitleEl.textContent = 'Chỉnh sửa sản phẩm'; 
-    hideEl(document.getElementById('productFeedback'));
-    showEl(productOverlay); 
-    showEl(productBox);
-    }catch(err){ 
-        console.error(err); 
+        populateProductForm(data);
+        productTitleEl.textContent = 'Chỉnh sửa sản phẩm';
+        hideEl(document.getElementById('productFeedback'));
+        showEl(productOverlay);
+        showEl(productBox);
+    } catch (err) {
+        console.error(err);
         const fb = document.getElementById('productFeedback');
         fb.textContent = 'Lỗi khi lấy thông tin sản phẩm';
         showEl(fb);
     }
 }
 
-document.getElementById('productModalClose')?.addEventListener('click', ()=>{ 
-    hideEl(productOverlay); 
-    hideEl(productBox); 
+document.getElementById('productModalClose')?.addEventListener('click', () => {
+    hideEl(productOverlay);
+    hideEl(productBox);
 });
-document.getElementById('productCancel')?.addEventListener('click', ()=>{ 
-    hideEl(productOverlay); 
-    hideEl(productBox); 
+document.getElementById('productCancel')?.addEventListener('click', () => {
+    hideEl(productOverlay);
+    hideEl(productBox);
 });
 
-productForm?.addEventListener('submit', async (e)=>{
+productForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = productIdInput.value;
     const fd = new FormData(productForm);
-    const params = new URLSearchParams(); 
-    for(const [k,v] of fd.entries()) params.append(k,v);
+    const params = new URLSearchParams();
+    for (const [k, v] of fd.entries()) params.append(k, v);
     const token = localStorage.getItem('admin_token');
     const fb = document.getElementById('productFeedback');
     hideEl(fb);
 
-    try{
-        const action = id ? 'update' : 'create'; 
-        if(id) params.append('id', id);
-        
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=${action}`,{ 
-            method:'POST', 
-            headers:{ 
-                'Authorization':`Bearer ${token}`, 
-                'Content-Type':'application/x-www-form-urlencoded'
-            }, 
-            body: params.toString() 
+    try {
+        const action = id ? 'update' : 'create';
+        if (id) params.append('id', id);
+
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=${action}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: params.toString()
         });
-        
+
         const data = await res.json();
-        if(data.error){ 
-            fb.textContent = data.error; 
-            showEl(fb); 
-            return; 
+        if (data.error) {
+            fb.textContent = data.error;
+            showEl(fb);
+            return;
         }
 
         loadProducts(); // refresh table first
 
         // If create returned id, use it for auto-open edit
-        if(!id && data.id){
+        if (!id && data.id) {
             populateProductForm(data);
-            productTitleEl.textContent = 'Chỉnh sửa sản phẩm'; 
+            productTitleEl.textContent = 'Chỉnh sửa sản phẩm';
             hideEl(fb);
             return; // keep modal open
         }
 
         // For updates, close modal and show success
-        hideEl(productOverlay); 
-        hideEl(productBox); 
+        hideEl(productOverlay);
+        hideEl(productBox);
         alert(data.message || 'Thành công');
-    }catch(err){ 
-        console.error(err); 
+    } catch (err) {
+        console.error(err);
         fb.textContent = 'Lỗi khi lưu sản phẩm';
         showEl(fb);
     }
@@ -391,14 +397,14 @@ productForm?.addEventListener('submit', async (e)=>{
 document.getElementById('openCreateProductBtn')?.addEventListener('click', openAddProduct);
 
 // Delegate table actions (edit/delete)
-document.querySelector('table')?.addEventListener('click', (e)=>{
+document.querySelector('table')?.addEventListener('click', (e) => {
     const editBtn = e.target.closest('.btn-warning, .btn-edit');
     const delBtn = e.target.closest('.btn-danger, .btn-delete');
-    if(editBtn){
-        const tr = editBtn.closest('tr'); const id = tr?.querySelector('td')?.textContent?.trim(); if(id) openEditProduct(id); return;
+    if (editBtn) {
+        const tr = editBtn.closest('tr'); const id = tr?.querySelector('td')?.textContent?.trim(); if (id) openEditProduct(id); return;
     }
-    if(delBtn){
-        const tr = delBtn.closest('tr'); const id = tr?.querySelector('td')?.textContent?.trim(); if(id) openDeleteProduct(id); return;
+    if (delBtn) {
+        const tr = delBtn.closest('tr'); const id = tr?.querySelector('td')?.textContent?.trim(); if (id) openDeleteProduct(id); return;
     }
 });
 
@@ -406,35 +412,35 @@ document.querySelector('table')?.addEventListener('click', (e)=>{
 const productDeleteOverlay = document.getElementById('productDeleteOverlay');
 const productDeleteBox = document.getElementById('productDeleteBox');
 let deletingProduct = null;
-function openDeleteProduct(id){ deletingProduct = id; showEl(productDeleteOverlay); showEl(productDeleteBox); }
-document.getElementById('productDeleteCancel')?.addEventListener('click', ()=>{ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; });
-document.getElementById('productDeleteClose')?.addEventListener('click', ()=>{ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; });
-document.getElementById('productDeleteConfirm')?.addEventListener('click', async ()=>{
-    if(!deletingProduct) return; const token=localStorage.getItem('admin_token'); try{ const res=await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=delete&id=${deletingProduct}`,{method:'POST', headers:{'Authorization':`Bearer ${token}`}}); const data=await res.json(); if(data.error){ document.getElementById('productDeleteFeedback').textContent=data.error; document.getElementById('productDeleteFeedback').style.display='block'; return; } hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; loadProducts(); alert(data.message||'Đã xóa'); }catch(err){ console.error(err); alert('Lỗi khi xóa'); }
+function openDeleteProduct(id) { deletingProduct = id; showEl(productDeleteOverlay); showEl(productDeleteBox); }
+document.getElementById('productDeleteCancel')?.addEventListener('click', () => { hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct = null; });
+document.getElementById('productDeleteClose')?.addEventListener('click', () => { hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct = null; });
+document.getElementById('productDeleteConfirm')?.addEventListener('click', async () => {
+    if (!deletingProduct) return; const token = localStorage.getItem('admin_token'); try { const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/products?action=delete&id=${deletingProduct}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); const data = await res.json(); if (data.error) { document.getElementById('productDeleteFeedback').textContent = data.error; document.getElementById('productDeleteFeedback').style.display = 'block'; return; } hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct = null; loadProducts(); alert(data.message || 'Đã xóa'); } catch (err) { console.error(err); alert('Lỗi khi xóa'); }
 });
 
 // Close when clicking overlay
-productOverlay?.addEventListener('click', (e)=>{ 
-    if(e.target===productOverlay){ 
-        hideEl(productOverlay); 
-        hideEl(productBox); 
-    } 
+productOverlay?.addEventListener('click', (e) => {
+    if (e.target === productOverlay) {
+        hideEl(productOverlay);
+        hideEl(productBox);
+    }
 });
-productDeleteOverlay?.addEventListener('click', (e)=>{ if(e.target===productDeleteOverlay){ hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct=null; } });
+productDeleteOverlay?.addEventListener('click', (e) => { if (e.target === productDeleteOverlay) { hideEl(productDeleteOverlay); hideEl(productDeleteBox); deletingProduct = null; } });
 
 // Close on Escape
-document.addEventListener('keydown', (e)=>{
-    if(e.key === 'Escape'){
-        if(productBox && productBox.classList.contains('active')){ 
-            hideEl(productOverlay); 
-            hideEl(productBox); 
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (productBox && productBox.classList.contains('active')) {
+            hideEl(productOverlay);
+            hideEl(productBox);
             hideEl(document.getElementById('productFeedback'));
         }
-        if(productDeleteBox && productDeleteBox.style.display==='block'){ 
-            hideEl(productDeleteOverlay); 
-            hideEl(productDeleteBox); 
+        if (productDeleteBox && productDeleteBox.style.display === 'block') {
+            hideEl(productDeleteOverlay);
+            hideEl(productDeleteBox);
             hideEl(document.getElementById('productDeleteFeedback'));
-            deletingProduct=null; 
+            deletingProduct = null;
         }
     }
 });
