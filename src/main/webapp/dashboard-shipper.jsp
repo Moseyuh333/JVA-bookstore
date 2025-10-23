@@ -19,7 +19,7 @@
 
   <div class="mb-8">
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-semibold">Bảng điều khiển Shipper</h1>
+      <h1 class="text-2xl font-semibold">Không gian Shipper</h1>
       <div class="flex items-center gap-2">
         <button id="logout" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
           <i data-feather="log-out" class="w-4 h-4 mr-2"></i>Đăng xuất
@@ -66,7 +66,6 @@
     </div>
   </div>
 
-  <!-- Bảng 10 vận đơn gần nhất -->
   <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
     <div class="px-4 py-3 border-b border-amber-100">
       <h2 class="text-lg font-medium">10 vận đơn gần nhất</h2>
@@ -99,14 +98,12 @@
 <script>
   const ctx = '<%=ctx%>';
 
-  // Bảo vệ role shipper (client-side)
   function guardRole(){
     const role = (localStorage.getItem('auth_role')||'').toLowerCase();
     if (role !== 'shipper') location.href = ctx + '/login.jsp';
   }
   guardRole();
 
-  // fetch có kèm Bearer và xử lý lỗi chuẩn
   async function authFetch(url,opt={}){
     const token = localStorage.getItem('auth_token')||'';
     const headers = new Headers(opt.headers||{});
@@ -114,7 +111,6 @@
     const res = await fetch(url,{...opt, headers});
     const ct = res.headers.get('content-type')||'';
     if (!res.ok) {
-      // nếu hết hạn/không hợp lệ → về login
       if (res.status === 401) { localStorage.clear(); location.href = ctx + '/login.jsp'; return; }
       const body = await res.text();
       throw new Error(`HTTP ${res.status} – ${ct.includes('json')? body : 'Non-JSON: ' + body.slice(0,120)}`);
@@ -140,14 +136,12 @@
 
   async function reload(){
     try{
-      // KPI
       const stats = await authFetch(apiBase + '/stats');
       document.getElementById('kpi-in-progress').textContent = stats.inProgress||0;
       document.getElementById('kpi-delivered').textContent  = stats.delivered||0;
       document.getElementById('kpi-failed').textContent     = stats.failed||0;
       document.getElementById('kpi-success-rate').textContent = ((stats.successRate||0)*100).toFixed(0)+'%';
 
-      // Chart
       const el = document.getElementById('chart-success');
       if (chart) chart.destroy();
       chart = new Chart(el, {
@@ -158,8 +152,7 @@
         }
       });
 
-      // Recent: mặc định lấy 10 mới nhất (không filter status)
-      const list = await authFetch(apiBase + '/shipments?size=10&page=1');
+      const list = await authFetch(`${apiBase}/shipments?status=all&page=1&size=10`);
       const tbody = document.getElementById('recent-shipments');
       const items = list.items || [];
 
@@ -169,7 +162,6 @@
           `<tr><td colspan="6" class="px-3 py-4 text-center text-gray-500">Không có vận đơn nào.</td></tr>`);
       } else {
         items.forEach(it=>{
-          // Sửa điểm chính: dùng đúng trường lastUpdateAt do API trả về
           const lastRaw = (it.lastUpdateAt || '').toString();
           const last = lastRaw ? new Date(lastRaw).toLocaleString('vi-VN') : '-';
           const badge = statusBadge(it.status);
