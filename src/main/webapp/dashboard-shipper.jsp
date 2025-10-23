@@ -7,7 +7,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Shipper Dashboard</title>
+  <title>Không gian Shipper</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -66,6 +66,7 @@
     </div>
   </div>
 
+  <!-- Bảng 10 vận đơn gần nhất -->
   <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
     <div class="px-4 py-3 border-b border-amber-100">
       <h2 class="text-lg font-medium">10 vận đơn gần nhất</h2>
@@ -128,10 +129,44 @@
   function statusBadge(status){
     const s = (status||'').toUpperCase();
     let cls = 'bg-gray-100 text-gray-700';
-    if (s === 'DELIVERED') cls = 'bg-green-100 text-green-700';
-    else if (s === 'FAILED_DELIVERY') cls = 'bg-red-100 text-red-700';
-    else if (['ASSIGNED','PICKED_UP','IN_TRANSIT','OUT_FOR_DELIVERY'].includes(s)) cls = 'bg-amber-100 text-amber-700';
-    return `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}">${status??'-'}</span>`;
+    let label = 'Không xác định';
+
+    switch (s) {
+      case 'PENDING':
+        cls = 'bg-gray-100 text-gray-700';
+        label = 'Chờ xử lý';
+        break;
+      case 'ASSIGNED':
+        cls = 'bg-blue-100 text-blue-700';
+        label = 'Đã phân công';
+        break;
+      case 'PICKED_UP':
+        cls = 'bg-amber-100 text-amber-700';
+        label = 'Đã lấy hàng';
+        break;
+      case 'IN_TRANSIT':
+        cls = 'bg-amber-100 text-amber-700';
+        label = 'Đang vận chuyển';
+        break;
+      case 'OUT_FOR_DELIVERY':
+        cls = 'bg-amber-100 text-amber-700';
+        label = 'Đang giao hàng';
+        break;
+      case 'DELIVERED':
+        cls = 'bg-green-100 text-green-700';
+        label = 'Giao thành công';
+        break;
+      case 'FAILED_DELIVERY':
+        cls = 'bg-red-100 text-red-700';
+        label = 'Giao thất bại';
+        break;
+      case 'CANCELLED':
+        cls = 'bg-gray-200 text-gray-700';
+        label = 'Đã hủy';
+        break;
+    }
+
+    return `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}">${label}</span>`;
   }
 
   async function reload(){
