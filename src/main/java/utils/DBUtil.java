@@ -74,6 +74,16 @@ public class DBUtil {
                     ")";
                 stmt.execute(createTableSQL);
 
+                try {
+                    if (!columnExists(conn, "users", "role")) {
+                        stmt.execute("ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'user'");
+                        stmt.execute("UPDATE users SET role = 'user' WHERE role IS NULL");
+                        System.out.println("DBUtil - Added missing role column to users table");
+                    }
+                } catch (SQLException e) {
+                    System.err.println("DBUtil - Unable to ensure user role column: " + e.getMessage());
+                }
+
                 // Add verification_token column if missing
                 try {
                     String addColumnSQL = "ALTER TABLE users ADD COLUMN verification_token VARCHAR(255)";
