@@ -435,11 +435,12 @@
             height: 32px;
             border: none;
             border-radius: 6px;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
             cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
         }
 
         .btn-view { background: #fef3c7; color: #92400e; }
