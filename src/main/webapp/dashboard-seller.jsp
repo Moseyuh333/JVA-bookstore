@@ -5,8 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seller Dashboard - Bookish Bliss Haven</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/style.css">
+    <title>${shop.name != null ? shop.name : 'Seller Dashboard'} - Bookish Bliss Haven</title>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <style>
         * {
@@ -17,7 +16,7 @@
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -38,29 +37,41 @@
             align-items: center;
         }
         
-        .seller-header-left h1 {
-            font-size: 32px;
-            color: #1a202c;
-            margin-bottom: 8px;
+        .seller-header-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 20px;
         }
         
-        .seller-header-left p {
+        .shop-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            object-fit: cover;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background: white;
+        }
+        
+        .shop-info h1 {
+            font-size: 28px;
+            color: #1a202c;
+            margin-bottom: 4px;
+        }
+        
+        .shop-info p {
             color: #718096;
-            font-size: 16px;
+            font-size: 14px;
+            margin-bottom: 8px;
         }
         
-        .seller-header-left .role-badge {
+        .role-badge {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
             color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 14px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
             font-weight: 600;
-            margin-top: 8px;
         }
         
         .seller-nav {
@@ -97,15 +108,15 @@
         }
         
         .seller-nav a:hover {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            color: #667eea;
-            border-bottom-color: #667eea;
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 66, 0.1) 100%);
+            color: #FF6B35;
+            border-bottom-color: #FF6B35;
         }
         
         .seller-nav a.active {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-            color: #667eea;
-            border-bottom-color: #667eea;
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 140, 66, 0.15) 100%);
+            color: #FF6B35;
+            border-bottom-color: #FF6B35;
         }
         
         .dashboard-content {
@@ -132,10 +143,10 @@
         }
         
         .stat-card {
-            background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
+            background: linear-gradient(135deg, #FFF5F0 0%, #ffffff 100%);
             padding: 30px;
             border-radius: 16px;
-            border-left: 5px solid #667eea;
+            border-left: 5px solid #FF6B35;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -148,13 +159,13 @@
             right: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
             transition: transform 0.6s ease;
         }
         
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 15px 40px rgba(255, 107, 53, 0.2);
         }
         
         .stat-card:hover::before {
@@ -175,7 +186,7 @@
         .stat-card .value {
             font-size: 42px;
             font-weight: 800;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -184,7 +195,7 @@
         }
         
         .welcome-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
             color: white;
             padding: 40px;
             border-radius: 16px;
@@ -200,7 +211,7 @@
             right: -10%;
             width: 500px;
             height: 500px;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
         }
         
         .welcome-section h3 {
@@ -212,7 +223,7 @@
         
         .welcome-section p {
             font-size: 16px;
-            opacity: 0.9;
+            opacity: 0.95;
             margin-bottom: 25px;
             position: relative;
             z-index: 1;
@@ -223,20 +234,20 @@
             align-items: center;
             gap: 10px;
             background: white;
-            color: #667eea;
+            color: #FF6B35;
             padding: 14px 28px;
             border-radius: 12px;
             text-decoration: none;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             position: relative;
             z-index: 1;
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
         
         .logout-btn {
@@ -250,6 +261,9 @@
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .logout-btn:hover {
@@ -264,12 +278,12 @@
                 text-align: center;
             }
             
-            .seller-nav ul {
+            .seller-header-left {
                 flex-direction: column;
             }
             
-            .seller-nav li {
-                width: 100%;
+            .seller-nav ul {
+                flex-direction: column;
             }
             
             .stats-grid {
@@ -280,28 +294,40 @@
 </head>
 <body>
     <div class="seller-container">
+        <!-- Header với logo shop -->
         <div class="seller-header">
             <div class="seller-header-left">
-                <h1>
-                    <i data-feather="shopping-bag"></i>
-                    Seller Dashboard
-                </h1>
-                <p>Chào mừng trở lại, <strong>${username}</strong>!</p>
-                <span class="role-badge">
-                    <i data-feather="award" style="width: 14px; height: 14px; vertical-align: middle;"></i>
-                    ${role}
-                </span>
+                <c:choose>
+                    <c:when test="${shop != null && shop.logoUrl != null}">
+                        <img src="${shop.logoUrl}" alt="${shop.name}" class="shop-logo">
+                    </c:when>
+                    <c:otherwise>
+                        <div class="shop-logo" style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%); color: white; font-weight: bold; font-size: 24px;">
+                            S
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+                
+                <div class="shop-info">
+                    <h1>${shop != null && shop.name != null ? shop.name : 'Seller Dashboard'}</h1>
+                    <p>Chào mừng, <strong>${username}</strong>!</p>
+                    <span class="role-badge">
+                        <i data-feather="award" style="width: 12px; height: 12px; vertical-align: middle;"></i>
+                        Seller
+                    </span>
+                </div>
             </div>
             <button onclick="logout()" class="logout-btn">
-                <i data-feather="log-out" style="width: 16px; height: 16px; vertical-align: middle;"></i>
+                <i data-feather="log-out"></i>
                 Đăng xuất
             </button>
         </div>
         
+        <!-- Navigation -->
         <nav class="seller-nav">
             <ul>
                 <li>
-                    <a href="${pageContext.request.contextPath}/seller/dashboard" class="active">
+                    <a href="${pageContext.request.contextPath}/seller-dashboard" class="active">
                         <i data-feather="home"></i>
                         <span>Tổng quan</span>
                     </a>
@@ -331,14 +357,15 @@
                     </a>
                 </li>
                 <li>
-                    <a href="${pageContext.request.contextPath}/seller/settings">
-                        <i data-feather="settings"></i>
-                        <span>Cài đặt</span>
+                    <a href="${pageContext.request.contextPath}/seller/wallet">
+                        <i data-feather="credit-card"></i>
+                        <span>Ví</span>
                     </a>
                 </li>
             </ul>
         </nav>
         
+        <!-- Dashboard Content -->
         <div class="dashboard-content">
             <h2>
                 <i data-feather="trending-up"></i>
@@ -351,80 +378,80 @@
                         <i data-feather="package" style="width: 14px; height: 14px; vertical-align: middle;"></i>
                         Tổng sản phẩm
                     </h3>
-                    <div class="value">0</div>
+                    <div class="value">${totalProducts != null ? totalProducts : 0}</div>
                 </div>
                 <div class="stat-card">
                     <h3>
                         <i data-feather="bell" style="width: 14px; height: 14px; vertical-align: middle;"></i>
                         Đơn hàng mới
                     </h3>
-                    <div class="value">0</div>
+                    <div class="value">${newOrders != null ? newOrders : 0}</div>
                 </div>
                 <div class="stat-card">
                     <h3>
                         <i data-feather="dollar-sign" style="width: 14px; height: 14px; vertical-align: middle;"></i>
                         Doanh thu tháng này
                     </h3>
-                    <div class="value">0đ</div>
+                    <div class="value">${monthlyRevenue != null ? monthlyRevenue : '0đ'}</div>
                 </div>
                 <div class="stat-card">
                     <h3>
                         <i data-feather="star" style="width: 14px; height: 14px; vertical-align: middle;"></i>
                         Đánh giá TB
                     </h3>
-                    <div class="value">0.0 ⭐</div>
+                    <div class="value">${avgRating != null ? avgRating : '0.0'} ⭐</div>
                 </div>
             </div>
             
-            <div class="welcome-section">
-                <h3>
-                    <i data-feather="zap" style="width: 24px; height: 24px; vertical-align: middle;"></i>
-                    Bắt đầu bán hàng ngay hôm nay!
-                </h3>
-                <p>Bạn chưa có sản phẩm nào trong cửa hàng. Hãy thêm sản phẩm đầu tiên để bắt đầu kinh doanh trên nền tảng của chúng tôi.</p>
-                <a href="${pageContext.request.contextPath}/seller/products/add" class="btn-primary">
-                    <i data-feather="plus-circle"></i>
-                    <span>Thêm sản phẩm mới</span>
-                </a>
-            </div>
+            <c:choose>
+                <c:when test="${totalProducts == 0 || totalProducts == null}">
+                    <div class="welcome-section">
+                        <h3>
+                            <i data-feather="zap" style="width: 24px; height: 24px; vertical-align: middle;"></i>
+                            Bắt đầu bán hàng ngay hôm nay!
+                        </h3>
+                        <p>Bạn chưa có sản phẩm nào trong cửa hàng. Hãy thêm sản phẩm đầu tiên để bắt đầu kinh doanh trên nền tảng của chúng tôi.</p>
+                        <a href="${pageContext.request.contextPath}/seller/products" class="btn-primary">
+                            <i data-feather="plus-circle"></i>
+                            <span>Quản lý sản phẩm</span>
+                        </a>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="welcome-section">
+                        <h3>
+                            <i data-feather="check-circle" style="width: 24px; height: 24px; vertical-align: middle;"></i>
+                            Cửa hàng ${shop != null && shop.name != null ? shop.name : 'của bạn'} đang hoạt động tốt!
+                        </h3>
+                        <p>Bạn đang có ${totalProducts} sản phẩm và ${newOrders} đơn hàng mới cần xử lý.</p>
+                        <a href="${pageContext.request.contextPath}/seller/orders" class="btn-primary">
+                            <i data-feather="shopping-cart"></i>
+                            <span>Xem đơn hàng</span>
+                        </a>
+                    </div>
+                </c:otherwise>
+            </c:choose>
         </div>
     </div>
     
     <script>
-        // Initialize Feather Icons
         feather.replace();
         
         function logout() {
-            // Xóa tất cả tokens
             localStorage.removeItem('seller_token');
             localStorage.removeItem('seller_username');
             localStorage.removeItem('auth_token');
             localStorage.removeItem('auth_username');
             localStorage.removeItem('admin_token');
             localStorage.removeItem('admin_username');
-            
-            console.log('Logging out, redirecting to login page');
-            
-            // Redirect về login
             window.location.href = '${pageContext.request.contextPath}/login.jsp';
         }
         
-        // Kiểm tra token khi load trang
         window.addEventListener('load', function() {
-            const sellerToken = localStorage.getItem('seller_token');
-            const authToken = localStorage.getItem('auth_token');
-            const token = sellerToken || authToken;
-            
-            console.log('Seller token:', sellerToken ? 'exists' : 'not found');
-            console.log('Auth token:', authToken ? 'exists' : 'not found');
-            
+            const token = localStorage.getItem('seller_token') || localStorage.getItem('auth_token');
             if (!token) {
-                console.log('No token found, redirecting to login');
                 window.location.href = '${pageContext.request.contextPath}/login.jsp';
-                return;
             }
-            
-            console.log('Token found, page loaded successfully');
         });
     </script>
 </body>

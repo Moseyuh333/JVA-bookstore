@@ -1,66 +1,95 @@
 package web.seller;
 
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import utils.JwtUtil;
+import utils.DBUtil;
+import dao.ShopDAO;
+import models.Shop;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.text.NumberFormat;
+import java.util.Locale;
+import java.util.Map;
 
-// Giả sử bạn có model User trong hệ thống để kiểm tra vai trò
-// import models.User; 
-
-/**
- * Servlet xử lý yêu cầu hiển thị trang Seller Dashboard.
- * Ánh xạ URL: /seller-dashboard
- * Chú ý: Vì dùng @WebServlet, phải xóa ánh xạ /seller-dashboard trong web.xml
- */
-@WebServlet("/seller-dashboard") 
 public class SellerDashboardServlet extends HttpServlet {
-
+    
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
         
-        // 1. KIỂM TRA XÁC THỰC VÀ VAI TRÒ (AUTHORIZATION)
-        Object userObj = req.getSession().getAttribute("currentUser");
-        String username = null;
-        String role = "User"; // Mặc định là User nếu không tìm thấy
-        if (userObj == null) {
-            // Nếu chưa đăng nhập, chuyển hướng về trang đăng nhập
-            resp.sendRedirect(req.getContextPath() + "/login.jsp");
-            return;
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
         }
-
-        /* // Logic mẫu để lấy Username và Role từ User Object (Cần import models.User)
-        if (userObj instanceof User) {
-            User user = (User) userObj;
-            username = user.getUsername(); // Hoặc getEmail()
-            role = user.getRole();
-            
-            if (!"seller".equalsIgnoreCase(role)) {
-                // Nếu đã đăng nhập nhưng không phải vai trò seller, chuyển về trang chủ
-                resp.sendRedirect(req.getContextPath() + "/");
+        
+        String username = null;
+        if (token != null && !token.isEmpty()) {
+            try {
+                username = JwtUtil.validateToken(token);
+            } catch (Exception e) {
+                response.sendRedirect(request.getContextPath() + "/login.jsp");
                 return;
             }
         }
-        */
-
         
-        if (username == null) {
-            // Trong môi trường thực tế, bạn cần lấy User Object từ Session/Token
-            username = "Seller_Account"; 
-            role = "Seller"; 
-}
-
-        // Đặt thuộc tính vào request để JSP có thể đọc được (ví dụ: ${username}, ${role})
-        req.setAttribute("username", username); 
-        req.setAttribute("role", role); 
-
-        // 2. CHUYỂN TIẾP (FORWARD) TỚI GIAO DIỆN JSP
-        // Đường dẫn: /Seller/sellerDashboard.jsp
-        req.getRequestDispatcher("/Seller/sellerDashboard.jsp").forward(req, resp);
+        if (username == null || username.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
         
+        try {
+            String role = DBUtil.getUserRole(username);
+            if (!"seller".equalsIgnoreCase(role)) {
+                if ("admin".equalsIgnoreCase(role)) {
+                    response.sendRedirect(request.getContextPath() + "/admin-dashboard");
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/home-page.jsp");
+                }
+                return;
+            }
+            
+            int userId = DBUtil.getUserIdByUsername(username);
+            if (userId <= 0) {
+                throw new SQLException("Invalid user ID");
+            }
+            
+            // Lấy thông tin shop
+            Shop shop = ShopDAO.getShopByOwnerId(userId);
+            
+            if (shop == null) {
+                request.setAttribute("username", username);
+                request.setAttribute("role", role);
+                request.setAttribute("error", "Không tìm thấy cửa hàng");
+                request.getRequestDispatcher("/Seller/sellerDashboard.jsp").forward(request, response);
+                return;
+            }
+            
+            // Lấy thống kê
+            Map<String, Object> stats = ShopDAO.getDashboardStats(shop.getId());
+            
+            // Format số tiền
+            NumberFormat currencyFormat = NumberFormat.getInstance(new Locale("vi", "VN"));
+            double revenue = (double) stats.getOrDefault("monthlyRevenue", 0.0);
+            String formattedRevenue = currencyFormat.format(revenue) + "đ";
+            
+            // Set attributes
+            request.setAttribute("username", username);
+            request.setAttribute("role", role);
+            request.setAttribute("shop", shop);
+            request.setAttribute("shopId", shop.getId());
+            request.setAttribute("totalProducts", stats.getOrDefault("totalProducts", 0));
+            request.setAttribute("newOrders", stats.getOrDefault("newOrders", 0));
+            request.setAttribute("monthlyRevenue", formattedRevenue);
+            request.setAttribute("avgRating", stats.getOrDefault("avgRating", 0.0));
+            
+            request.getRequestDispatcher("/Seller/sellerDashboard.jsp").forward(request, response);
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/error.jsp");
+        }
     }
-    
-    // Xóa các hàm thống kê cũ
 }

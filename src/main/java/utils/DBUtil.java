@@ -1115,5 +1115,24 @@ public class DBUtil {
         }
         return "user";
     }
-
+    
+    /**
+     * Lấy user ID theo username
+     * @param username Username cần tìm
+     * @return User ID hoặc -1 nếu không tìm thấy
+     */
+    public static int getUserIdByUsername(String username) throws SQLException {
+        String sql = "SELECT id FROM users WHERE username = ?";
+        try (Connection conn = getConnection(); 
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id");
+                }
+                return -1;
+            }
+        }
+    }
 }
+
