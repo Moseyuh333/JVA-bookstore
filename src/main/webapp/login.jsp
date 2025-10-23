@@ -125,13 +125,14 @@
 
           let target = contextPath + '/';
           if (role === 'seller') {
-            target = contextPath + '/seller/dashboard';
+            target = contextPath + '/seller/dashboard?token=' + encodeURIComponent(data.token);
           } else if (role === 'admin') {
-            target = contextPath + '/admin-dashboard';
+            target = contextPath + '/admin-orders.jsp';
           }
 
           showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
           setTimeout(function () {
+            console.log("Redirecting to:", target);
             window.location.href = target;
           }, 500);
         } else {
