@@ -123,10 +123,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${valid}</td>
                 <td>${active}</td>
                 <td class="actions">
-                    <button class="btn-icon btn-edit" title="Sửa" data-id="${c.id}">
+                    <button class="btn-icon btn-edit" title="Sửa" data-id="${p.id}">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon btn-delete" title="Xóa" data-id="${c.id}">
+                    <button class="btn-icon btn-delete" title="Xóa" data-id="${p.id}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
