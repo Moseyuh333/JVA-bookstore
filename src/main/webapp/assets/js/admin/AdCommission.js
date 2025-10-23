@@ -340,8 +340,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Delegate edit/delete button clicks
     tableBody.addEventListener('click', async (ev) => {
-        const editBtn = ev.target.closest('.btn-warning, .edit-btn');
-        const delBtn = ev.target.closest('.btn-danger, .delete-btn');
+        const editBtn = ev.target.closest('.btn-edit');
+        const delBtn = ev.target.closest('.btn-delete');
         if (editBtn) {
             const tr = editBtn.closest('tr');
             const idCell = tr.querySelector('td');

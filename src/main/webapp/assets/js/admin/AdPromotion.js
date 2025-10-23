@@ -304,8 +304,8 @@ document.getElementById('openCreatePromotionBtn')?.addEventListener('click', ope
 
 // Delegate table actions
 document.querySelector('#promotionTable')?.addEventListener('click', (e)=>{
-    const edit = e.target.closest('.edit-btn'); if(edit && edit.dataset.id){ openEditPromo(edit.dataset.id); return; }
-    const del = e.target.closest('.delete-btn'); if(del && del.dataset.id){ openDeletePromo(del.dataset.id); return; }
+    const edit = e.target.closest('.btn-edit'); if(edit && edit.dataset.id){ openEditPromo(edit.dataset.id); return; }
+    const del = e.target.closest('.btn-delete'); if(del && del.dataset.id){ openDeletePromo(del.dataset.id); return; }
 });
 
 // Delete flow
