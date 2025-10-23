@@ -16,10 +16,10 @@
 
             <!-- Center -->
             <div class="flex flex-wrap justify-center lg:justify-center gap-x-8 gap-y-2 text-center whitespace-nowrap">
-                <a href="<%=request.getContextPath()%>/admin/dashboard" class="hover:text-white">Dashboard</a>
-                <a href="<%=request.getContextPath()%>/admin/products" class="hover:text-white">Sản phẩm</a>
-                <a href="<%=request.getContextPath()%>/admin/accounts" class="hover:text-white">Tài khoản</a>
-                <a href="<%=request.getContextPath()%>/admin/shipping" class="hover:text-white">Vận chuyển</a>
+                <a href="<%=request.getContextPath()%>/admin-dashboard" class="hover:text-white">Dashboard</a>
+                <a href="<%=request.getContextPath()%>/admin-product" class="hover:text-white">Sản phẩm</a>
+                <a href="<%=request.getContextPath()%>/admin-account" class="hover:text-white">Tài khoản</a>
+                <a href="<%=request.getContextPath()%>/admin-shippers" class="hover:text-white">Vận chuyển</a>
             </div>
 
             <!-- Right -->
