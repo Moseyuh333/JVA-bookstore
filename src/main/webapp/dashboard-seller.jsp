@@ -16,7 +16,7 @@
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            background: linear-gradient(135deg, #F59e0b 0%, #FF8C42 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -66,7 +66,7 @@
         
         .role-badge {
             display: inline-block;
-            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            background: linear-gradient(135deg, #F59e0b 0%, #FF8C42 100%);
             color: white;
             padding: 4px 12px;
             border-radius: 12px;
@@ -109,14 +109,14 @@
         
         .seller-nav a:hover {
             background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 66, 0.1) 100%);
-            color: #FF6B35;
-            border-bottom-color: #FF6B35;
+            color: #F59e0b;
+            border-bottom-color: #F59e0b;
         }
         
         .seller-nav a.active {
             background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 140, 66, 0.15) 100%);
-            color: #FF6B35;
-            border-bottom-color: #FF6B35;
+            color: #F59e0b;
+            border-bottom-color: #F59e0b;
         }
         
         .dashboard-content {
@@ -146,7 +146,7 @@
             background: linear-gradient(135deg, #FFF5F0 0%, #ffffff 100%);
             padding: 30px;
             border-radius: 16px;
-            border-left: 5px solid #FF6B35;
+            border-left: 5px solid #F59e0b;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -186,7 +186,7 @@
         .stat-card .value {
             font-size: 42px;
             font-weight: 800;
-            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            background: linear-gradient(135deg, #F59e0b 0%, #FF8C42 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -195,7 +195,7 @@
         }
         
         .welcome-section {
-            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            background: linear-gradient(135deg, #F59e0b 0%, #FF8C42 100%);
             color: white;
             padding: 40px;
             border-radius: 16px;
@@ -234,7 +234,7 @@
             align-items: center;
             gap: 10px;
             background: white;
-            color: #FF6B35;
+            color: #F59e0b;
             padding: 14px 28px;
             border-radius: 12px;
             text-decoration: none;
@@ -302,7 +302,7 @@
                         <img src="${shop.logoUrl}" alt="${shop.name}" class="shop-logo">
                     </c:when>
                     <c:otherwise>
-                        <div class="shop-logo" style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%); color: white; font-weight: bold; font-size: 24px;">
+                        <div class="shop-logo" style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #F59e0b 0%, #FF8C42 100%); color: white; font-weight: bold; font-size: 24px;">
                             S
                         </div>
                     </c:otherwise>
