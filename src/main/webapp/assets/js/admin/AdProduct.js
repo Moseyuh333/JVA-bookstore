@@ -83,7 +83,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${price}</td>
                 <td>${stock}</td>
                 <td>${escapeHtml(shop)}</td>
-                <td>
                 <td class="actions">
                     <button class="btn-icon btn-edit" title="Sửa" data-id="${p.id}">
                     <i class="fas fa-edit"></i>
@@ -91,7 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         <button class="btn-icon btn-delete" title="Xóa" data-id="${p.id}">
                         <i class="fas fa-trash"></i>
                     </button>
-                </td>
                 </td>`;
             tableBody.appendChild(tr);
         });
