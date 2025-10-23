@@ -56,8 +56,8 @@
     const role  = (localStorage.getItem('auth_role') || '').toLowerCase();
     if (token && role) {
       let target = contextPath + '/';
-      if (role === 'seller') target = contextPath + '/Seller/sellerDashboard.jsp';
-      else if (role === 'admin') target = contextPath + '/admin-orders.jsp';
+      if (role === 'seller') target = contextPath + '/seller/dashboard';
+      else if (role === 'admin') target = contextPath + '/admin-dashboard';
       window.location.replace(target);
     }
   })();
@@ -125,9 +125,9 @@
 
           let target = contextPath + '/';
           if (role === 'seller') {
-            target = contextPath + '/Seller/sellerDashboard.jsp';
+            target = contextPath + '/seller/dashboard';
           } else if (role === 'admin') {
-            target = contextPath + '/admin-orders.jsp';
+            target = contextPath + '/admin-dashboard';
           }
 
           showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
