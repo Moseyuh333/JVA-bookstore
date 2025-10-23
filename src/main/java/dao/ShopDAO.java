@@ -82,55 +82,56 @@ public class ShopDAO {
      */
     public static Map<String, Object> getDashboardStats(int shopId) throws SQLException {
         Map<String, Object> stats = new HashMap<>();
-        
+
         try (Connection conn = DBUtil.getConnection()) {
+
             // Tổng sản phẩm
             String sql1 = "SELECT COUNT(*) FROM books WHERE shop_id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql1)) {
                 ps.setInt(1, shopId);
                 try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        stats.put("totalProducts", rs.getInt(1));
-                    }
+                    if (rs.next()) stats.put("totalProducts", rs.getInt(1));
                 }
             }
-            
-            // Đơn hàng mới (status = 'new')
-            String sql2 = "SELECT COUNT(DISTINCT o.id) FROM orders o " +
-                         "JOIN order_items oi ON o.id = oi.order_id " +
-                         "JOIN books b ON oi.book_id = b.id " +
-                         "WHERE b.shop_id = ? AND o.status = 'new'";
+
+            // Đơn hàng mới
+            String sql2 = 
+                "SELECT COUNT(DISTINCT o.id) " +
+                "FROM orders o " +
+                "JOIN order_items oi ON o.id = oi.order_id " +
+                "JOIN books b ON oi.book_id = b.id " +
+                "WHERE b.shop_id = ? " +
+                "AND LOWER(o.status) = 'new'";
             try (PreparedStatement ps = conn.prepareStatement(sql2)) {
                 ps.setInt(1, shopId);
                 try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        stats.put("newOrders", rs.getInt(1));
-                    }
+                    if (rs.next()) stats.put("newOrders", rs.getInt(1));
                 }
             }
-            
-            // Doanh thu tháng này (chỉ đơn đã thanh toán)
-            String sql3 = "SELECT COALESCE(SUM(oi.total_price), 0) FROM order_items oi " +
-                         "JOIN books b ON oi.book_id = b.id " +
-                         "JOIN orders o ON oi.order_id = o.id " +
-                         "WHERE b.shop_id = ? " +
-                         "AND EXTRACT(MONTH FROM o.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) " +
-                         "AND EXTRACT(YEAR FROM o.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) " +
-                         "AND o.status = 'delivered'";
-                                        
+
+            // Doanh thu tháng này (các đơn đã giao thành công)
+            String sql3 = 
+                "SELECT COALESCE(SUM(oi.total_price), 0) " +
+                "FROM order_items oi " +
+                "JOIN books b ON oi.book_id = b.id " +
+                "JOIN orders o ON oi.order_id = o.id " +
+                "WHERE b.shop_id = ? " +
+                "AND EXTRACT(MONTH FROM o.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) " +
+                "AND EXTRACT(YEAR FROM o.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) " +
+                "AND LOWER(o.status) IN ('delivered', 'completed')";
             try (PreparedStatement ps = conn.prepareStatement(sql3)) {
                 ps.setInt(1, shopId);
                 try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        stats.put("monthlyRevenue", rs.getDouble(1));
-                    }
+                    if (rs.next()) stats.put("monthlyRevenue", rs.getDouble(1));
                 }
             }
-            
+
             // Đánh giá trung bình
-            String sql4 = "SELECT COALESCE(AVG(br.rating), 0) FROM book_reviews br " +
-                         "JOIN books b ON br.book_id = b.id " +
-                         "WHERE b.shop_id = ?";
+            String sql4 = 
+                "SELECT COALESCE(AVG(br.rating), 0) " +
+                "FROM book_reviews br " +
+                "JOIN books b ON br.book_id = b.id " +
+                "WHERE b.shop_id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql4)) {
                 ps.setInt(1, shopId);
                 try (ResultSet rs = ps.executeQuery()) {
@@ -140,9 +141,10 @@ public class ShopDAO {
                 }
             }
         }
-        
+
         return stats;
     }
+
     
     /**
      * Cập nhật thông tin shop
