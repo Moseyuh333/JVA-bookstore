@@ -116,7 +116,8 @@ public class ShopDAO {
                          "WHERE b.shop_id = ? " +
                          "AND EXTRACT(MONTH FROM o.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) " +
                          "AND EXTRACT(YEAR FROM o.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) " +
-                         "AND o.payment_status = 'paid'";
+                         "AND o.status = 'delivered'";
+                                        
             try (PreparedStatement ps = conn.prepareStatement(sql3)) {
                 ps.setInt(1, shopId);
                 try (ResultSet rs = ps.executeQuery()) {
