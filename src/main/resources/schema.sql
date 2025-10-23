@@ -379,39 +379,4 @@ BEGIN
   END IF;
 END $$;
 
--- 6) SEED DEMO (shipper01) — có thể chạy nhiều lần an toàn
-INSERT INTO carriers (name, base_fee, note)
-VALUES ('GiaoNhan Nhanh', 20000, 'Demo'), ('Siêu Ship', 25000, 'Demo')
-ON CONFLICT DO NOTHING;
 
--- Tạo 3 shipment mẫu (gán cho shipper01). order_id giả định 5001..5003 (không bắt buộc phải tồn tại)
-INSERT INTO shipments (order_id, carrier_id, shipper_user_id, status, cod_amount)
-VALUES
-  (5001, 1, 'shipper01', 'ASSIGNED', 120000),
-  (5002, 2, 'shipper01', 'OUT_FOR_DELIVERY', 0),
-  (5003, 1, 'shipper01', 'IN_TRANSIT', 85000)
-ON CONFLICT DO NOTHING;
-
--- Gán event mặc định cho các shipment chưa có event
-INSERT INTO shipment_events (shipment_id, status, note, created_by)
-SELECT s.id, 'ASSIGNED', 'Phân công ban đầu', 'system'
-FROM shipments s
-WHERE NOT EXISTS (
-  SELECT 1 FROM shipment_events e WHERE e.shipment_id = s.id
-);
-
--- Bổ sung timeline mẫu cho shipment order_id=5002
-DO $$
-DECLARE s_id BIGINT;
-BEGIN
-  SELECT id INTO s_id FROM shipments WHERE order_id = 5002 LIMIT 1;
-  IF s_id IS NOT NULL THEN
-    INSERT INTO shipment_events (shipment_id, status, note, created_by) VALUES
-      (s_id, 'PICKED_UP', 'Nhận tại kho Q1', 'shipper01'),
-      (s_id, 'IN_TRANSIT', 'Rời kho Q1', 'shipper01'),
-      (s_id, 'OUT_FOR_DELIVERY', 'Đang đi giao', 'shipper01');
-  END IF;
-END $$;
-
-COMMIT;
--- =====================================================================
