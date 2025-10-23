@@ -1,6 +1,7 @@
 package web.seller;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,6 +15,7 @@ import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Map;
 
+@WebServlet(name = "SellerDashboardServlet", urlPatterns = {"/seller/dashboard"})
 public class SellerDashboardServlet extends HttpServlet {
     
     // @Override
