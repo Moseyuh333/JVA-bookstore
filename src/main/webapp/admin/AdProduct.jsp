@@ -61,7 +61,7 @@
             margin: 0;
         }
 
-                .btn-add {
+        .btn-add {
             background: #92400e;
             color: white;
             padding: 8px 16px;
@@ -209,6 +209,33 @@
             margin-left: auto;
         }
 
+                .btn-view {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .btn-view:hover {
+            background: #fde68a;
+        }
+
+        .btn-edit {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .btn-edit:hover {
+            background: #bfdbfe;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+        
         /* Stats */
         .stats-container {
             display: flex;
@@ -266,8 +293,8 @@
         /* Modal styling - fixed for pointer events and scroll */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9998; }
         .modal-overlay.active { display: block; }
-    .modal-box { display: none; position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 600px; max-width: 95vw; max-height: 90vh; overflow-y: auto; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-    .modal-box.active { display: block; }
+        .modal-box { display: none; position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 600px; max-width: 95vw; max-height: 90vh; overflow-y: auto; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .modal-box.active { display: block; }
         .modal-header { padding: 18px 22px; border-bottom: 1px solid #eef2f6; display:flex; justify-content:space-between; align-items:center; }
         .modal-title { font-size:18px; font-weight:700; color:#1a202c; }
         .modal-body { padding: 18px 22px; }
@@ -443,12 +470,6 @@
             font-size: 14px;
         }
 
-        .btn-view { background: #fef3c7; color: #92400e; }
-        .btn-edit { background: #dbeafe; color: #1e40af; }
-        .btn-delete { background: #fee2e2; color: #991b1b; }
-        .btn-view:hover { background: #fde68a; }
-        .btn-edit:hover { background: #bfdbfe; }
-        .btn-delete:hover { background: #fecaca; }
     </style>
 </head>
 <body>
