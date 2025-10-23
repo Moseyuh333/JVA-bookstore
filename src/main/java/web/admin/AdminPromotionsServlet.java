@@ -349,13 +349,20 @@ public class AdminPromotionsServlet extends HttpServlet {
         String sql = "DELETE FROM promotions WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                out.write("{\"message\":\"Promotion deleted successfully\"}");
+                // 🪄 Sau khi xóa thành công → đồng bộ lại sequence
+                try (PreparedStatement ps2 = conn.prepareStatement(
+                    "SELECT setval('promotions_id_seq', COALESCE((SELECT MAX(id) FROM promotions), 0) + 1)"
+                )) {
+                    ps2.execute();
+                }
+
+                out.write("{\"message\":\"Promotion deleted successfully and sequence updated!\"}");
             } else {
                 out.write("{\"error\":\"Promotion not found\"}");
             }
