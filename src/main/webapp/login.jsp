@@ -125,9 +125,9 @@
 
           let target = contextPath + '/';
           if (role === 'seller') {
-            target = contextPath + '/Seller/sellerDashboard.jsp';
+            target = contextPath + '/seller/dashboard';
           } else if (role === 'admin') {
-            target = contextPath + '/admin-orders.jsp';
+            target = contextPath + '/admin-dashboard';
           }
 
           showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
