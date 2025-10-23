@@ -198,6 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renderTable(filteredPromotions);
         }
     };
+    window.loadPromotions = loadPromotions;
 
     const resetFilters = () => {
         if (searchInput) searchInput.value = '';
