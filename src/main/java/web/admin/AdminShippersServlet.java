@@ -40,7 +40,7 @@ public class AdminShippersServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"" + e.getMessage().replace("\"","\\\"") + "\"}");
         } finally {
             out.flush();
         }
@@ -70,7 +70,7 @@ public class AdminShippersServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"" + e.getMessage().replace("\"","\\\"") + "\"}");
         } finally {
             out.flush();
         }
