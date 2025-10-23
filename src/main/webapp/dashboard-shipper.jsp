@@ -7,7 +7,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Không gian Shipper</title>
+  <title>Shipper Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -66,7 +66,6 @@
     </div>
   </div>
 
-  <!-- Bảng 10 vận đơn gần nhất -->
   <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
     <div class="px-4 py-3 border-b border-amber-100">
       <h2 class="text-lg font-medium">10 vận đơn gần nhất</h2>
@@ -126,10 +125,11 @@
   const apiBase = ctx + '/api/shipper';
   let chart;
 
+  // === Chỉ sửa HÀM NÀY: hiển thị trạng thái tiếng Việt ===
   function statusBadge(status){
     const s = (status||'').toUpperCase();
     let cls = 'bg-gray-100 text-gray-700';
-    let label = 'Không xác định';
+    let label = status || '-';
 
     switch (s) {
       case 'PENDING':
@@ -165,7 +165,6 @@
         label = 'Đã hủy';
         break;
     }
-
     return `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}">${label}</span>`;
   }
 
