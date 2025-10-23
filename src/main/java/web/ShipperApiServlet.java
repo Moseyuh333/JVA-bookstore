@@ -76,6 +76,7 @@ public class ShipperApiServlet extends HttpServlet {
 
             if (path.startsWith("/shipments/")) {
                 String[] seg = path.split("/");
+                // /shipments/{id}
                 if (seg.length == 3) {
                     long id = Long.parseLong(seg[2]);
                     Shipment s = shipmentDAO.findByIdOwned(id, user);
@@ -88,6 +89,19 @@ public class ShipperApiServlet extends HttpServlet {
                     out.put("shipment", s);
                     out.put("events", events);
                     writeJson(resp, 200, out);
+                    return;
+                }
+
+                // NEW: GET /shipments/{id}/events  -> trả về mảng events thuần
+                if (seg.length == 4 && "events".equals(seg[3])) {
+                    long id = Long.parseLong(seg[2]);
+                    Shipment s = shipmentDAO.findByIdOwned(id, user);
+                    if (s == null) {
+                        writeJson(resp, 404, err("NOT_FOUND", "Shipment not found or not yours"));
+                        return;
+                    }
+                    List<ShipmentEvent> events = shipmentDAO.findEvents(id);
+                    writeJson(resp, 200, events); // trả array để frontend dùng trực tiếp
                     return;
                 }
             }
@@ -238,7 +252,6 @@ public class ShipperApiServlet extends HttpServlet {
         }
     }
 
-
     private String normalizeUser(String subject) {
         String sqlU = "SELECT username FROM users WHERE username = ? LIMIT 1";
         String sqlI = "SELECT username FROM users WHERE CAST(id AS TEXT) = ? LIMIT 1";
@@ -269,7 +282,6 @@ public class ShipperApiServlet extends HttpServlet {
             try { if (con != null) con.close(); } catch (Exception ignore) {}
         }
     }
-
 
     private String normalizedPath(HttpServletRequest req) {
         String p = req.getPathInfo();
