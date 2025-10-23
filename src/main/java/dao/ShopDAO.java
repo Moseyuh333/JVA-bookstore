@@ -82,6 +82,7 @@ public class ShopDAO {
      */
     public static Map<String, Object> getDashboardStats(int shopId) throws SQLException {
         Map<String, Object> stats = new HashMap<>();
+        System.out.println("[ShopDAO] Đang chạy bản DAO mới nè ❤️ | shopId=" + shopId);
 
         try (Connection conn = DBUtil.getConnection()) {
 
