@@ -7,12 +7,41 @@ import utils.DBUtil;
 
 public class ShipmentDAO {
 
+    // ================== HELPER: map email -> username ==================
+    /** 
+     * Chuẩn hoá định danh shipper lấy từ JWT/login.
+     * - Nếu là email: tra bảng users để lấy username tương ứng.
+     * - Nếu không phải email: dùng nguyên làm username.
+     * Trả về null nếu rỗng.
+     */
+    private String resolveUsernameFromIdentifier(Connection con, String ident) throws SQLException {
+        if (ident == null) return null;
+        String trimmed = ident.trim();
+        if (trimmed.isEmpty()) return null;
+
+        // Nếu có ký tự @ -> coi là email, tra bảng users để lấy username
+        if (trimmed.contains("@")) {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT username FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1")) {
+                ps.setString(1, trimmed);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) return rs.getString(1);
+                }
+            }
+            // Không tìm thấy email -> fallback dùng nguyên giá trị (để không chặn)
+            return trimmed;
+        }
+
+        // Không phải email -> coi như username
+        return trimmed;
+    }
+
     // ================= FIND BY SHIPPER =================
-    public List<Shipment> findByShipper(String username, String status, int page, int size) throws SQLException {
+    public List<Shipment> findByShipper(String usernameOrEmail, String status, int page, int size) throws SQLException {
         List<Shipment> list = new ArrayList<>();
         boolean filterStatus = status != null && !status.isEmpty() && !"all".equalsIgnoreCase(status);
 
-        String sql =
+        final String selectSql =
             "SELECT " +
             "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
             "  o.code AS order_code, " +
@@ -30,38 +59,36 @@ public class ShipmentDAO {
             "  (o.shipping_snapshot->>'recipientName') AS customer_name " +
             "FROM shipments s " +
             "LEFT JOIN orders o ON o.id = s.order_id " +
-            "WHERE ( " +
-            "    TRIM(s.shipper_user_id) = ? " +
-            "    OR LOWER(TRIM(s.shipper_user_id)) = LOWER(?) " +
-            "    OR TRIM(s.shipper_user_id) = ( " +
-            "        SELECT CAST(u.id AS TEXT) FROM users u WHERE u.username = ? LIMIT 1" +
-            "    )" +
-            ") " +
+            "WHERE LOWER(TRIM(s.shipper_user_id)) = LOWER(?) " +
             (filterStatus ? "AND s.status = ? " : "") +
             "ORDER BY s.last_update_at DESC " +
             "LIMIT ? OFFSET ?";
 
-        try (Connection con = DBUtil.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBUtil.getConnection()) {
+            // Map email -> username (nếu cần)
+            String resolvedUsername = resolveUsernameFromIdentifier(con, usernameOrEmail);
+            if (resolvedUsername == null || resolvedUsername.isBlank()) {
+                return list; // rỗng
+            }
 
-            int i = 1;
-            ps.setString(i++, username);
-            ps.setString(i++, username);
-            ps.setString(i++, username);
-            if (filterStatus) ps.setString(i++, status);
-            ps.setInt(i++, size);
-            ps.setInt(i, (page - 1) * size);
+            try (PreparedStatement ps = con.prepareStatement(selectSql)) {
+                int i = 1;
+                ps.setString(i++, resolvedUsername);
+                if (filterStatus) ps.setString(i++, status);
+                ps.setInt(i++, Math.max(size, 1));
+                ps.setInt(i, Math.max(page, 1) - 1 >= 0 ? (Math.max(page, 1) - 1) * Math.max(size, 1) : 0);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapShipmentJoinedV2(rs));
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) list.add(mapShipmentJoinedV2(rs));
+                }
             }
         }
         return list;
     }
 
     // ================= FIND ONE BY ID & SHIPPER =================
-    public Shipment findByIdOwned(long id, String username) throws SQLException {
-        String sql =
+    public Shipment findByIdOwned(long id, String usernameOrEmail) throws SQLException {
+        final String selectSql =
             "SELECT s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
             "  o.code AS order_code, " +
             "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " +
@@ -78,24 +105,19 @@ public class ShipmentDAO {
             "  (o.shipping_snapshot->>'recipientName') AS customer_name " +
             "FROM shipments s " +
             "LEFT JOIN orders o ON o.id = s.order_id " +
-            "WHERE s.id = ? AND ( " +
-            "    TRIM(s.shipper_user_id) = ? " +
-            "    OR LOWER(TRIM(s.shipper_user_id)) = LOWER(?) " +
-            "    OR TRIM(s.shipper_user_id) = ( " +
-            "        SELECT CAST(u.id AS TEXT) FROM users u WHERE u.username = ? LIMIT 1" +
-            "    )" +
-            ")";
+            "WHERE s.id = ? AND LOWER(TRIM(s.shipper_user_id)) = LOWER(?)";
 
-        try (Connection con = DBUtil.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBUtil.getConnection()) {
+            String resolvedUsername = resolveUsernameFromIdentifier(con, usernameOrEmail);
+            if (resolvedUsername == null || resolvedUsername.isBlank()) return null;
 
-            ps.setLong(1, id);
-            ps.setString(2, username);
-            ps.setString(3, username);
-            ps.setString(4, username);
+            try (PreparedStatement ps = con.prepareStatement(selectSql)) {
+                ps.setLong(1, id);
+                ps.setString(2, resolvedUsername);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapShipmentJoinedV2(rs);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) return mapShipmentJoinedV2(rs);
+                }
             }
         }
         return null;
@@ -213,23 +235,22 @@ public class ShipmentDAO {
     }
 
     // ================= GET STATS =================
-    public Map<String, Integer> getStats(String username) throws SQLException {
+    public Map<String, Integer> getStats(String usernameOrEmail) throws SQLException {
         Map<String, Integer> map = new HashMap<>();
-        String sql =
+        final String sql =
             "SELECT s.status, COUNT(*) AS c FROM shipments s " +
-            "WHERE ( TRIM(s.shipper_user_id)=? " +
-            "    OR LOWER(TRIM(s.shipper_user_id))=LOWER(?) " +
-            "    OR TRIM(s.shipper_user_id)=(SELECT CAST(u.id AS TEXT) FROM users u WHERE u.username=? LIMIT 1) ) " +
+            "WHERE LOWER(TRIM(s.shipper_user_id)) = LOWER(?) " +
             "GROUP BY s.status";
 
-        try (Connection con = DBUtil.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBUtil.getConnection()) {
+            String resolvedUsername = resolveUsernameFromIdentifier(con, usernameOrEmail);
+            if (resolvedUsername == null || resolvedUsername.isBlank()) return map;
 
-            ps.setString(1, username);
-            ps.setString(2, username);
-            ps.setString(3, username);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) map.put(rs.getString("status"), rs.getInt("c"));
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, resolvedUsername);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) map.put(rs.getString("status"), rs.getInt("c"));
+                }
             }
         }
 
@@ -276,7 +297,7 @@ public class ShipmentDAO {
         return e;
     }
 
-    // ================= SEED RANDOM SHIPPER
+    // ================= SEED RANDOM SHIPPER =================
     public void createForNewOrderRandomShipper(Connection con, long orderId) throws SQLException {
         final String pickSql = "SELECT u.username FROM users u WHERE role='shipper'::user_role ORDER BY random() LIMIT 1";
         String shipperUser = null;
