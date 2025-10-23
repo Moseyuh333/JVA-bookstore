@@ -235,7 +235,7 @@
         .btn-delete:hover {
             background: #fecaca;
         }
-        
+
         /* Stats */
         .stats-container {
             display: flex;
@@ -558,7 +558,7 @@
                                         <th>Giá</th>
                                         <th>Tồn kho</th>
                                         <th>Shop</th>
-                                        <th>Hành động</th>
+                                        <th>Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="product"></tbody>
