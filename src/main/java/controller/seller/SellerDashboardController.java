@@ -59,7 +59,7 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet implementation class AdDashboardController
  */
 @WebServlet("/seller-dashboard")
-public class SellerDashboardServlet extends HttpServlet {
+public class SellerDashboardController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
 	protected void processRequest(HttpServletRequest req, HttpServletResponse resp)
@@ -68,7 +68,7 @@ public class SellerDashboardServlet extends HttpServlet {
 		resp.setCharacterEncoding("UTF-8");
 		req.setCharacterEncoding("UTF-8");
 
-	req.getRequestDispatcher("/admin/AdDashboard.jsp").forward(req, resp);
+	req.getRequestDispatcher("/Seller/sellerDashboard.jsp").forward(req, resp);
 	}
 
 	@Override

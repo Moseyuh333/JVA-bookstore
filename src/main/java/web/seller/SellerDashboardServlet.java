@@ -15,7 +15,7 @@ import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Map;
 
-@WebServlet(name = "SellerDashboardServlet", urlPatterns = {"/seller/dashboard"})
+@WebServlet(name = "SellerDashboardServlet", urlPatterns = {"api/seller/dashboard"})
 public class SellerDashboardServlet extends HttpServlet {
     
     // @Override
