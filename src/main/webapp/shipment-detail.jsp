@@ -132,19 +132,32 @@
   }
   guardRole();
 
-  async function authFetch(url,opt={}){
+  async function authFetch(url,opt={}) {
     const token = localStorage.getItem('auth_token')||'';
     const headers = new Headers(opt.headers||{});
     if (token) headers.set('Authorization','Bearer '+token);
     const res = await fetch(url,{...opt, headers});
-    const ct = res.headers.get('content-type')||'';
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`HTTP ${res.status} – ${ct.includes('json')? body : 'Non-JSON: ' + body.slice(0,120)}`);
+    return res;
+  }
+
+  // ---------- NEW: helper thử nhiều endpoint ----------
+  async function fetchJsonTry(urls, opt={}) {
+    let lastErr;
+    for (const u of urls) {
+      const res = await authFetch(u, opt);
+      const ct = res.headers.get('content-type')||'';
+      if (res.ok) {
+        if (ct.includes('json')) return res.json();
+        return {};
+      }
+      // 404 ⇒ thử endpoint tiếp theo
+      if (res.status === 404) { lastErr = new Error('404: '+u); continue; }
+      // lỗi khác ⇒ đọc body để báo cho người dùng
+      const body = await res.text().catch(()=> '');
+      throw new Error(`HTTP ${res.status} – ${body || u}`);
     }
-    if (ct.includes('json')) return res.json();
-    const txt = await res.text();
-    throw new Error('Non-JSON response: ' + txt.slice(0,120));
+    // nếu tất cả đều 404
+    throw lastErr || new Error('All endpoints failed');
   }
 
   const apiBase = ctx + '/api/shipper';
@@ -155,9 +168,58 @@
     el.textContent = status||'-';
   }
 
+  // ---------- NEW: wrapper cho 3 hành động ----------
+  async function getShipmentDetail(id){
+    // detail đã đúng path cũ
+    return fetchJsonTry([`${apiBase}/shipments/${id}`]);
+  }
+  async function getShipmentEvents(id){
+    return fetchJsonTry([
+      `${apiBase}/shipments/${id}/events`,
+      `${apiBase}/shipment-events?shipmentId=${id}`,
+      `${apiBase}/events?shipmentId=${id}`
+    ]);
+  }
+  async function postShipmentEvent(id, payload){
+    // body JSON cho cả hai kiểu
+    const bodies = [
+      { url: `${apiBase}/shipments/${id}/events`, body: JSON.stringify(payload) },
+      { url: `${apiBase}/shipment-events`,       body: JSON.stringify({ shipmentId: id, ...payload }) }
+    ];
+    let lastErr;
+    for (const b of bodies) {
+      try {
+        await fetchJsonTry([b.url], { method:'POST', headers:{'Content-Type':'application/json'}, body: b.body });
+        return;
+      } catch (e) {
+        if (String(e.message).startsWith('404:')) { lastErr = e; continue; }
+        throw e;
+      }
+    }
+    throw lastErr || new Error('No endpoint for posting events');
+  }
+  async function putDelivered(id, payload){
+    const bodies = [
+      { url: `${apiBase}/shipments/${id}/deliver`, body: JSON.stringify(payload) },
+      { url: `${apiBase}/shipments/deliver`,       body: JSON.stringify({ shipmentId: id, ...payload }) },
+      { url: `${apiBase}/deliver`,                 body: JSON.stringify({ shipmentId: id, ...payload }) },
+    ];
+    let lastErr;
+    for (const b of bodies) {
+      try {
+        await fetchJsonTry([b.url], { method:'PUT', headers:{'Content-Type':'application/json'}, body: b.body });
+        return;
+      } catch (e) {
+        if (String(e.message).startsWith('404:')) { lastErr = e; continue; }
+        throw e;
+      }
+    }
+    throw lastErr || new Error('No endpoint for deliver');
+  }
+
   async function load(){
     try{
-      const d = await authFetch(`${apiBase}/shipments/${id}`);
+      const d = await getShipmentDetail(id);
       document.getElementById('order-code').textContent = d.orderCode||'-';
       document.getElementById('receiver-name').textContent = d.receiverName||'-';
       document.getElementById('receiver-phone').textContent = d.receiverPhone||'-';
@@ -165,7 +227,7 @@
       document.getElementById('cod-amount').textContent = (d.codAmount||0).toLocaleString('vi-VN') + ' ₫';
       setBadge(d.status);
 
-      const evts = await authFetch(`${apiBase}/shipments/${id}/events`);
+      const evts = await getShipmentEvents(id);
       const ul = document.getElementById('events');
       ul.innerHTML = '';
       (evts||[]).forEach(e=>{
@@ -180,6 +242,7 @@
             ${e.evidenceUrl ? `<a class="text-sm text-amber-700 hover:underline" href="${e.evidenceUrl}" target="_blank">Xem bằng chứng</a>` : ``}
           </li>`);
       });
+      document.getElementById('err').textContent = '';
     }catch(e){
       document.getElementById('err').textContent = e.message;
     }
@@ -189,11 +252,7 @@
     try{
       const status = document.getElementById('evt-status').value;
       const note = document.getElementById('evt-note').value;
-      await authFetch(`${apiBase}/shipments/${id}/events`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ status, note })
-      });
+      await postShipmentEvent(id, { status, note });
       await load();
     }catch(e){
       alert(e.message);
@@ -204,11 +263,7 @@
     try{
       const proofUrl = document.getElementById('proofUrl').value.trim();
       const codCollected = document.getElementById('codCollected').checked;
-      await authFetch(`${apiBase}/shipments/${id}/deliver`, {
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ proofUrl, codCollected })
-      });
+      await putDelivered(id, { proofUrl, codCollected });
       await load();
     }catch(e){
       alert(e.message);
