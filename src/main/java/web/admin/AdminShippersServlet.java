@@ -224,7 +224,7 @@ public class AdminShippersServlet extends HttpServlet {
         BigDecimal baseFee = new BigDecimal(baseFeeStr);
 
         String sql = "INSERT INTO shippers (name, phone, email, base_fee, service_area, estimated_time, status, updated_at) "
-           + "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING id, created_at";
+           + "VALUES (?, ?, ?, ?, ?, ?, ?::shipper_status, CURRENT_TIMESTAMP) RETURNING id, created_at";
 
         try (Connection conn = DBUtil.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -268,7 +268,7 @@ public class AdminShippersServlet extends HttpServlet {
         BigDecimal baseFee = new BigDecimal(baseFeeStr);
 
         String sql = "UPDATE shippers SET name = ?, phone = ?, email = ?, base_fee = ?, " +
-                "service_area = ?, estimated_time = ?, status = ?, updated_at = CURRENT_TIMESTAMP " +
+                "service_area = ?, estimated_time = ?, status = ?::shipper_status, updated_at = CURRENT_TIMESTAMP " +
                 "WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
