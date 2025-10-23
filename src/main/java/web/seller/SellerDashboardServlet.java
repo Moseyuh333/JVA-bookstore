@@ -16,29 +16,66 @@ import java.util.Map;
 
 public class SellerDashboardServlet extends HttpServlet {
     
+    // @Override
+    // protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+    //         throws ServletException, IOException {
+        
+    //     String token = request.getHeader("Authorization");
+    //     if (token != null && token.startsWith("Bearer ")) {
+    //         token = token.substring(7);
+    //     }
+        
+    //     String username = null;
+    //     if (token != null && !token.isEmpty()) {
+    //         try {
+    //             username = JwtUtil.validateToken(token);
+    //         } catch (Exception e) {
+    //             response.sendRedirect(request.getContextPath() + "/login.jsp");
+    //             return;
+    //         }
+    //     }
+        
+    //     if (username == null || username.isEmpty()) {
+    //         response.sendRedirect(request.getContextPath() + "/login.jsp");
+    //         return;
+    //     }
+
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        
-        String token = request.getHeader("Authorization");
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
-        
-        String username = null;
-        if (token != null && !token.isEmpty()) {
-            try {
-                username = JwtUtil.validateToken(token);
-            } catch (Exception e) {
-                response.sendRedirect(request.getContextPath() + "/login.jsp");
-                return;
-            }
-        }
-        
-        if (username == null || username.isEmpty()) {
+protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+        throws ServletException, IOException {
+    
+    // Lấy token từ nhiều nguồn
+    String token = request.getHeader("Authorization");
+    if (token != null && token.startsWith("Bearer ")) {
+        token = token.substring(7);
+    }
+    
+    // ✅ Nếu không có trong header, lấy từ parameter
+    if (token == null || token.isEmpty()) {
+        token = request.getParameter("token");
+    }
+    
+    System.out.println("DEBUG - Token present: " + (token != null));
+    
+    String username = null;
+    if (token != null && !token.isEmpty()) {
+        try {
+            username = JwtUtil.validateToken(token);
+            System.out.println("DEBUG - Username from token: " + username);
+        } catch (Exception e) {
+            System.out.println("DEBUG - Invalid token: " + e.getMessage());
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
+    }
+    
+    if (username == null || username.isEmpty()) {
+        System.out.println("DEBUG - No username, redirecting to login");
+        response.sendRedirect(request.getContextPath() + "/login.jsp");
+        return;
+    }
+    
+    
         
         try {
             String role = DBUtil.getUserRole(username);

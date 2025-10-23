@@ -434,7 +434,7 @@
         </div>
     </div>
     
-    <script>
+    <!-- <script>
         feather.replace();
         
         function logout() {
@@ -453,6 +453,87 @@
                 window.location.href = '${pageContext.request.contextPath}/login.jsp';
             }
         });
-    </script>
+    </script> -->
+
+
+    <script>
+    feather.replace();
+    
+    function logout() {
+        localStorage.removeItem('seller_token');
+        localStorage.removeItem('seller_username');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_username');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_username');
+        window.location.href = '${pageContext.request.contextPath}/login.jsp';
+    }
+    
+    // ✅ Hàm navigate với token
+    function navigateWithToken(url) {
+        const token = localStorage.getItem('seller_token') || localStorage.getItem('auth_token');
+        if (!token) {
+            window.location.href = '${pageContext.request.contextPath}/login.jsp';
+            return;
+        }
+        
+        // Tạo form ẩn để gửi token
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = url;
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'token';
+        input.value = token;
+        
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    // ✅ Thêm event listener cho tất cả navigation links
+    window.addEventListener('load', function() {
+        const token = localStorage.getItem('seller_token') || localStorage.getItem('auth_token');
+        
+        if (!token) {
+            window.location.href = '${pageContext.request.contextPath}/login.jsp';
+            return;
+        }
+        
+        // Thêm token vào tất cả các link trong nav
+        document.querySelectorAll('.seller-nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                
+                // Nếu là link active (dashboard hiện tại), không làm gì
+                if (this.classList.contains('active')) {
+                    return;
+                }
+                
+                // Tạo URL với token
+                const url = new URL(href, window.location.origin);
+                url.searchParams.set('token', token);
+                
+                window.location.href = url.toString();
+            });
+        });
+        
+        // Thêm token vào button "Xem đơn hàng" / "Quản lý sản phẩm"
+        const actionButtons = document.querySelectorAll('.btn-primary');
+        actionButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                const url = new URL(href, window.location.origin);
+                url.searchParams.set('token', token);
+                window.location.href = url.toString();
+            });
+        });
+    });
+</script>
+
+
 </body>
 </html>
