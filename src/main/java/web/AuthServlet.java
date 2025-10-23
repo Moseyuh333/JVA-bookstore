@@ -114,7 +114,7 @@ public class AuthServlet extends HttpServlet {
             if ("admin".equals(role)) {
                 response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"admin\", \"redirect\":\"/admin-dashboard\"}";
             } else if ("seller".equals(role)) {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"seller\", \"redirect\":\"/seller/dashboard\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"seller\", \"redirect\":\"/seller-dashboard\"}";
             } else {
                 response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"user\"}";
             }
