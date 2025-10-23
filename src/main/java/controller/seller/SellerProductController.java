@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Servlet implementation class AdProductController
  */
-@WebServlet("/seller-product")
+@WebServlet("/seller-products")
 public class SellerProductController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
@@ -20,7 +20,7 @@ public class SellerProductController extends HttpServlet {
 		resp.setCharacterEncoding("UTF-8");
 		req.setCharacterEncoding("UTF-8");
 
-	req.getRequestDispatcher("/seller/SellerProduct.jsp").forward(req, resp);
+	req.getRequestDispatcher("/Seller/SellerProduct.jsp").forward(req, resp);
 	}
 
 	@Override
