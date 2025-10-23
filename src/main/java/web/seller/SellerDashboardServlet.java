@@ -96,6 +96,13 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
         request.setAttribute("monthlyRevenue", formattedRevenue);
         request.setAttribute("avgRating", stats.getOrDefault("avgRating", 0.0));
 
+        System.out.println("DEBUG: username=" + username);
+        System.out.println("DEBUG: shopId=" + shop.getId() + " | ownerId=" + shop.getOwnerId());
+        System.out.println("DEBUG: totalProducts=" + stats.get("totalProducts"));
+        System.out.println("DEBUG: newOrders=" + stats.get("newOrders"));
+        System.out.println("DEBUG: monthlyRevenue=" + stats.get("monthlyRevenue"));
+        System.out.println("DEBUG: avgRating=" + stats.get("avgRating"));
+
         request.getRequestDispatcher("/Seller/sellerDashboard.jsp").forward(request, response);
 
     } catch (SQLException e) {

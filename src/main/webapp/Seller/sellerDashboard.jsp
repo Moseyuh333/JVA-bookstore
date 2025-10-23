@@ -344,7 +344,7 @@
                 <i data-feather="trending-up"></i>
                 Tổng quan hoạt động
             </h2>
-            
+            <c:out value="${totalProducts}" default="(null)" />
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3>
