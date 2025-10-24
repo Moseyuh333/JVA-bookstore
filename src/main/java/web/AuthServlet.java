@@ -7,6 +7,7 @@ import utils.JwtUtil;
 import utils.DBUtil;
 import utils.EmailUtil;
 import utils.OTPUtil;
+import dao.ShopDAO;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.servlet.ServletException;
@@ -110,14 +111,30 @@ public class AuthServlet extends HttpServlet {
 
                 // Check user role for redirect
             String role = DBUtil.getUserRole(username);
+            int userId = DBUtil.getUserIdByUsername(username);
             System.out.println("DEBUG Login - User role: " + role);
+            System.out.println("DEBUG Login - User ID: " + userId);
 
 
                     // ✅ Tạo session để JSP biết người đang đăng nhập
             HttpSession session = req.getSession(true);
             session.setAttribute("username", username);
             session.setAttribute("role", role);
+            session.setAttribute("user_id", userId);
             session.setAttribute("token", token);
+            
+            // Nếu là seller, lấy luôn shop_id
+            if ("seller".equals(role)) {
+                try {
+                    int shopId = ShopDAO.getShopIdByUserId(userId);
+                    if (shopId > 0) {
+                        session.setAttribute("shop_id", shopId);
+                        System.out.println("DEBUG Login - Shop ID: " + shopId);
+                    }
+                } catch (Exception e) {
+                    System.out.println("DEBUG Login - Failed to get shop_id: " + e.getMessage());
+                }
+            }
             
             String response;
             if ("admin".equals(role)) {
