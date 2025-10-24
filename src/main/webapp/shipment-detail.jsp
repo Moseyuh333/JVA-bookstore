@@ -10,7 +10,6 @@
   <meta charset="UTF-8">
   <title>Chi tiết vận đơn #<%=sid%></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Đồng bộ “vibe” trang chủ, không dùng header.jsp -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/feather-icons"></script>
 </head>
@@ -66,9 +65,7 @@
           <h2 class="text-lg font-medium">Dòng thời gian</h2>
         </div>
         <div class="p-4">
-          <ul id="events" class="space-y-3">
-            <!-- JS render -->
-          </ul>
+          <ul id="events" class="space-y-3"><!-- JS render --></ul>
           <p id="err" class="text-sm text-red-600 mt-3"></p>
         </div>
       </div>
@@ -81,13 +78,13 @@
           <h2 class="text-lg font-medium">Cập nhật trạng thái</h2>
         </div>
         <div class="p-4 space-y-4">
+          <!-- CHỈ GIỮ NHỮNG GIÁ TRỊ THUỘC ENUM MỚI -->
           <select id="evt-status" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full">
             <option value="PICKED_UP">Đã lấy hàng</option>
             <option value="IN_TRANSIT">Đang vận chuyển</option>
             <option value="OUT_FOR_DELIVERY">Đang giao</option>
             <option value="FAILED_DELIVERY">Giao thất bại</option>
-            <option value="RETURNING">Đang hoàn</option>
-            <option value="RETURNED">Đã hoàn</option>
+            <option value="CANCELLED">Huỷ đơn</option>
           </select>
 
           <input id="evt-note" type="text" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full" placeholder="Ghi chú (tuỳ chọn)">
@@ -140,24 +137,11 @@
     return res;
   }
 
-  // ---------- NEW: helper thử nhiều endpoint ----------
-  async function fetchJsonTry(urls, opt={}) {
-    let lastErr;
-    for (const u of urls) {
-      const res = await authFetch(u, opt);
-      const ct = res.headers.get('content-type')||'';
-      if (res.ok) {
-        if (ct.includes('json')) return res.json();
-        return {};
-      }
-      // 404 ⇒ thử endpoint tiếp theo
-      if (res.status === 404) { lastErr = new Error('404: '+u); continue; }
-      // lỗi khác ⇒ đọc body để báo cho người dùng
-      const body = await res.text().catch(()=> '');
-      throw new Error(`HTTP ${res.status} – ${body || u}`);
-    }
-    // nếu tất cả đều 404
-    throw lastErr || new Error('All endpoints failed');
+  async function fetchJson(url, opt={}) {
+    const r = await authFetch(url,opt);
+    if (!r.ok) throw new Error(await r.text());
+    const ct = r.headers.get('content-type')||'';
+    return ct.includes('json') ? r.json() : {};
   }
 
   const apiBase = ctx + '/api/shipper';
@@ -168,66 +152,22 @@
     el.textContent = status||'-';
   }
 
-  // ---------- NEW: wrapper cho 3 hành động ----------
-  async function getShipmentDetail(id){
-    // detail đã đúng path cũ
-    return fetchJsonTry([`${apiBase}/shipments/${id}`]);
-  }
-  async function getShipmentEvents(id){
-    return fetchJsonTry([
-      `${apiBase}/shipments/${id}/events`,
-      `${apiBase}/shipment-events?shipmentId=${id}`,
-      `${apiBase}/events?shipmentId=${id}`
-    ]);
-  }
-  async function postShipmentEvent(id, payload){
-    // body JSON cho cả hai kiểu
-    const bodies = [
-      { url: `${apiBase}/shipments/${id}/events`, body: JSON.stringify(payload) },
-      { url: `${apiBase}/shipment-events`,       body: JSON.stringify({ shipmentId: id, ...payload }) }
-    ];
-    let lastErr;
-    for (const b of bodies) {
-      try {
-        await fetchJsonTry([b.url], { method:'POST', headers:{'Content-Type':'application/json'}, body: b.body });
-        return;
-      } catch (e) {
-        if (String(e.message).startsWith('404:')) { lastErr = e; continue; }
-        throw e;
-      }
-    }
-    throw lastErr || new Error('No endpoint for posting events');
-  }
-  async function putDelivered(id, payload){
-    const bodies = [
-      { url: `${apiBase}/shipments/${id}/deliver`, body: JSON.stringify(payload) },
-      { url: `${apiBase}/shipments/deliver`,       body: JSON.stringify({ shipmentId: id, ...payload }) },
-      { url: `${apiBase}/deliver`,                 body: JSON.stringify({ shipmentId: id, ...payload }) },
-    ];
-    let lastErr;
-    for (const b of bodies) {
-      try {
-        await fetchJsonTry([b.url], { method:'PUT', headers:{'Content-Type':'application/json'}, body: b.body });
-        return;
-      } catch (e) {
-        if (String(e.message).startsWith('404:')) { lastErr = e; continue; }
-        throw e;
-      }
-    }
-    throw lastErr || new Error('No endpoint for deliver');
-  }
-
   async function load(){
     try{
-      const d = await getShipmentDetail(id);
-      document.getElementById('order-code').textContent = d.orderCode||'-';
-      document.getElementById('receiver-name').textContent = d.receiverName||'-';
-      document.getElementById('receiver-phone').textContent = d.receiverPhone||'-';
-      document.getElementById('receiver-address').textContent = d.receiverAddress||'-';
-      document.getElementById('cod-amount').textContent = (d.codAmount||0).toLocaleString('vi-VN') + ' ₫';
-      setBadge(d.status);
+      // LẤY { shipment, events } TỪ BACKEND
+      const d = await fetchJson(`${apiBase}/shipments/${id}`);
+      const s = d.shipment ?? d;        // fallback nếu backend trả phẳng
+      const evts = d.events ?? [];      // đã có sẵn events trong cùng response
 
-      const evts = await getShipmentEvents(id);
+      // --- fill "Thông tin" ---
+      document.getElementById('order-code').textContent     = s.orderCode || '-';
+      document.getElementById('receiver-name').textContent  = s.receiverName || s.customerName || '-';
+      document.getElementById('receiver-phone').textContent = s.receiverPhone || '-';
+      document.getElementById('receiver-address').textContent = s.receiverAddress || '-';
+      document.getElementById('cod-amount').textContent     = ((s.codAmount||0).toLocaleString('vi-VN')) + ' ₫';
+      setBadge(s.status);
+
+      // --- render timeline ---
       const ul = document.getElementById('events');
       ul.innerHTML = '';
       (evts||[]).forEach(e=>{
@@ -244,7 +184,7 @@
       });
       document.getElementById('err').textContent = '';
     }catch(e){
-      document.getElementById('err').textContent = e.message;
+      document.getElementById('err').textContent = e.message || 'Lỗi tải dữ liệu';
     }
   }
 
@@ -252,21 +192,29 @@
     try{
       const status = document.getElementById('evt-status').value;
       const note = document.getElementById('evt-note').value;
-      await postShipmentEvent(id, { status, note });
+      await fetchJson(`${apiBase}/shipments/${id}/events`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status, note })
+      });
       await load();
     }catch(e){
-      alert(e.message);
+      alert(e.message || 'Lỗi ghi sự kiện');
     }
   };
 
   document.getElementById('btnDeliver').onclick = async ()=>{
     try{
-      const proofUrl = document.getElementById('proofUrl').value.trim();
+      const evidenceUrl = document.getElementById('proofUrl').value.trim(); // TÊN TRƯỜNG CHUẨN BACKEND
       const codCollected = document.getElementById('codCollected').checked;
-      await putDelivered(id, { proofUrl, codCollected });
+      await fetchJson(`${apiBase}/shipments/${id}/deliver`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ evidenceUrl, codCollected })
+      });
       await load();
     }catch(e){
-      alert(e.message);
+      alert(e.message || 'Lỗi đánh dấu giao hàng');
     }
   };
 
