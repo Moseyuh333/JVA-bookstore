@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadProducts = async (page = 1, search = "", searchType = "all") => {
         try {
             showLoading();
-            const token = localStorage.getItem("seller_token"); // lấy token từ localStorage
+            const token = localStorage.getItem("auth_token"); // ✅ FIX: Đổi từ "seller_token" thành "auth_token"
 
             let url = `/api/seller/products?action=list&page=${page}&limit=${limit}`;
             if (search && search.trim()) {
@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const loadStats = async () => {
         try {
-            const token = localStorage.getItem("seller_token"); // ✅ lấy token đã lưu
+            const token = localStorage.getItem("auth_token"); // ✅ FIX: Đổi từ "seller_token" thành "auth_token"
             const res = await fetch(`${window.appConfig?.contextPath || ''}/api/seller/products?action=stats`, {
             headers: {
                 "Authorization": `Bearer ${token}`,
