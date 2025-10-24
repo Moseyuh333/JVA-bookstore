@@ -55,6 +55,11 @@
   (function bootstrapRedirect() {
     const token = localStorage.getItem('auth_token');
     const role  = (localStorage.getItem('auth_role') || '').toLowerCase();
+
+    // Chỉ chạy auto-redirect nếu đang ở login.jsp
+    const currentPage = window.location.pathname;
+    if (!currentPage.endsWith('/login.jsp')) return;
+
     if (token && role) {
       let target = contextPath + '/';
       if (role === 'shipper')      target = contextPath + '/dashboard-shipper.jsp';
@@ -62,6 +67,7 @@
       window.location.replace(target);
     }
   })();
+
 
   function decodeJwtPayload(token) {
     try {
