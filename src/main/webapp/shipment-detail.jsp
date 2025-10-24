@@ -28,7 +28,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/feather-icons"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen">
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 <div class="container mx-auto px-4 py-8">
 
   <div class="flex items-center justify-between mb-6">
