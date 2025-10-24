@@ -258,13 +258,6 @@ public class ShipmentDAO {
             ps3.setLong(1, shipmentId);
             ps3.executeUpdate();
 
-            PreparedStatement ps4 = con.prepareStatement(
-                "INSERT INTO order_events (order_id,status,created_by) " +
-                "SELECT order_id,'delivered',? FROM shipments WHERE id=?");
-            ps4.setString(1, createdBy);
-            ps4.setLong(2, shipmentId);
-            ps4.executeUpdate();
-
             con.commit();
         } catch (Exception e) {
             if (con != null) con.rollback();
