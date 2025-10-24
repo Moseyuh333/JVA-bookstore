@@ -2,10 +2,8 @@ package utils;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.SignatureException;
 import java.util.Date;
 import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
@@ -38,27 +36,4 @@ public class JwtUtil {
             return null;
         }
     }
-
-    public static boolean verifyToken(String token) {
-        try {
-            Claims claims = Jwts.parser()
-                    .setSigningKey(SECRET_KEY)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-
-            return claims != null;
-
-        } catch (ExpiredJwtException e) {
-            System.err.println("Token expired: " + e.getMessage());
-            return false;
-        } catch (SignatureException e) {
-            System.err.println("Invalid token signature: " + e.getMessage());
-            return false;
-        } catch (Exception e) {
-            System.err.println("Invalid token: " + e.getMessage());
-            return false;
-        }
-    }
 }
-

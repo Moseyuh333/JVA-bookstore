@@ -104,11 +104,11 @@ public class AuthServlet extends HttpServlet {
             String role = DBUtil.getUserRole(username);
             String response;
             if ("admin".equals(role)) {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"" + role + "\", \"redirect\":\"/admin-dashboard\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/admin-dashboard\"}";
             } else if ("shipper".equals(role)) {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"" + role + "\", \"redirect\":\"/dashboard-shipper.jsp\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/dashboard-shipper.jsp\"}";
             } else {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"" + role + "\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
             }
             System.out.println("DEBUG Login - Response: " + response);
             out.write(response);
@@ -373,37 +373,6 @@ public class AuthServlet extends HttpServlet {
             System.err.println("AuthServlet - Failed to parse JSON body: " + parseEx.getMessage());
             return null;
         }
-    }
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String path = req.getServletPath();
-        resp.setContentType("application/json; charset=UTF-8");
-        PrintWriter out = resp.getWriter();
-
-        // 🔸 Kiểm tra nếu gọi /api/verify
-        if ("/api/verify".equals(path)) {
-            String authHeader = req.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7);
-                try {
-                    boolean valid = JwtUtil.verifyToken(token);
-                    if (valid) {
-                        resp.setStatus(HttpServletResponse.SC_OK);
-                        out.write("{\"valid\":true}");
-                        return;
-                    }
-                } catch (Exception e) {
-                    System.err.println("DEBUG verify - invalid token: " + e.getMessage());
-                }
-            }
-            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            out.write("{\"valid\":false}");
-            return;
-        }
-
-        // Nếu không phải /api/verify thì báo 404
-        resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        out.write("{\"error\":\"Endpoint not found\"}");
     }
 
 }
