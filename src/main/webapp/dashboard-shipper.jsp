@@ -61,8 +61,8 @@
     <div class="px-4 py-3 border-b border-amber-100">
       <h2 class="text-lg font-medium">Tỷ lệ giao hàng</h2>
     </div>
-    <div class="p-4">
-      <canvas id="chart-success" height="140"></canvas>
+    <div class="p-4 flex justify-center" style="height: 300px; max-width: 500px; margin: 0 auto;">
+      <canvas id="chart-success"></canvas>
     </div>
   </div>
 
@@ -179,10 +179,24 @@
       const el = document.getElementById('chart-success');
       if (chart) chart.destroy();
       chart = new Chart(el, {
-        type:'doughnut',
-        data:{
-          labels:['Thành công','Thất bại','Đang giao'],
-          datasets:[{ data:[stats.delivered||0, stats.failed||0, stats.inProgress||0] }]
+        type: 'doughnut',
+        data: {
+          labels: ['Thành công', 'Thất bại', 'Đang giao'],
+          datasets: [{
+            data: [stats.delivered || 0, stats.failed || 0, stats.inProgress || 0],
+            backgroundColor: ['#36A2EB', '#FF6384', '#FF9F40'],
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '60%',
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { enabled: true }
+          }
         }
       });
 
