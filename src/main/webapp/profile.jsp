@@ -67,6 +67,18 @@
                             <a class="nav-link" id="delete-account-tab" data-bs-toggle="pill" href="#delete-account" role="tab">
                                 <i class="fas fa-trash me-2"></i>Xóa tài khoản
                             </a>
+                            
+
+                            <c:if test="${sessionScope.role == 'seller' || sessionScope.shop_id > 0}">
+                                <a class="nav-link fw-semibold text-success" 
+                                href="${pageContext.request.contextPath}/Seller/sellerDashboard.jsp" 
+                                id="seller-dashboard-tab">
+                                    <i class="fas fa-chart-line me-2"></i>Trang Bán Hàng
+                                </a>
+                                <hr class="my-1 border-light">
+                            </c:if>
+
+
                         </div>
                     </div>
                 </div>
