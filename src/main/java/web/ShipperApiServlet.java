@@ -168,21 +168,7 @@ public class ShipperApiServlet extends HttpServlet {
                 }
             }
 
-            writeJson(resp, 404, err("NOT_FOUND", "Unknown endpoint: " + path));
-        } catch (Exception e) {
-            e.printStackTrace();
-            writeJson(resp, 500, err("SERVER_ERROR", e.getMessage()));
-        }
-    }
-
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String user = currentUsername(req);
-        if (user == null) { writeJson(resp, 401, err("UNAUTHORIZED", "Missing/invalid login")); return; }
-
-        String path = normalizedPath(req);
-
-        try {
+            // POST /shipments/{id}/deliver  -> đánh dấu delivered
             if (path.startsWith("/shipments/") && path.endsWith("/deliver")) {
                 String[] seg = path.split("/");
                 if (seg.length == 4) {
@@ -220,6 +206,8 @@ public class ShipperApiServlet extends HttpServlet {
             writeJson(resp, 500, err("SERVER_ERROR", e.getMessage()));
         }
     }
+
+
 
     // -------------------- helpers --------------------
     private String currentUsername(HttpServletRequest req) {
