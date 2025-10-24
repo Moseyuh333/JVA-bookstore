@@ -94,11 +94,12 @@ public class AdminProductsServlet extends HttpServlet {
 
         if ("status".equals(searchType) && search != null) {
             String s = search.trim().toLowerCase();
-            if (s.contains("hoạt")) search = "active";
-            else if (s.contains("chờ") || s.contains("duyệt")) search = "pending";
-            else if (s.contains("không") || s.contains("ngưng") || s.contains("nghỉ")) search = "inactive";
-            else if (s.contains("từ chối") || s.contains("bị")) search = "rejected";
+            if (s.matches(".*(ho|động|hoạt).*")) search = "active";
+            else if (s.matches(".*(ch|duy|chờ|đợi).*")) search = "pending";
+            else if (s.matches(".*(kh|ngưng|ngh).*")) search = "inactive";
+            else if (s.matches(".*(từ|chối|bị).*")) search = "rejected";
         }
+
 
         StringBuilder sql = new StringBuilder(
             "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, b.status, " +
