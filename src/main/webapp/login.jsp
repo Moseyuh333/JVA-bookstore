@@ -135,7 +135,7 @@
           // 🔸 Chuyển hướng theo role
           let target = contextPath + '/';
           if (role === 'shipper')      target = contextPath + '/dashboard-shipper.jsp';
-          else if (role === 'admin')   target = contextPath + '/admin-dashboard.jsp';
+          else if (role === 'admin')   target = contextPath + '/admin-dashboard';
 
           showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
           setTimeout(() => { window.location.href = target; }, 800);
