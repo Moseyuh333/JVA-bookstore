@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -343,7 +344,7 @@
                             <div class="profile-avatar">
                                 <c:choose>
                                     <c:when test="${not empty shop.name}">
-                                        ${shop.name.substring(0, 1).toUpperCase()}
+                                        ${fn:toUpperCase(fn:substring(shop.name,0,1))}
                                     </c:when>
                                     <c:otherwise>S</c:otherwise>
                                 </c:choose>
@@ -482,10 +483,18 @@
             loadStats();
         });
 
+        // Determine if shop object is present
+        var shopExists = <c:choose><c:when test="${not empty shop}">true</c:when><c:otherwise>false</c:otherwise></c:choose>;
+
         function loadStats() {
             // Placeholder - you can implement real stats API later
-            $('#totalProducts').text('${shop.id > 0 ? "12" : "0"}');
-            $('#totalOrders').text('${shop.id > 0 ? "8" : "0"}');
+            if (shopExists) {
+                $('#totalProducts').text('12');
+                $('#totalOrders').text('8');
+            } else {
+                $('#totalProducts').text('0');
+                $('#totalOrders').text('0');
+            }
         }
 
         // Handle form submission

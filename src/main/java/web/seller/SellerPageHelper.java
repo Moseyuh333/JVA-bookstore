@@ -51,10 +51,11 @@ final class SellerPageHelper {
 
         int userId = DBUtil.getUserIdByUsername(username);
         int shopId = ShopDAO.getShopIdByUserId(userId);
-        if (shopId <= 0) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Shop not found for this user");
-            return null;
-        }
+            if (shopId <= 0) {
+                // Không có shop, đánh dấu vào request để servlet biết lý do (không gửi lỗi trực tiếp)
+                request.setAttribute("seller_missing_shop", Boolean.TRUE);
+                return null;
+            }
 
     SellerContext context = new SellerContext(username, role, userId, shopId);
 

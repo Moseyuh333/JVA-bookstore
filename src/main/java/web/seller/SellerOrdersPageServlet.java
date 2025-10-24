@@ -25,6 +25,13 @@ public class SellerOrdersPageServlet extends HttpServlet {
             SellerPageHelper.SellerContext context =
                     SellerPageHelper.resolveSellerContext(req, resp);
             if (context == null) {
+                // If helper marked that the seller has no shop, redirect to register page.
+                Object missing = req.getAttribute("seller_missing_shop");
+                if (missing instanceof Boolean && (Boolean) missing) {
+                    resp.sendRedirect(req.getContextPath() + "/Seller/register-shop.jsp");
+                    return;
+                }
+                // Otherwise, resolveSellerContext already handled redirect/sendError for auth/role.
                 return;
             }
 
