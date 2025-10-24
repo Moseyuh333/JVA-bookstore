@@ -69,7 +69,7 @@
                                 <i class="fas fa-trash me-2"></i>Xóa tài khoản
                             </a>
                             <%
-                                String contextPath = request.getContextPath();
+                                String ctxPath = request.getContextPath();
                                 String sessionRole = (String) session.getAttribute("role");
                                 String usernameSession = (String) session.getAttribute("username");
 
@@ -87,14 +87,14 @@
                                 boolean isSeller = sessionRole != null && sessionRole.equalsIgnoreCase("seller");
                                 if (isSeller) {
                             %>
-                                <a href="<%= contextPath %>/seller/dashboard" class="nav-link text-primary fw-semibold">Trang bán hàng</a>
-                                <a href="<%= contextPath %>/seller/products" class="nav-link text-primary fw-semibold">Quản lý sản phẩm</a>
-                                <a href="<%= contextPath %>/seller/orders" class="nav-link text-primary fw-semibold">Quản lý đơn hàng</a>
-                                <a href="<%= contextPath %>/seller/analytics" class="nav-link text-primary fw-semibold">Thống kê doanh thu</a>
+                                <a href="<%= ctxPath %>/seller/dashboard" class="nav-link text-primary fw-semibold">Trang bán hàng</a>
+                                <a href="<%= ctxPath %>/seller/products" class="nav-link text-primary fw-semibold">Quản lý sản phẩm</a>
+                                <a href="<%= ctxPath %>/seller/orders" class="nav-link text-primary fw-semibold">Quản lý đơn hàng</a>
+                                <a href="<%= ctxPath %>/seller/analytics" class="nav-link text-primary fw-semibold">Thống kê doanh thu</a>
                             <%
                                 } else {
                             %>
-                                <a href="<%= contextPath %>/seller/register-shop" class="btn btn-primary w-100 mt-3">Đăng ký trở thành người bán</a>
+                                <a href="<%= ctxPath %>/seller/register-shop" class="btn btn-primary w-100 mt-3">Đăng ký trở thành người bán</a>
                             <%
                                 }
                             %>
