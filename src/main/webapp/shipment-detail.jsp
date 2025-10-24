@@ -34,11 +34,15 @@
 
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-semibold">Vận đơn #<span id="ship-id"><%=sid%></span></h1>
-    <a href="<%=backHref%>" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
-      « Quay lại danh sách
-    </a>
+    <div class="flex items-center gap-2">
+      <a href="<%=backHref%>" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+        « Quay lại danh sách
+      </a>
+      <a href="<%=ctx%>/" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+        Trang chủ
+      </a>
+    </div>
   </div>
-
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Thông tin -->
     <div class="lg:col-span-2 space-y-6">

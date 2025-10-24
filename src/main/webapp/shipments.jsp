@@ -17,7 +17,12 @@
 <div class="container mx-auto px-4 py-8">
 
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-semibold">Vận đơn của tôi</h1>
+    <div class="flex items-center gap-4">
+      <h1 class="text-2xl font-semibold">Vận đơn của tôi</h1>
+      <a href="<%=ctx%>/" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+        Trang chủ
+      </a>
+    </div>
     <div class="flex items-center gap-2">
       <input id="fQuery" type="text" class="border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="Tìm mã/đơn hàng/khách...">
       <select id="fStatus" class="border border-gray-300 rounded-md px-3 py-2 text-sm">
