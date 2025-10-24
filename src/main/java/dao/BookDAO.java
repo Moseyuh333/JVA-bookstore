@@ -100,8 +100,9 @@ public class BookDAO {
         }
         StringBuilder sql = new StringBuilder(BASE_SELECT);
         List<Object> params = new ArrayList<>();
+        sql.append(" WHERE b.status = 'active'");
         if (category != null && !category.isEmpty()) {
-            sql.append(" WHERE b.category = ?");
+            sql.append(" AND b.category = ?");
             params.add(category);
         }
         sql.append(" ");
@@ -127,10 +128,10 @@ public class BookDAO {
     }
 
     public static int countBooks(String category) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM books";
+        String sql = "SELECT COUNT(*) FROM books WHERE status = 'active'";
         List<Object> params = Collections.emptyList();
         if (category != null && !category.isEmpty()) {
-            sql += " WHERE category = ?";
+            sql += " AND category = ?";
             params = Collections.singletonList(category);
         }
         try (Connection connection = DBUtil.getConnection();
@@ -147,7 +148,7 @@ public class BookDAO {
     }
 
     public static List<String> getAllCategories() throws SQLException {
-        String sql = "SELECT DISTINCT category FROM books WHERE category IS NOT NULL AND TRIM(category) <> '' ORDER BY category";
+        String sql = "SELECT DISTINCT category FROM books WHERE status = 'active' AND category IS NOT NULL AND TRIM(category) <> '' ORDER BY category";
         try (Connection connection = DBUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet rs = statement.executeQuery()) {
@@ -179,7 +180,7 @@ public class BookDAO {
         String pattern = "%" + escaped + "%";
 
         String sql = BASE_SELECT +
-                " WHERE (b.title ILIKE ? ESCAPE '\\' " +
+                " WHERE b.status = 'active' AND (b.title ILIKE ? ESCAPE '\\' " +
                 "OR b.author ILIKE ? ESCAPE '\\' " +
                 "OR b.isbn ILIKE ? ESCAPE '\\') " +
                 "ORDER BY rating_count DESC, total_sold DESC, b.title ASC LIMIT ?";
