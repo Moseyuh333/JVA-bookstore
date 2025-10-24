@@ -349,7 +349,7 @@ public class ShipperApiServlet extends HttpServlet {
         if ("done".equals(lower)) return "DELIVERED";
         if ("failed".equals(lower)) return "FAILED_DELIVERY";
 
-        List<String> valid = Arrays.asList("ASSIGNED","PICKED_UP","OUT_FOR_DELIVERY","DELIVERED","FAILED_DELIVERY");
+        List<String> valid = Arrays.asList("ASSIGNED","PICKED_UP","OUT_FOR_DELIVERY","DELIVERED","FAILED_DELIVERY","CANCELLED","RETURNING","RETURNED");
         String up = s.toUpperCase();
         return valid.contains(up) ? up : null;
     }
