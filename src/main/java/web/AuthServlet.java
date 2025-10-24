@@ -104,7 +104,7 @@ public class AuthServlet extends HttpServlet {
             String role = DBUtil.getUserRole(username);
             String response;
             if ("admin".equals(role)) {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"" + role + "\", \"redirect\":\"/admin-dashboard.jsp\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"" + role + "\", \"redirect\":\"/admin-dashboard\"}";
             } else if ("shipper".equals(role)) {
                 response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"" + role + "\", \"redirect\":\"/dashboard-shipper.jsp\"}";
             } else {
