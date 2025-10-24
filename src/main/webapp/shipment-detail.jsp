@@ -38,7 +38,7 @@
       <a href="<%=backHref%>" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
         « Quay lại danh sách
       </a>
-      <a href="<%=ctx%>/" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+      <a href="<%=ctx%>/dashboard-shipper.jsp" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
         Trang chủ
       </a>
     </div>

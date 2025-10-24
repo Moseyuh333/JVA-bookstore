@@ -19,7 +19,7 @@
   <div class="flex items-center justify-between mb-6">
     <div class="flex items-center gap-4">
       <h1 class="text-2xl font-semibold">Vận đơn của tôi</h1>
-      <a href="<%=ctx%>/" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+      <a href="<%=ctx%>/dashboard-shipper.jsp" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
         Trang chủ
       </a>
     </div>
