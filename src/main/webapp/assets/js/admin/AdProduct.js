@@ -303,7 +303,7 @@ function populateProductForm(data) {
 function openAddProduct() {
     productForm.reset();
     productIdInput.value = '';
-    document.getElementById('prodStatus').value = 'active'; // Default to active for new products
+    document.getElementById('prodStatus').value = 'pending'; // Default to active for new products
     productTitleEl.textContent = 'Thêm sản phẩm';
     hideEl(document.getElementById('productFeedback'));
     showEl(productOverlay);
