@@ -79,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
+            <tr>
                 <td>${escapeHtml(p.id || "-")}</td>
                 <td>${escapeHtml(p.title || "-")}</td>
                 <td>${escapeHtml(p.author || "-")}</td>
@@ -95,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
-`;
+            </tr>`;
             tableBody.appendChild(tr);
         });
     };
