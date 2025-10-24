@@ -93,18 +93,11 @@ public class AdminProductsServlet extends HttpServlet {
         int offset = (page - 1) * limit;
 
         if ("status".equals(searchType) && search != null) {
-            switch (search.trim().toLowerCase()) {
-                case "hoạt động":
-                    search = "active";
-                    break;
-                case "đang chờ duyệt":
-                case "chờ duyệt":
-                    search = "pending";
-                    break;
-                case "không hoạt động":
-                    search = "inactive";
-                    break;
-            }
+            String s = search.trim().toLowerCase();
+            if (s.contains("hoạt")) search = "active";
+            else if (s.contains("chờ") || s.contains("duyệt")) search = "pending";
+            else if (s.contains("không") || s.contains("ngưng") || s.contains("nghỉ")) search = "inactive";
+            else if (s.contains("từ chối") || s.contains("bị")) search = "rejected";
         }
 
         StringBuilder sql = new StringBuilder(
@@ -171,7 +164,7 @@ public class AdminProductsServlet extends HttpServlet {
                     if ("id".equals(searchType)) {
                         psCount.setInt(paramCount++, Integer.parseInt(search.trim()));
                     } else {
-                        String pattern = search.trim() + "%";
+                        String pattern = "%" + search.trim() + "%";
                         if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) 
                             || "shop_name".equals(searchType) || "status".equals(searchType)) {
                             psCount.setString(paramCount++, "%" + search.trim() + "%");
@@ -205,7 +198,7 @@ public class AdminProductsServlet extends HttpServlet {
                     if ("id".equals(searchType)) {
                         ps.setInt(paramIndex++, Integer.parseInt(search.trim()));
                     } else {
-                        String pattern = search.trim() + "%";
+                        String pattern = "%" + search.trim() + "%";
                         if ("title".equals(searchType) || "author".equals(searchType) 
                             || "category".equals(searchType) || "shop_name".equals(searchType) 
                             || "status".equals(searchType)) {
