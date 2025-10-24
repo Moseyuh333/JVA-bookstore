@@ -97,7 +97,7 @@
           <select id="evt-status" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full">
             <option value="ASSIGNED">Đã phân công</option>
             <option value="PICKED_UP">Đã lấy hàng</option>
-            <option value="IN_TRANSIT">Đang vận chuyển</option>
+
             <option value="OUT_FOR_DELIVERY">Đang giao</option>
             <option value="DELIVERED">Đã giao</option>
             <option value="FAILED_DELIVERY">Giao thất bại</option>
@@ -179,7 +179,6 @@
     const flow = [
       'ASSIGNED',
       'PICKED_UP',
-      'IN_TRANSIT',
       'OUT_FOR_DELIVERY',
       'DELIVERED',
       'FAILED_DELIVERY',

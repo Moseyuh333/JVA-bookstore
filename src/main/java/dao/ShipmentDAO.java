@@ -291,7 +291,6 @@ public class ShipmentDAO {
         int failed = map.getOrDefault("FAILED_DELIVERY", 0);
         int inProgress = map.getOrDefault("ASSIGNED", 0)
                         + map.getOrDefault("PICKED_UP", 0)
-                        + map.getOrDefault("IN_TRANSIT", 0)
                         + map.getOrDefault("OUT_FOR_DELIVERY", 0)
                         + map.getOrDefault("pending", 0);
         map.put("delivered", delivered);

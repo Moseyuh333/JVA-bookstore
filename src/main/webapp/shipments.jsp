@@ -24,7 +24,7 @@
         <option value="">Tất cả</option>
         <option value="ASSIGNED">Đã phân công</option>
         <option value="PICKED_UP">Đã lấy hàng</option>
-        <option value="IN_TRANSIT">Đang vận chuyển</option>
+
         <option value="OUT_FOR_DELIVERY">Đang giao</option>
         <option value="DELIVERED">Đã giao</option>
         <option value="FAILED_DELIVERY">Giao thất bại</option>
@@ -127,7 +127,7 @@
   const statusStyle = {
     'ASSIGNED':         {cls:'bg-slate-700 text-blue-200', label:'Đã phân công'},
     'PICKED_UP':        {cls:'bg-blue-700 text-white',     label:'Đã lấy hàng'},
-    'IN_TRANSIT':       {cls:'bg-indigo-700 text-white',   label:'Đang vận chuyển'},
+
     'OUT_FOR_DELIVERY': {cls:'bg-amber-600 text-white',    label:'Đang giao hàng'},
     'DELIVERED':        {cls:'bg-emerald-700 text-white',  label:'Giao thành công'},
     'FAILED_DELIVERY':  {cls:'bg-rose-700 text-white',     label:'Giao thất bại'},
