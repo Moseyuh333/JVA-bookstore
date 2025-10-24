@@ -175,20 +175,19 @@
         const detailHref = ctx + '/shipment-detail.jsp?' + params;
 
         const row =
-          '<tr class="hover:bg-gray-800/40">' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + esc(it.id) + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + esc(it.orderCode||'-') + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + esc(it.receiverName||'-') + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + badge + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + esc(last) + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' +
-              '<button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm" ' +
-                      'onclick="location.href=\'' + detailHref.replace(/'/g,'&#39;') + '\'">' +
-                'Chi tiết' +
-              '</button>' +
-            '</td>' +
-          '</tr>';
-
+      '<tr class="hover:bg-gray-800/40">' +
+        '<td class="px-3 py-2 whitespace-nowrap text-sm">' + esc(it.id) + '</td>' +
+        '<td class="px-3 py-2 whitespace-nowrap text-sm">' + esc(it.orderCode||'-') + '</td>' +
+        '<td class="px-3 py-2 whitespace-nowrap text-sm">' + esc(it.receiverName||'-') + '</td>' +
+        '<td class="px-3 py-2 whitespace-nowrap text-sm">' + badge + '</td>' +
+        '<td class="px-3 py-2 whitespace-nowrap text-sm">' + esc(last) + '</td>' +
+        '<td class="px-3 py-2 whitespace-nowrap text-sm">' +
+          '<button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm" ' +
+                  'onclick="location.href=\'' + detailHref.replace(/'/g,'&#39;') + '\'">' +
+            'Chi tiết' +
+          '</button>' +
+        '</td>' +
+      '</tr>';
         tbody.insertAdjacentHTML('beforeend', row);
       });
 
