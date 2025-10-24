@@ -286,7 +286,7 @@ public class AdminProductsServlet extends HttpServlet {
 
         int id = Integer.parseInt(idStr);
         // Use the same join and fields as listProducts for consistency
-        String sql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, " +
+        String sql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, b.status, " +
                 "b.description, b.image_url, b.shop_id, b.created_at, b.updated_at, " +
                 "COALESCE(s.name, 'Unknown Shop') as shop_name, s.commission_rate " +
                 "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE b.id = ?";
@@ -407,7 +407,7 @@ public class AdminProductsServlet extends HttpServlet {
                 if (rs.next()) {
                     int newId = rs.getInt("id");
                     // fetch the product row with the same join used by listProducts
-                    String fetchSql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, " +
+                    String fetchSql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, b.status, " +
                             "b.description, b.image_url, b.shop_id, b.created_at, b.updated_at, " +
                             "COALESCE(s.name, 'Unknown Shop') AS shop_name, s.commission_rate " +
                             "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE b.id = ?";
@@ -500,7 +500,7 @@ public class AdminProductsServlet extends HttpServlet {
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
                 // fetch and return updated row using same join as listProducts
-                String fetchSql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, " +
+                String fetchSql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, b.status, " +
                         "b.description, b.image_url, b.shop_id, b.created_at, b.updated_at, " +
                         "COALESCE(s.name, 'Unknown Shop') AS shop_name, s.commission_rate " +
                         "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE b.id = ?";

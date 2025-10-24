@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS books (
     category VARCHAR(100),
     stock_quantity INTEGER DEFAULT 0,
     image_url VARCHAR(500),
+    status VARCHAR(20) DEFAULT 'pending',
     shop_id INTEGER REFERENCES shops(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
