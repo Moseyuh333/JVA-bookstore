@@ -59,11 +59,12 @@ public class ShipperApiServlet extends HttpServlet {
             if (path.equals("/shipments")) {
                 String raw = opt(req.getParameter("status"));
                 String status = normalizeStatusForDb(raw);
+                String q = opt(req.getParameter("q"));
                 int page = clamp(parseInt(req.getParameter("page"), 1), 1, 1000000);
                 int size = clamp(parseInt(req.getParameter("size"), 20), 1, 100);
 
-                List<Shipment> items = shipmentDAO.findByShipper(user, status == null ? "" : status, page, size);
-                int total = countByShipper(user, status == null ? "" : status);
+                List<Shipment> items = shipmentDAO.findByShipper(user, status == null ? "" : status, q, page, size);
+                int total = countByShipper(user, status == null ? "" : status, q);
 
                 Map<String, Object> out = new LinkedHashMap<String, Object>();
                 out.put("items", items);
@@ -354,17 +355,27 @@ public class ShipperApiServlet extends HttpServlet {
         return valid.contains(up) ? up : null;
     }
 
-    private int countByShipper(String username, String status) throws SQLException {
-        String base = "SELECT COUNT(*) FROM shipments s WHERE s.shipper_user_id = ? ";
-        String sql = base + ((status != null && !status.isEmpty()) ? "AND s.status=?" : "");
+    private int countByShipper(String username, String status, String q) throws SQLException {
+        String base = "SELECT COUNT(*) FROM shipments s LEFT JOIN orders o ON o.id = s.order_id WHERE s.shipper_user_id = ? ";
+        StringBuilder sql = new StringBuilder(base);
+        if (status != null && !status.isEmpty()) sql.append("AND s.status=? ");
+        if (q != null && !q.isEmpty()) {
+            sql.append("AND (LOWER(s.id::text) LIKE LOWER(?) OR LOWER(o.code) LIKE LOWER(?) OR LOWER(o.shipping_snapshot->>'recipientName') LIKE LOWER(?)) ");
+        }
 
         Connection con = null; PreparedStatement ps = null; ResultSet rs = null;
         try {
             con = DBUtil.getConnection();
-            ps = con.prepareStatement(sql);
+            ps = con.prepareStatement(sql.toString());
             int i = 1;
             ps.setString(i++, username);
             if (status != null && !status.isEmpty()) ps.setString(i++, status);
+            if (q != null && !q.isEmpty()) {
+                String like = "%" + q + "%";
+                ps.setString(i++, like);
+                ps.setString(i++, like);
+                ps.setString(i++, like);
+            }
             rs = ps.executeQuery();
             return rs.next() ? rs.getInt(1) : 0;
         } finally {

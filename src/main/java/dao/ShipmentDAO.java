@@ -37,9 +37,10 @@ public class ShipmentDAO {
     }
 
     // ================= FIND BY SHIPPER =================
-    public List<Shipment> findByShipper(String usernameOrEmail, String status, int page, int size) throws SQLException {
+    public List<Shipment> findByShipper(String usernameOrEmail, String status, String q, int page, int size) throws SQLException {
         List<Shipment> list = new ArrayList<>();
         boolean filterStatus = status != null && !status.isEmpty() && !"all".equalsIgnoreCase(status);
+        boolean filterQ = q != null && !q.isEmpty();
 
         final String selectSql =
             "SELECT " +
@@ -61,6 +62,7 @@ public class ShipmentDAO {
             "LEFT JOIN orders o ON o.id = s.order_id " +
             "WHERE LOWER(TRIM(s.shipper_user_id)) = LOWER(?) " +
             (filterStatus ? "AND s.status = ? " : "") +
+            (filterQ ? "AND (LOWER(s.id::text) LIKE LOWER(?) OR LOWER(o.code) LIKE LOWER(?) OR LOWER(o.shipping_snapshot->>'recipientName') LIKE LOWER(?)) " : "") +
             "ORDER BY s.last_update_at DESC " +
             "LIMIT ? OFFSET ?";
 
@@ -75,6 +77,12 @@ public class ShipmentDAO {
                 int i = 1;
                 ps.setString(i++, resolvedUsername);
                 if (filterStatus) ps.setString(i++, status);
+                if (filterQ) {
+                    String like = "%" + q + "%";
+                    ps.setString(i++, like);
+                    ps.setString(i++, like);
+                    ps.setString(i++, like);
+                }
                 ps.setInt(i++, Math.max(size, 1));
                 ps.setInt(i, Math.max(page, 1) - 1 >= 0 ? (Math.max(page, 1) - 1) * Math.max(size, 1) : 0);
 
