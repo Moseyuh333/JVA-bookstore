@@ -10,7 +10,7 @@ public class SellerProfileServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/webapp/Seller/SellerProfile.jsp");
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/Seller/SellerProfile.jsp");
         dispatcher.forward(request, response);
     }
 }
