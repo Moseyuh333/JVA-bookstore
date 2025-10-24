@@ -532,6 +532,9 @@
         <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
-<script src="${pageContext.request.contextPath}/assets/js/admin/AdCategory.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/seller/SellerOrders.js"></script>
+<script>
+    if (typeof feather !== "undefined") feather.replace();
+</script>
 </body>
 </html>
