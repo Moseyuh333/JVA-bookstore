@@ -268,6 +268,7 @@
   load();
 </script>
 </main>
-</body>
 <%@ include file="/WEB-INF/includes/footer.jsp" %>
+</body>
+
 </html>
