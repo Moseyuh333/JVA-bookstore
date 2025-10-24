@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" isELIgnored="true" %>
+<%@ page import="utils.DBUtil" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <c:set var="pageTitle" value="Hồ sơ của tôi" />
 <!DOCTYPE html>
@@ -68,7 +69,21 @@
                                 <i class="fas fa-trash me-2"></i>Xóa tài khoản
                             </a>
                             <%
+                                String contextPath = request.getContextPath();
                                 String sessionRole = (String) session.getAttribute("role");
+                                String usernameSession = (String) session.getAttribute("username");
+
+                                if ((sessionRole == null || sessionRole.isBlank()) && usernameSession != null) {
+                                    try {
+                                        String dbRole = DBUtil.getUserRole(usernameSession);
+                                        if (dbRole != null && !dbRole.isBlank()) {
+                                            sessionRole = dbRole;
+                                            session.setAttribute("role", dbRole);
+                                        }
+                                    } catch (Exception ignored) {
+                                    }
+                                }
+
                                 boolean isSeller = sessionRole != null && sessionRole.equalsIgnoreCase("seller");
                                 if (isSeller) {
                             %>
