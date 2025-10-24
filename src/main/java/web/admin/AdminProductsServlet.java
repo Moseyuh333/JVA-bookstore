@@ -93,7 +93,7 @@ public class AdminProductsServlet extends HttpServlet {
         int offset = (page - 1) * limit;
 
         StringBuilder sql = new StringBuilder(
-            "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, " +
+            "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, b.status, " +
             "b.description, b.image_url, b.created_at, b.updated_at, " +
             "COALESCE(s.name, 'Unknown Shop') AS shop_name, s.commission_rate " +
             "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
@@ -214,6 +214,7 @@ public class AdminProductsServlet extends HttpServlet {
                             .append("\"price\":").append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : 0).append(",")
                             .append("\"stock\":").append(rs.getInt("stock")).append(",")
                             .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
+                            .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
                             .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
                             .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
                             .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
@@ -227,6 +228,7 @@ public class AdminProductsServlet extends HttpServlet {
                                 .append("\"price\":").append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : 0).append(",")
                                 .append("\"stock\":").append(rs.getInt("stock")).append(",")
                                 .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
+                                .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
                                 .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
                                 .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
                                 .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
@@ -309,6 +311,7 @@ public class AdminProductsServlet extends HttpServlet {
                     j.append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",");
                     j.append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",");
                     j.append("\"image_url\":\"").append(escapeJson(rs.getString("image_url"))).append("\",");
+                    j.append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",");
                     Object shopObj = rs.getObject("shop_id");
                     j.append("\"shop_id\":"); if (shopObj != null) j.append(rs.getInt("shop_id")); else j.append("null"); j.append(",");
                     j.append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",");
@@ -372,6 +375,7 @@ public class AdminProductsServlet extends HttpServlet {
         String stockStr = req.getParameter("stock");
         String imageUrl = req.getParameter("image_url");
         String shopIdStr = req.getParameter("shop_id");
+        String status = req.getParameter("status");
 
         if (title == null || title.trim().isEmpty() || priceStr == null || shopIdStr == null) {
             out.write("{\"error\":\"Title, price and shop_id are required\"}");
@@ -382,8 +386,8 @@ public class AdminProductsServlet extends HttpServlet {
         int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
         int shopId = Integer.parseInt(shopIdStr);
 
-        String insertSql = "INSERT INTO books (title, author, isbn, price, description, category, stock, image_url, shop_id) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+        String insertSql = "INSERT INTO books (title, author, isbn, price, description, category, stock, image_url, shop_id, status) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
@@ -397,6 +401,7 @@ public class AdminProductsServlet extends HttpServlet {
             pstmt.setInt(7, stockQuantity);
             pstmt.setString(8, imageUrl != null ? imageUrl.trim() : null);
             pstmt.setInt(9, shopId);
+            pstmt.setString(10, status != null ? status.trim() : null);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -456,6 +461,7 @@ public class AdminProductsServlet extends HttpServlet {
         String category = req.getParameter("category");
         String stockStr = req.getParameter("stock");
         String imageUrl = req.getParameter("image_url");
+        String status = req.getParameter("status");
 
         if (idStr == null || title == null || title.trim().isEmpty() || priceStr == null) {
             out.write("{\"error\":\"ID, title and price are required\"}");
@@ -470,7 +476,7 @@ public class AdminProductsServlet extends HttpServlet {
     boolean updateShop = shopIdStr != null && !shopIdStr.trim().isEmpty();
 
     String sql = "UPDATE books SET title = ?, author = ?, isbn = ?, price = ?, description = ?, " +
-        "category = ?, stock = ?, image_url = ?" + (updateShop ? ", shop_id = ?" : "") + ", updated_at = CURRENT_TIMESTAMP " +
+        "category = ?, stock = ?, image_url = ?, status = ?" + (updateShop ? ", shop_id = ?" : "") + ", updated_at = CURRENT_TIMESTAMP " +
         "WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
@@ -485,6 +491,7 @@ public class AdminProductsServlet extends HttpServlet {
             pstmt.setString(idx++, category != null ? category.trim() : null);
             pstmt.setInt(idx++, stockQuantity);
             pstmt.setString(idx++, imageUrl != null ? imageUrl.trim() : null);
+            pstmt.setString(idx++, status != null ? status.trim() : null);
             if (updateShop) {
                 pstmt.setInt(idx++, Integer.parseInt(shopIdStr));
             }

@@ -74,6 +74,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const shop = p.shop_name || "-";
             const commission = p.commission_rate ? p.commission_rate + "%" : "-";
 
+            const status = p.status || "active"; // Default to active if not set
+            const statusDisplay = status === "active" ? "Hoạt động" : status === "inactive" ? "Không hoạt động" : status === "pending" ? "Đang chờ duyệt" : status;
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
             <tr>
@@ -83,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${escapeHtml(p.category || "-")}</td>
                 <td>${price}</td>
                 <td>${stock}</td>
+                <td>${escapeHtml(statusDisplay)}</td>
                 <td>${escapeHtml(shop)}</td>
                 <td class="actions">
                     <button class="btn-icon btn-edit" title="Sửa" data-id="${p.id}">
@@ -293,12 +297,14 @@ function populateProductForm(data) {
     document.getElementById('prodDescription').value = plain;
     document.getElementById('prodImage').value = data.image_url || '';
     updateImagePreview(data.image_url || '');
+    document.getElementById('prodStatus').value = data.status || 'active';
     document.getElementById('prodShopId').value = data.shop_id || '';
 }
 
 function openAddProduct() {
     productForm.reset();
     productIdInput.value = '';
+    document.getElementById('prodStatus').value = 'active'; // Default to active for new products
     productTitleEl.textContent = 'Thêm sản phẩm';
     hideEl(document.getElementById('productFeedback'));
     showEl(productOverlay);

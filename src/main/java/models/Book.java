@@ -19,6 +19,7 @@ public class Book {
     private final double averageRating;
     private final int ratingCount;
     private final int favoriteCount;
+    private final String status;
 
     public Book(
             long id,
@@ -35,7 +36,8 @@ public class Book {
             int totalSold,
             double averageRating,
             int ratingCount,
-            int favoriteCount) {
+            int favoriteCount,
+            String status) {
         this.id = id;
         this.title = title;
         this.author = author;
@@ -51,6 +53,7 @@ public class Book {
         this.averageRating = averageRating;
         this.ratingCount = ratingCount;
         this.favoriteCount = favoriteCount;
+        this.status = status;
     }
 
     public long getId() {
@@ -111,5 +114,9 @@ public class Book {
 
     public int getFavoriteCount() {
         return favoriteCount;
+    }
+
+    public String getStatus() {
+        return status;
     }
 }

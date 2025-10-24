@@ -539,6 +539,7 @@
                                 <option value="title">Tên sách</option>
                                 <option value="author">Tác giả</option>
                                 <option value="category">Thể loại</option>
+                                <option value="status">Trạng thái</option>
                                 <option value="shop_name">Tên shop</option>
                             </select>
                             <div class="search-box">
@@ -575,6 +576,7 @@
                                         <th>Thể loại</th>
                                         <th>Giá</th>
                                         <th>Tồn kho</th>
+                                        <th>Trạng thái</th>
                                         <th>Shop</th>
                                         <th>Thao tác</th>
                                     </tr>
@@ -636,6 +638,16 @@
                 <div style="flex:1">
                     <input id="prodImage" name="image_url" class="modal-input" type="url" placeholder="URL ảnh" />
                     <div id="prodImagePreview" style="margin-top:8px; min-height:40px;"></div>
+                </div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Trạng thái</div>
+                <div style="flex:1">
+                    <select id="prodStatus" name="status" class="modal-input">
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Không hoạt động</option>
+                        <option value="pending">Đang chờ duyệt</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-row">

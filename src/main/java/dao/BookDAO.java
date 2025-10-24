@@ -67,7 +67,7 @@ public class BookDAO {
 
     private static final String BASE_SELECT =
             "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, b.stock_quantity, b.image_url, " +
-            "b.created_at, b.updated_at, " +
+            "b.created_at, b.updated_at, b.status, " +
             "COALESCE(sales.total_sold, metrics.total_sold, 0) AS total_sold, " +
             "COALESCE(reviews.avg_rating, metrics.avg_rating, 0) AS average_rating, " +
             "COALESCE(reviews.rating_count, metrics.rating_count, 0) AS rating_count, " +
@@ -286,7 +286,8 @@ public class BookDAO {
         }
         int ratingCount = rs.getInt("rating_count");
         int favoriteCount = rs.getInt("favorite_count");
+        String status = rs.getString("status");
         return new Book(id, title, author, isbn, price, description, category, stockQuantity, imageUrl,
-                createdAt, updatedAt, totalSold, averageRating, ratingCount, favoriteCount);
+                createdAt, updatedAt, totalSold, averageRating, ratingCount, favoriteCount, status);
     }
 }
