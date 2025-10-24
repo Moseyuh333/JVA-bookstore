@@ -86,6 +86,12 @@ public class AdminProductsServlet extends HttpServlet {
 
         String search = req.getParameter("search");
         String searchType = req.getParameter("searchType");
+        String category = req.getParameter("category");
+        String shopId = req.getParameter("shop_id");
+        int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
+        int limit = req.getParameter("limit") != null ? Integer.parseInt(req.getParameter("limit")) : 20;
+        int offset = (page - 1) * limit;
+
         if ("status".equals(searchType) && search != null) {
             switch (search.trim().toLowerCase()) {
                 case "hoạt động":
@@ -97,16 +103,8 @@ public class AdminProductsServlet extends HttpServlet {
                 case "không hoạt động":
                     search = "inactive";
                     break;
-                case "bị từ chối":
-                    search = "rejected";
-                    break;
             }
         }
-        String category = req.getParameter("category");
-        String shopId = req.getParameter("shop_id");
-        int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
-        int limit = req.getParameter("limit") != null ? Integer.parseInt(req.getParameter("limit")) : 20;
-        int offset = (page - 1) * limit;
 
         StringBuilder sql = new StringBuilder(
             "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, b.status, " +
