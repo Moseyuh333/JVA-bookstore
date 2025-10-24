@@ -61,12 +61,25 @@
     if (!currentPage.endsWith('/login.jsp')) return;
 
     if (token && role) {
-      let target = contextPath + '/';
-      if (role === 'shipper')      target = contextPath + '/dashboard-shipper.jsp';
-      else if (role === 'admin')   target = contextPath + '/admin/AdDashboard.jsp';
-      window.location.replace(target);
+      // Gửi request nhẹ kiểm tra token có hợp lệ trên server không
+      fetch(contextPath + '/api/verify', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+        .then(res => {
+          if (res.ok) {
+            let target = contextPath + '/';
+            if (role === 'shipper')      target = contextPath + '/dashboard-shipper.jsp';
+            else if (role === 'admin')   target = contextPath + '/admin/AdDashboard.jsp';
+            window.location.replace(target);
+          } else {
+            // Token sai → xoá localStorage, về login
+            localStorage.clear();
+          }
+        })
+        .catch(() => localStorage.clear());
     }
   })();
+
 
 
   function decodeJwtPayload(token) {

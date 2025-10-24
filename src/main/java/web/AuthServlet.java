@@ -20,7 +20,7 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.UUID;
 
-@WebServlet(name = "AuthServlet", urlPatterns = {"/api/login", "/api/auth/register", "/api/auth/send-otp", "/api/auth/verify-otp", "/api/auth/reset-password"})
+@WebServlet(name = "AuthServlet", urlPatterns = {"/api/login", "/api/auth/register", "/api/auth/send-otp", "/api/auth/verify-otp", "/api/auth/reset-password", "/api/verify"})
 public class AuthServlet extends HttpServlet {
 
     private static final String ATTR_JSON_BODY = "AUTH_SERVLET_JSON_BODY";
@@ -374,4 +374,36 @@ public class AuthServlet extends HttpServlet {
             return null;
         }
     }
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = req.getServletPath();
+        resp.setContentType("application/json; charset=UTF-8");
+        PrintWriter out = resp.getWriter();
+
+        // 🔸 Kiểm tra nếu gọi /api/verify
+        if ("/api/verify".equals(path)) {
+            String authHeader = req.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                try {
+                    boolean valid = JwtUtil.verifyToken(token);
+                    if (valid) {
+                        resp.setStatus(HttpServletResponse.SC_OK);
+                        out.write("{\"valid\":true}");
+                        return;
+                    }
+                } catch (Exception e) {
+                    System.err.println("DEBUG verify - invalid token: " + e.getMessage());
+                }
+            }
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.write("{\"valid\":false}");
+            return;
+        }
+
+        // Nếu không phải /api/verify thì báo 404
+        resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        out.write("{\"error\":\"Endpoint not found\"}");
+    }
+
 }
