@@ -62,6 +62,9 @@ public class SellerProfileServlet extends HttpServlet {
                 "name", shop.getName() != null ? shop.getName() : "",
                 "address", shop.getAddress() != null ? shop.getAddress() : "",
                 "description", shop.getDescription() != null ? shop.getDescription() : "",
+                "phone", shop.getPhone() != null ? shop.getPhone() : "",
+                "email", shop.getEmail() != null ? shop.getEmail() : "",
+                "slogan", shop.getSlogan() != null ? shop.getSlogan() : "",
                 "commissionRate", shop.getCommissionRate()
             ));
 
@@ -100,8 +103,11 @@ public class SellerProfileServlet extends HttpServlet {
             String name = req.getParameter("name");
             String address = req.getParameter("address");
             String description = req.getParameter("description");
+            String phone = req.getParameter("phone");
+            String email = req.getParameter("email");
+            String slogan = req.getParameter("slogan");
 
-            ShopDAO.updateShopProfile(shopId, name, address, description);
+            ShopDAO.updateShopProfile(shopId, name, address, description, phone, email, slogan);
 
             out.write(gson.toJson(Map.of("success", true, "message", "Shop profile updated successfully")));
 

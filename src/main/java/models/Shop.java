@@ -6,21 +6,15 @@ public class Shop {
     private String name;
     private String address;
     private String description;
-    private double commissionRate; // DECIMAL(4, 2)
-    // Các trường created_at và updated_at (Tùy chọn)
+    private double commissionRate;
+    private String phone;
+    private String email;
+    private String logoUrl;
+    private String status;
+    private String slogan;
 
-    // Constructor (Tùy chọn)
+    // Constructor
     public Shop() {}
-    
-    // Constructor đầy đủ
-    public Shop(int id, int ownerId, String name, String address, String description, double commissionRate) {
-        this.id = id;
-        this.ownerId = ownerId;
-        this.name = name;
-        this.address = address;
-        this.description = description;
-        this.commissionRate = commissionRate;
-    }
 
     // Getters và Setters
     public int getId() { return id; }
@@ -40,6 +34,19 @@ public class Shop {
 
     public double getCommissionRate() { return commissionRate; }
     public void setCommissionRate(double commissionRate) { this.commissionRate = commissionRate; }
-    
-    // Bạn có thể thêm các getters/setters cho created_at và updated_at nếu cần
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getLogoUrl() { return logoUrl; }
+    public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getSlogan() { return slogan; }
+    public void setSlogan(String slogan) { this.slogan = slogan; }
 }

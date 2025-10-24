@@ -1,5 +1,8 @@
 package web.seller;
 
+import dao.ShopDAO;
+import models.Shop;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -26,6 +29,12 @@ public class SellerProfilePageServlet extends HttpServlet {
                     SellerPageHelper.resolveSellerContext(req, resp);
             if (context == null) {
                 return;
+            }
+
+            // Load shop data and pass to JSP
+            Shop shop = ShopDAO.getShopByUserId(context.userId());
+            if (shop != null) {
+                req.setAttribute("shop", shop);
             }
 
             req.getRequestDispatcher(PROFILE_JSP).forward(req, resp);

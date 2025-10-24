@@ -13,7 +13,7 @@ public class ShopDAO {
      * Lấy thông tin Shop bằng ID
      */
     public static Shop getShopById(int shopId) throws SQLException {
-        String sql = "SELECT id, owner_id, name, address, description, commission_rate FROM shops WHERE id = ?";
+        String sql = "SELECT id, owner_id, name, address, description, commission_rate, phone, email, logo_url, status, slogan FROM shops WHERE id = ?";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, shopId);
@@ -26,6 +26,40 @@ public class ShopDAO {
                     shop.setAddress(rs.getString("address"));
                     shop.setDescription(rs.getString("description"));
                     shop.setCommissionRate(rs.getDouble("commission_rate"));
+                    shop.setPhone(rs.getString("phone"));
+                    shop.setEmail(rs.getString("email"));
+                    shop.setLogoUrl(rs.getString("logo_url"));
+                    shop.setStatus(rs.getString("status"));
+                    shop.setSlogan(rs.getString("slogan"));
+                    return shop;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Lấy thông tin Shop bằng User ID (Owner ID)
+     */
+    public static Shop getShopByUserId(int userId) throws SQLException {
+        String sql = "SELECT id, owner_id, name, address, description, commission_rate, phone, email, logo_url, status, slogan FROM shops WHERE owner_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Shop shop = new Shop();
+                    shop.setId(rs.getInt("id"));
+                    shop.setOwnerId(rs.getInt("owner_id"));
+                    shop.setName(rs.getString("name"));
+                    shop.setAddress(rs.getString("address"));
+                    shop.setDescription(rs.getString("description"));
+                    shop.setCommissionRate(rs.getDouble("commission_rate"));
+                    shop.setPhone(rs.getString("phone"));
+                    shop.setEmail(rs.getString("email"));
+                    shop.setLogoUrl(rs.getString("logo_url"));
+                    shop.setStatus(rs.getString("status"));
+                    shop.setSlogan(rs.getString("slogan"));
                     return shop;
                 }
             }
@@ -86,14 +120,17 @@ public class ShopDAO {
     /**
      * Cập nhật thông tin Shop
      */
-    public static void updateShopProfile(int shopId, String name, String address, String description) throws SQLException {
-        String sql = "UPDATE shops SET name = ?, address = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+    public static void updateShopProfile(int shopId, String name, String address, String description, String phone, String email, String slogan) throws SQLException {
+        String sql = "UPDATE shops SET name = ?, address = ?, description = ?, phone = ?, email = ?, slogan = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, name);
             ps.setString(2, address);
             ps.setString(3, description);
-            ps.setInt(4, shopId);
+            ps.setString(4, phone);
+            ps.setString(5, email);
+            ps.setString(6, slogan);
+            ps.setInt(7, shopId);
             ps.executeUpdate();
         }
     }

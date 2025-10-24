@@ -25,7 +25,7 @@ final class SellerPageHelper {
         String username = (String) session.getAttribute("username");
 
         if (username == null || username.isEmpty()) {
-            String token = (String) session.getAttribute("seller_token");
+            String token = (String) session.getAttribute("token");
             if (token != null && !token.isBlank()) {
                 try {
                     username = JwtUtil.validateToken(token);
