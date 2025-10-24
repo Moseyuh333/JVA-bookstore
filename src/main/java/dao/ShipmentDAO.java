@@ -253,14 +253,14 @@ public class ShipmentDAO {
             ps2.executeUpdate();
 
             PreparedStatement ps3 = con.prepareStatement(
-                "UPDATE orders SET status='DELIVERED_WAITING_CONFIRM' " +
+                "UPDATE orders SET status='delivered' " +
                 "WHERE id=(SELECT order_id FROM shipments WHERE id=?)");
             ps3.setLong(1, shipmentId);
             ps3.executeUpdate();
 
             PreparedStatement ps4 = con.prepareStatement(
                 "INSERT INTO order_events (order_id,status,created_by) " +
-                "SELECT order_id,'DELIVERED_WAITING_CONFIRM',? FROM shipments WHERE id=?");
+                "SELECT order_id,'delivered',? FROM shipments WHERE id=?");
             ps4.setString(1, createdBy);
             ps4.setLong(2, shipmentId);
             ps4.executeUpdate();
