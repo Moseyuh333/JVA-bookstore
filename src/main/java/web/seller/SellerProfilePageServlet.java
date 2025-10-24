@@ -1,0 +1,35 @@
+package web.seller;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.sql.SQLException;
+
+/**
+ * Serves the seller profile management page.
+ */
+@WebServlet("/seller/profile")
+public class SellerProfilePageServlet extends HttpServlet {
+
+    private static final String PROFILE_JSP = "/Seller/SellerProfile.jsp";
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        try {
+            SellerPageHelper.SellerContext context =
+                    SellerPageHelper.resolveSellerContext(req, resp);
+            if (context == null) {
+                return;
+            }
+
+            req.getRequestDispatcher(PROFILE_JSP).forward(req, resp);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to load profile page");
+        }
+    }
+}
