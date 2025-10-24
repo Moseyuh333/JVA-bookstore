@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page isELIgnored="true" %>
 <%
   String ctx = request.getContextPath();
 %>
@@ -8,7 +9,7 @@
   <meta charset="UTF-8">
   <title>Danh sách vận đơn</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Đồng bộ “vibe” trang chủ, không dùng header.jsp -->
+  <!-- Đồng bộ vibe trang chủ, không dùng header.jsp -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/feather-icons"></script>
 </head>
@@ -74,6 +75,7 @@
 
 <script>
   const ctx = '<%=ctx%>';
+
   function guardRole(){
     const role = localStorage.getItem('auth_role')||'';
     if(role.toLowerCase()!=='shipper'){ location.href = ctx+'/login.jsp'; }
@@ -85,10 +87,15 @@
     const headers = new Headers(opt.headers||{});
     if (token) headers.set('Authorization','Bearer '+token);
     const res = await fetch(url,{...opt, headers});
+    if (res.status === 401) {
+      localStorage.removeItem('auth_token');
+      location.href = ctx + '/login.jsp';
+      throw new Error('Unauthorized');
+    }
     const ct = res.headers.get('content-type')||'';
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`HTTP ${res.status} – ${ct.includes('json')? body : 'Non-JSON: ' + body.slice(0,120)}`);
+      throw new Error('HTTP '+res.status+' – ' + (ct.includes('json')? body : ('Non-JSON: ' + body.slice(0,120))));
     }
     if (ct.includes('json')) return res.json();
     const txt = await res.text();
@@ -97,6 +104,10 @@
 
   const apiBase = ctx + '/api/shipper';
   let page=1, size=10;
+
+  function esc(s){
+    return String(s==null? '': s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
 
   async function load(){
     try{
@@ -107,29 +118,50 @@
       url.searchParams.set('size', size);
       if (status) url.searchParams.set('status', status);
       if (q) url.searchParams.set('q', q); // nếu BE đã hỗ trợ
+
       const data = await authFetch(url.toString());
       const tbody = document.getElementById('shipments-body');
       tbody.innerHTML = '';
-      (data.items||[]).forEach(it=>{
-        const lastEvt = (it.lastEventAt || it.updatedAt || it.createdAt || '').toString();
+
+      (data.items||[]).forEach(function(it){
+        const lastEvt = (it.lastEventAt || it.updatedAt || it.createdAt || '');
         const last = lastEvt ? new Date(lastEvt).toLocaleString('vi-VN') : '-';
-        const badge = `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">${it.status??'-'}</span>`;
-        tbody.insertAdjacentHTML('beforeend', `
-          <tr class="hover:bg-gray-50">
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.id}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.orderCode||'-'}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${it.receiverName||'-'}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${badge}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${last}</td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-              <button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm"
-                      onclick="location.href='${ctx}/shipment-detail.jsp?id=${it.id}'">
-                Chi tiết
-              </button>
-            </td>
-          </tr>`);
+        const st = it.status || '-';
+        const badge = '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">' + esc(st) + '</span>';
+
+        // build link sang trang detail kèm filter hiện tại
+        const params = new URLSearchParams({
+          id: String(it.id),
+          page: String(page),
+          size: String(size),
+          status: status || 'all',
+          q: q
+        }).toString();
+        const detailHref = ctx + '/shipment-detail.jsp?' + params;
+
+        const row =
+          '<tr class="hover:bg-gray-50">' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + esc(it.id) + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + esc(it.orderCode||'-') + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + esc(it.receiverName||'-') + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + badge + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + esc(last) + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' +
+              '<button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm" ' +
+                      'onclick="location.href=\'' + detailHref.replace(/'/g,'&#39;') + '\'">' +
+                'Chi tiết' +
+              '</button>' +
+            '</td>' +
+          '</tr>';
+
+        tbody.insertAdjacentHTML('beforeend', row);
       });
-      document.getElementById('pageInfo').textContent = `Trang ${data.page||page}`;
+
+      document.getElementById('pageInfo').textContent = 'Trang ' + (data.page||page);
+      document.getElementById('prevPage').disabled = (data.page||page) <= 1;
+      document.getElementById('nextPage').disabled = (data.items||[]).length < size;
+
+      document.getElementById('err').textContent = '';
     }catch(e){
       document.getElementById('err').textContent = e.message;
     }

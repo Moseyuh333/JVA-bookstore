@@ -1,8 +1,23 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page isELIgnored="true" %>
+<%@ page import="java.net.URLEncoder" %>
 <%
   String ctx = request.getContextPath();
   String sid = request.getParameter("id")==null?"":request.getParameter("id");
+
+  String pPage   = request.getParameter("page");   if (pPage==null || pPage.isEmpty())   pPage = "1";
+  String pSize   = request.getParameter("size");   if (pSize==null || pSize.isEmpty())   pSize = "10";
+  String pStatus = request.getParameter("status"); if (pStatus==null || pStatus.isEmpty()) pStatus = "all";
+  String pQ      = request.getParameter("q");      if (pQ==null) pQ = "";
+
+  String qs = "page="+URLEncoder.encode(pPage,"UTF-8")
+            + "&size="+URLEncoder.encode(pSize,"UTF-8")
+            + "&status="+URLEncoder.encode(pStatus,"UTF-8")
+            + "&q="+URLEncoder.encode(pQ,"UTF-8");
+
+  String ref = request.getHeader("referer");
+  String listUrl = ctx + "/shipments.jsp?" + qs;
+  String backHref = (ref!=null && ref.contains("/shipments.jsp")) ? ref : listUrl;
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -18,7 +33,7 @@
 
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-semibold">Vận đơn #<span id="ship-id"><%=sid%></span></h1>
-    <a href="<%=ctx%>/shipments.jsp" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+    <a href="<%=backHref%>" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
       « Quay lại danh sách
     </a>
   </div>
@@ -136,7 +151,13 @@
     const token = localStorage.getItem('auth_token')||'';
     const headers = new Headers(opt.headers||{});
     if (token) headers.set('Authorization','Bearer '+token);
-    return fetch(url,{...opt, headers});
+    const r = await fetch(url,{...opt, headers});
+    if (r.status === 401) {
+      localStorage.removeItem('auth_token');
+      location.href = ctx + '/login.jsp';
+      throw new Error('Unauthorized');
+    }
+    return r;
   }
   async function fetchJson(url,opt={}){
     const r = await authFetch(url,opt);
@@ -153,7 +174,7 @@
     el.textContent = status||'-';
   }
 
-  // chọn trạng thái kế tiếp theo luồng, KHÔNG dùng biến s toàn cục
+  // Chọn trạng thái kế tiếp theo luồng
   function setNextStatus(currentStatus){
     const flow = [
       'ASSIGNED',
@@ -172,8 +193,8 @@
 
   async function load(){
     try{
-      // API trả { shipment, events }
-      const d = await fetchJson(`${apiBase}/shipments/${id}`);
+      // API trả { shipment, events } hoặc gộp
+      const d = await fetchJson(apiBase + '/shipments/' + encodeURIComponent(id));
       const s = d.shipment ?? d;
       const events = d.events ?? [];
 
@@ -184,22 +205,23 @@
       document.getElementById('receiver-address').textContent = s.receiverAddress || '-';
       document.getElementById('cod-amount').textContent = ((s.codAmount||0).toLocaleString('vi-VN')) + ' ₫';
       setBadge(s.status);
-      setNextStatus(s.status); // 👉 không còn “s is not defined”
+      setNextStatus(s.status);
 
       // Timeline
       const ul = document.getElementById('events');
       ul.innerHTML = '';
-      (events||[]).forEach(e=>{
+      (events||[]).forEach(function(e){
         const t = e.createdAt ? new Date(e.createdAt).toLocaleString('vi-VN') : '-';
-        ul.insertAdjacentHTML('beforeend', `
-          <li class="rounded-lg border border-gray-200 bg-white px-3 py-2">
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-medium">${e.status}</span>
-              <span class="text-xs text-gray-500">${t}</span>
-            </div>
-            ${e.note ? `<div class="text-sm text-gray-700 mt-1">${e.note}</div>` : ``}
-            ${e.evidenceUrl ? `<a class="text-sm text-amber-700 hover:underline" href="${e.evidenceUrl}" target="_blank">Xem bằng chứng</a>` : ``}
-          </li>`);
+        ul.insertAdjacentHTML('beforeend',
+          '<li class="rounded-lg border border-gray-200 bg-white px-3 py-2">' +
+            '<div class="flex items-center justify-between">' +
+              '<span class="text-sm font-medium">' + (e.status||'-') + '</span>' +
+              '<span class="text-xs text-gray-500">' + t + '</span>' +
+            '</div>' +
+            (e.note ? '<div class="text-sm text-gray-700 mt-1">'+ e.note +'</div>' : '') +
+            (e.evidenceUrl ? '<a class="text-sm text-amber-700 hover:underline" href="'+ e.evidenceUrl +'" target="_blank">Xem bằng chứng</a>' : '') +
+          '</li>'
+        );
       });
       document.getElementById('err').textContent = '';
     }catch(e){
@@ -208,14 +230,14 @@
   }
 
   // actions
-  document.getElementById('btnAddEvent').onclick = async ()=>{
+  document.getElementById('btnAddEvent').onclick = async function(){
     try{
       const status = document.getElementById('evt-status').value;
       const note = document.getElementById('evt-note').value;
-      await fetchJson(`${apiBase}/shipments/${id}/events`, {
+      await fetchJson(apiBase + '/shipments/' + encodeURIComponent(id) + '/events', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ status, note })
+        body: JSON.stringify({ status: status, note: note })
       });
       await load();
     }catch(e){
@@ -223,14 +245,14 @@
     }
   };
 
-  document.getElementById('btnDeliver').onclick = async ()=>{
+  document.getElementById('btnDeliver').onclick = async function(){
     try{
-      const evidenceUrl = document.getElementById('proofUrl').value.trim(); // tên field chuẩn backend
+      const evidenceUrl = document.getElementById('proofUrl').value.trim();
       const codCollected = document.getElementById('codCollected').checked;
-      await fetchJson(`${apiBase}/shipments/${id}/deliver`, {
+      await fetchJson(apiBase + '/shipments/' + encodeURIComponent(id) + '/deliver', {
         method:'PUT',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ evidenceUrl, codCollected })
+        body: JSON.stringify({ evidenceUrl: evidenceUrl, codCollected: codCollected })
       });
       await load();
     }catch(e){
