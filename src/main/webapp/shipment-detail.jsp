@@ -259,7 +259,7 @@
       const evidenceUrl = document.getElementById('proofUrl').value.trim();
       const codCollected = document.getElementById('codCollected').checked;
       await fetchJson(apiBase + '/shipments/' + encodeURIComponent(id) + '/deliver', {
-        method:'PUT',
+        method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ evidenceUrl: evidenceUrl, codCollected: codCollected })
       });
