@@ -20,7 +20,7 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.UUID;
 
-@WebServlet(name = "AuthServlet", urlPatterns = {"/api/login", "/api/auth/register", "/api/auth/send-otp", "/api/auth/verify-otp", "/api/auth/reset-password", "/api/verify"})
+@WebServlet(name = "AuthServlet", urlPatterns = {"/api/login", "/api/auth/register", "/api/auth/send-otp", "/api/auth/verify-otp", "/api/auth/reset-password"})
 public class AuthServlet extends HttpServlet {
 
     private static final String ATTR_JSON_BODY = "AUTH_SERVLET_JSON_BODY";
