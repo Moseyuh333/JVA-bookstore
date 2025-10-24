@@ -296,6 +296,48 @@ public final class OrderDAO {
         }
     }
 
+
+
+    // Trong file dao.OrderDAO.java
+
+// ... (Sau các hàm listOrdersForSeller, fetchOrderById, v.v.)
+
+/**
+ * Lấy tổng doanh thu tháng này cho một Shop cụ thể.
+ * (Cần triển khai logic SQL tính tổng từ bảng orders/order_items theo shop_id và tháng hiện tại)
+ */
+public static BigDecimal getMonthlyRevenue(int shopId) throws SQLException {
+    // Đây là SQL giả định. Cần thay bằng logic tính tổng doanh thu theo shopId và tháng.
+    String sql = "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE shop_id = ? AND status = 'delivered' AND order_date >= date_trunc('month', CURRENT_DATE)";
+    try (Connection conn = DBUtil.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, shopId);
+        try (ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+}
+
+/**
+ * Đếm tổng số đơn hàng đã hoàn tất (hoặc tất cả) cho một Shop cụ thể.
+ */
+public static int countTotalOrders(int shopId) throws SQLException {
+    // Chỉ đếm đơn đã confirmed/delivered để phản ánh đơn hàng thực tế
+    String sql = "SELECT COUNT(*) FROM orders WHERE shop_id = ? AND status IN ('confirmed', 'shipping', 'delivered')";
+    try (Connection conn = DBUtil.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, shopId);
+        try (ResultSet rs = stmt.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+}
+
+
+
     public static void updateOrderStatus(long orderId, String newStatus, String note, String actor) throws SQLException {
         String normalizedStatus = normalizeStatusValue(newStatus);
         if (normalizedStatus == null || !ALLOWED_STATUSES.contains(normalizedStatus)) {

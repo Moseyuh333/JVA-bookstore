@@ -299,4 +299,33 @@ public class BookDAO {
         return new Book(id, title, author, isbn, price, description, category, stockQuantity, imageUrl,
                 createdAt, updatedAt, totalSold, averageRating, ratingCount, favoriteCount, shopId, shopName);
     }
+
+
+// Trong file dao.BookDAO.java (Thêm vào cuối class)
+
+/**
+ * Tìm tên sách bán chạy nhất (total_sold cao nhất) cho một Shop cụ thể.
+ * @param shopId ID của Shop cần lọc
+ * @return Tên sách bán chạy nhất hoặc thông báo mặc định.
+ */
+public static String findBestSellerTitle(int shopId) throws SQLException {
+    StringBuilder sql = new StringBuilder(BASE_SELECT);
+    sql.append(" WHERE b.shop_id = ?"); // LỌC THEO SHOP ID
+    sql.append(" ORDER BY total_sold DESC, b.created_at DESC LIMIT 1"); // Sắp xếp theo bán chạy
+
+    try (Connection connection = DBUtil.getConnection();
+         PreparedStatement statement = prepare(connection, sql.toString(), Collections.singletonList(shopId))) {
+        
+        try (ResultSet rs = statement.executeQuery()) {
+            if (rs.next()) {
+                // Trả về tên sách
+                return rs.getString("title"); 
+            }
+            return "--Chưa có sách bán chạy--";
+        }
+    } catch (SQLException ex) {
+        System.err.println("BookDAO - findBestSellerTitle failed: msg=" + ex.getMessage());
+        throw ex;
+    }
+}
 }
