@@ -44,7 +44,7 @@ public class ShipmentDAO {
 
         final String selectSql =
             "SELECT " +
-            "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
+            "  s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, s.cod_collected, " +
             "  o.code AS order_code, " +
             "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " +
             "  (o.shipping_snapshot->>'phone')         AS receiver_phone, " +
@@ -97,10 +97,10 @@ public class ShipmentDAO {
     // ================= FIND ONE BY ID & SHIPPER =================
     public Shipment findByIdOwned(long id, String usernameOrEmail) throws SQLException {
         final String selectSql =
-            "SELECT s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
+            "SELECT s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, s.cod_collected, " +
             "  o.code AS order_code, " +
             "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " +
-            "  (o.shipping_snapshot->>'phone') AS receiver_phone, " +
+            "  (o.shipping_snapshot->>'phone')         AS receiver_phone, " +
             "  NULLIF(CONCAT_WS(', ', " +
             "      NULLIF(o.shipping_snapshot->>'line1',''), " +
             "      NULLIF(o.shipping_snapshot->>'line2',''), " +
@@ -134,10 +134,10 @@ public class ShipmentDAO {
     // ================= FIND BY ID =================
     public Shipment findById(long id) throws SQLException {
         String sql =
-            "SELECT s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, " +
+            "SELECT s.id, s.order_id, s.shipper_user_id, s.status, s.last_update_at, s.cod_collected, " +
             "  o.code AS order_code, " +
             "  (o.shipping_snapshot->>'recipientName') AS receiver_name, " +
-            "  (o.shipping_snapshot->>'phone') AS receiver_phone, " +
+            "  (o.shipping_snapshot->>'phone')         AS receiver_phone, " +
             "  NULLIF(CONCAT_WS(', ', " +
             "      NULLIF(o.shipping_snapshot->>'line1',''), " +
             "      NULLIF(o.shipping_snapshot->>'line2',''), " +
@@ -236,7 +236,7 @@ public class ShipmentDAO {
             con.setAutoCommit(false);
 
             PreparedStatement ps1 = con.prepareStatement(
-                "UPDATE shipments SET status='DELIVERED', cod_collected=?, proof_image_url=?, " +
+                "UPDATE shipments SET status='DELIVERED', cod_collected=?, evidence_url=?, " +
                 "delivered_at=NOW(), last_update_at=NOW() WHERE id=?");
             ps1.setBoolean(1, codCollected);
             ps1.setString(2, evidenceUrl);
@@ -322,7 +322,7 @@ public class ShipmentDAO {
         s.setReceiverAddress(rs.getString("receiver_address"));
         s.setCodAmount(rs.getDouble("cod_amount"));
         try { s.getClass().getMethod("setCustomerName", String.class).invoke(s, rs.getString("customer_name")); } catch (Exception ignore) {}
-        s.setCodCollected(false);
+        s.setCodCollected(rs.getBoolean("cod_collected"));
         return s;
     }
 

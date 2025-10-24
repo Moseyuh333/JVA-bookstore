@@ -11,7 +11,7 @@ public class Shipment {
     private boolean codCollected;
     private Timestamp pickupAt;
     private Timestamp deliveredAt;
-    private String proofImageUrl;
+    private String evidenceUrl;
     private Timestamp lastUpdateAt;
     private String orderCode;
     private String receiverName;
@@ -82,12 +82,12 @@ public class Shipment {
         this.deliveredAt = deliveredAt;
     }
 
-    public String getProofImageUrl() {
-        return proofImageUrl;
+    public String getEvidenceUrl() {
+        return evidenceUrl;
     }
 
-    public void setProofImageUrl(String proofImageUrl) {
-        this.proofImageUrl = proofImageUrl;
+    public void setEvidenceUrl(String evidenceUrl) {
+        this.evidenceUrl = evidenceUrl;
     }
 
     public Timestamp getLastUpdateAt() {
