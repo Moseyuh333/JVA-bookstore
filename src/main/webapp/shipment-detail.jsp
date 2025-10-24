@@ -136,7 +136,6 @@
 
 </div>
 
-<%@ include file="/WEB-INF/includes/footer.jsp" %>
 <script>feather.replace();</script>
 
 <script>
@@ -268,4 +267,5 @@
   load();
 </script>
 </body>
+<%@ include file="/WEB-INF/includes/footer.jsp" %>
 </html>
