@@ -208,7 +208,7 @@
       document.getElementById('receiver-address').textContent = s.receiverAddress || '-';
       document.getElementById('cod-amount').textContent = ((s.codAmount||0).toLocaleString('vi-VN')) + ' ₫';
       setBadge(s.status);
-      setNextStatus(s.status);
+      document.getElementById('evt-status').value = s.status || 'ASSIGNED';
 
       // Timeline
       const ul = document.getElementById('events');
