@@ -75,7 +75,7 @@
                         Trang bán hàng
                         </a>
                     </c:if> -->
-                    <a href="<%= contextPath %>/Seller/sellerDashboard.jsp" class="hover:text-amber-200 font-medium transition">Trang bán hàng</a>
+                    
 
 
                 </div>
@@ -130,8 +130,7 @@
                 </a>
             </c:if> -->
 
-            <a href="<%= contextPath %>/Seller/sellerDashboard.jsp" class="block font-medium hover:text-amber-200 transition">Trang bán hàng</a>
-
+            
 
 
 

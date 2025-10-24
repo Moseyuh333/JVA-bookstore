@@ -67,6 +67,7 @@
                             <a class="nav-link" id="delete-account-tab" data-bs-toggle="pill" href="#delete-account" role="tab">
                                 <i class="fas fa-trash me-2"></i>Xóa tài khoản
                             </a>
+                            <a href="<%= contextPath %>/Seller/sellerDashboard.jsp" class="hover:text-amber-200 font-medium transition">Trang bán hàng</a>
                    
                         </div>
                     </div>
