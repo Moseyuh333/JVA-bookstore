@@ -82,4 +82,39 @@ public class ShopDAO {
             }
         }
     }
+
+    /**
+     * Cập nhật thông tin Shop
+     */
+    public static void updateShopProfile(int shopId, String name, String address, String description) throws SQLException {
+        String sql = "UPDATE shops SET name = ?, address = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, name);
+            ps.setString(2, address);
+            ps.setString(3, description);
+            ps.setInt(4, shopId);
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Tạo Shop mới
+     */
+    public static int createShop(int ownerId, String name, String address, String description) throws SQLException {
+        String sql = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) VALUES (?, ?, ?, ?, 'active', 10.00) RETURNING id";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, ownerId);
+            ps.setString(2, name);
+            ps.setString(3, address);
+            ps.setString(4, description);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+                return -1;
+            }
+        }
+    }
 }

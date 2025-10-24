@@ -1538,4 +1538,120 @@ public static int countTotalOrders(int shopId) throws SQLException {
             return result;
         }
     }
+
+    /**
+     * Lấy danh sách đơn hàng theo Shop ID
+     */
+    public static List<AdminOrderSummary> listOrdersForShop(int shopId, String statusFilter, String keyword, int limit) throws SQLException {
+        String normalizedStatus = normalizeStatusValue(statusFilter);
+        int safeLimit = limit <= 0 ? 50 : Math.min(limit, 200);
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT o.id, o.code, o.status, o.payment_status, o.payment_method, o.total_amount, o.shipping_fee, o.order_date, o.updated_at, ")
+                .append("u.email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name ")
+                .append("FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.shop_id = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(shopId);
+        
+        if (normalizedStatus != null && !"all".equals(normalizedStatus)) {
+            sql.append(" AND LOWER(o.status) = ?");
+            params.add(normalizedStatus);
+        }
+        if (keyword != null) {
+            String trimmed = keyword.trim();
+            if (!trimmed.isEmpty()) {
+                String pattern = "%" + trimmed.toLowerCase(Locale.US) + "%";
+                sql.append(" AND (LOWER(o.code) LIKE ? OR LOWER(COALESCE(u.email, '')) LIKE ? OR LOWER(COALESCE(u.full_name, '')) LIKE ?)");
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
+            }
+        }
+        sql.append(" ORDER BY o.order_date DESC NULLS LAST, o.id DESC LIMIT ?");
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int index = 1;
+            for (Object param : params) {
+                stmt.setObject(index++, param);
+            }
+            stmt.setInt(index, safeLimit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<AdminOrderSummary> orders = new ArrayList<>();
+                while (rs.next()) {
+                    AdminOrderSummary summary = new AdminOrderSummary();
+                    summary.id = rs.getLong("id");
+                    summary.code = rs.getString("code");
+                    summary.status = rs.getString("status");
+                    summary.paymentStatus = rs.getString("payment_status");
+                    summary.paymentMethod = rs.getString("payment_method");
+                    summary.totalAmount = rs.getBigDecimal("total_amount");
+                    summary.shippingFee = rs.getBigDecimal("shipping_fee");
+                    summary.orderDate = toLocalDateTime(rs.getTimestamp("order_date"));
+                    summary.updatedAt = toLocalDateTime(rs.getTimestamp("updated_at"));
+                    summary.customerEmail = rs.getString("email");
+                    summary.customerName = rs.getString("customer_name");
+                    orders.add(summary);
+                }
+                return orders;
+            }
+        }
+    }
+
+    /**
+     * Đếm số đơn hàng theo trạng thái của Shop
+     */
+    public static int countOrdersByStatus(int shopId, String status) throws SQLException {
+        String normalizedStatus = normalizeStatusValue(status);
+        if (normalizedStatus == null) {
+            return 0;
+        }
+        String sql = "SELECT COUNT(*) FROM orders WHERE shop_id = ? AND LOWER(status) = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, shopId);
+            stmt.setString(2, normalizedStatus);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    /**
+     * Kiểm tra đơn hàng có thuộc về Shop không
+     */
+    public static boolean orderBelongsToShop(long orderId, int shopId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM orders WHERE id = ? AND shop_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, orderId);
+            stmt.setInt(2, shopId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Lấy dữ liệu doanh thu 7 ngày gần nhất
+     */
+    public static List<Map<String, Object>> getDailySalesLast7Days(int shopId) throws SQLException {
+        String sql = "SELECT DATE(order_date) as sale_date, SUM(total_amount) as revenue " +
+                     "FROM orders WHERE shop_id = ? AND status = 'delivered' " +
+                     "AND order_date >= CURRENT_DATE - INTERVAL '7 days' " +
+                     "GROUP BY DATE(order_date) ORDER BY sale_date";
+        
+        List<Map<String, Object>> result = new ArrayList<>();
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, shopId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> dailyData = new HashMap<>();
+                    dailyData.put("date", rs.getDate("sale_date").toString());
+                    dailyData.put("revenue", rs.getBigDecimal("revenue"));
+                    result.add(dailyData);
+                }
+            }
+        }
+        return result;
+    }
 }

@@ -128,6 +128,7 @@ public class CheckoutServlet extends HttpServlet {
             if (!(node instanceof Map)) {
                 continue;
             }
+            @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) node;
             Long bookId = parseId(map.get("bookId"));
             Integer quantity = parseQuantity(map.get("quantity"));

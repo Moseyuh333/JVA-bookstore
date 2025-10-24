@@ -13,8 +13,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class BookDAO {
 
@@ -310,21 +312,49 @@ public class BookDAO {
  */
 public static String findBestSellerTitle(int shopId) throws SQLException {
     StringBuilder sql = new StringBuilder(BASE_SELECT);
-    sql.append(" WHERE b.shop_id = ?"); // LỌC THEO SHOP ID
-    sql.append(" ORDER BY total_sold DESC, b.created_at DESC LIMIT 1"); // Sắp xếp theo bán chạy
+    sql.append(" WHERE b.shop_id = ?");
+    sql.append(" ORDER BY total_sold DESC, b.created_at DESC LIMIT 1");
 
     try (Connection connection = DBUtil.getConnection();
          PreparedStatement statement = prepare(connection, sql.toString(), Collections.singletonList(shopId))) {
         
         try (ResultSet rs = statement.executeQuery()) {
             if (rs.next()) {
-                // Trả về tên sách
                 return rs.getString("title"); 
             }
             return "--Chưa có sách bán chạy--";
         }
     } catch (SQLException ex) {
         System.err.println("BookDAO - findBestSellerTitle failed: msg=" + ex.getMessage());
+        throw ex;
+    }
+}
+
+/**
+ * Lấy top sản phẩm bán chạy của Shop
+ */
+public static List<Map<String, Object>> getTopSellingProducts(int shopId, int limit) throws SQLException {
+    StringBuilder sql = new StringBuilder(BASE_SELECT);
+    sql.append(" WHERE b.shop_id = ?");
+    sql.append(" ORDER BY total_sold DESC, b.created_at DESC LIMIT ?");
+
+    List<Map<String, Object>> result = new ArrayList<>();
+    try (Connection connection = DBUtil.getConnection();
+         PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+        statement.setInt(1, shopId);
+        statement.setInt(2, limit);
+        
+        try (ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                Map<String, Object> product = new HashMap<>();
+                product.put("title", rs.getString("title"));
+                product.put("sold", rs.getInt("total_sold"));
+                result.add(product);
+            }
+            return result;
+        }
+    } catch (SQLException ex) {
+        System.err.println("BookDAO - getTopSellingProducts failed: msg=" + ex.getMessage());
         throw ex;
     }
 }

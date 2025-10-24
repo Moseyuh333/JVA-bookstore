@@ -1134,5 +1134,22 @@ public class DBUtil {
             }
         }
     }
+
+    /**
+     * Cập nhật role của user
+     * @param userId User ID cần cập nhật
+     * @param newRole Role mới (admin, seller, user)
+     * @return true nếu cập nhật thành công
+     */
+    public static boolean updateUserRole(int userId, String newRole) throws SQLException {
+        String sql = "UPDATE users SET role = ? WHERE id = ?";
+        try (Connection conn = getConnection(); 
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newRole);
+            pstmt.setInt(2, userId);
+            return pstmt.executeUpdate() > 0;
+        }
+    }
 }
+
 

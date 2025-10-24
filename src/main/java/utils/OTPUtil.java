@@ -8,7 +8,6 @@ import java.sql.Timestamp;
 import java.util.Random;
 
 public class OTPUtil {
-    private static final int OTP_LENGTH = 6;
     private static final int OTP_VALIDITY_MINUTES = 10;
     private static final int MAX_ATTEMPTS = 5;
     
