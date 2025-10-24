@@ -67,7 +67,15 @@
                             <a class="nav-link" id="delete-account-tab" data-bs-toggle="pill" href="#delete-account" role="tab">
                                 <i class="fas fa-trash me-2"></i>Xóa tài khoản
                             </a>
-                            <a href="<%= contextPath %>/seller/dashboard" class="hover:text-amber-200 font-medium transition">Trang bán hàng</a>
+                            <c:choose>
+                                <c:when test="${sessionScope.role == 'seller'}">
+                                    <a href="<%= contextPath %>/seller/dashboard" class="btn btn-outline-primary w-100 mb-2">Trang bán hàng</a>
+                                    <a href="<%= contextPath %>/seller/products" class="btn btn-outline-secondary w-100">Quản lý sản phẩm</a>
+                                </c:when>
+                                <c:otherwise>
+                                    <a href="<%= contextPath %>/seller/register-shop" class="btn btn-primary w-100">Đăng ký trở thành người bán</a>
+                                </c:otherwise>
+                            </c:choose>
                    
                         </div>
                     </div>
