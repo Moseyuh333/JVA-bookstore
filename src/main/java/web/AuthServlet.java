@@ -100,13 +100,15 @@ public class AuthServlet extends HttpServlet {
             System.out.println("DEBUG Login - Token generated: " + (token != null));
             System.out.println("DEBUG Login - Token generated: " + (token != null));
 
-            // Check user role for admin redirect
+            // Check user role for redirect
             String role = DBUtil.getUserRole(username);
             String response;
             if ("admin".equals(role)) {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/admin-dashboard\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"" + role + "\", \"redirect\":\"/admin-dashboard.jsp\"}";
+            } else if ("shipper".equals(role)) {
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"" + role + "\", \"redirect\":\"/dashboard-shipper.jsp\"}";
             } else {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"" + role + "\"}";
             }
             System.out.println("DEBUG Login - Response: " + response);
             out.write(response);

@@ -58,7 +58,7 @@
     if (token && role) {
       let target = contextPath + '/';
       if (role === 'shipper')      target = contextPath + '/dashboard-shipper.jsp';
-      else if (role === 'admin')   target = contextPath + '/admin-dashboard.jsp';
+      else if (role === 'admin')   target = contextPath + '/admin/AdDashboard.jsp';
       window.location.replace(target);
     }
   })();
