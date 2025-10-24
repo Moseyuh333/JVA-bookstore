@@ -208,8 +208,10 @@
       document.getElementById('receiver-address').textContent = s.receiverAddress || '-';
       document.getElementById('cod-amount').textContent = ((s.codAmount||0).toLocaleString('vi-VN')) + ' ₫';
       setBadge(s.status);
-      document.getElementById('evt-status').value = s.status || 'ASSIGNED';
-
+      if (!['DELIVERED','FAILED_DELIVERY','CANCELLED','RETURNED'].includes(s.status))
+          setNextStatus(s.status);
+      else
+          document.getElementById('evt-status').value = s.status;
       // Timeline
       const ul = document.getElementById('events');
       ul.innerHTML = '';
