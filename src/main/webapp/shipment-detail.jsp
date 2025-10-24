@@ -65,7 +65,7 @@
           <h2 class="text-lg font-medium">Dòng thời gian</h2>
         </div>
         <div class="p-4">
-          <ul id="events" class="space-y-3"><!-- JS render --></ul>
+          <ul id="events" class="space-y-3"></ul>
           <p id="err" class="text-sm text-red-600 mt-3"></p>
         </div>
       </div>
@@ -78,13 +78,13 @@
           <h2 class="text-lg font-medium">Cập nhật trạng thái</h2>
         </div>
         <div class="p-4 space-y-4">
-          <!-- CHỈ GIỮ NHỮNG GIÁ TRỊ THUỘC ENUM MỚI -->
+          <!-- 7 trạng thái chuẩn -->
           <select id="evt-status" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full">
             <option value="ASSIGNED">Đã phân công</option>
             <option value="PICKED_UP">Đã lấy hàng</option>
             <option value="IN_TRANSIT">Đang vận chuyển</option>
-            <option value="DELIVERED">Đã giao</option>
             <option value="OUT_FOR_DELIVERY">Đang giao</option>
+            <option value="DELIVERED">Đã giao</option>
             <option value="FAILED_DELIVERY">Giao thất bại</option>
             <option value="CANCELLED">Huỷ đơn</option>
           </select>
@@ -125,6 +125,7 @@
 <script>
   const ctx = '<%=ctx%>';
   const id = '<%=sid%>';
+
   function guardRole(){
     const role = localStorage.getItem('auth_role')||'';
     if(role.toLowerCase()!=='shipper'){ location.href = ctx+'/login.jsp'; }
@@ -135,15 +136,13 @@
     const token = localStorage.getItem('auth_token')||'';
     const headers = new Headers(opt.headers||{});
     if (token) headers.set('Authorization','Bearer '+token);
-    const res = await fetch(url,{...opt, headers});
-    return res;
+    return fetch(url,{...opt, headers});
   }
-
-  async function fetchJson(url, opt={}) {
+  async function fetchJson(url,opt={}){
     const r = await authFetch(url,opt);
-    if (!r.ok) throw new Error(await r.text());
-    const ct = r.headers.get('content-type')||'';
-    return ct.includes('json') ? r.json() : {};
+    const text = await r.text();
+    if(!r.ok) throw new Error(text || ('HTTP '+r.status));
+    try { return JSON.parse(text); } catch { return {}; }
   }
 
   const apiBase = ctx + '/api/shipper';
@@ -154,25 +153,43 @@
     el.textContent = status||'-';
   }
 
+  // chọn trạng thái kế tiếp theo luồng, KHÔNG dùng biến s toàn cục
+  function setNextStatus(currentStatus){
+    const flow = [
+      'ASSIGNED',
+      'PICKED_UP',
+      'IN_TRANSIT',
+      'OUT_FOR_DELIVERY',
+      'DELIVERED',
+      'FAILED_DELIVERY',
+      'CANCELLED'
+    ];
+    const sel = document.getElementById('evt-status');
+    if(!sel) return;
+    const i = flow.indexOf(currentStatus||'');
+    sel.value = (i>=0 && i+1<flow.length) ? flow[i+1] : (currentStatus||'ASSIGNED');
+  }
+
   async function load(){
     try{
-      // LẤY { shipment, events } TỪ BACKEND
+      // API trả { shipment, events }
       const d = await fetchJson(`${apiBase}/shipments/${id}`);
-      const s = d.shipment ?? d;        // fallback nếu backend trả phẳng
-      const evts = d.events ?? [];      // đã có sẵn events trong cùng response
+      const s = d.shipment ?? d;
+      const events = d.events ?? [];
 
-      // --- fill "Thông tin" ---
-      document.getElementById('order-code').textContent     = s.orderCode || '-';
-      document.getElementById('receiver-name').textContent  = s.receiverName || s.customerName || '-';
+      // Thông tin
+      document.getElementById('order-code').textContent = s.orderCode || '-';
+      document.getElementById('receiver-name').textContent = s.receiverName || s.customerName || '-';
       document.getElementById('receiver-phone').textContent = s.receiverPhone || '-';
       document.getElementById('receiver-address').textContent = s.receiverAddress || '-';
-      document.getElementById('cod-amount').textContent     = ((s.codAmount||0).toLocaleString('vi-VN')) + ' ₫';
+      document.getElementById('cod-amount').textContent = ((s.codAmount||0).toLocaleString('vi-VN')) + ' ₫';
       setBadge(s.status);
+      setNextStatus(s.status); // 👉 không còn “s is not defined”
 
-      // --- render timeline ---
+      // Timeline
       const ul = document.getElementById('events');
       ul.innerHTML = '';
-      (evts||[]).forEach(e=>{
+      (events||[]).forEach(e=>{
         const t = e.createdAt ? new Date(e.createdAt).toLocaleString('vi-VN') : '-';
         ul.insertAdjacentHTML('beforeend', `
           <li class="rounded-lg border border-gray-200 bg-white px-3 py-2">
@@ -188,22 +205,9 @@
     }catch(e){
       document.getElementById('err').textContent = e.message || 'Lỗi tải dữ liệu';
     }
-
-    const flow = [
-    'ASSIGNED',
-    'PICKED_UP',
-    'IN_TRANSIT',
-    'OUT_FOR_DELIVERY',
-    'DELIVERED',
-    'FAILED_DELIVERY',
-    'CANCELLED'
-  ];
-  const sel = document.getElementById('evt-status');
-  const i = flow.indexOf(s.status);
-  const next = (i >= 0 && i + 1 < flow.length) ? flow[i + 1] : s.status;
-  if (sel) sel.value = next;  // gợi ý trạng thái kế tiếp
   }
 
+  // actions
   document.getElementById('btnAddEvent').onclick = async ()=>{
     try{
       const status = document.getElementById('evt-status').value;
@@ -215,13 +219,13 @@
       });
       await load();
     }catch(e){
-      alert(e.message || 'Lỗi ghi sự kiện');
+      alert('Lỗi khi cập nhật sự kiện: ' + (e.message || e));
     }
   };
 
   document.getElementById('btnDeliver').onclick = async ()=>{
     try{
-      const evidenceUrl = document.getElementById('proofUrl').value.trim(); // TÊN TRƯỜNG CHUẨN BACKEND
+      const evidenceUrl = document.getElementById('proofUrl').value.trim(); // tên field chuẩn backend
       const codCollected = document.getElementById('codCollected').checked;
       await fetchJson(`${apiBase}/shipments/${id}/deliver`, {
         method:'PUT',
@@ -230,7 +234,7 @@
       });
       await load();
     }catch(e){
-      alert(e.message || 'Lỗi đánh dấu giao hàng');
+      alert('Lỗi khi đánh dấu giao hàng: ' + (e.message || e));
     }
   };
 
