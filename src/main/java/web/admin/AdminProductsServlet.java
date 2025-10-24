@@ -98,6 +98,7 @@ public class AdminProductsServlet extends HttpServlet {
                     search = "active";
                     break;
                 case "đang chờ duyệt":
+                case "chờ duyệt":
                     search = "pending";
                     break;
                 case "không hoạt động":
@@ -142,6 +143,9 @@ public class AdminProductsServlet extends HttpServlet {
             } else if ("shop_name".equals(searchType)) {
                 sql.append(" AND s.name ILIKE ?");
                 countSql.append(" AND s.name ILIKE ?");
+            } else if ("status".equals(searchType)) {
+                sql.append(" AND b.status ILIKE ?");
+                countSql.append(" AND b.status ILIKE ?");
             } else {
                 // Default "all"
                 sql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.category ILIKE ? OR s.name ILIKE ? OR CAST(b.id AS TEXT) ILIKE ?)");
@@ -168,8 +172,9 @@ public class AdminProductsServlet extends HttpServlet {
                         psCount.setInt(paramCount++, Integer.parseInt(search.trim()));
                     } else {
                         String pattern = search.trim() + "%";
-                        if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
-                            psCount.setString(paramCount++, pattern);
+                        if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) 
+                            || "shop_name".equals(searchType) || "status".equals(searchType)) {
+                            psCount.setString(paramCount++, "%" + search.trim() + "%");
                         } else {
                             psCount.setString(paramCount++, pattern);
                             psCount.setString(paramCount++, pattern);
@@ -201,14 +206,16 @@ public class AdminProductsServlet extends HttpServlet {
                         ps.setInt(paramIndex++, Integer.parseInt(search.trim()));
                     } else {
                         String pattern = search.trim() + "%";
-                        if ("title".equals(searchType) || "author".equals(searchType) || "category".equals(searchType) || "shop_name".equals(searchType)) {
-                            ps.setString(paramIndex++, pattern);
+                        if ("title".equals(searchType) || "author".equals(searchType) 
+                            || "category".equals(searchType) || "shop_name".equals(searchType) 
+                            || "status".equals(searchType)) {
+                            ps.setString(paramIndex++, "%" + search.trim() + "%");
                         } else {
-                            ps.setString(paramIndex++, pattern);
-                            ps.setString(paramIndex++, pattern);
-                            ps.setString(paramIndex++, pattern);
-                            ps.setString(paramIndex++, pattern);
-                            ps.setString(paramIndex++, pattern);
+                            ps.setString(paramIndex++, "%" + search.trim() + "%");
+                            ps.setString(paramIndex++, "%" + search.trim() + "%");
+                            ps.setString(paramIndex++, "%" + search.trim() + "%");
+                            ps.setString(paramIndex++, "%" + search.trim() + "%");
+                            ps.setString(paramIndex++, "%" + search.trim() + "%");
                         }
                     }
                 }
