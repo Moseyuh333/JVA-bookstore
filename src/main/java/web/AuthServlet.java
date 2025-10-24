@@ -14,6 +14,8 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
@@ -109,15 +111,23 @@ public class AuthServlet extends HttpServlet {
                 // Check user role for redirect
             String role = DBUtil.getUserRole(username);
             System.out.println("DEBUG Login - User role: " + role);
+
+
+                    // ✅ Tạo session để JSP biết người đang đăng nhập
+            HttpSession session = req.getSession(true);
+            session.setAttribute("username", username);
+            session.setAttribute("role", role);
+            session.setAttribute("token", token);
             
             String response;
             if ("admin".equals(role)) {
                 response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"admin\", \"redirect\":\"/admin-dashboard\"}";
-            } else if ("seller".equals(role)) {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"seller\", \"redirect\":\"/seller-dashboard\"}";
+             } else if ("seller".equals(role)) {
+                 response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"seller\", \"redirect\":\"/seller/dashboard\"}";
             } else {
                 response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"user\"}";
             }
+            
 
             System.out.println("DEBUG Login - Response: " + response);
             out.write(response);
