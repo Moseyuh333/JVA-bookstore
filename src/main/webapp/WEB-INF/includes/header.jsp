@@ -69,12 +69,14 @@
                     <a href="<%= contextPath %>/catalog.jsp?sort=best" class="hover:text-amber-200 font-medium transition">Bán chạy</a>
                     <a href="<%= contextPath %>/catalog.jsp?sort=rated" class="hover:text-amber-200 font-medium transition">Đánh giá cao</a>
 
-                    <c:if test="${sessionScope.role == 'seller'}">
+                    <!-- <c:if test="${sessionScope.role == 'seller'}">
                         <a href="<%= contextPath %>/Seller/sellerDashboard.jsp" 
                         class="hover:text-amber-200 font-medium transition">
                         Trang bán hàng
                         </a>
-                    </c:if>
+                    </c:if> -->
+                    <a href="<%= contextPath %>/Seller/sellerDashboard.jsp" class="hover:text-amber-200 font-medium transition">Trang bán hàng</a>
+
 
                 </div>
                 <div class="flex items-center space-x-3">
@@ -121,12 +123,14 @@
             <a href="<%= contextPath %>/catalog.jsp?sort=best" class="block font-medium hover:text-amber-200 transition">Bán chạy</a>
             <a href="<%= contextPath %>/catalog.jsp?sort=rated" class="block font-medium hover:text-amber-200 transition">Đánh giá cao</a>
             
-            <c:if test="${sessionScope.role == 'seller'}">
+            <!-- <c:if test="${sessionScope.role == 'seller'}">
                 <a href="<%= contextPath %>/Seller/sellerDashboard.jsp" 
                 class="block font-medium hover:text-amber-200 transition">
                 Trang bán hàng
                 </a>
-            </c:if>
+            </c:if> -->
+
+            <a href="<%= contextPath %>/Seller/sellerDashboard.jsp" class="block font-medium hover:text-amber-200 transition">Trang bán hàng</a>
 
 
 
