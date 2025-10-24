@@ -431,10 +431,10 @@
 <body>
 
 <div id="wrapper">
-    <%@ include file="/WEB-INF/includes/admin/AdSideBar.jsp" %>
+    <%@ include file="/WEB-INF/includes/seller/SellerSideBar.jsp" %>
 
     <div id="content-wrapper">
-        <%@ include file="/WEB-INF/includes/admin/header.jsp" %>
+    <!-- seller header intentionally omitted; page provides its own topbar -->
 
         <div id="content">
             <div class="container-fluid">
@@ -529,7 +529,7 @@
             </div>
         </div>
 
-        <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
+    <%@ include file="/WEB-INF/includes/footer.jsp" %>
     </div>
 </div>
 <script src="${pageContext.request.contextPath}/assets/js/seller/SellerOrders.js"></script>
