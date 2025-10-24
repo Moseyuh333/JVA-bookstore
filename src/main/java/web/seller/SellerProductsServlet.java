@@ -23,7 +23,7 @@ import dao.ShopDAO;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
-import static javax.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
+//import static javax.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
 // Ánh xạ cả 2 URL để Servlet này có thể phân biệt và xử lý
 @WebServlet(urlPatterns = {"/seller/products", "/api/seller/products"})
@@ -56,16 +56,36 @@ public class SellerProductsServlet extends HttpServlet {
             username = JwtUtil.validateToken(token);
         }
 
-        if (username == null || username.isEmpty()) {
-            // Chỉ redirect nếu đây là yêu cầu trang web chính, không phải API
-            if (request.getRequestURI().endsWith("/seller/products")) {
-                response.sendRedirect(request.getContextPath() + "/login.jsp");
-            } else {
-                 response.setStatus(SC_UNAUTHORIZED);
-                 response.getWriter().write("{\"error\":\"Unauthorized: Invalid or missing token\"}");
+        // if (username == null || username.isEmpty()) {
+        //     // Chỉ redirect nếu đây là yêu cầu trang web chính, không phải API
+        //     if (request.getRequestURI().endsWith("/seller/products")) {
+        //         response.sendRedirect(request.getContextPath() + "/login.jsp");
+        //     } else {
+        //          response.setStatus(SC_UNAUTHORIZED);
+        //          response.getWriter().write("{\"error\":\"Unauthorized: Invalid or missing token\"}");
+        //     }
+        //     return false;
+        // }
+
+        // Trong hàm private boolean setupSellerContext(...)
+// ... (Logic xác thực) ...
+
+            if (username == null || username.isEmpty()) {
+                // ⚠️ ĐIỂM SỬA CHỮA: Chuyển hướng đến một URL xử lý việc xóa token (hoặc dùng parameter)
+                
+                // Nếu đây là yêu cầu trang web chính, KHÔNG chuyển thẳng về login.jsp, 
+                // mà chuyển về một trang clear-token/logout tạm thời.
+                if (request.getRequestURI().endsWith("/seller/products")) {
+                    // Tốt nhất là chuyển hướng đến trang logout/clear session
+                    response.sendRedirect(request.getContextPath() + "/logout-clear.jsp");
+                } else {
+                    // Nếu là API call, vẫn trả về lỗi Unauthorized để AJAX xử lý
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"error\":\"Unauthorized: Invalid or missing token, please re-login\"}");
+                }
+                return false;
             }
-            return false;
-        }
+        
 
         String role = DBUtil.getUserRole(username);
         int userId = DBUtil.getUserIdByUsername(username);
