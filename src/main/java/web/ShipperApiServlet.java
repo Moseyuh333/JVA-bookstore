@@ -189,6 +189,10 @@ public class ShipperApiServlet extends HttpServlet {
                         writeJson(resp, 400, err("BAD_REQUEST", "evidenceUrl is required"));
                         return;
                     }
+                    // Truncate evidenceUrl to fit VARCHAR(20) if necessary
+                    if (evidenceUrl.length() > 20) {
+                        evidenceUrl = evidenceUrl.substring(0, 20);
+                    }
                     if (s.getCodAmount() > 0 && !codCollected) {
                         writeJson(resp, 400, err("BAD_REQUEST", "COD shipment requires codCollected=true"));
                         return;
