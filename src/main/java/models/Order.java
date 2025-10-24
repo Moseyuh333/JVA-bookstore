@@ -17,6 +17,7 @@ public class Order {
     private BigDecimal itemsSubtotal;
     private BigDecimal discountAmount;
     private BigDecimal shippingFee;
+    private String shippingAddress;
     private BigDecimal totalAmount;
     private String currency;
     private String couponCode;
@@ -113,6 +114,14 @@ public class Order {
 
     public void setShippingFee(BigDecimal shippingFee) {
         this.shippingFee = shippingFee;
+    }
+
+    public String getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(String shippingAddress) {
+        this.shippingAddress = shippingAddress;
     }
 
     public BigDecimal getTotalAmount() {

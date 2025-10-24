@@ -171,6 +171,9 @@
     function handleLogout(dropdown) {
         window.localStorage.removeItem('auth_token');
         window.localStorage.removeItem('auth_username');
+        // Also remove admin tokens if they exist
+        window.localStorage.removeItem('admin_token');
+        window.localStorage.removeItem('admin_username');
         renderGuestDropdown(dropdown);
         dropdown.classList.add('hidden');
         window.location.href = contextPath + '/login.jsp';

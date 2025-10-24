@@ -2,6 +2,7 @@ package dao;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import models.Order;
 import models.OrderItem;
@@ -15,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.postgresql.util.PGobject;
 
 
 public final class OrderDAO {
@@ -102,7 +105,7 @@ public final class OrderDAO {
 
     public static List<Order> findOrders(long userId, String statusFilter) throws SQLException {
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT id, code, user_id, order_date, status, payment_status, payment_method, payment_provider, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
+    sql.append("SELECT id, code, user_id, order_date, status, payment_status, payment_method, payment_provider, shipping_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
                 + "FROM orders WHERE user_id = ?");
         if (statusFilter != null && !statusFilter.trim().isEmpty()) {
             sql.append(" AND status = ?");
@@ -192,7 +195,7 @@ public final class OrderDAO {
     }
 
     private static Order fetchOrderByIdInternal(Connection conn, long orderId, Long userId) throws SQLException {
-        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
+    StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.shipping_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
                 + "u.email AS customer_email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name "
                 + "FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?");
         if (userId != null) {
@@ -319,6 +322,175 @@ public final class OrderDAO {
         }
     }
 
+    public static Order updateOrderDetails(long orderId, OrderUpdateCommand command) throws SQLException {
+        if (command == null) {
+            throw new SQLException("Không có dữ liệu để cập nhật");
+        }
+
+        List<String> assignments = new ArrayList<>();
+        List<Object> values = new ArrayList<>();
+        List<Integer> sqlTypes = new ArrayList<>();
+        Integer shippingSnapshotIndex = null;
+        String normalizedShippingAddress = null;
+
+        if (command.paymentMethodSet) {
+            assignments.add("payment_method = ?");
+            values.add(command.paymentMethod);
+            sqlTypes.add(Types.VARCHAR);
+        }
+        if (command.paymentStatusSet) {
+            assignments.add("payment_status = ?");
+            values.add(command.paymentStatus);
+            sqlTypes.add(Types.VARCHAR);
+        }
+        if (command.paymentProviderSet) {
+            assignments.add("payment_provider = ?");
+            values.add(command.paymentProvider);
+            sqlTypes.add(Types.VARCHAR);
+        }
+        if (command.shippingAddressSet) {
+            normalizedShippingAddress = normalizeShippingAddress(command.shippingAddress);
+            shippingSnapshotIndex = values.size();
+            assignments.add("shipping_snapshot = ?");
+            values.add(normalizedShippingAddress);
+            sqlTypes.add(Types.OTHER);
+        }
+        if (command.shippingFeeSet) {
+            assignments.add("shipping_fee = ?");
+            values.add(command.shippingFee);
+            sqlTypes.add(Types.DECIMAL);
+        }
+        if (command.notesSet) {
+            assignments.add("notes = ?");
+            values.add(command.notes);
+            sqlTypes.add(Types.VARCHAR);
+        }
+        if (command.couponCodeSet) {
+            assignments.add("coupon_code = ?");
+            values.add(command.couponCode);
+            sqlTypes.add(Types.VARCHAR);
+        }
+
+        if (assignments.isEmpty()) {
+            throw new SQLException("Không có dữ liệu nào để cập nhật");
+        }
+
+        try (Connection conn = DBUtil.getConnection()) {
+            boolean hasSnapshotColumn = shippingSnapshotIndex != null && columnExists(conn, "orders", "shipping_snapshot");
+            if (shippingSnapshotIndex != null) {
+                if (hasSnapshotColumn) {
+                    String formattedSnapshot = buildShippingSnapshotForUpdate(conn, orderId, normalizedShippingAddress);
+                    values.set(shippingSnapshotIndex, formattedSnapshot);
+                } else {
+                    assignments.remove((int) shippingSnapshotIndex);
+                    values.remove((int) shippingSnapshotIndex);
+                    sqlTypes.remove((int) shippingSnapshotIndex);
+                    shippingSnapshotIndex = null;
+                    if (assignments.isEmpty()) {
+                        throw new SQLException("Không có dữ liệu nào để cập nhật");
+                    }
+                }
+            }
+
+            boolean hasLegacyColumn = command.shippingAddressSet && columnExists(conn, "orders", "shipping_address");
+            if (hasLegacyColumn) {
+                assignments.add("shipping_address = ?");
+                values.add(normalizedShippingAddress);
+                sqlTypes.add(Types.VARCHAR);
+            }
+
+            StringBuilder sql = new StringBuilder("UPDATE orders SET ");
+            sql.append(String.join(", ", assignments));
+            sql.append(", updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+                int index = 1;
+                for (int i = 0; i < values.size(); i++) {
+                    Object value = values.get(i);
+                    int type = sqlTypes.get(i);
+                    if (value == null) {
+                        stmt.setNull(index++, type);
+                    } else if (type == Types.DECIMAL || type == Types.NUMERIC) {
+                        stmt.setBigDecimal(index++, (BigDecimal) value);
+                    } else if (type == Types.OTHER && value instanceof String) {
+                        PGobject jsonObject = new PGobject();
+                        jsonObject.setType("jsonb");
+                        jsonObject.setValue((String) value);
+                        stmt.setObject(index++, jsonObject);
+                    } else {
+                        stmt.setObject(index++, value);
+                    }
+                }
+                stmt.setLong(index, orderId);
+                int updated = stmt.executeUpdate();
+                if (updated == 0) {
+                    throw new SQLException("Order not found: " + orderId);
+                }
+            }
+        }
+
+        return fetchOrderForAdmin(orderId);
+    }
+
+    public static final class OrderUpdateCommand {
+        private boolean paymentMethodSet;
+        private String paymentMethod;
+        private boolean paymentStatusSet;
+        private String paymentStatus;
+        private boolean paymentProviderSet;
+        private String paymentProvider;
+        private boolean shippingAddressSet;
+        private String shippingAddress;
+        private boolean shippingFeeSet;
+        private BigDecimal shippingFee;
+        private boolean notesSet;
+        private String notes;
+        private boolean couponCodeSet;
+        private String couponCode;
+
+        public OrderUpdateCommand withPaymentMethod(String value) {
+            this.paymentMethod = value;
+            this.paymentMethodSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withPaymentStatus(String value) {
+            this.paymentStatus = value;
+            this.paymentStatusSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withPaymentProvider(String value) {
+            this.paymentProvider = value;
+            this.paymentProviderSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withShippingAddress(String value) {
+            this.shippingAddress = value;
+            this.shippingAddressSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withShippingFee(BigDecimal value) {
+            this.shippingFee = value;
+            this.shippingFeeSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withNotes(String value) {
+            this.notes = value;
+            this.notesSet = true;
+            return this;
+        }
+
+        public OrderUpdateCommand withCouponCode(String value) {
+            this.couponCode = value;
+            this.couponCodeSet = true;
+            return this;
+        }
+    }
+
     private static String normalizeStatusValue(String status) {
         if (status == null) {
             return null;
@@ -366,6 +538,7 @@ public final class OrderDAO {
         order.setItemsSubtotal(rs.getBigDecimal("items_subtotal"));
         order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
         order.setShippingFee(rs.getBigDecimal("shipping_fee"));
+    order.setShippingAddress(resolveShippingAddress(rs));
         order.setTotalAmount(rs.getBigDecimal("total_amount"));
         order.setCurrency(rs.getString("currency"));
         order.setCouponCode(rs.getString("coupon_code"));
@@ -373,6 +546,199 @@ public final class OrderDAO {
         order.setCreatedAt(toLocalDateTime(rs.getTimestamp("created_at")));
         order.setUpdatedAt(toLocalDateTime(rs.getTimestamp("updated_at")));
         return order;
+    }
+
+    private static String normalizeShippingAddress(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        if (trimmed.length() > 1000) {
+            return trimmed.substring(0, 1000);
+        }
+        return trimmed;
+    }
+
+    private static String resolveShippingAddress(ResultSet rs) throws SQLException {
+        String direct = getStringIfPresent(rs, "shipping_address");
+        if (hasText(direct)) {
+            return direct.trim();
+        }
+        String snapshot = getStringIfPresent(rs, "shipping_snapshot");
+        if (!hasText(snapshot)) {
+            return null;
+        }
+        try {
+            JsonObject obj = GSON.fromJson(snapshot, JsonObject.class);
+            if (obj == null) {
+                return snapshot;
+            }
+            String formatted = chooseFirst(obj, "formatted");
+            if (hasText(formatted)) {
+                return formatted.trim();
+            }
+            List<String> lines = new ArrayList<>();
+            String recipient = chooseFirst(obj, "recipientName", "recipient_name");
+            String phone = chooseFirst(obj, "phone");
+            String header = joinWithSeparator(" - ", recipient, phone);
+            if (hasText(header)) {
+                lines.add(header);
+            }
+
+            List<String> addressParts = new ArrayList<>();
+            addIfHasText(addressParts, chooseFirst(obj, "line1", "addressLine1"));
+            addIfHasText(addressParts, chooseFirst(obj, "line2", "addressLine2"));
+            addIfHasText(addressParts, chooseFirst(obj, "ward", "commune"));
+            addIfHasText(addressParts, chooseFirst(obj, "district"));
+            addIfHasText(addressParts, chooseFirst(obj, "city"));
+            addIfHasText(addressParts, chooseFirst(obj, "province", "state"));
+            addIfHasText(addressParts, chooseFirst(obj, "postalCode", "postal_code"));
+            addIfHasText(addressParts, chooseFirst(obj, "country"));
+            if (!addressParts.isEmpty()) {
+                lines.add(String.join(", ", addressParts));
+            }
+
+            String note = chooseFirst(obj, "note");
+            if (hasText(note)) {
+                lines.add("Ghi chú: " + note.trim());
+            }
+
+            StringBuilder builder = new StringBuilder();
+            for (String line : lines) {
+                if (!hasText(line)) {
+                    continue;
+                }
+                if (builder.length() > 0) {
+                    builder.append('\n');
+                }
+                builder.append(line.trim());
+            }
+            if (builder.length() > 0) {
+                return builder.toString();
+            }
+        } catch (Exception ignore) {
+            // fall back to raw snapshot string
+        }
+        return snapshot;
+    }
+
+    private static String getStringIfPresent(ResultSet rs, String column) throws SQLException {
+        try {
+            return rs.getString(column);
+        } catch (SQLException ex) {
+            String state = ex.getSQLState();
+            if ("42703".equals(state) || (state != null && state.equalsIgnoreCase("S0022"))) {
+                return null;
+            }
+            String message = ex.getMessage();
+            if (message != null) {
+                String lower = message.toLowerCase(Locale.US);
+                if (lower.contains("does not exist") || lower.contains("not found")) {
+                    return null;
+                }
+            }
+            return null;
+        }
+    }
+
+    private static String chooseFirst(JsonObject obj, String... keys) {
+        if (obj == null || keys == null) {
+            return null;
+        }
+        for (String key : keys) {
+            if (key == null || key.isEmpty() || !obj.has(key)) {
+                continue;
+            }
+            JsonElement element = obj.get(key);
+            if (element == null || element.isJsonNull()) {
+                continue;
+            }
+            try {
+                String value = element.getAsString();
+                if (hasText(value)) {
+                    return value.trim();
+                }
+            } catch (ClassCastException | IllegalStateException ignore) {
+                // ignore non-string values
+            }
+        }
+        return null;
+    }
+
+    private static void addIfHasText(List<String> target, String value) {
+        if (target == null) {
+            return;
+        }
+        if (hasText(value)) {
+            target.add(value.trim());
+        }
+    }
+
+    private static String joinWithSeparator(String separator, String... parts) {
+        if (parts == null || parts.length == 0) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (!hasText(part)) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append(separator);
+            }
+            sb.append(part.trim());
+        }
+        return sb.toString();
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private static String buildShippingSnapshotForUpdate(Connection conn, long orderId, String shippingAddress) throws SQLException {
+        String existing = fetchShippingSnapshot(conn, orderId);
+        JsonObject snapshot;
+        if (hasText(existing)) {
+            try {
+                snapshot = GSON.fromJson(existing, JsonObject.class);
+            } catch (Exception ex) {
+                snapshot = new JsonObject();
+            }
+        } else {
+            snapshot = new JsonObject();
+        }
+
+        String trimmedAddress = hasText(shippingAddress) ? shippingAddress.trim() : null;
+        if (trimmedAddress == null) {
+            snapshot.remove("formatted");
+            snapshot.remove("updatedByAdmin");
+            snapshot.remove("updatedByAdminAt");
+        } else {
+            snapshot.addProperty("formatted", trimmedAddress);
+            snapshot.addProperty("updatedByAdmin", true);
+            snapshot.addProperty("updatedByAdminAt", LocalDateTime.now().toString());
+        }
+
+        if (snapshot.entrySet().isEmpty()) {
+            return null;
+        }
+        return GSON.toJson(snapshot);
+    }
+
+    private static String fetchShippingSnapshot(Connection conn, long orderId) throws SQLException {
+        String sql = "SELECT shipping_snapshot FROM orders WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, orderId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString(1);
+                }
+            }
+        }
+        return null;
     }
 
     private static List<OrderItem> findOrderItems(Connection conn, long orderId, Long userId) throws SQLException {

@@ -67,8 +67,8 @@ public class BookDAO {
 
     private static final String BASE_SELECT =
             "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, b.stock_quantity, b.image_url, " +
+            "b.created_at, b.updated_at, b.status, " +
             "b.shop_id, b.shop_name, " +
-            "b.created_at, b.updated_at, " +
             "COALESCE(sales.total_sold, metrics.total_sold, 0) AS total_sold, " +
             "COALESCE(reviews.avg_rating, metrics.avg_rating, 0) AS average_rating, " +
             "COALESCE(reviews.rating_count, metrics.rating_count, 0) AS rating_count, " +
@@ -101,8 +101,9 @@ public class BookDAO {
         }
         StringBuilder sql = new StringBuilder(BASE_SELECT);
         List<Object> params = new ArrayList<>();
+        sql.append(" WHERE b.status = 'active'");
         if (category != null && !category.isEmpty()) {
-            sql.append(" WHERE b.category = ?");
+            sql.append(" AND b.category = ?");
             params.add(category);
         }
         sql.append(" ");
@@ -128,10 +129,10 @@ public class BookDAO {
     }
 
     public static int countBooks(String category) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM books";
+        String sql = "SELECT COUNT(*) FROM books WHERE status = 'active'";
         List<Object> params = Collections.emptyList();
         if (category != null && !category.isEmpty()) {
-            sql += " WHERE category = ?";
+            sql += " AND category = ?";
             params = Collections.singletonList(category);
         }
         try (Connection connection = DBUtil.getConnection();
@@ -148,7 +149,7 @@ public class BookDAO {
     }
 
     public static List<String> getAllCategories() throws SQLException {
-        String sql = "SELECT DISTINCT category FROM books WHERE category IS NOT NULL AND TRIM(category) <> '' ORDER BY category";
+        String sql = "SELECT DISTINCT category FROM books WHERE status = 'active' AND category IS NOT NULL AND TRIM(category) <> '' ORDER BY category";
         try (Connection connection = DBUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet rs = statement.executeQuery()) {
@@ -180,7 +181,7 @@ public class BookDAO {
         String pattern = "%" + escaped + "%";
 
         String sql = BASE_SELECT +
-                " WHERE (b.title ILIKE ? ESCAPE '\\' " +
+                " WHERE b.status = 'active' AND (b.title ILIKE ? ESCAPE '\\' " +
                 "OR b.author ILIKE ? ESCAPE '\\' " +
                 "OR b.isbn ILIKE ? ESCAPE '\\') " +
                 "ORDER BY rating_count DESC, total_sold DESC, b.title ASC LIMIT ?";
@@ -287,6 +288,7 @@ public class BookDAO {
         }
         int ratingCount = rs.getInt("rating_count");
         int favoriteCount = rs.getInt("favorite_count");
+        String status = rs.getString("status");
         
         // Lấy thông tin shop
         Integer shopId = null;
@@ -297,6 +299,6 @@ public class BookDAO {
         String shopName = rs.getString("shop_name");
         
         return new Book(id, title, author, isbn, price, description, category, stockQuantity, imageUrl,
-                createdAt, updatedAt, totalSold, averageRating, ratingCount, favoriteCount, shopId, shopName);
+                createdAt, updatedAt, totalSold, averageRating, ratingCount, favoriteCount,status, shopId, shopName);
     }
 }

@@ -31,8 +31,8 @@ public class DBUtil {
                 username = dbUri.getUserInfo().split(":")[0];
                 password = dbUri.getUserInfo().split(":")[1];
                 String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + (dbUri.getPort() != -1 ? ":" + dbUri.getPort() : "") + dbUri.getPath();
-                // Ensure SSL for Heroku
-                url = jdbcUrl + "?sslmode=require";
+                // Ensure SSL for Heroku and UTF-8 encoding
+                url = jdbcUrl + "?sslmode=require&charSet=UTF-8";
             } else {
                 try (InputStream input = DBUtil.class.getClassLoader().getResourceAsStream("db.properties")) {
                     if (input == null) {
@@ -43,6 +43,10 @@ public class DBUtil {
                     url = prop.getProperty("db.url");
                     username = prop.getProperty("db.username");
                     password = prop.getProperty("db.password");
+                    // Ensure UTF-8 encoding for local database
+                    if (!url.contains("charSet")) {
+                        url += (url.contains("?") ? "&" : "?") + "charSet=UTF-8";
+                    }
                 }
             }
             Class.forName("org.postgresql.Driver");
@@ -66,6 +70,7 @@ public class DBUtil {
                     "username VARCHAR(50) UNIQUE NOT NULL," +
                     "email VARCHAR(100) UNIQUE NOT NULL," +
                     "password_hash VARCHAR(255) NOT NULL," +
+                    "role VARCHAR(20) DEFAULT 'user'," +
                     "email_verified BOOLEAN DEFAULT FALSE," +
                     "verification_token VARCHAR(255)," +
                     "reset_token VARCHAR(255)," +
@@ -137,12 +142,14 @@ public class DBUtil {
                     "category VARCHAR(100)," +
                     "stock_quantity INTEGER DEFAULT 0," +
                     "image_url VARCHAR(500)," +
+                    "shop_id INTEGER REFERENCES shops(id) ON DELETE CASCADE," +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                     "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                     ")";
                 stmt.execute(createBooksTableSQL);
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_books_category ON books(category)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_books_title ON books(title)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_books_shop_id ON books(shop_id)");
 
                 ensureBooksSchema(conn);
 
@@ -249,19 +256,6 @@ public class DBUtil {
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_book_id ON book_reviews(book_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_user_id ON book_reviews(user_id)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_book_reviews_status ON book_reviews(status)");
-                ensureBookReviewsSchema(conn);
-
-                String createRecentViewsSql = "CREATE TABLE IF NOT EXISTS user_recent_views (" +
-                    "id SERIAL PRIMARY KEY," +
-                    "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE," +
-                    "book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE," +
-                    "viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                    "CONSTRAINT uq_user_recent_views UNIQUE (user_id, book_id)" +
-                    ")";
-                stmt.execute(createRecentViewsSql);
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_recent_views_user ON user_recent_views(user_id)");
-                stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_recent_views_book ON user_recent_views(book_id)");
-                ensureRecentViewsSchema(conn);
             }
 
             ensurePasswordHashColumn(conn);
@@ -1100,20 +1094,16 @@ public class DBUtil {
         }
     }
 
-    // utils/DBUtil.java
     public static String getUserRole(String username) throws SQLException {
         String sql = "SELECT role FROM users WHERE username = ?";
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, username);
-            try (ResultSet rs = ps.executeQuery()) {
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    String r = rs.getString("role");
-                    return (r == null || r.isBlank()) ? "user" : r.trim().toLowerCase();
+                    return rs.getString("role");
                 }
+                return null;
             }
         }
-        return "user";
     }
-
 }

@@ -51,13 +51,14 @@
 <script>
   const contextPath = '<%= request.getContextPath() %>';
 
+  // 🔸 Nếu user đã đăng nhập rồi → tự động chuyển hướng theo role
   (function bootstrapRedirect() {
     const token = localStorage.getItem('auth_token');
     const role  = (localStorage.getItem('auth_role') || '').toLowerCase();
     if (token && role) {
       let target = contextPath + '/';
       if (role === 'shipper')      target = contextPath + '/dashboard-shipper.jsp';
-      else if (role === 'admin')   target = contextPath + '/admin-orders.jsp';
+      else if (role === 'admin')   target = contextPath + '/admin-dashboard.jsp';
       window.location.replace(target);
     }
   })();
@@ -112,6 +113,7 @@
           const token = data.token;
           localStorage.setItem('auth_token', token);
 
+          // 🔸 Lưu username
           const enteredUsername = (formData.get('username') || '').trim();
           let username = enteredUsername;
           if (!username) {
@@ -121,6 +123,7 @@
           if (username) localStorage.setItem('auth_username', username);
           else localStorage.removeItem('auth_username');
 
+          // 🔸 Xác định role
           let role = (data.role || '').toLowerCase();
           if (!role) {
             const p = decodeJwtPayload(token) || {};
@@ -129,12 +132,13 @@
           if (!role) role = 'user';
           localStorage.setItem('auth_role', role);
 
+          // 🔸 Chuyển hướng theo role
           let target = contextPath + '/';
           if (role === 'shipper')      target = contextPath + '/dashboard-shipper.jsp';
-          else if (role === 'admin')   target = contextPath + '/admin-orders.jsp';
+          else if (role === 'admin')   target = contextPath + '/admin-dashboard.jsp';
 
           showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
-          setTimeout(() => { window.location.href = target; }, 400);
+          setTimeout(() => { window.location.href = target; }, 800);
 
         } else {
           localStorage.removeItem('auth_token');
@@ -146,9 +150,7 @@
 
       } catch (e) {
         console.error('Login error', e);
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_username');
-        localStorage.removeItem('auth_role');
+        localStorage.clear();
         showMessage('danger', '❌ Lỗi kết nối. Vui lòng thử lại.');
       } finally {
         submitBtn.disabled = false;
