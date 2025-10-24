@@ -86,6 +86,22 @@ public class AdminProductsServlet extends HttpServlet {
 
         String search = req.getParameter("search");
         String searchType = req.getParameter("searchType");
+        if ("status".equals(searchType) && search != null) {
+            switch (search.trim().toLowerCase()) {
+                case "hoạt động":
+                    search = "active";
+                    break;
+                case "đang chờ duyệt":
+                    search = "pending";
+                    break;
+                case "không hoạt động":
+                    search = "inactive";
+                    break;
+                case "bị từ chối":
+                    search = "rejected";
+                    break;
+            }
+        }
         String category = req.getParameter("category");
         String shopId = req.getParameter("shop_id");
         int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
