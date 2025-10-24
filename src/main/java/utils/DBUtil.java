@@ -1134,5 +1134,16 @@ public class DBUtil {
             }
         }
     }
+public static Integer getShopIdByUserId(int userId) throws SQLException {
+    String sql = "SELECT id FROM stores WHERE owner_id = ?";
+    try (Connection conn = getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, userId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) return rs.getInt("id");
+    }
+    return null;
+}
+
 }
 
