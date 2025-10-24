@@ -330,12 +330,12 @@
                         <span>Hồ sơ</span>
                     </a>
                 </li>
-                <li>
+                <!-- <li>
                     <a href="${pageContext.request.contextPath}/seller/settings">
                         <i data-feather="settings"></i>
                         <span>Cài đặt</span>
                     </a>
-                </li>
+                </li> -->
             </ul>
         </nav>
         
@@ -430,7 +430,19 @@
 
         
 
-    </script>
+    // </script>
+
+    
+    //     <div id="content">
+    //         </div>
+
+    //     <script>
+    //         // Bắt buộc phải nhúng các biến JSP vào window scope để JS có thể đọc
+    //         window.contextPath = '<%= request.getContextPath() %>';
+    //         window.shopId = ${id}; // Đảm bảo shopId được set trong Servlet
+    //     </script>
+    //     <script src="<%= request.getContextPath() %>/assets/js/seller_dashboard.js"></script>
+
 
 </body>
 </html>
