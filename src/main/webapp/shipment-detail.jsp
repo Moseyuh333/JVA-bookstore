@@ -80,8 +80,10 @@
         <div class="p-4 space-y-4">
           <!-- CHỈ GIỮ NHỮNG GIÁ TRỊ THUỘC ENUM MỚI -->
           <select id="evt-status" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full">
+            <option value="ASSIGNED">Đã phân công</option>
             <option value="PICKED_UP">Đã lấy hàng</option>
             <option value="IN_TRANSIT">Đang vận chuyển</option>
+            <option value="DELIVERED">Đã giao</option>
             <option value="OUT_FOR_DELIVERY">Đang giao</option>
             <option value="FAILED_DELIVERY">Giao thất bại</option>
             <option value="CANCELLED">Huỷ đơn</option>
@@ -186,6 +188,20 @@
     }catch(e){
       document.getElementById('err').textContent = e.message || 'Lỗi tải dữ liệu';
     }
+
+    const flow = [
+    'ASSIGNED',
+    'PICKED_UP',
+    'IN_TRANSIT',
+    'OUT_FOR_DELIVERY',
+    'DELIVERED',
+    'FAILED_DELIVERY',
+    'CANCELLED'
+  ];
+  const sel = document.getElementById('evt-status');
+  const i = flow.indexOf(s.status);
+  const next = (i >= 0 && i + 1 < flow.length) ? flow[i + 1] : s.status;
+  if (sel) sel.value = next;  // gợi ý trạng thái kế tiếp
   }
 
   document.getElementById('btnAddEvent').onclick = async ()=>{
