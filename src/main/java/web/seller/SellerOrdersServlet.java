@@ -14,12 +14,14 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.google.gson.Gson;
 
 @WebServlet("/api/seller/orders")
 public class SellerOrdersServlet extends HttpServlet {
-
+    private static final Logger LOGGER = Logger.getLogger(SellerOrdersServlet.class.getName());
     private final Gson gson = new Gson();
 
     private void setEncoding(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -63,7 +65,7 @@ public class SellerOrdersServlet extends HttpServlet {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error in doGet /api/seller/orders", e);
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write(gson.toJson(Map.of("success", false, "message", "Database error: " + e.getMessage())));
         } finally {
@@ -104,7 +106,7 @@ public class SellerOrdersServlet extends HttpServlet {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error in doPost /api/seller/orders", e);
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write(gson.toJson(Map.of("success", false, "message", "Database error: " + e.getMessage())));
         } finally {

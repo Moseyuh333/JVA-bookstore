@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.google.gson.Gson;
 import dao.OrderDAO;
@@ -19,7 +21,7 @@ import static javax.servlet.http.HttpServletResponse.*;
 
 @WebServlet("/api/seller/analytics")
 public class SellerAnalyticsServlet extends HttpServlet {
-
+    private static final Logger LOGGER = Logger.getLogger(SellerAnalyticsServlet.class.getName());
     private final Gson gson = new Gson();
 
     private int getShopIdFromSession(HttpServletRequest req) {
@@ -54,7 +56,7 @@ public class SellerAnalyticsServlet extends HttpServlet {
                 out.write(gson.toJson(Map.of("success", false, "message", "Invalid API action.")));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error in /api/seller/analytics", e);
             resp.setStatus(SC_INTERNAL_SERVER_ERROR);
             out.write(gson.toJson(Map.of("success", false, "message", "Database error: " + e.getMessage())));
         }

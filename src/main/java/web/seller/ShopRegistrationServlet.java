@@ -12,12 +12,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.google.gson.Gson;
 
 @WebServlet("/api/seller/register-shop")
 public class ShopRegistrationServlet extends HttpServlet {
-
+    private static final Logger LOGGER = Logger.getLogger(ShopRegistrationServlet.class.getName());
     private final Gson gson = new Gson();
 
     private void setEncoding(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -82,7 +84,7 @@ public class ShopRegistrationServlet extends HttpServlet {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error in /api/seller/register-shop", e);
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write(gson.toJson(Map.of("success", false, "message", "Database error: " + e.getMessage())));
         } finally {

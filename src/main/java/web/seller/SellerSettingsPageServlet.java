@@ -7,13 +7,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Serves the seller settings page.
  */
 @WebServlet("/seller/settings")
 public class SellerSettingsPageServlet extends HttpServlet {
-
+    private static final Logger LOGGER = Logger.getLogger(SellerSettingsPageServlet.class.getName());
     private static final String SETTINGS_JSP = "/Seller/SellerSetting.jsp";
 
     @Override
@@ -28,7 +30,7 @@ public class SellerSettingsPageServlet extends HttpServlet {
 
             req.getRequestDispatcher(SETTINGS_JSP).forward(req, resp);
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to load settings page", e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to load settings page");
         }
     }

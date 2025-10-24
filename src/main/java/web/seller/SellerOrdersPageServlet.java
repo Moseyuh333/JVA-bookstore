@@ -7,13 +7,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Serves the seller order management page.
  */
 @WebServlet("/seller/orders")
 public class SellerOrdersPageServlet extends HttpServlet {
-
+    private static final Logger LOGGER = Logger.getLogger(SellerOrdersPageServlet.class.getName());
     private static final String ORDERS_JSP = "/Seller/SellerOrders.jsp";
 
     @Override
@@ -28,7 +30,7 @@ public class SellerOrdersPageServlet extends HttpServlet {
 
             req.getRequestDispatcher(ORDERS_JSP).forward(req, resp);
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to load orders page", e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to load orders page");
         }
     }

@@ -11,12 +11,14 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.google.gson.Gson;
 
 @WebServlet("/api/seller/profile")
 public class SellerProfileServlet extends HttpServlet {
-
+    private static final Logger LOGGER = Logger.getLogger(SellerProfileServlet.class.getName());
     private final Gson gson = new Gson();
 
     private void setEncoding(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -66,7 +68,7 @@ public class SellerProfileServlet extends HttpServlet {
             out.write(gson.toJson(response));
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error in GET /api/seller/profile", e);
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write(gson.toJson(Map.of("success", false, "message", "Database error: " + e.getMessage())));
         } finally {
@@ -104,7 +106,7 @@ public class SellerProfileServlet extends HttpServlet {
             out.write(gson.toJson(Map.of("success", true, "message", "Shop profile updated successfully")));
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error in POST /api/seller/profile", e);
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write(gson.toJson(Map.of("success", false, "message", "Database error: " + e.getMessage())));
         } finally {

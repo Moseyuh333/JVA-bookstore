@@ -7,13 +7,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Serves the seller profile management page.
  */
 @WebServlet("/seller/profile")
 public class SellerProfilePageServlet extends HttpServlet {
-
+    private static final Logger LOGGER = Logger.getLogger(SellerProfilePageServlet.class.getName());
     private static final String PROFILE_JSP = "/Seller/SellerProfile.jsp";
 
     @Override
@@ -28,7 +30,7 @@ public class SellerProfilePageServlet extends HttpServlet {
 
             req.getRequestDispatcher(PROFILE_JSP).forward(req, resp);
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to load profile page", e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to load profile page");
         }
     }
