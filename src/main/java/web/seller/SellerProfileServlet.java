@@ -11,7 +11,20 @@ import utils.DBUtil;
 public class SellerProfileServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        int userId = Integer.parseInt(req.getParameter("userId"));
+
+        
+    Object userIdObj = req.getSession().getAttribute("id"); // Giả định bạn lưu là "user_id"
+    
+    if (userIdObj == null) {
+        // Xử lý lỗi: Người dùng chưa đăng nhập hoặc Session đã hết hạn
+        resp.sendRedirect(req.getContextPath() + "/login.jsp?error=session_expired");
+        return;
+    }
+    
+    int userId = (Integer) userIdObj; // Ép kiểu an toàn từ Integer object
+    
+    
+        //int userId = Integer.parseInt(req.getParameter("userId"));
 
         try (Connection conn = DBUtil.getConnection()) {
             String sql = "SELECT * FROM shops WHERE owner_id = ?";
