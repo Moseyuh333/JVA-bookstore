@@ -108,6 +108,33 @@
   function esc(s){
     return String(s==null? '': s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
+  function first(...xs){
+    for (const x of xs){ if (x!==undefined && x!==null && x!=='') return x; }
+    return null;
+  }
+  // 👉 định dạng đúng mẫu: HH:mm:ss dd/MM/yyyy
+  function fmtTime(iso){
+    if(!iso) return '-';
+    const d = new Date(iso);
+    if (isNaN(+d)) return '-';
+    const pad = n => String(n).padStart(2,'0');
+    const HH = pad(d.getHours()), mm = pad(d.getMinutes()), ss = pad(d.getSeconds());
+    const dd = pad(d.getDate()), MM = pad(d.getMonth()+1), yyyy = d.getFullYear();
+    return `${HH}:${mm}:${ss} ${dd}/${MM}/${yyyy}`;
+  }
+
+  // màu + NHÃN TIẾNG VIỆT cho badge (giống ảnh mẫu)
+  const statusStyle = {
+    'ASSIGNED':         {cls:'bg-slate-700 text-blue-200', label:'Đã phân công'},
+    'PICKED_UP':        {cls:'bg-blue-700 text-white',     label:'Đã lấy hàng'},
+    'IN_TRANSIT':       {cls:'bg-indigo-700 text-white',   label:'Đang vận chuyển'},
+    'OUT_FOR_DELIVERY': {cls:'bg-amber-600 text-white',    label:'Đang giao hàng'},
+    'DELIVERED':        {cls:'bg-emerald-700 text-white',  label:'Giao thành công'},
+    'FAILED_DELIVERY':  {cls:'bg-rose-700 text-white',     label:'Giao thất bại'},
+    'RETURNING':        {cls:'bg-yellow-700 text-white',   label:'Đang hoàn'},
+    'RETURNED':         {cls:'bg-yellow-800 text-white',   label:'Đã hoàn'},
+    'CANCELLED':        {cls:'bg-slate-600 text-white',    label:'Huỷ đơn'}
+  };
 
   async function load(){
     try{
@@ -117,19 +144,27 @@
       url.searchParams.set('page', page);
       url.searchParams.set('size', size);
       if (status) url.searchParams.set('status', status);
-      if (q) url.searchParams.set('q', q); // nếu BE đã hỗ trợ
+      if (q) url.searchParams.set('q', q);
 
       const data = await authFetch(url.toString());
       const tbody = document.getElementById('shipments-body');
       tbody.innerHTML = '';
 
       (data.items||[]).forEach(function(it){
-        const lastEvt = (it.lastEventAt || it.updatedAt || it.createdAt || '');
-        const last = lastEvt ? new Date(lastEvt).toLocaleString('vi-VN') : '-';
-        const st = it.status || '-';
-        const badge = '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">' + esc(st) + '</span>';
+        // thời điểm cập nhật gần nhất
+        const lastIso = first(
+          it.lastEventAt, it.last_event_at, it.eventLastAt, it.event_last_at,
+          it.lastUpdateAt, it.last_update_at, it.updatedAt, it.updated_at,
+          it.createdAt, it.created_at
+        );
+        const last = fmtTime(lastIso);
 
-        // build link sang trang detail kèm filter hiện tại
+        const stKey = (it.status||'').toUpperCase();
+        const meta = statusStyle[stKey] || {cls:'bg-gray-600 text-gray-100', label:(it.status||'-')};
+        const badge =
+          '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium '+meta.cls+'">' +
+          esc(meta.label) + '</span>';
+
         const params = new URLSearchParams({
           id: String(it.id),
           page: String(page),
@@ -140,13 +175,13 @@
         const detailHref = ctx + '/shipment-detail.jsp?' + params;
 
         const row =
-          '<tr class="hover:bg-gray-50">' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + esc(it.id) + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + esc(it.orderCode||'-') + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + esc(it.receiverName||'-') + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + badge + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' + esc(last) + '</td>' +
-            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">' +
+          '<tr class="hover:bg-gray-800/40">' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + esc(it.id) + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + esc(it.orderCode||'-') + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + esc(it.receiverName||'-') + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + badge + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' + esc(last) + '</td>' +
+            '<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-200">' +
               '<button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm" ' +
                       'onclick="location.href=\'' + detailHref.replace(/'/g,'&#39;') + '\'">' +
                 'Chi tiết' +
