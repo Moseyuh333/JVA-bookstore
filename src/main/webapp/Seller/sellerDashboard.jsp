@@ -17,7 +17,7 @@
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #c96d28 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -54,7 +54,7 @@
         
         .seller-header-left .role-badge {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #c96d28 0%, #764ba2 100%);
             color: white;
             padding: 6px 16px;
             border-radius: 20px;
@@ -98,14 +98,14 @@
         
         .seller-nav a:hover {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            color: #667eea;
-            border-bottom-color: #667eea;
+            color: #c96d28;
+            border-bottom-color: #c96d28;
         }
         
         .seller-nav a.active {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-            color: #667eea;
-            border-bottom-color: #667eea;
+            color: #c96d28;
+            border-bottom-color: #c96d28;
         }
         
         .dashboard-content {
@@ -135,7 +135,7 @@
             background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
             padding: 30px;
             border-radius: 16px;
-            border-left: 5px solid #667eea;
+            border-left: 5px solid #c96d28;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -175,7 +175,7 @@
         .stat-card .value {
             font-size: 42px;
             font-weight: 800;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #c96d28 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -184,7 +184,7 @@
         }
         
         .welcome-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #c96d28 0%, #764ba2 100%);
             color: white;
             padding: 40px;
             border-radius: 16px;
@@ -223,7 +223,7 @@
             align-items: center;
             gap: 10px;
             background: white;
-            color: #667eea;
+            color: #c96d28;
             padding: 14px 28px;
             border-radius: 12px;
             text-decoration: none;
