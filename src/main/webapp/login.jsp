@@ -96,22 +96,12 @@
         const username = (formData.get('username') || '').trim();
         const role = (data.role || '').toLowerCase();
 
-        // Lưu token theo vai trò
-        if (role === 'admin') {
-          localStorage.setItem('admin_token', data.token);
-          localStorage.setItem('admin_username', username);
-        } else if (role === 'shipper') {
-          localStorage.setItem('shipper_token', data.token);
-          localStorage.setItem('shipper_username', username);
-        } else {
-          localStorage.setItem('auth_token', data.token);
-          localStorage.setItem('auth_username', username);
-        }
+        localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('auth_role', role);
+        localStorage.setItem('auth_username', username);
 
-        // Thông báo thành công
         showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
 
-        // Xác định trang đích theo role
         let redirectUrl = contextPath + '/';
         if (role === 'admin') redirectUrl = contextPath + '/admin-dashboard';
         else if (role === 'shipper') redirectUrl = contextPath + '/dashboard-shipper.jsp';

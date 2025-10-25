@@ -98,29 +98,46 @@
 <script>
   const ctx = '<%=ctx%>';
 
+  // Kiểm tra token
+  const token = localStorage.getItem('auth_token');
+  if (!token) {
+    window.location.replace(ctx + '/login.jsp');
+  }
+
+  // Kiểm tra vai trò
   function guardRole(){
-    const role = (localStorage.getItem('auth_role')||'').toLowerCase();
-    if (role !== 'shipper') location.href = ctx + '/login.jsp';
+    const role = (localStorage.getItem('auth_role') || '').toLowerCase();
+    if (role !== 'shipper') {
+      window.location.replace(ctx + '/login.jsp');
+    }
   }
   guardRole();
 
-  async function authFetch(url,opt={}){
-    const token = localStorage.getItem('auth_token')||'';
-    const headers = new Headers(opt.headers||{});
-    if (token) headers.set('Authorization','Bearer '+token);
-    const res = await fetch(url,{...opt, headers});
-    const ct = res.headers.get('content-type')||'';
+  // Hàm fetch có token
+  async function authFetch(url, opt = {}) {
+    const headers = new Headers(opt.headers || {});
+    headers.set('Authorization', 'Bearer ' + token);
+    const res = await fetch(url, { ...opt, headers });
+    const ct = res.headers.get('content-type') || '';
+
     if (!res.ok) {
-      if (res.status === 401) { localStorage.clear(); location.href = ctx + '/login.jsp'; return; }
+      if (res.status === 401) {
+        localStorage.clear();
+        window.location.replace(ctx + '/login.jsp');
+        return;
+      }
       const body = await res.text();
-      throw new Error(`HTTP ${res.status} – ${ct.includes('json')? body : 'Non-JSON: ' + body.slice(0,120)}`);
+      throw new Error(`HTTP ${res.status} – ${ct.includes('json') ? body : body.slice(0, 120)}`);
     }
-    if (ct.includes('json')) return res.json();
-    const txt = await res.text();
-    throw new Error('Non-JSON response: ' + txt.slice(0,120));
+
+    return ct.includes('json') ? res.json() : res.text();
   }
 
-  document.getElementById('logout').onclick = () => { localStorage.clear(); location.href=ctx+'/login.jsp'; };
+  // Logout
+  document.getElementById('logout').onclick = () => {
+    localStorage.clear();
+    window.location.replace(ctx + '/login.jsp');
+  };
 
   const apiBase = ctx + '/api/shipper';
   let chart;
