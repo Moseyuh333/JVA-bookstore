@@ -390,6 +390,64 @@
             to { transform: rotate(360deg); }
         }
 
+        .seller-footer {
+            margin: 32px 24px 24px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            color: #4b5563;
+            font-size: 14px;
+        }
+
+        .seller-footer .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            color: #1a202c;
+        }
+
+        .seller-footer .footer-brand-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #c96d28 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .seller-footer .footer-note {
+            font-size: 13px;
+            font-weight: 400;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .seller-footer .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .seller-footer .footer-links a {
+            color: #4b5563;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .seller-footer .footer-links a:hover {
+            color: #c96d28;
+        }
+
         @media (max-width: 768px) {
             #content {
                 padding: 16px;
@@ -424,6 +482,16 @@
 
             .table-custom {
                 min-width: 800px;
+            }
+
+            .seller-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                margin: 24px 16px;
+            }
+
+            .seller-footer .footer-links {
+                width: 100%;
             }
         }
     </style>
@@ -526,7 +594,23 @@
             </div>
         </div>
 
-    <%@ include file="/WEB-INF/includes/footer.jsp" %>
+        <footer class="seller-footer">
+            <div class="footer-brand">
+                <div class="footer-brand-icon">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div>
+                    <div>Bookish Seller Center</div>
+                    <div class="footer-note">Quan ly don hang va theo doi hieu qua cua cua hang.</div>
+                </div>
+            </div>
+            <div class="footer-links">
+                <a href="${pageContext.request.contextPath}/seller/dashboard">Trang chu seller</a>
+                <a href="${pageContext.request.contextPath}/seller/orders">Don hang</a>
+                <a href="mailto:seller-support@bookishhaven.com">Ho tro</a>
+                <a href="${pageContext.request.contextPath}/seller/settings">Cai dat</a>
+            </div>
+        </footer>
     </div>
 </div>
 <script src="${pageContext.request.contextPath}/assets/js/seller/SellerOrders.js"></script>

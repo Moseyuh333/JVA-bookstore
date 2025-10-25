@@ -325,12 +325,6 @@
                     </a>
                 </li>
                 <li>
-                    <a href="${pageContext.request.contextPath}/seller/profile">
-                        <i data-feather="user"></i>
-                        <span>Hồ sơ</span>
-                    </a>
-                </li>
-                <li>
                     <a href="${pageContext.request.contextPath}/seller/settings">
                         <i data-feather="settings"></i>
                         <span>Cài đặt</span>
