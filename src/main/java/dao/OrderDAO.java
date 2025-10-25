@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.postgresql.util.PGobject;
 
+
 public final class OrderDAO {
 
     private static final Gson GSON = new Gson();
@@ -39,6 +40,11 @@ public final class OrderDAO {
         "delivered",
         "cancelled",
         "returned"
+    ));
+    private static final Set<String> USER_CANCELLABLE_STATUSES = new HashSet<>(Arrays.asList(
+        "new",
+        "confirmed",
+        "shipping"
     ));
 
     private OrderDAO() {
@@ -83,6 +89,8 @@ public final class OrderDAO {
                 if (mode == CheckoutMode.CART) {
                     clearCartAfterCheckout(conn, cartData, selections);
                 }
+                
+                new ShipmentDAO().createForNewOrderRandomShipper(conn, orderId);
                 Order order = fetchOrderByIdInternal(conn, orderId, userId);
                 conn.commit();
                 return order;
@@ -113,7 +121,7 @@ public final class OrderDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     Order order = mapOrder(rs);
-                    order.setItems(findOrderItems(conn, order.getId()));
+                    order.setItems(findOrderItems(conn, order.getId(), order.getUserId()));
                     orders.add(order);
                 }
             }
@@ -147,6 +155,45 @@ public final class OrderDAO {
         }
     }
 
+    public static Order cancelOrder(long orderId, long userId, String reason) throws SQLException {
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                Order existing = fetchOrderByIdInternal(conn, orderId, userId);
+                String normalizedStatus = normalizeStatusValue(existing.getStatus());
+                if (!isUserCancellableStatus(normalizedStatus)) {
+                    throw new SQLException("Đơn hàng không thể hủy ở trạng thái hiện tại");
+                }
+                String trimmedReason = reason == null ? "" : reason.trim();
+                if (trimmedReason.length() > 255) {
+                    trimmedReason = trimmedReason.substring(0, 255);
+                }
+                int updated;
+                String updateSql = "UPDATE orders SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+                    stmt.setLong(1, orderId);
+                    stmt.setString(2, existing.getStatus());
+                    updated = stmt.executeUpdate();
+                }
+                if (updated == 0) {
+                    throw new SQLException("Đơn hàng không thể hủy ở trạng thái hiện tại hoặc đã được cập nhật");
+                }
+                String note = trimmedReason.isEmpty() ? "Khách hủy đơn hàng" : "Khách hủy: " + trimmedReason;
+                recordStatus(conn, orderId, "cancelled", note, "user:" + userId);
+                restoreInventory(conn, orderId);
+                releaseCouponUsage(conn, orderId, userId);
+                Order updatedOrder = fetchOrderByIdInternal(conn, orderId, userId);
+                conn.commit();
+                return updatedOrder;
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
     private static Order fetchOrderByIdInternal(Connection conn, long orderId, Long userId) throws SQLException {
     StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.shipping_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
                 + "u.email AS customer_email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name "
@@ -166,7 +213,7 @@ public final class OrderDAO {
                 Order order = mapOrder(rs);
                 order.setCustomerEmail(rs.getString("customer_email"));
                 order.setCustomerName(rs.getString("customer_name"));
-                order.setItems(findOrderItems(conn, orderId));
+                order.setItems(findOrderItems(conn, orderId, order.getUserId()));
                 return order;
             }
         }
@@ -694,11 +741,25 @@ public final class OrderDAO {
         return null;
     }
 
-    private static List<OrderItem> findOrderItems(Connection conn, long orderId) throws SQLException {
-        String sql = "SELECT oi.id, oi.order_id, oi.book_id, oi.quantity, oi.unit_price, oi.total_price, b.title, b.author, b.image_url "
-                + "FROM order_items oi INNER JOIN books b ON b.id = oi.book_id WHERE oi.order_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, orderId);
+    private static List<OrderItem> findOrderItems(Connection conn, long orderId, Long userId) throws SQLException {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT oi.id, oi.order_id, oi.book_id, oi.quantity, oi.unit_price, oi.total_price, ");
+        sql.append("oi.shop_id AS oi_shop_id, oi.shop_name AS oi_shop_name, ");
+        sql.append("b.title, b.author, b.image_url, b.shop_id AS b_shop_id, b.shop_name AS b_shop_name");
+        if (userId != null) {
+            sql.append(", r.id AS review_id");
+        }
+        sql.append(" FROM order_items oi INNER JOIN books b ON b.id = oi.book_id");
+        if (userId != null) {
+            sql.append(" LEFT JOIN book_reviews r ON r.book_id = oi.book_id AND r.user_id = ?");
+        }
+        sql.append(" WHERE oi.order_id = ?");
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int index = 1;
+            if (userId != null) {
+                stmt.setLong(index++, userId);
+            }
+            stmt.setLong(index, orderId);
             try (ResultSet rs = stmt.executeQuery()) {
                 List<OrderItem> items = new ArrayList<>();
                 while (rs.next()) {
@@ -712,6 +773,45 @@ public final class OrderDAO {
                     item.setTitle(rs.getString("title"));
                     item.setAuthor(rs.getString("author"));
                     item.setImageUrl(rs.getString("image_url"));
+                    
+                    // Ưu tiên lấy shop info từ order_items (snapshot), nếu không có thì lấy từ books
+                    Integer shopId = null;
+                    String shopName = null;
+                    
+                    // Thử lấy từ order_items trước
+                    int oiShopId = rs.getInt("oi_shop_id");
+                    if (!rs.wasNull()) {
+                        shopId = oiShopId;
+                    }
+                    shopName = rs.getString("oi_shop_name");
+                    
+                    // Nếu order_items không có, fallback sang books
+                    if (shopId == null) {
+                        int bShopId = rs.getInt("b_shop_id");
+                        if (!rs.wasNull()) {
+                            shopId = bShopId;
+                        }
+                    }
+                    if (shopName == null || shopName.trim().isEmpty()) {
+                        shopName = rs.getString("b_shop_name");
+                    }
+                    
+                    item.setShopId(shopId);
+                    item.setShopName(shopName);
+                    
+                    if (userId != null) {
+                        long reviewId = rs.getLong("review_id");
+                        if (rs.wasNull()) {
+                            item.setReviewId(null);
+                            item.setHasReview(false);
+                        } else {
+                            item.setReviewId(reviewId);
+                            item.setHasReview(true);
+                        }
+                    } else {
+                        item.setReviewId(null);
+                        item.setHasReview(false);
+                    }
                     items.add(item);
                 }
                 return items;
@@ -720,7 +820,7 @@ public final class OrderDAO {
     }
 
     private static void insertOrderItems(Connection conn, long orderId, CartData cartData) throws SQLException {
-        String sql = "INSERT INTO order_items (order_id, book_id, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO order_items (order_id, book_id, quantity, unit_price, total_price, shop_id, shop_name) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             for (CartLine item : cartData.items) {
                 stmt.setLong(1, orderId);
@@ -728,6 +828,15 @@ public final class OrderDAO {
                 stmt.setInt(3, item.quantity);
                 stmt.setBigDecimal(4, item.unitPrice);
                 stmt.setBigDecimal(5, item.unitPrice.multiply(BigDecimal.valueOf(item.quantity)));
+                
+                // Lưu shop info snapshot
+                if (item.shopId != null) {
+                    stmt.setInt(6, item.shopId);
+                } else {
+                    stmt.setNull(6, java.sql.Types.INTEGER);
+                }
+                stmt.setString(7, item.shopName);
+                
                 stmt.addBatch();
             }
             stmt.executeBatch();
@@ -760,6 +869,64 @@ public final class OrderDAO {
             stmt.setString(3, note);
             stmt.setString(4, createdBy);
             stmt.executeUpdate();
+        }
+    }
+
+    private static void restoreInventory(Connection conn, long orderId) throws SQLException {
+        if (!columnExists(conn, "books", "stock_quantity")) {
+            return;
+        }
+        Map<Long, Integer> restock = new HashMap<>();
+        String sql = "SELECT book_id, quantity FROM order_items WHERE order_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, orderId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long bookId = rs.getLong("book_id");
+                    int quantity = rs.getInt("quantity");
+                    restock.merge(bookId, quantity, Integer::sum);
+                }
+            }
+        }
+        if (restock.isEmpty()) {
+            return;
+        }
+        String updateSql = "UPDATE books SET stock_quantity = stock_quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+            for (Map.Entry<Long, Integer> entry : restock.entrySet()) {
+                stmt.setInt(1, entry.getValue());
+                stmt.setLong(2, entry.getKey());
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        }
+    }
+
+    private static void releaseCouponUsage(Connection conn, long orderId, long userId) throws SQLException {
+        String sql = "SELECT coupon_id FROM order_coupons WHERE order_id = ? AND coupon_id IS NOT NULL";
+        List<Long> couponIds = new ArrayList<>();
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, orderId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long couponId = rs.getLong("coupon_id");
+                    if (!rs.wasNull()) {
+                        couponIds.add(couponId);
+                    }
+                }
+            }
+        }
+        if (couponIds.isEmpty()) {
+            return;
+        }
+        String updateSql = "UPDATE user_coupons SET usage_count = GREATEST(COALESCE(usage_count, 0) - 1, 0), status = 'available', redeemed_at = NULL WHERE user_id = ? AND coupon_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(updateSql)) {
+            for (Long couponId : couponIds) {
+                stmt.setLong(1, userId);
+                stmt.setLong(2, couponId);
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
         }
     }
 
@@ -882,7 +1049,7 @@ public final class OrderDAO {
         CartData cartData = new CartData();
         boolean hasOriginalPrice = columnExists(conn, "books", "original_price");
         boolean hasStockQuantity = columnExists(conn, "books", "stock_quantity");
-        StringBuilder sql = new StringBuilder("SELECT id, title, author, image_url, price");
+        StringBuilder sql = new StringBuilder("SELECT id, title, author, image_url, price, shop_id, shop_name");
         if (hasOriginalPrice) {
             sql.append(", original_price");
         }
@@ -914,6 +1081,14 @@ public final class OrderDAO {
                     item.title = rs.getString("title");
                     item.author = rs.getString("author");
                     item.imageUrl = rs.getString("image_url");
+                    
+                    // Lấy thông tin shop
+                    int shopIdValue = rs.getInt("shop_id");
+                    if (!rs.wasNull()) {
+                        item.shopId = shopIdValue;
+                    }
+                    item.shopName = rs.getString("shop_name");
+                    
                     if (hasStockQuantity) {
                         item.stockQuantity = rs.getInt("stock_quantity");
                         if (!rs.wasNull() && item.quantity > item.stockQuantity) {
@@ -939,7 +1114,7 @@ public final class OrderDAO {
         for (ItemSelection selection : selections) {
             selectionMap.put(selection.getBookId(), selection);
         }
-        StringBuilder sql = new StringBuilder("SELECT c.id AS cart_id, ci.book_id, ci.quantity, ci.unit_price, b.title, b.author, b.image_url, b.stock_quantity "
+        StringBuilder sql = new StringBuilder("SELECT c.id AS cart_id, ci.book_id, ci.quantity, ci.unit_price, b.title, b.author, b.image_url, b.stock_quantity, b.shop_id, b.shop_name "
                 + "FROM carts c "
                 + "INNER JOIN cart_items ci ON ci.cart_id = c.id "
                 + "INNER JOIN books b ON b.id = ci.book_id "
@@ -982,6 +1157,14 @@ public final class OrderDAO {
                     item.author = rs.getString("author");
                     item.imageUrl = rs.getString("image_url");
                     item.stockQuantity = rs.getInt("stock_quantity");
+                    
+                    // Lấy thông tin shop
+                    int shopIdValue = rs.getInt("shop_id");
+                    if (!rs.wasNull()) {
+                        item.shopId = shopIdValue;
+                    }
+                    item.shopName = rs.getString("shop_name");
+                    
                     if (!rs.wasNull() && item.quantity > item.stockQuantity) {
                         throw new SQLException("Số lượng sách \"" + item.title + "\" vượt quá tồn kho");
                     }
@@ -1009,6 +1192,13 @@ public final class OrderDAO {
         try (ResultSet rs = conn.getMetaData().getColumns(null, null, table.toUpperCase(Locale.ROOT), column.toUpperCase(Locale.ROOT))) {
             return rs.next();
         }
+    }
+
+    private static boolean isUserCancellableStatus(String status) {
+        if (status == null) {
+            return false;
+        }
+        return USER_CANCELLABLE_STATUSES.contains(status);
     }
 
     private static AddressSnapshot loadAddress(Connection conn, long userId, long addressId) throws SQLException {
@@ -1253,6 +1443,8 @@ public final class OrderDAO {
         private String author;
         private String imageUrl;
         private int stockQuantity;
+        private Integer shopId;
+        private String shopName;
     }
 
     private static class AddressSnapshot {

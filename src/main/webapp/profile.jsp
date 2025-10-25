@@ -317,6 +317,22 @@
                             <textarea id="reviewContent" name="content" class="form-control" rows="6" minlength="50" required placeholder="Chia sẻ trải nghiệm của bạn (tối thiểu 50 ký tự)"></textarea>
                             <div class="form-text">Chỉ khách đã nhận hàng mới có thể bình luận. Nội dung tối thiểu 50 ký tự.</div>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ảnh/Video minh hoạ</label>
+                            <div class="d-flex flex-column gap-2">
+                                <div id="reviewMediaPreview" class="border rounded bg-light p-3 d-none"></div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <label class="btn btn-outline-secondary mb-0">
+                                        <i class="fas fa-upload me-1"></i>Chọn tệp
+                                        <input type="file" class="d-none" id="reviewMediaInput" accept="image/*,video/mp4,video/webm,video/ogg">
+                                    </label>
+                                    <button type="button" class="btn btn-outline-danger d-none" id="reviewMediaRemoveBtn">
+                                        <i class="fas fa-times me-1"></i>Xóa nội dung
+                                    </button>
+                                </div>
+                                <div class="form-text">Hỗ trợ ảnh (tối đa 5MB) hoặc video MP4/WebM/Ogg (tối đa 20MB).</div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
@@ -456,7 +472,15 @@
             orderItemId: null,
             orderCode: '',
             bookTitle: '',
-            loading: false
+            loading: false,
+            initialMediaUrl: null,
+            initialMediaType: null,
+            mediaUrl: null,
+            mediaType: null,
+            mediaFile: null,
+            previewObjectUrl: null,
+            removeMedia: false,
+            reviewId: null
         };
 
         // Check authentication on page load
@@ -485,6 +509,15 @@
                     reviewState.orderCode = '';
                     reviewState.bookTitle = '';
                 });
+            }
+
+            const reviewMediaInput = document.getElementById('reviewMediaInput');
+            if (reviewMediaInput) {
+                reviewMediaInput.addEventListener('change', handleReviewMediaInputChange);
+            }
+            const reviewMediaRemoveBtn = document.getElementById('reviewMediaRemoveBtn');
+            if (reviewMediaRemoveBtn) {
+                reviewMediaRemoveBtn.addEventListener('click', handleReviewMediaRemove);
             }
 
             loadUserProfile();
@@ -1421,6 +1454,14 @@
             return getStatusMeta(status).badge || 'secondary';
         }
 
+        function canCancelOrder(status) {
+            if (!status) {
+                return false;
+            }
+            const normalized = status.toString().trim().toLowerCase();
+            return normalized === 'new' || normalized === 'confirmed' || normalized === 'shipping';
+        }
+
         function formatCurrency(value) {
             const number = Number(value);
             if (!Number.isFinite(number)) {
@@ -1538,6 +1579,246 @@
             }
         }
 
+        async function requestCancelOrder(orderId, orderCode, triggerButton) {
+            if (!orderId) {
+                return;
+            }
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                showAlert('Bạn cần đăng nhập để hủy đơn hàng.', 'warning');
+                return;
+            }
+            const confirmMessage = orderCode ? `Bạn có chắc chắn muốn hủy đơn ${orderCode}?` : 'Bạn có chắc chắn muốn hủy đơn hàng này?';
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            let reason = prompt('Nhập lý do hủy đơn (có thể bỏ trống):');
+            if (reason) {
+                reason = reason.trim();
+                if (reason.length > 255) {
+                    reason = reason.substring(0, 255);
+                }
+            }
+            if (triggerButton) {
+                triggerButton.disabled = true;
+                triggerButton.dataset.originalHtml = triggerButton.innerHTML;
+                triggerButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang hủy...';
+            }
+            try {
+                const response = await fetch(`${contextPath}/api/profile/orders/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ reason: reason || null })
+                });
+                const payload = await response.json().catch(() => ({ success: false }));
+                if (!response.ok || !payload.success) {
+                    const message = payload && payload.message ? payload.message : 'Không thể hủy đơn hàng. Vui lòng thử lại.';
+                    showAlert(message, 'danger');
+                    return;
+                }
+                showAlert(payload.message || 'Đã hủy đơn hàng.', 'success');
+                loadOrderHistory();
+                viewOrderDetails(orderId);
+            } catch (error) {
+                console.error('requestCancelOrder error', error);
+                showAlert('Không thể hủy đơn hàng. Vui lòng thử lại sau.', 'danger');
+            } finally {
+                if (triggerButton) {
+                    const original = triggerButton.dataset.originalHtml;
+                    triggerButton.innerHTML = original || '<i class="fas fa-times me-1"></i>Hủy đơn';
+                    triggerButton.disabled = false;
+                    delete triggerButton.dataset.originalHtml;
+                }
+            }
+        }
+
+        function clearReviewError() {
+            const alertEl = document.getElementById('reviewFormAlert');
+            if (alertEl) {
+                alertEl.textContent = '';
+                alertEl.classList.add('d-none');
+            }
+        }
+
+        function showReviewError(message) {
+            const alertEl = document.getElementById('reviewFormAlert');
+            if (alertEl) {
+                alertEl.textContent = message;
+                alertEl.classList.remove('d-none');
+            }
+        }
+
+        function revokeReviewMediaObjectUrl() {
+            if (reviewState.previewObjectUrl) {
+                URL.revokeObjectURL(reviewState.previewObjectUrl);
+                reviewState.previewObjectUrl = null;
+            }
+        }
+
+        function resetReviewMediaState() {
+            revokeReviewMediaObjectUrl();
+            reviewState.initialMediaUrl = null;
+            reviewState.initialMediaType = null;
+            reviewState.mediaUrl = null;
+            reviewState.mediaType = null;
+            reviewState.mediaFile = null;
+            reviewState.removeMedia = false;
+            const mediaInput = document.getElementById('reviewMediaInput');
+            if (mediaInput) {
+                mediaInput.value = '';
+            }
+            updateReviewMediaPreview();
+        }
+
+        function resolveReviewMediaUrl(url) {
+            if (!url) {
+                return null;
+            }
+            const trimmed = url.trim();
+            if (!trimmed) {
+                return null;
+            }
+            if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('//')) {
+                return trimmed;
+            }
+            const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+            return `${contextPath}${normalized}`;
+        }
+
+        function updateReviewMediaPreview() {
+            const preview = document.getElementById('reviewMediaPreview');
+            const removeBtn = document.getElementById('reviewMediaRemoveBtn');
+            if (preview) {
+                preview.innerHTML = '';
+                preview.classList.add('d-none');
+            }
+            if (removeBtn) {
+                removeBtn.classList.add('d-none');
+                removeBtn.disabled = reviewState.loading;
+                removeBtn.innerHTML = '<i class="fas fa-times me-1"></i>Xóa nội dung';
+            }
+            if (!preview || !removeBtn) {
+                return;
+            }
+            if (reviewState.removeMedia && reviewState.mediaUrl) {
+                preview.innerHTML = '<div class="text-muted small fst-italic">Tệp đính kèm hiện tại sẽ bị xóa khi bạn lưu.</div>';
+                preview.classList.remove('d-none');
+                removeBtn.classList.remove('d-none');
+                removeBtn.disabled = reviewState.loading;
+                removeBtn.innerHTML = '<i class="fas fa-undo me-1"></i>Khôi phục';
+                return;
+            }
+            if (reviewState.mediaFile && reviewState.previewObjectUrl) {
+                const file = reviewState.mediaFile;
+                const isVideo = file.type && file.type.startsWith('video/');
+                if (isVideo) {
+                    preview.innerHTML = `<video class="w-100 rounded" controls src="${reviewState.previewObjectUrl}"></video>`;
+                } else {
+                    preview.innerHTML = `<img class="img-fluid rounded" src="${reviewState.previewObjectUrl}" alt="Tệp đính kèm">`;
+                }
+                preview.classList.remove('d-none');
+                removeBtn.classList.remove('d-none');
+                removeBtn.disabled = reviewState.loading;
+                removeBtn.innerHTML = '<i class="fas fa-times me-1"></i>Xóa tệp';
+                return;
+            }
+            if (reviewState.mediaUrl) {
+                const resolved = resolveReviewMediaUrl(reviewState.mediaUrl);
+                if (resolved) {
+                    const isVideo = (reviewState.mediaType || '').toLowerCase() === 'video';
+                    if (isVideo) {
+                        preview.innerHTML = `<video class="w-100 rounded" controls src="${resolved}"></video>`;
+                    } else {
+                        preview.innerHTML = `<img class="img-fluid rounded" src="${resolved}" alt="Tệp đính kèm">`;
+                    }
+                    preview.classList.remove('d-none');
+                    removeBtn.classList.remove('d-none');
+                    removeBtn.disabled = reviewState.loading;
+                    removeBtn.innerHTML = '<i class="fas fa-times me-1"></i>Xóa nội dung';
+                }
+            }
+        }
+
+        function handleReviewMediaInputChange(event) {
+            if (reviewState.loading) {
+                if (event && event.target) {
+                    event.target.value = '';
+                }
+                return;
+            }
+            clearReviewError();
+            const input = event && event.target ? event.target : null;
+            const file = input && input.files && input.files.length > 0 ? input.files[0] : null;
+            revokeReviewMediaObjectUrl();
+            reviewState.mediaFile = null;
+            reviewState.previewObjectUrl = null;
+            if (!file) {
+                reviewState.removeMedia = false;
+                updateReviewMediaPreview();
+                return;
+            }
+            const type = file.type || '';
+            const isImage = type.startsWith('image/');
+            const isVideo = type.startsWith('video/');
+            if (!isImage && !isVideo) {
+                if (input) {
+                    input.value = '';
+                }
+                showReviewError('Định dạng tệp không được hỗ trợ. Vui lòng chọn ảnh hoặc video.');
+                updateReviewMediaPreview();
+                return;
+            }
+            const limit = isImage ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
+            if (file.size > limit) {
+                if (input) {
+                    input.value = '';
+                }
+                showReviewError(isImage ? 'Ảnh vượt quá dung lượng tối đa 5MB.' : 'Video vượt quá dung lượng tối đa 20MB.');
+                updateReviewMediaPreview();
+                return;
+            }
+            reviewState.mediaFile = file;
+            reviewState.previewObjectUrl = URL.createObjectURL(file);
+            reviewState.removeMedia = false;
+            updateReviewMediaPreview();
+        }
+
+        function handleReviewMediaRemove(event) {
+            if (event) {
+                event.preventDefault();
+            }
+            if (reviewState.loading) {
+                return;
+            }
+            clearReviewError();
+            const mediaInput = document.getElementById('reviewMediaInput');
+            if (reviewState.removeMedia) {
+                reviewState.removeMedia = false;
+                updateReviewMediaPreview();
+                return;
+            }
+            if (reviewState.mediaFile) {
+                revokeReviewMediaObjectUrl();
+                reviewState.mediaFile = null;
+                reviewState.previewObjectUrl = null;
+                if (mediaInput) {
+                    mediaInput.value = '';
+                }
+                updateReviewMediaPreview();
+                return;
+            }
+            if (reviewState.mediaUrl) {
+                reviewState.removeMedia = true;
+                if (mediaInput) {
+                    mediaInput.value = '';
+                }
+                updateReviewMediaPreview();
+            }
+        }
+
         function resetReviewForm() {
             const form = document.getElementById('reviewForm');
             if (form) {
@@ -1551,16 +1832,14 @@
             if (contentEl) {
                 contentEl.value = '';
             }
-            const alertEl = document.getElementById('reviewFormAlert');
-            if (alertEl) {
-                alertEl.textContent = '';
-                alertEl.classList.add('d-none');
-            }
+            clearReviewError();
             const existingInfoEl = document.getElementById('reviewExistingInfo');
             if (existingInfoEl) {
                 existingInfoEl.textContent = '';
                 existingInfoEl.classList.add('d-none');
             }
+            resetReviewMediaState();
+            reviewState.reviewId = null;
         }
 
         function setReviewFormLoading(loading) {
@@ -1583,6 +1862,15 @@
             if (contentEl) {
                 contentEl.disabled = loading;
             }
+            const mediaInput = document.getElementById('reviewMediaInput');
+            if (mediaInput) {
+                mediaInput.disabled = loading;
+            }
+            const removeBtn = document.getElementById('reviewMediaRemoveBtn');
+            if (removeBtn) {
+                removeBtn.disabled = loading;
+            }
+            updateReviewMediaPreview();
         }
 
         async function openReviewModal(order, item, orderCodeDisplay) {
@@ -1660,6 +1948,15 @@
                         existingInfoEl.textContent = 'Bạn đã từng bình luận sản phẩm này. Bạn có thể chỉnh sửa nội dung và gửi lại.';
                         existingInfoEl.classList.remove('d-none');
                     }
+                    reviewState.reviewId = payload.review.id || null;
+                    reviewState.initialMediaUrl = payload.review.mediaUrl || null;
+                    reviewState.initialMediaType = payload.review.mediaType || null;
+                    reviewState.mediaUrl = reviewState.initialMediaUrl;
+                    reviewState.mediaType = reviewState.initialMediaType;
+                    reviewState.mediaFile = null;
+                    reviewState.removeMedia = false;
+                    revokeReviewMediaObjectUrl();
+                    updateReviewMediaPreview();
                 }
             } catch (error) {
                 console.error('openReviewModal error', error);
@@ -1678,35 +1975,39 @@
             }
             const ratingEl = document.getElementById('reviewRating');
             const contentEl = document.getElementById('reviewContent');
-            const alertEl = document.getElementById('reviewFormAlert');
             const rating = ratingEl ? parseInt(ratingEl.value, 10) : 0;
             const content = contentEl ? contentEl.value.trim() : '';
 
+            clearReviewError();
             if (!rating || rating < 1 || rating > 5) {
-                if (alertEl) {
-                    alertEl.textContent = 'Vui lòng chọn số sao hợp lệ.';
-                    alertEl.classList.remove('d-none');
-                }
+                showReviewError('Vui lòng chọn số sao hợp lệ.');
                 return;
             }
             if (!content || content.length < 50) {
-                if (alertEl) {
-                    alertEl.textContent = 'Nội dung bình luận phải có ít nhất 50 ký tự.';
-                    alertEl.classList.remove('d-none');
-                }
+                showReviewError('Nội dung bình luận phải có ít nhất 50 ký tự.');
                 return;
-            }
-            if (alertEl) {
-                alertEl.classList.add('d-none');
             }
 
             const token = localStorage.getItem('auth_token');
             if (!token) {
-                if (alertEl) {
-                    alertEl.textContent = 'Bạn cần đăng nhập để bình luận sản phẩm.';
-                    alertEl.classList.remove('d-none');
-                }
+                showReviewError('Bạn cần đăng nhập để bình luận sản phẩm.');
                 return;
+            }
+
+            const formData = new FormData();
+            formData.append('bookId', reviewState.bookId);
+            formData.append('rating', rating);
+            formData.append('content', content);
+            if (reviewState.mediaFile) {
+                formData.append('media', reviewState.mediaFile);
+            } else if (reviewState.mediaUrl && !reviewState.removeMedia) {
+                formData.append('mediaUrl', reviewState.mediaUrl);
+                if (reviewState.mediaType) {
+                    formData.append('mediaType', reviewState.mediaType);
+                }
+            }
+            if (reviewState.removeMedia) {
+                formData.append('removeMedia', 'true');
             }
 
             setReviewFormLoading(true);
@@ -1714,23 +2015,26 @@
                 const response = await fetch(`${contextPath}/api/reviews`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({
-                        bookId: reviewState.bookId,
-                        rating,
-                        content
-                    })
+                    body: formData
                 });
                 const payload = await response.json().catch(() => ({ success: false }));
                 if (!response.ok || !payload.success) {
                     const message = payload && payload.message ? payload.message : 'Không thể lưu bình luận. Vui lòng thử lại.';
-                    if (alertEl) {
-                        alertEl.textContent = message;
-                        alertEl.classList.remove('d-none');
-                    }
+                    showReviewError(message);
                     return;
+                }
+                if (payload.review) {
+                    reviewState.reviewId = payload.review.id || null;
+                    reviewState.initialMediaUrl = payload.review.mediaUrl || null;
+                    reviewState.initialMediaType = payload.review.mediaType || null;
+                    reviewState.mediaUrl = reviewState.initialMediaUrl;
+                    reviewState.mediaType = reviewState.initialMediaType;
+                    reviewState.removeMedia = false;
+                    reviewState.mediaFile = null;
+                    revokeReviewMediaObjectUrl();
+                    updateReviewMediaPreview();
                 }
                 showAlert('Đã lưu bình luận cho sản phẩm.', 'success');
                 if (reviewModal) {
@@ -1738,10 +2042,7 @@
                 }
             } catch (error) {
                 console.error('submitReview error', error);
-                if (alertEl) {
-                    alertEl.textContent = 'Không thể lưu bình luận. Vui lòng thử lại sau.';
-                    alertEl.classList.remove('d-none');
-                }
+                showReviewError('Không thể lưu bình luận. Vui lòng thử lại sau.');
             } finally {
                 setReviewFormLoading(false);
             }
@@ -1760,6 +2061,7 @@
             const statusMeta = getStatusMeta(order.status);
             const badgeClass = statusMeta.badge ? `bg-${statusMeta.badge}` : 'bg-secondary';
             const allowReview = statusMeta.key === 'delivered';
+            const isCancellable = canCancelOrder(order.status);
 
             let itemsHtml = '<p class="text-muted mb-0">Danh sách sản phẩm trống.</p>';
             if (Array.isArray(order.items) && order.items.length > 0) {
@@ -1768,6 +2070,7 @@
                         <td>
                             <div class="fw-semibold">${escapeHtml(item.title || 'Sản phẩm')}</div>
                             ${item.author ? `<div class="text-muted small">${escapeHtml(item.author)}</div>` : ''}
+                            ${item.shopName ? `<div class="text-muted small"><i class="fas fa-store me-1"></i>${escapeHtml(item.shopName)}</div>` : ''}
                         </td>
                         <td class="text-center">${item.quantity}</td>
                         <td class="text-end">${formatCurrency(item.unitPrice)}</td>
@@ -1826,7 +2129,10 @@
                         ${order.paymentMethod ? `<div class="text-muted small">Thanh toán: ${escapeHtml(order.paymentMethod.toUpperCase())}</div>` : ''}
                         ${order.couponCode ? `<div class="text-muted small">Mã giảm giá: ${escapeHtml(order.couponCode)}</div>` : ''}
                     </div>
-                    <span class="badge ${badgeClass} fs-6">${escapeHtml(statusMeta.label)}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        ${isCancellable ? `<button type="button" class="btn btn-outline-danger" data-order-cancel><i class="fas fa-times me-1"></i>Hủy đơn</button>` : ''}
+                        <span class="badge ${badgeClass} fs-6">${escapeHtml(statusMeta.label)}</span>
+                    </div>
                 </div>
                 <div class="border rounded-3 p-3 bg-light mb-4">
                     <div class="d-flex justify-content-between mb-1"><span>Tạm tính</span><span>${formatCurrency(order.itemsSubtotal)}</span></div>
@@ -1841,6 +2147,13 @@
                 ${timelineHtml}
                 ${order.notes ? `<div class="mt-4"><strong>Ghi chú:</strong> ${escapeHtml(order.notes)}</div>` : ''}
             `;
+
+            if (isCancellable) {
+                const cancelBtn = container.querySelector('[data-order-cancel]');
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', () => requestCancelOrder(order.id, orderCode, cancelBtn));
+                }
+            }
 
             if (allowReview && Array.isArray(order.items) && order.items.length > 0) {
                 const buttons = container.querySelectorAll('[data-review-trigger]');

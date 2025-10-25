@@ -75,16 +75,31 @@ document.addEventListener("DOMContentLoaded", () => {
             refreshIcons();
         }
 
+        // ======================
+        // Logout đầy đủ
+        // ======================
         function handleLogout() {
+            console.log("🚪 Logging out...");
+            // Xóa tất cả token có thể
             localStorage.removeItem("admin_token");
             localStorage.removeItem("admin_username");
+            localStorage.removeItem("auth_token");
+            localStorage.removeItem("auth_role");
+            localStorage.removeItem("auth_username");
+            sessionStorage.clear();
+
+            // Ẩn dropdown
             adminDropdown.classList.add("hidden");
+
+            // Chuyển về login.jsp
             setTimeout(() => {
                 window.location.href = contextPath + "/login.jsp";
             }, 300);
         }
 
-        // Initialize dropdown with token check
+        // ======================
+        // 🔹 Khởi tạo Dropdown
+        // ======================
         const token = localStorage.getItem("admin_token");
         const username = getStoredUsername(token);
 
@@ -95,7 +110,6 @@ document.addEventListener("DOMContentLoaded", () => {
             renderAdminDropdown(username);
             console.log("✓ Rendered admin dropdown");
         } else {
-            // Admin panel requires login, redirect to login page
             console.log("✗ No admin token, redirecting to login");
             window.location.href = contextPath + "/login.jsp";
         }
@@ -135,14 +149,18 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("✓ Admin dropdown initialized successfully");
     }
 
-    // Initialize when DOM is ready
+    // ======================
+    // 🔹 Initialize dropdown
+    // ======================
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initAdminDropdown);
     } else {
         initAdminDropdown();
     }
 
-    // Sidebar toggle
+    // ======================
+    // 🔹 Sidebar toggle
+    // ======================
     const sidebarToggle = document.getElementById("sidebarToggle");
     const sidebar = document.getElementById("accordionSidebar");
     if (sidebarToggle && sidebar) {
@@ -153,7 +171,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Highlight menu active
+    // ======================
+    // 🔹 Highlight menu active
+    // ======================
     const currentPath = window.location.pathname;
     document.querySelectorAll(".nav-item a.nav-link").forEach((link) => {
         if (link.href.includes(currentPath)) {
@@ -165,7 +185,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Scroll-to-top button
+    // ======================
+    // 🔹 Scroll-to-top button
+    // ======================
     const btnScrollTop = document.getElementById("btnScrollTop");
     if (btnScrollTop) {
         window.addEventListener("scroll", () => {

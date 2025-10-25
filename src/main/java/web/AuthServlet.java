@@ -94,17 +94,23 @@ public class AuthServlet extends HttpServlet {
             if (subject == null || subject.trim().isEmpty()) {
                 subject = username;
             }
+
             String token = JwtUtil.generateToken(subject);
+
+            System.out.println("DEBUG Login - Token generated: " + (token != null));
             System.out.println("DEBUG Login - Token generated: " + (token != null));
 
-            // Check user role for admin redirect
+            // Check user role for redirect
             String role = DBUtil.getUserRole(username);
             String response;
             if ("admin".equals(role)) {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"redirect\":\"/admin-dashboard\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"admin\", \"redirect\":\"/admin-dashboard\"}";
+            } else if ("shipper".equals(role)) {
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"shipper\", \"redirect\":\"/dashboard-shipper.jsp\"}";
             } else {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"user\"}";
             }
+
             System.out.println("DEBUG Login - Response: " + response);
             out.write(response);
         } else {
@@ -369,4 +375,5 @@ public class AuthServlet extends HttpServlet {
             return null;
         }
     }
+
 }

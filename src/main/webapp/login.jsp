@@ -49,97 +49,87 @@
 
 <%@ include file="/WEB-INF/includes/footer.jsp" %>
 <script>
-  (function () {
-    const contextPath = '<%= request.getContextPath() %>';
-    const form = document.getElementById('loginForm');
-    const feedback = document.getElementById('loginFeedback');
-    const submitBtn = document.getElementById('loginSubmit');
+(function () {
+  const contextPath = '<%= request.getContextPath() %>';
+  const form = document.getElementById('loginForm');
+  const feedback = document.getElementById('loginFeedback');
+  const submitBtn = document.getElementById('loginSubmit');
 
-    function showMessage(type, message) {
-      if (!feedback) {
-        return;
+  /** Hiển thị thông báo **/
+  function showMessage(type, message) {
+    if (!feedback) return;
+    feedback.innerHTML = '';
+    const wrapper = document.createElement('div');
+    const base = 'px-4 py-3 rounded-2xl border text-sm font-medium transition';
+    let tone = 'bg-red-100 border-red-200 text-red-700';
+    if (type === 'success') tone = 'bg-emerald-100 border-emerald-200 text-emerald-800';
+    else if (type === 'info') tone = 'bg-amber-50 border-amber-200 text-amber-700';
+    wrapper.className = base + ' ' + tone;
+    wrapper.innerHTML = message;
+    feedback.appendChild(wrapper);
+  }
+
+  /** Gửi request đăng nhập **/
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const payload = new URLSearchParams(formData);
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-60', 'cursor-wait');
+
+    try {
+      const response = await fetch(contextPath + '/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload
+      });
+
+      const text = await response.text();
+      let data = {};
+      if (text) {
+        try { data = JSON.parse(text); }
+        catch (e) { console.warn('Không thể phân tích JSON đăng nhập', e); }
       }
-      feedback.innerHTML = '';
-      const wrapper = document.createElement('div');
-      const base = 'px-4 py-3 rounded-2xl border text-sm font-medium transition';
-      let tone = 'bg-red-100 border-red-200 text-red-700';
-      if (type === 'success') {
-        tone = 'bg-emerald-100 border-emerald-200 text-emerald-800';
-      } else if (type === 'info') {
-        tone = 'bg-amber-50 border-amber-200 text-amber-700';
+
+      if (response.ok && data && data.token) {
+        const username = (formData.get('username') || '').trim();
+        const role = (data.role || '').toLowerCase();
+
+        localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('auth_role', role);
+        localStorage.setItem('auth_username', username);
+
+        // For admin role, also set admin_token for admin panel
+        if (role === 'admin') {
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_username', username);
+        }
+
+        showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
+
+        let redirectUrl = contextPath + '/';
+        if (role === 'admin') redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/admin-dashboard';
+        else if (role === 'shipper') redirectUrl = contextPath + '/dashboard-shipper.jsp';
+        else redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/';
+
+        setTimeout(() => window.location.href = redirectUrl, 1200);
+
+      } else {
+        localStorage.clear();
+        const errorMsg = data?.error || text || 'Đăng nhập thất bại.';
+        showMessage('danger', '❌ ' + errorMsg);
       }
-      wrapper.className = base + ' ' + tone;
-      wrapper.innerHTML = message;
-      feedback.appendChild(wrapper);
+    } catch (error) {
+      console.error('Login error', error);
+      localStorage.clear();
+      showMessage('danger', '❌ Lỗi kết nối. Vui lòng thử lại.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('opacity-60', 'cursor-wait');
     }
-
-    form.addEventListener('submit', async function (event) {
-      event.preventDefault();
-      const formData = new FormData(form);
-      const payload = new URLSearchParams(formData);
-
-      submitBtn.disabled = true;
-      submitBtn.classList.add('opacity-60');
-      submitBtn.classList.add('cursor-wait');
-
-      try {
-        const response = await fetch(contextPath + '/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: payload
-        });
-
-        const text = await response.text();
-        let data = {};
-        if (text) {
-          try {
-            data = JSON.parse(text);
-          } catch (parseError) {
-            console.warn('Không thể phân tích JSON đăng nhập', parseError);
-          }
-        }
-
-        if (response.ok && data && data.token) {
-          const enteredUsername = (formData.get('username') || '').trim();
-          const isAdmin = data.redirect === '/admin-dashboard';
-          if (isAdmin) {
-            localStorage.setItem('admin_token', data.token);
-            if (enteredUsername.length > 0) {
-              localStorage.setItem('admin_username', enteredUsername);
-            } else {
-              localStorage.removeItem('admin_username');
-            }
-          } else {
-            localStorage.setItem('auth_token', data.token);
-            if (enteredUsername.length > 0) {
-              localStorage.setItem('auth_username', enteredUsername);
-            } else {
-              localStorage.removeItem('auth_username');
-            }
-          }
-          showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
-          setTimeout(function () {
-            const redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/';
-            window.location.href = redirectUrl;
-          }, 1200);
-        } else {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('auth_username');
-          const errorMsg = data && data.error ? data.error : (text || 'Đăng nhập thất bại.');
-          showMessage('danger', '❌ ' + errorMsg);
-        }
-      } catch (error) {
-        console.error('Login error', error);
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_username');
-        showMessage('danger', '❌ Lỗi kết nối. Vui lòng thử lại.');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('opacity-60');
-        submitBtn.classList.remove('cursor-wait');
-      }
-    });
-  })();
+  });
+})();
 </script>
 </body>
 </html>

@@ -1,7 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-
+<%@ page isELIgnored="true" %>
+<%
+  String ctx = request.getContextPath();
+%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -19,7 +20,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap&subset=vietnamese" rel="stylesheet">
     <script>
         window.appConfig = window.appConfig || {};
-        window.appConfig.contextPath = '${pageContext.request.contextPath}';
+        window.appConfig.contextPath = '<%=ctx%>';
     </script>
     
     <style>
@@ -560,7 +561,7 @@
 
     </div>
 </div>
-<script src ="${pageContext.request.contextPath}/assets/js/admin/AdDashboard.js"></script>
+<script src ="<%=ctx%>/assets/js/admin/AdDashboard.js"></script>
 
 </body>
 </html>

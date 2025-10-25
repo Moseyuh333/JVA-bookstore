@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<footer class="bg-gray-900 text-gray-300 py-12 px-4">
+<footer class="mt-auto bg-gray-900 text-gray-300 py-12 px-4">
         <div class="container mx-auto">
             <div class="flex justify-center mb-10">
                 <span class="inline-flex items-center gap-2 bg-gray-800 text-amber-200 px-4 py-2 rounded-full text-sm shadow-sm">

@@ -1,4 +1,8 @@
 document.addEventListener("DOMContentLoaded", function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+
     const contextPath = window.appConfig?.contextPath || "";
 
     function getAdminToken() {
