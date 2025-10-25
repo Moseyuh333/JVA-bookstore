@@ -34,19 +34,19 @@ public class ShopRegistrationServlet extends HttpServlet {
         try {
             Integer userId = (Integer) req.getSession().getAttribute("user_id");
 
-            if (userId == null) {
-                resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                out.write(gson.toJson(Map.of("success", false, "message", "Vui lòng đăng nhập trước")));
-                return;
-            }
+            // if (userId == null) {
+            //     resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            //     out.write(gson.toJson(Map.of("success", false, "message", "Vui lòng đăng nhập trước")));
+            //     return;
+            // }
 
-            // Kiểm tra user đã có shop chưa
-            int existingShopId = ShopDAO.getShopIdByUserId(userId);
-            if (existingShopId > 0) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write(gson.toJson(Map.of("success", false, "message", "Bạn đã có shop rồi")));
-                return;
-            }
+            // // Kiểm tra user đã có shop chưa
+            // int existingShopId = ShopDAO.getShopIdByUserId(userId);
+            // if (existingShopId > 0) {
+            //     resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            //     out.write(gson.toJson(Map.of("success", false, "message", "Bạn đã có shop rồi")));
+            //     return;
+            // }
 
             String name = req.getParameter("name");
             String address = req.getParameter("address");
