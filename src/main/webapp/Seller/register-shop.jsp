@@ -182,7 +182,8 @@
     
     <script>
         const API_URL = '<%= request.getContextPath() %>/api/seller/register-shop';
-        
+        //const API_URL = '<%= request.getContextPath() %>/api/seller/request-approval';
+
         document.getElementById('shopRegisterForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
