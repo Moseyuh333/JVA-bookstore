@@ -122,7 +122,7 @@ public class AuthServlet extends HttpServlet {
             session.setAttribute("role", role);
             session.setAttribute("user_id", userId);
             session.setAttribute("token", token);
-            
+            //session.setAttribute("status", status);
             // Nếu là seller, lấy luôn shop_id
             if ("seller".equals(role)) {
                 try {
