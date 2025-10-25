@@ -100,6 +100,12 @@
         localStorage.setItem('auth_role', role);
         localStorage.setItem('auth_username', username);
 
+        // For admin role, also set admin_token for admin panel
+        if (role === 'admin') {
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_username', username);
+        }
+
         showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
 
         let redirectUrl = contextPath + '/';

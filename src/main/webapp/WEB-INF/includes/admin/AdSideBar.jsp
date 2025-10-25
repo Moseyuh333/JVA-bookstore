@@ -279,7 +279,7 @@
             <div class="nav-section-title">Tổng quan</div>
 
             <div class="nav-item">
-                <a class="nav-link" href="admin-dashboard">
+                <a class="nav-link" href="<%=request.getContextPath()%>/admin-dashboard">
                     <i class="fas fa-chart-line"></i>
                     <span>Dashboard</span>
                 </a>
@@ -293,49 +293,49 @@
             <div class="nav-section-title">Quản lý hệ thống</div>
 
             <div class="nav-item">
-                <a class="nav-link" href="admin-account">
+                <a class="nav-link" href="<%=request.getContextPath()%>/admin-account">
                     <i class="fas fa-users-cog"></i>
                     <span>Tài khoản người dùng</span>
                 </a>
             </div>
 
             <div class="nav-item">
-                <a class="nav-link" href="admin-product">
+                <a class="nav-link" href="<%=request.getContextPath()%>/admin-product">
                     <i class="fas fa-book"></i>
                     <span>Sản phẩm</span>
                 </a>
             </div>
 
             <div class="nav-item">
-                <a class="nav-link" href="admin-categories">
+                <a class="nav-link" href="<%=request.getContextPath()%>/admin-categories">
                     <i class="fas fa-tags"></i>
                     <span>Danh mục sản phẩm</span>
                 </a>
             </div>
 
             <div class="nav-item">
-                <a class="nav-link" href="admin-commission">
+                <a class="nav-link" href="<%=request.getContextPath()%>/admin-commission">
                     <i class="fas fa-hand-holding-usd"></i>
                     <span>Chiết khấu cửa hàng</span>
                 </a>
             </div>
 
             <div class="nav-item">
-                <a class="nav-link" href="admin-promotion">
+                <a class="nav-link" href="<%=request.getContextPath()%>/admin-promotion">
                     <i class="fas fa-percentage"></i>
                     <span>Chương trình khuyến mãi</span>
                 </a>
             </div>
 
             <div class="nav-item">
-                <a class="nav-link" href="admin-shippers">
+                <a class="nav-link" href="<%=request.getContextPath()%>/admin-shippers">
                     <i class="fas fa-truck"></i>
                     <span>Nhà vận chuyển</span>
                 </a>
             </div>
 
             <div class="nav-item">
-                <a class="nav-link" href="<c:url value='/admin-orders.jsp'/>">
+                <a class="nav-link" href="<%=request.getContextPath()%>/admin-orders">
                     <i class="fas fa-shopping-cart"></i>
                     <span>Đơn hàng</span>
                 </a>
@@ -347,7 +347,7 @@
         <!-- ======= Cài đặt ======= -->
         <div class="nav-section">
             <div class="nav-item">
-                <a class="nav-link" href="logout">
+                <a class="nav-link" href="<%=request.getContextPath()%>/logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Đăng xuất</span>
                 </a>
