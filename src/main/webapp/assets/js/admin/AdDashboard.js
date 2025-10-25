@@ -3,31 +3,6 @@ document.addEventListener("DOMContentLoaded", function() {
         feather.replace();
     }
 
-    // Admin dropdown functionality
-    const dropdownBtn = document.getElementById('adminDropdownBtn');
-    const dropdown = document.getElementById('adminDropdown');
-
-    if (dropdownBtn && dropdown) {
-        dropdownBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dropdown.classList.toggle('hidden');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
-            }
-        });
-
-        // Close dropdown on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                dropdown.classList.add('hidden');
-            }
-        });
-    }
-
     const contextPath = window.appConfig?.contextPath || "";
 
     function getAdminToken() {
