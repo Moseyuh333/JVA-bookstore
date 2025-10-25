@@ -431,10 +431,7 @@
 <body>
 
 <div id="wrapper">
-    <%@ include file="/WEB-INF/includes/seller/SellerSideBar.jsp" %>
-
     <div id="content-wrapper">
-    <!-- seller header intentionally omitted; page provides its own topbar -->
 
         <div id="content">
             <div class="container-fluid">

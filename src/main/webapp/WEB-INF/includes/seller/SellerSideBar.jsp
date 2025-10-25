@@ -44,7 +44,7 @@
         <a href="${pageContext.request.contextPath}/seller/products"><i class="fas fa-box"></i> Sản phẩm</a>
         <a href="${pageContext.request.contextPath}/seller/orders"><i class="fas fa-shopping-cart"></i> Đơn hàng</a>
         <a href="${pageContext.request.contextPath}/seller/analytics"><i class="fas fa-chart-line"></i> Thống kê</a>
-        <a href="${pageContext.request.contextPath}/seller/profile"><i class="fas fa-user"></i> Hồ sơ</a>
+        <a href="${pageContext.request.contextPath}/seller/categories"><i class="fas fa-tags"></i> Danh mục</a>
         <a href="${pageContext.request.contextPath}/seller/settings"><i class="fas fa-cog"></i> Cài đặt</a>
     </nav>
 </div>
