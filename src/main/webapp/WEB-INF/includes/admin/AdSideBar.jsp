@@ -11,8 +11,8 @@
         width: 260px;
         position: fixed;
         left: -260px;
-        top: 0;
-        height: 100vh;
+        top: 70px;
+        height: calc(100vh - 70px);
         z-index: 999;
         transition: left 0.3s ease;
         overflow-y: auto;
@@ -347,7 +347,7 @@
         <!-- ======= Cài đặt ======= -->
         <div class="nav-section">
             <div class="nav-item">
-                <a class="nav-link" href="<%=request.getContextPath()%>/logout">
+                <a class="nav-link" href="#" onclick="handleLogout()">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Đăng xuất</span>
                 </a>
@@ -360,11 +360,18 @@
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <script>
+function handleLogout() {
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_username");
+    localStorage.removeItem("auth_token");
+    window.location.href = "<%=request.getContextPath()%>/login.jsp";
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('accordionSidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const overlay = document.getElementById('sidebarOverlay');
-    
+
     // Toggle sidebar
     sidebarToggle?.addEventListener('click', e => {
         e.preventDefault();
