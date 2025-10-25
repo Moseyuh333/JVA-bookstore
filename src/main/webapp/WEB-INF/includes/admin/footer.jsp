@@ -51,4 +51,4 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- ====== JS Chung cho Admin ====== -->
-    <script src="${pageContext.request.contextPath}/assets/js/admin/admin.js"></script>
+    <script src="<%= request.getContextPath() %>/assets/js/admin/admin.js"></script>
