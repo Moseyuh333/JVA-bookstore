@@ -56,6 +56,19 @@ public class ShipperApiServlet extends HttpServlet {
                 return;
             }
 
+            // ===================== NEW: LẤY THÔNG TIN USER TỪ BẢNG users ======================
+            // GET /api/shipper/profile  -> {username, email, fullName, phone}
+            if (path.equals("/profile")) {
+                Map<String, Object> profile = fetchUserProfile(user);
+                if (profile == null) {
+                    writeJson(resp, 404, err("NOT_FOUND", "User not found"));
+                } else {
+                    writeJson(resp, 200, profile);
+                }
+                return;
+            }
+            // ===================================================================================
+
             if (path.equals("/shipments")) {
                 String raw = opt(req.getParameter("status"));
                 String status = normalizeStatusForDb(raw);
@@ -372,4 +385,38 @@ public class ShipperApiServlet extends HttpServlet {
             try { if (con != null) con.close(); } catch (Exception ignored) {}
         }
     }
+
+    // ============== PRIVATE: query profile từ bảng users (không cần sửa DAO) ==============
+    private Map<String, Object> fetchUserProfile(String ident) {
+        if (ident == null || ident.trim().isEmpty()) return null;
+
+        String sql =
+            "SELECT username, email, COALESCE(NULLIF(full_name,''), username) AS full_name, phone " +
+            "FROM users WHERE LOWER(username)=LOWER(?) OR LOWER(email)=LOWER(?) LIMIT 1";
+
+        Connection con = null; PreparedStatement ps = null; ResultSet rs = null;
+        try {
+            con = DBUtil.getConnection();
+            ps = con.prepareStatement(sql);
+            ps.setString(1, ident.trim());
+            ps.setString(2, ident.trim());
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                Map<String,Object> m = new LinkedHashMap<>();
+                m.put("username", rs.getString("username"));
+                m.put("email", rs.getString("email"));
+                m.put("fullName", rs.getString("full_name"));
+                m.put("phone", rs.getString("phone"));
+                return m;
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            try { if (rs != null) rs.close(); } catch (Exception ignore) {}
+            try { if (ps != null) ps.close(); } catch (Exception ignore) {}
+            try { if (con != null) con.close(); } catch (Exception ignore) {}
+        }
+    }
+    // =======================================================================================
 }

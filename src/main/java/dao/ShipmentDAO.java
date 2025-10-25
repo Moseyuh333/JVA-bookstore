@@ -354,4 +354,28 @@ public class ShipmentDAO {
             }
         }
     }
+
+    public Map<String, Object> findUserProfile(String ident) throws SQLException {
+        if (ident == null || ident.trim().isEmpty()) return null;
+        String key = ident.trim();
+
+        String sql = "SELECT username, email, COALESCE(NULLIF(full_name,''), username) AS full_name, phone " +
+                    "FROM users WHERE LOWER(username)=LOWER(?) OR LOWER(email)=LOWER(?) LIMIT 1";
+        try (Connection con = DBUtil.getConnection();
+            PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, key);
+            ps.setString(2, key);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String,Object> m = new LinkedHashMap<>();
+                    m.put("username", rs.getString("username"));
+                    m.put("email", rs.getString("email"));
+                    m.put("fullName", rs.getString("full_name"));
+                    m.put("phone", rs.getString("phone"));
+                    return m;
+                }
+            }
+        }
+        return null;
+    }
 }

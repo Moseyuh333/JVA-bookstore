@@ -80,9 +80,11 @@
         <div class="flex items-start gap-4">
           <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-semibold" id="shipperAvatar">S</div>
           <div class="flex-1">
-            <div class="font-semibold text-gray-900" id="shipperName">—</div>
+            <!-- đổi sang full_name + thêm phone -->
+            <div class="font-semibold text-gray-900" id="shipperFullname">—</div>
             <div class="text-sm text-gray-600" id="shipperUsername">—</div>
             <div class="text-sm text-gray-600" id="shipperEmail">—</div>
+            <div class="text-sm text-gray-600" id="shipperPhone">—</div>
           </div>
         </div>
 
@@ -262,7 +264,7 @@
     return `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}">${label}</span>`;
   }
 
-  // ===== Thông tin shipper (avatar + text + kpi nhỏ) =====
+  // ===== Thông tin shipper (tạm thời từ localStorage/JWT, sẽ bị ghi đè bởi profile từ DB) =====
   function renderShipperInfo(stats){
     const nameLS  = localStorage.getItem('auth_user') || '';
     const emailLS = localStorage.getItem('auth_email') || '';
@@ -275,7 +277,7 @@
     const init = (display || username || 'S').trim().charAt(0).toUpperCase();
     document.getElementById('shipperAvatar').textContent = init;
 
-    document.getElementById('shipperName').textContent     = display || '—';
+    document.getElementById('shipperFullname').textContent = display || '—';
     document.getElementById('shipperUsername').textContent = username ? ('@' + username) : '—';
     document.getElementById('shipperEmail').textContent    = email || '—';
     document.getElementById('shipperMeta').textContent     = 'Vai trò: Shipper • Cập nhật: ' + new Date().toLocaleString('vi-VN');
@@ -286,7 +288,22 @@
     document.getElementById('infoFailed').textContent     = stats.failed || 0;
   }
 
-  // ===== Chart nhỏ gọn =====
+  // ===== NẠP PROFILE TỪ BACKEND (users) =====
+  async function loadProfile(){
+    // yêu cầu: ShipperApiServlet đã có GET /api/shipper/profile
+    const prof = await authFetch(ctx + '/api/shipper/profile');
+    const display = (prof.fullName && prof.fullName.trim()) ? prof.fullName.trim()
+                    : (prof.username || prof.email || 'S');
+    const init = (display || 'S').trim().charAt(0).toUpperCase();
+
+    document.getElementById('shipperAvatar').textContent   = init;
+    document.getElementById('shipperFullname').textContent = display || '—';
+    document.getElementById('shipperUsername').textContent = prof.username ? ('@' + prof.username) : '—';
+    document.getElementById('shipperEmail').textContent    = prof.email || '—';
+    document.getElementById('shipperPhone').textContent    = prof.phone || '—';
+  }
+
+  // ===== Chart nhỏ gọn (có màu, hỗ trợ dark-mode) =====
   let chart;
   function renderChart(stats){
     const el = document.getElementById('chart-success');
@@ -331,9 +348,7 @@
               boxHeight: 10,
             }
           },
-          tooltip: {
-            enabled: true
-          }
+          tooltip: { enabled: true }
         }
       }
     });
@@ -357,7 +372,8 @@
       document.getElementById('kpi-success-rate').textContent = ((stats.successRate||0)*100).toFixed(0)+'%';
 
       renderChart(stats);
-      renderShipperInfo(stats);
+      renderShipperInfo(stats); // hiển thị tạm từ localStorage/JWT
+      await loadProfile();      // ghi đè bằng dữ liệu users từ DB
 
       const list = await authFetch(`${apiBase}/shipments?status=all&page=1&size=10`);
       const tbody = document.getElementById('recent-shipments');
