@@ -347,7 +347,7 @@
         <!-- ======= Cài đặt ======= -->
         <div class="nav-section">
             <div class="nav-item">
-                <a class="nav-link" href="<%=request.getContextPath()%>/logout">
+                <a class="nav-link" href="javascript:void(0);" id="logoutBtn">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Đăng xuất</span>
                 </a>
@@ -389,5 +389,24 @@ document.addEventListener('DOMContentLoaded', function() {
             link.closest('.nav-item').classList.add('active');
         }
     });
+
+    // =====================
+    // 🔸 Client-side Logout
+    // =====================
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            console.log('Đăng xuất...');
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_username');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_role');
+            localStorage.removeItem('auth_username');
+            sessionStorage.clear();
+
+            const contextPath = '<%= request.getContextPath() %>';
+            window.location.href = contextPath + '/login.jsp';
+        });
+    }
 });
 </script>
