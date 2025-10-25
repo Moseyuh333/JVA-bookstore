@@ -16,9 +16,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Admin Dropdown Handler
     // =====================
     function initAdminDropdown() {
-        const adminDropdownBtn = document.getElementById("adminDropdownBtn");
-        const adminDropdown = document.getElementById("adminDropdown");
-
+        const adminDropdownBtn = document.getElementById("adminDropdownButton");
+        const adminDropdown = document.getElementById("adminDropdownMenu");
+        
         if (!adminDropdownBtn || !adminDropdown) {
             console.warn("❌ Dropdown elements not found");
             return;
