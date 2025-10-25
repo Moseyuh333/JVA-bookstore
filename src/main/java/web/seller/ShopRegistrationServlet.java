@@ -66,10 +66,18 @@ public class ShopRegistrationServlet extends HttpServlet {
 
             if (shopId > 0) {
                 // Cập nhật role thành seller nếu chưa phải
-                if (!"seller".equalsIgnoreCase(role)) {
-                    DBUtil.updateUserRole(userId, "seller");
-                    req.getSession().setAttribute("role", "seller");
-                }
+                // if (!"seller".equalsIgnoreCase(role)) {
+                //     DBUtil.updateUserRole(userId, "seller");
+                //     req.getSession().setAttribute("role", "seller");
+                // }
+
+                // Cập nhật role thành seller_pending (chờ admin duyệt)
+                    if (!"seller_pending".equalsIgnoreCase(role)) {
+                        DBUtil.updateUserRole(userId, "seller_pending", "pending");
+                        req.getSession().setAttribute("role", "seller_pending");
+                        req.getSession().setAttribute("status", "pending");
+                    }
+
                 
                 req.getSession().setAttribute("shop_id", shopId);
 

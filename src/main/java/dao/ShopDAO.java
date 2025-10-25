@@ -171,8 +171,8 @@ public class ShopDAO {
      * Tạo Shop mới
      */
     public static int createShop(int ownerId, String name, String address, String description) throws SQLException {
-        String sqlWithAddress = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) VALUES (?, ?, ?, ?, 'active', 10.00) RETURNING id";
-        String sqlWithoutAddress = "INSERT INTO shops (owner_id, name, description, status, commission_rate) VALUES (?, ?, ?, 'active', 10.00) RETURNING id";
+        String sqlWithAddress = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) VALUES (?, ?, ?, ?, 'pending', 10.00) RETURNING id";
+        String sqlWithoutAddress = "INSERT INTO shops (owner_id, name, description, status, commission_rate) VALUES (?, ?, ?, 'pending', 10.00) RETURNING id";
         try (Connection conn = DBUtil.getConnection()) {
             try (PreparedStatement ps = conn.prepareStatement(sqlWithAddress)) {
                 ps.setInt(1, ownerId);

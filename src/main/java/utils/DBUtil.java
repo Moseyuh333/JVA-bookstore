@@ -1150,6 +1150,19 @@ public class DBUtil {
             return pstmt.executeUpdate() > 0;
         }
     }
+
+
+    public static void updateUserRole(int userId, String newRole, String newStatus) throws SQLException {
+    String sql = "UPDATE users SET role = ?, status = ?, updated_at = NOW() WHERE id = ?";
+    try (Connection conn = getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setString(1, newRole);
+        ps.setString(2, newStatus);
+        ps.setInt(3, userId);
+        ps.executeUpdate();
+    }
+}
+
 }
 
 
