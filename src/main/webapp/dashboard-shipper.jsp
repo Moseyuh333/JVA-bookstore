@@ -17,48 +17,16 @@
 <body class="bg-gray-50 text-gray-800 min-h-screen">
 <div class="container mx-auto px-4 py-8">
 
-  <div class="mb-8">
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-semibold">Không gian Shipper</h1>
-      <div class="flex items-center gap-2">
-        <button id="logout" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
-          <i data-feather="log-out" class="w-4 h-4 mr-2"></i>Đăng xuất
-        </button>
-      </div>
-    </div>
-
-    <!-- KPI -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
-        <div class="p-4">
-          <div class="text-gray-500 text-sm">Đang giao</div>
-          <div id="kpi-in-progress" class="text-2xl font-bold">0</div>
-        </div>
-      </div>
-      <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
-        <div class="p-4">
-          <div class="text-gray-500 text-sm">Đã giao</div>
-          <div id="kpi-delivered" class="text-2xl font-bold">0</div>
-        </div>
-      </div>
-      <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
-        <div class="p-4">
-          <div class="text-gray-500 text-sm">Thất bại</div>
-          <div id="kpi-failed" class="text-2xl font-bold">0</div>
-        </div>
-      </div>
-      <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
-        <div class="p-4">
-          <div class="text-gray-500 text-sm">Tỷ lệ thành công</div>
-          <div id="kpi-success-rate" class="text-2xl font-bold">0%</div>
-        </div>
-      </div>
-    </div>
+  <div class="mb-6 flex items-center justify-between">
+    <h1 class="text-2xl font-semibold">Không gian Shipper</h1>
+    <button id="logout" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
+      <i data-feather="log-out" class="w-4 h-4 mr-2"></i>Đăng xuất
+    </button>
   </div>
 
-  <!-- CHART + SHIPPER INFO (thu nhỏ chart, thêm khung thông tin) -->
+  <!-- CHART + SHIPPER INFO (chart nhỏ, info bên phải) -->
   <section class="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <!-- Card: Tỷ lệ giao hàng (đÃ thu nhỏ) -->
+    <!-- Card: Tỷ lệ giao hàng -->
     <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
       <div class="px-4 py-3 border-b border-amber-100 flex items-center justify-between">
         <h2 class="text-lg font-medium">Tỷ lệ giao hàng</h2>
@@ -80,7 +48,6 @@
         <div class="flex items-start gap-4">
           <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-semibold" id="shipperAvatar">S</div>
           <div class="flex-1">
-            <!-- đổi sang full_name + thêm phone -->
             <div class="font-semibold text-gray-900" id="shipperFullname">—</div>
             <div class="text-sm text-gray-600" id="shipperUsername">—</div>
             <div class="text-sm text-gray-600" id="shipperEmail">—</div>
@@ -88,10 +55,11 @@
           </div>
         </div>
 
+        <!-- 4 ô nhỏ: ĐÃ ĐỔI ô đầu thành TỶ LỆ THÀNH CÔNG -->
         <div class="grid grid-cols-2 gap-3 mt-4">
           <div class="rounded-lg border border-gray-100 p-3">
-            <div class="text-xs text-gray-500">Đơn hôm nay</div>
-            <div class="text-xl font-bold" id="todayCount">0</div>
+            <div class="text-xs text-gray-500">Tỷ lệ thành công</div>
+            <div class="text-xl font-bold text-green-600" id="infoSuccessRate">0%</div>
           </div>
           <div class="rounded-lg border border-gray-100 p-3">
             <div class="text-xs text-gray-500">Đang giao</div>
@@ -155,22 +123,16 @@
 <script>
   const ctx = '<%=ctx%>';
 
-  // Kiểm tra token
+  // Auth guard
   const token = localStorage.getItem('auth_token');
-  if (!token) {
-    window.location.replace(ctx + '/login.jsp');
-  }
-
-  // Kiểm tra vai trò
+  if (!token) window.location.replace(ctx + '/login.jsp');
   function guardRole(){
     const role = (localStorage.getItem('auth_role') || '').toLowerCase();
-    if (role !== 'shipper') {
-      window.location.replace(ctx + '/login.jsp');
-    }
+    if (role !== 'shipper') window.location.replace(ctx + '/login.jsp');
   }
   guardRole();
 
-  // ===== Helpers chung =====
+  // Helpers
   function showSkeleton(show = true){
     const tbody = document.getElementById('recent-shipments');
     if (show) {
@@ -190,27 +152,18 @@
       tbody.innerHTML = '';
     }
   }
-
   async function authFetch(url, opt = {}) {
     const headers = new Headers(opt.headers || {});
     headers.set('Authorization', 'Bearer ' + token);
     const res = await fetch(url, { ...opt, headers });
     const ct = res.headers.get('content-type') || '';
-
     if (!res.ok) {
-      if (res.status === 401) {
-        localStorage.clear();
-        window.location.replace(ctx + '/login.jsp');
-        return;
-      }
+      if (res.status === 401) { localStorage.clear(); window.location.replace(ctx + '/login.jsp'); return; }
       const body = await res.text();
       throw new Error(`HTTP ${res.status} – ${ct.includes('json') ? body : body.slice(0, 120)}`);
     }
-
     return ct.includes('json') ? res.json() : res.text();
   }
-
-  // Timeago đơn giản
   function timeago(date){
     if (!date) return '-';
     const d = new Date(date);
@@ -224,8 +177,6 @@
     if (dd < 7) return dd + ' ngày trước';
     return d.toLocaleString('vi-VN');
   }
-
-  // Giải mã payload JWT để rút thông tin (nếu cần)
   function parseJwt(token){
     try{
       const p = token.split('.')[1];
@@ -234,29 +185,20 @@
     }catch(e){ return {}; }
   }
 
-  // ===== Chỉ sửa HÀM NÀY: hiển thị trạng thái tiếng Việt (đã đồng bộ enum 8 trạng thái) =====
+  // Badge trạng thái
   function statusBadge(status){
     const s = (status||'').toUpperCase();
     let cls = 'bg-gray-100 text-gray-700';
     let label = status || '-';
-
     switch (s) {
-      case 'ASSIGNED':
-        cls = 'bg-blue-100 text-blue-700';  label = 'Đã phân công'; break;
-      case 'PICKED_UP':
-        cls = 'bg-amber-100 text-amber-700'; label = 'Đã lấy hàng'; break;
-      case 'OUT_FOR_DELIVERY':
-        cls = 'bg-amber-100 text-amber-700'; label = 'Đang giao hàng'; break;
-      case 'DELIVERED':
-        cls = 'bg-green-100 text-green-700'; label = 'Giao thành công'; break;
-      case 'FAILED_DELIVERY':
-        cls = 'bg-red-100 text-red-700';     label = 'Giao thất bại'; break;
-      case 'RETURNING':
-        cls = 'bg-purple-100 text-purple-700'; label = 'Đang hoàn hàng'; break;
-      case 'RETURNED':
-        cls = 'bg-purple-100 text-purple-700'; label = 'Đã hoàn hàng'; break;
-      case 'CANCELLED':
-        cls = 'bg-gray-200 text-gray-700';   label = 'Đã hủy'; break;
+      case 'ASSIGNED':         cls = 'bg-blue-100 text-blue-700';    label = 'Đã phân công'; break;
+      case 'PICKED_UP':        cls = 'bg-amber-100 text-amber-700';  label = 'Đã lấy hàng'; break;
+      case 'OUT_FOR_DELIVERY': cls = 'bg-amber-100 text-amber-700';  label = 'Đang giao hàng'; break;
+      case 'DELIVERED':        cls = 'bg-green-100 text-green-700';  label = 'Giao thành công'; break;
+      case 'FAILED_DELIVERY':  cls = 'bg-red-100 text-red-700';      label = 'Giao thất bại'; break;
+      case 'RETURNING':        cls = 'bg-purple-100 text-purple-700';label = 'Đang hoàn hàng'; break;
+      case 'RETURNED':         cls = 'bg-purple-100 text-purple-700';label = 'Đã hoàn hàng'; break;
+      case 'CANCELLED':        cls = 'bg-gray-200 text-gray-700';    label = 'Đã hủy'; break;
       default:
         if (s === 'IN_TRANSIT') { cls = 'bg-amber-100 text-amber-700'; label = 'Đang vận chuyển'; break; }
         if (s === 'PENDING')    { cls = 'bg-gray-100 text-gray-700';  label = 'Chờ xử lý'; break; }
@@ -264,7 +206,7 @@
     return `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}">${label}</span>`;
   }
 
-  // ===== Thông tin shipper (tạm thời từ localStorage/JWT, sẽ bị ghi đè bởi profile từ DB) =====
+  // Shipper info (tạm từ localStorage/JWT)
   function renderShipperInfo(stats){
     const nameLS  = localStorage.getItem('auth_user') || '';
     const emailLS = localStorage.getItem('auth_email') || '';
@@ -282,16 +224,17 @@
     document.getElementById('shipperEmail').textContent    = email || '—';
     document.getElementById('shipperMeta').textContent     = 'Vai trò: Shipper • Cập nhật: ' + new Date().toLocaleString('vi-VN');
 
-    document.getElementById('todayCount').textContent     = stats.todayCount || 0; // nếu API chưa có thì 0
-    document.getElementById('infoInProgress').textContent = stats.inProgress || 0;
-    document.getElementById('infoDelivered').textContent  = stats.delivered || 0;
-    document.getElementById('infoFailed').textContent     = stats.failed || 0;
+    // set các ô nhỏ bằng stats
+    const rate = ((stats.successRate || 0) * 100).toFixed(0) + '%';
+    document.getElementById('infoSuccessRate').textContent = rate;
+    document.getElementById('infoInProgress').textContent  = stats.inProgress || 0;
+    document.getElementById('infoDelivered').textContent   = stats.delivered || 0;
+    document.getElementById('infoFailed').textContent      = stats.failed || 0;
   }
 
-  // ===== NẠP PROFILE TỪ BACKEND (users) =====
+  // Nạp profile từ backend (users)
   async function loadProfile(){
-    // yêu cầu: ShipperApiServlet đã có GET /api/shipper/profile
-    const prof = await authFetch(ctx + '/api/shipper/profile');
+    const prof = await authFetch(ctx + '/api/shipper/profile'); // cần endpoint này ở backend
     const display = (prof.fullName && prof.fullName.trim()) ? prof.fullName.trim()
                     : (prof.username || prof.email || 'S');
     const init = (display || 'S').trim().charAt(0).toUpperCase();
@@ -303,7 +246,7 @@
     document.getElementById('shipperPhone').textContent    = prof.phone || '—';
   }
 
-  // ===== Chart nhỏ gọn (có màu, hỗ trợ dark-mode) =====
+  // Chart (có màu, hỗ trợ dark-mode)
   let chart;
   function renderChart(stats){
     const el = document.getElementById('chart-success');
@@ -316,23 +259,11 @@
       data: {
         labels: ['Thành công', 'Thất bại', 'Đang giao'],
         datasets: [{
-          backgroundColor: [
-            '#22c55e',  // green-500 - Thành công
-            '#ef4444',  // red-500   - Thất bại
-            '#f59e0b'   // amber-500 - Đang giao
-          ],
-          hoverBackgroundColor: [
-            '#16a34a',  // green-600
-            '#dc2626',  // red-600
-            '#d97706'   // amber-600
-          ],
+          backgroundColor: ['#22c55e', '#ef4444', '#f59e0b'],
+          hoverBackgroundColor: ['#16a34a', '#dc2626', '#d97706'],
           borderColor: ringBorder,
           borderWidth: 2,
-          data: [
-            stats.delivered || 0,
-            stats.failed || 0,
-            stats.inProgress || 0
-          ]
+          data: [stats.delivered || 0, stats.failed || 0, stats.inProgress || 0]
         }]
       },
       options: {
@@ -340,40 +271,27 @@
         maintainAspectRatio: false,
         cutout: '62%',
         plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              color: legendColor,
-              boxWidth: 14,
-              boxHeight: 10,
-            }
-          },
+          legend: { position: 'top', labels: { color: legendColor, boxWidth: 14, boxHeight: 10 } },
           tooltip: { enabled: true }
         }
       }
     });
     const total = (stats.delivered||0) + (stats.failed||0) + (stats.inProgress||0);
-    const sub = document.getElementById('miniSubtitle');
-    if (sub) sub.textContent = total ? (total + ' vận đơn') : '';
+    document.getElementById('miniSubtitle').textContent = total ? (total + ' vận đơn') : '';
   }
 
-  // ===== Load & Render =====
+  // Load & Render
   const apiBase = ctx + '/api/shipper';
-
   async function reload(){
     try{
       document.getElementById('err').textContent = '';
       showSkeleton(true);
 
       const stats = await authFetch(apiBase + '/stats');
-      document.getElementById('kpi-in-progress').textContent = stats.inProgress||0;
-      document.getElementById('kpi-delivered').textContent  = stats.delivered||0;
-      document.getElementById('kpi-failed').textContent     = stats.failed||0;
-      document.getElementById('kpi-success-rate').textContent = ((stats.successRate||0)*100).toFixed(0)+'%';
 
       renderChart(stats);
-      renderShipperInfo(stats); // hiển thị tạm từ localStorage/JWT
-      await loadProfile();      // ghi đè bằng dữ liệu users từ DB
+      renderShipperInfo(stats); // fill ô nhỏ bằng stats
+      await loadProfile();      // điền full_name/phone/email từ DB
 
       const list = await authFetch(`${apiBase}/shipments?status=all&page=1&size=10`);
       const tbody = document.getElementById('recent-shipments');
@@ -388,7 +306,6 @@
           const lastRaw = (it.lastUpdateAt || it.last_update_at || '').toString();
           const last = lastRaw ? timeago(lastRaw) : '-';
           const badge = statusBadge(it.status);
-
           tbody.insertAdjacentHTML('beforeend', `
             <tr class="hover:bg-gray-50">
               <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">#${it.id}</td>
@@ -398,9 +315,7 @@
               <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${last}</td>
               <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
                 <button class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm"
-                        onclick="location.href='${ctx}/shipment-detail.jsp?id=${it.id}'">
-                  Chi tiết
-                </button>
+                        onclick="location.href='${ctx}/shipment-detail.jsp?id=${it.id}'">Chi tiết</button>
               </td>
             </tr>`);
         });
@@ -412,10 +327,7 @@
   }
 
   // Logout
-  document.getElementById('logout').onclick = () => {
-    localStorage.clear();
-    window.location.replace(ctx + '/login.jsp');
-  };
+  document.getElementById('logout').onclick = () => { localStorage.clear(); window.location.replace(ctx + '/login.jsp'); };
 
   reload();
 </script>
