@@ -103,7 +103,7 @@
         showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
 
         let redirectUrl = contextPath + '/';
-        if (role === 'admin') redirectUrl = contextPath + '/admin-dashboard';
+        if (role === 'admin') redirectUrl = contextPath + '/admin/AdDashboard.jsp';
         else if (role === 'shipper') redirectUrl = contextPath + '/dashboard-shipper.jsp';
         else redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/';
 
