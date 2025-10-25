@@ -129,5 +129,4 @@ public class Shipment {
     public void setReceiverAddress(String receiverAddress) {
         this.receiverAddress = receiverAddress;
     }
-
 }

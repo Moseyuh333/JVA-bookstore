@@ -19,7 +19,6 @@ public class ShipmentDAO {
         String trimmed = ident.trim();
         if (trimmed.isEmpty()) return null;
 
-        // Nếu có ký tự @ -> coi là email, tra bảng users để lấy username
         if (trimmed.contains("@")) {
             try (PreparedStatement ps = con.prepareStatement(
                     "SELECT username FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1")) {
@@ -67,10 +66,9 @@ public class ShipmentDAO {
             "LIMIT ? OFFSET ?";
 
         try (Connection con = DBUtil.getConnection()) {
-            // Map email -> username (nếu cần)
             String resolvedUsername = resolveUsernameFromIdentifier(con, usernameOrEmail);
             if (resolvedUsername == null || resolvedUsername.isBlank()) {
-                return list; // rỗng
+                return list;
             }
 
             try (PreparedStatement ps = con.prepareStatement(selectSql)) {
@@ -174,12 +172,6 @@ public class ShipmentDAO {
         return list;
     }
 
-    /**
-     * Ghi sự kiện cho shipment và CẬP NHẬT trạng thái shipment tương ứng.
-     * - Chạy trong 1 transaction.
-     * - Cast enum an toàn bằng ?::shipment_status (PostgreSQL).
-     * - Cập nhật last_update_at.
-     */
     public void addEvent(long shipmentId, String status, String note, String evidenceUrl, String createdBy)
             throws SQLException {
 

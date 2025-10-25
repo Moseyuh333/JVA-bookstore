@@ -66,5 +66,4 @@ public class ShipmentEvent {
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
     }
-
 }

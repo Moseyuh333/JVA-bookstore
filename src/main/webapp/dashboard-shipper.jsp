@@ -142,7 +142,7 @@
   const apiBase = ctx + '/api/shipper';
   let chart;
 
-  // === Chỉ sửa HÀM NÀY: hiển thị trạng thái tiếng Việt ===
+  
   function statusBadge(status){
     const s = (status||'').toUpperCase();
     let cls = 'bg-gray-100 text-gray-700';
