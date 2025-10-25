@@ -291,14 +291,31 @@
   function renderChart(stats){
     const el = document.getElementById('chart-success');
     if (chart) chart.destroy();
+    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const legendColor = isDark ? '#e5e7eb' : '#374151';
+    const ringBorder = isDark ? '#111827' : '#ffffff';
     chart = new Chart(el, {
       type: 'doughnut',
       data: {
         labels: ['Thành công', 'Thất bại', 'Đang giao'],
         datasets: [{
-          data: [stats.delivered || 0, stats.failed || 0, stats.inProgress || 0],
-          borderColor: '#fff',
-          borderWidth: 2
+          backgroundColor: [
+            '#22c55e',  // green-500 - Thành công
+            '#ef4444',  // red-500   - Thất bại
+            '#f59e0b'   // amber-500 - Đang giao
+          ],
+          hoverBackgroundColor: [
+            '#16a34a',  // green-600
+            '#dc2626',  // red-600
+            '#d97706'   // amber-600
+          ],
+          borderColor: ringBorder,
+          borderWidth: 2,
+          data: [
+            stats.delivered || 0,
+            stats.failed || 0,
+            stats.inProgress || 0
+          ]
         }]
       },
       options: {
@@ -306,13 +323,23 @@
         maintainAspectRatio: false,
         cutout: '62%',
         plugins: {
-          legend: { position: 'top' },
-          tooltip: { enabled: true }
+          legend: {
+            position: 'top',
+            labels: {
+              color: legendColor,
+              boxWidth: 14,
+              boxHeight: 10,
+            }
+          },
+          tooltip: {
+            enabled: true
+          }
         }
       }
     });
     const total = (stats.delivered||0) + (stats.failed||0) + (stats.inProgress||0);
-    document.getElementById('miniSubtitle').textContent = total ? (total + ' vận đơn') : '';
+    const sub = document.getElementById('miniSubtitle');
+    if (sub) sub.textContent = total ? (total + ' vận đơn') : '';
   }
 
   // ===== Load & Render =====
