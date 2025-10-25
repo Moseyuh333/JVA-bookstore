@@ -122,19 +122,14 @@
 
 package web.seller;
 
-import dao.ShopDAO;
 import utils.DBUtil;
 import com.google.gson.Gson;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.*;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -154,66 +149,39 @@ public class ShopRegistrationServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+
         setEncoding(req, resp);
         PrintWriter out = resp.getWriter();
 
         try {
             Integer userId = (Integer) req.getSession().getAttribute("user_id");
+            String role = (String) req.getSession().getAttribute("role");
 
             if (userId == null) {
                 resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                out.write(gson.toJson(Map.of("success", false, "message", "Vui lòng đăng nhập trước")));
+                out.write(gson.toJson(Map.of("success", false, "message", "Vui lòng đăng nhập trước.")));
                 return;
             }
 
-            // Kiểm tra đã có shop chưa
-            int existingShopId = ShopDAO.getShopIdByUserId(userId);
-            if (existingShopId > 0) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write(gson.toJson(Map.of("success", false, "message", "Bạn đã có shop rồi.")));
+            if ("seller_pending".equalsIgnoreCase(role) || "seller".equalsIgnoreCase(role)) {
+                out.write(gson.toJson(Map.of("success", false, "message", "Bạn đã gửi yêu cầu hoặc đã là người bán.")));
                 return;
             }
 
-            String name = req.getParameter("name");
-            String address = req.getParameter("address");
-            String description = req.getParameter("description");
+            // Cập nhật role và status
+            DBUtil.updateUserRole(userId, "seller_pending", "pending");
+            req.getSession().setAttribute("role", "seller_pending");
+            req.getSession().setAttribute("status", "pending");
 
-            if (name == null || name.trim().isEmpty()) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write(gson.toJson(Map.of("success", false, "message", "Tên shop là bắt buộc")));
-                return;
-            }
-
-            int shopId = ShopDAO.createShop(userId, name.trim(), address, description);
-
-            if (shopId > 0) {
-                // Cập nhật user -> role = 'seller', status = 'pending'
-                try (Connection conn = DBUtil.getConnection();
-                     PreparedStatement ps = conn.prepareStatement(
-                             "UPDATE users SET role = ?, status = ? WHERE id = ?")) {
-                    ps.setString(1, "seller");
-                    ps.setString(2, "pending");
-                    ps.setInt(3, userId);
-                    ps.executeUpdate();
-                }
-
-                req.getSession().setAttribute("role", "seller");
-                req.getSession().setAttribute("status", "pending");
-
-                out.write(gson.toJson(Map.of(
-                        "success", true,
-                        "message", "Yêu cầu đăng ký shop đã được gửi. Vui lòng chờ admin duyệt.",
-                        "shopId", shopId
-                )));
-            } else {
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                out.write(gson.toJson(Map.of("success", false, "message", "Không thể tạo shop")));
-            }
+            out.write(gson.toJson(Map.of(
+                "success", true,
+                "message", "Yêu cầu đăng ký người bán đã được gửi. Vui lòng chờ admin duyệt."
+            )));
 
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Database error in /api/seller/register-shop", e);
+            LOGGER.log(Level.SEVERE, "Database error in request approval", e);
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write(gson.toJson(Map.of("success", false, "message", "Lỗi cơ sở dữ liệu: " + e.getMessage())));
+            out.write(gson.toJson(Map.of("success", false, "message", "Lỗi cơ sở dữ liệu.")));
         } finally {
             out.flush();
         }
