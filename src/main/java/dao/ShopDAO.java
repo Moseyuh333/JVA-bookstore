@@ -170,64 +170,38 @@ public class ShopDAO {
     /**
      * Tạo Shop mới
      */
-    // public static int createShop(int ownerId, String name, String address, String description) throws SQLException {
-    //     String sqlWithAddress = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) VALUES (?, ?, ?, ?, 'pending', 10.00) RETURNING id";
-    //     String sqlWithoutAddress = "INSERT INTO shops (owner_id, name, description, status, commission_rate) VALUES (?, ?, ?, 'pending', 10.00) RETURNING id";
-    //     try (Connection conn = DBUtil.getConnection()) {
-    //         try (PreparedStatement ps = conn.prepareStatement(sqlWithAddress)) {
-    //             ps.setInt(1, ownerId);
-    //             ps.setString(2, name);
-    //             ps.setString(3, address);
-    //             ps.setString(4, description);
-    //             try (ResultSet rs = ps.executeQuery()) {
-    //                 if (rs.next()) return rs.getInt(1);
-    //                 return -1;
-    //             }
-    //         } catch (SQLException e) {
-    //             String msg = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
-    //             if (msg.contains("column \"address\" does not exist") || msg.contains("column \"address\"")) {
-    //                 try (PreparedStatement ps2 = conn.prepareStatement(sqlWithoutAddress)) {
-    //                     ps2.setInt(1, ownerId);
-    //                     ps2.setString(2, name);
-    //                     ps2.setString(3, description);
-    //                     try (ResultSet rs2 = ps2.executeQuery()) {
-    //                         if (rs2.next()) return rs2.getInt(1);
-    //                         return -1;
-    //                     }
-    //                 }
-    //             }
-    //             throw e;
-    //         }
-    //     }
-    // }
-
-public static int createShop(int ownerId, String name, String address, String description) throws SQLException {
-    String sql = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) " +
-                 "VALUES (?, ?, ?, ?, 'pending', 10.00) RETURNING id";
-
-    try (Connection conn = DBUtil.getConnection();
-         PreparedStatement ps = conn.prepareStatement(sql)) {
-
-        ps.setInt(1, ownerId);
-        ps.setString(2, name);
-        ps.setString(3, address);
-        ps.setString(4, description);
-
-        try (ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                System.out.println("✅ Shop created with ID: " + rs.getInt(1));
-                return rs.getInt(1);
-            } else {
-                System.err.println("⚠️ Insert executed but no ID returned.");
-                return -1;
+    public static int createShop(int ownerId, String name, String address, String description) throws SQLException {
+        String sqlWithAddress = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) VALUES (?, ?, ?, ?, 'pending', 10.00) RETURNING id";
+        String sqlWithoutAddress = "INSERT INTO shops (owner_id, name, description, status, commission_rate) VALUES (?, ?, ?, 'pending', 10.00) RETURNING id";
+        try (Connection conn = DBUtil.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(sqlWithAddress)) {
+                ps.setInt(1, ownerId);
+                ps.setString(2, name);
+                ps.setString(3, address);
+                ps.setString(4, description);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) return rs.getInt(1);
+                    return -1;
+                }
+            } catch (SQLException e) {
+                String msg = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+                if (msg.contains("column \"address\" does not exist") || msg.contains("column \"address\"")) {
+                    try (PreparedStatement ps2 = conn.prepareStatement(sqlWithoutAddress)) {
+                        ps2.setInt(1, ownerId);
+                        ps2.setString(2, name);
+                        ps2.setString(3, description);
+                        try (ResultSet rs2 = ps2.executeQuery()) {
+                            if (rs2.next()) return rs2.getInt(1);
+                            return -1;
+                        }
+                    }
+                }
+                throw e;
             }
         }
-
-    } catch (SQLException e) {
-        e.printStackTrace();
-        throw e;
     }
-}
+
+
 
 
 }
