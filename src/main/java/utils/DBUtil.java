@@ -112,6 +112,28 @@ public class DBUtil {
                     }
                 }
 
+                // Add role column if missing
+                try {
+                    String addRoleSQL = "ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'customer'";
+                    stmt.execute(addRoleSQL);
+                } catch (SQLException e) {
+                    // Ignore if column already exists
+                    if (!e.getMessage().contains("already exists")) {
+                        throw e;
+                    }
+                }
+
+                // Add status column if missing
+                try {
+                    String addStatusSQL = "ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'pending'";
+                    stmt.execute(addStatusSQL);
+                } catch (SQLException e) {
+                    // Ignore if column already exists
+                    if (!e.getMessage().contains("already exists")) {
+                        throw e;
+                    }
+                }
+
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)");
@@ -487,6 +509,28 @@ public class DBUtil {
             stmt.execute(createUserCouponsSql);
             stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_coupons_user ON user_coupons(user_id)");
             stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_coupons_status ON user_coupons(status)");
+
+            String createShopCouponsSql = "CREATE TABLE IF NOT EXISTS shop_coupons (" +
+                "id SERIAL PRIMARY KEY," +
+                "shop_id INTEGER NOT NULL REFERENCES shops(id) ON DELETE CASCADE," +
+                "code VARCHAR(60) NOT NULL," +
+                "description TEXT," +
+                "discount_type VARCHAR(20) NOT NULL DEFAULT 'percentage'," +
+                "discount_value DECIMAL(10, 2) NOT NULL," +
+                "minimum_order DECIMAL(10, 2) DEFAULT 0," +
+                "usage_limit INTEGER," +
+                "used_count INTEGER DEFAULT 0," +
+                "start_date TIMESTAMP," +
+                "end_date TIMESTAMP," +
+                "status VARCHAR(20) DEFAULT 'active'," +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                ")";
+            stmt.execute(createShopCouponsSql);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_shop_coupons_shop ON shop_coupons(shop_id)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_shop_coupons_status ON shop_coupons(status)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_shop_coupons_date ON shop_coupons(start_date, end_date)");
+            stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_shop_coupons_code ON shop_coupons(shop_id, code)");
 
             String createOrderCouponsSql = "CREATE TABLE IF NOT EXISTS order_coupons (" +
                 "id SERIAL PRIMARY KEY," +
@@ -1094,16 +1138,90 @@ public class DBUtil {
         }
     }
 
+    // utils/DBUtil.java
     public static String getUserRole(String username) throws SQLException {
         String sql = "SELECT role FROM users WHERE username = ?";
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String r = rs.getString("role");
+                    return (r == null || r.isBlank()) ? "user" : r.trim().toLowerCase();
+                }
+            }
+        }
+        return "user";
+    }
+    
+    /**
+     * Lấy user ID theo username
+     * @param username Username cần tìm
+     * @return User ID hoặc -1 nếu không tìm thấy
+     */
+    public static int getUserIdByUsername(String username) throws SQLException {
+        String sql = "SELECT id FROM users WHERE username = ?";
+        try (Connection conn = getConnection(); 
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getString("role");
+                    return rs.getInt("id");
+                }
+                return -1;
+            }
+        }
+    }
+
+    // /**
+    //  * Cập nhật role của user
+    //  * @param userId User ID cần cập nhật
+    //  * @param newRole Role mới (admin, seller, user)
+    //  * @return true nếu cập nhật thành công
+    //  */
+    // public static boolean updateUserRole(int userId, String newRole) throws SQLException {
+    //     String sql = "UPDATE users SET role = ? WHERE id = ?";
+    //     try (Connection conn = getConnection(); 
+    //          PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    //         pstmt.setString(1, newRole);
+    //         pstmt.setInt(2, userId);
+    //         return pstmt.executeUpdate() > 0;
+    //     }
+    // }
+
+    public static void updateUserRole(int userId, String role, String status) throws SQLException {
+    String sql = "UPDATE users SET role = ?, status = ? WHERE id = ?";
+    try (Connection conn = getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setString(1, role);
+        stmt.setString(2, status);
+        stmt.setInt(3, userId);
+        stmt.executeUpdate();
+    }
+}
+
+    /**
+     * Lấy status của user theo username
+     * @param username Username cần tìm
+     * @return Status hoặc null nếu không tìm thấy
+     */
+    public static String getUserStatus(String username) throws SQLException {
+        String sql = "SELECT status FROM users WHERE username = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("status");
                 }
                 return null;
             }
         }
     }
+
+
+
+   
 }
+
+

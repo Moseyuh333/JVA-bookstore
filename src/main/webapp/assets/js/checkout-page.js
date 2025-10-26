@@ -22,6 +22,7 @@
     var feedbackEl;
     var placeOrderBtn;
     var notesEl;
+    var couponInputEl;
     var couponSelectEl;
     var couponApplyBtn;
     var couponFeedbackEl;
@@ -51,6 +52,7 @@
         feedbackEl = document.getElementById('checkoutFeedback');
         placeOrderBtn = document.getElementById('placeOrderBtn');
         notesEl = document.getElementById('checkoutNotes');
+        couponInputEl = document.getElementById('checkoutCouponInput');
         couponSelectEl = document.getElementById('checkoutCouponSelect');
         couponApplyBtn = document.getElementById('applyCouponBtn');
         couponFeedbackEl = document.getElementById('couponFeedback');
@@ -194,18 +196,34 @@
         }
         if (couponSelectEl) {
             couponSelectEl.addEventListener('change', function () {
+                var selectedCode = couponSelectEl.value;
+                if (selectedCode && couponInputEl) {
+                    couponInputEl.value = selectedCode;
+                }
                 if (!couponState.selectedCode) {
                     updateCouponFeedback();
+                }
+            });
+        }
+        if (couponInputEl) {
+            couponInputEl.addEventListener('input', function () {
+                if (couponSelectEl) {
+                    couponSelectEl.value = '';
+                }
+            });
+            couponInputEl.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applySelectedCoupon();
                 }
             });
         }
     }
 
     function applySelectedCoupon() {
-        if (!couponSelectEl) {
-            return;
-        }
-        var selectedCode = couponSelectEl.value;
+        var inputCode = couponInputEl ? couponInputEl.value.trim().toUpperCase() : '';
+        var selectedCode = inputCode || (couponSelectEl ? couponSelectEl.value : '');
+        
         if (couponState.selectedCode && (!selectedCode || selectedCode === couponState.selectedCode)) {
             clearCouponSelection(true);
             updateTotalsFromSelection();
@@ -216,23 +234,78 @@
             updateTotalsFromSelection();
             return;
         }
+        
         var coupon = couponState.coupons.find(function (c) {
             return c.code === selectedCode;
         });
+        
         if (!coupon) {
-            updateCouponFeedback('Không tìm thấy mã giảm giá đã chọn.', false);
+            fetchAndApplyCoupon(selectedCode);
             return;
         }
+        
         couponState.selectedCode = selectedCode;
         couponState.selectedCoupon = coupon;
+        if (couponInputEl) {
+            couponInputEl.value = selectedCode;
+        }
         setCouponButtonState(true);
         updateTotalsFromSelection();
+    }
+    
+    async function fetchAndApplyCoupon(code) {
+        if (!code) {
+            return;
+        }
+        
+        updateCouponFeedback('Đang kiểm tra mã giảm giá...', false);
+        if (couponApplyBtn) {
+            couponApplyBtn.disabled = true;
+        }
+        
+        try {
+            var response = await apiClient.get('/api/coupons/validate?code=' + encodeURIComponent(code));
+            if (!response || !response.success || !response.coupon) {
+                throw new Error(response && response.message ? response.message : 'Mã giảm giá không hợp lệ');
+            }
+            
+            var coupon = response.coupon;
+            couponState.selectedCode = code;
+            couponState.selectedCoupon = coupon;
+            
+            if (couponState.coupons.findIndex(function (c) { return c.code === code; }) === -1) {
+                couponState.coupons.push(coupon);
+                renderCouponOptions();
+            }
+            
+            if (couponInputEl) {
+                couponInputEl.value = code;
+            }
+            if (couponSelectEl) {
+                couponSelectEl.value = code;
+            }
+            
+            setCouponButtonState(true);
+            updateTotalsFromSelection();
+        } catch (error) {
+            console.error('Validate coupon error', error);
+            var errorMsg = extractErrorMessage(error) || 'Không thể áp dụng mã giảm giá này';
+            updateCouponFeedback(errorMsg, false);
+            clearCouponSelection(false);
+        } finally {
+            if (couponApplyBtn) {
+                couponApplyBtn.disabled = false;
+            }
+        }
     }
 
     function clearCouponSelection(showMessage) {
         couponState.selectedCode = null;
         couponState.selectedCoupon = null;
         couponState.discount = 0;
+        if (couponInputEl) {
+            couponInputEl.value = '';
+        }
         if (couponSelectEl) {
             couponSelectEl.value = '';
         }
@@ -340,7 +413,7 @@
                 couponFeedbackEl.textContent = 'Mã ' + couponState.selectedCoupon.code + ' đang chờ áp dụng.';
                 couponFeedbackEl.className = 'text-xs text-gray-600';
             } else {
-                couponFeedbackEl.textContent = 'Bạn có thể chọn mã giảm giá để tiết kiệm hơn.';
+                couponFeedbackEl.textContent = 'Nhập hoặc chọn mã giảm giá để tiết kiệm hơn.';
                 couponFeedbackEl.className = 'text-xs text-gray-500';
             }
             return;

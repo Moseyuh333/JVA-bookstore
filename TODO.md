@@ -1,16 +1,16 @@
-# TODO: Add Status Column to Books
+## Pending Tasks
 
-## Backend Updates
-- [x] Update Book.java model to include status field
-- [x] Update BookDAO.java to include status in BASE_SELECT and mapRow
-- [x] Update AdminProductsServlet.java to include status in all SQL queries and JSON responses
+- Deploy to Heroku and test end-to-end OTP + reset flows
+- Verify EmailJS delivery in production (check spam if Gmail)
 
-## Frontend Updates
-- [x] Update AdProduct.jsp to display status in table and add to modal form
-- [x] Update AdProduct.js to render status in table and handle status in form
+## EmailJS configuration (new)
 
-## Testing
-- [x] Test list, create, update, delete products with status
-- [x] Verify frontend displays and edits status correctly
-- [x] Verify new products default to "active" status
-- [x] Verify search by status works correctly
+Backend now supports EmailJS as primary email sender. Set these environment variables (Heroku Config Vars or local):
+
+- EMAILJS_SERVICE_ID=service_ssjp9md
+- EMAILJS_PUBLIC_KEY=F34pTxmNdUjckT9-o
+- EMAILJS_TEMPLATE_REGISTER=template_pf8qw9d
+- EMAILJS_TEMPLATE_RESET=template_sjv9tjr
+- EMAILJS_FROM_NAME=Nkbookstore
+
+If EmailJS variables are missing, system falls back to SMTP (MailerToGo) using SMTP_* envs or `email.properties`.

@@ -9,6 +9,7 @@ public class Order {
     private long id;
     private String code;
     private long userId;
+    private Integer shopId;
     private LocalDateTime orderDate;
     private String status;
     private String paymentStatus;
@@ -50,6 +51,14 @@ public class Order {
 
     public void setUserId(long userId) {
         this.userId = userId;
+    }
+
+    public Integer getShopId() {
+        return shopId;
+    }
+
+    public void setShopId(Integer shopId) {
+        this.shopId = shopId;
     }
 
     public LocalDateTime getOrderDate() {

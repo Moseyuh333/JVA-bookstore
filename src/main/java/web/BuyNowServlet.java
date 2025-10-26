@@ -52,6 +52,7 @@ public class BuyNowServlet extends HttpServlet {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("application/json; charset=UTF-8");
         response.setCharacterEncoding("UTF-8");
@@ -83,7 +84,6 @@ public class BuyNowServlet extends HttpServlet {
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> buildPreview(List<BuyNowItem> items) throws SQLException {
         List<Map<String, Object>> renderedItems = new ArrayList<>();
         long totalQuantity = 0;

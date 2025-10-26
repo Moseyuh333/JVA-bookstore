@@ -49,87 +49,103 @@
 
 <%@ include file="/WEB-INF/includes/footer.jsp" %>
 <script>
-(function () {
   const contextPath = '<%= request.getContextPath() %>';
-  const form = document.getElementById('loginForm');
-  const feedback = document.getElementById('loginFeedback');
-  const submitBtn = document.getElementById('loginSubmit');
 
-  /** Hiển thị thông báo **/
-  function showMessage(type, message) {
-    if (!feedback) return;
-    feedback.innerHTML = '';
-    const wrapper = document.createElement('div');
-    const base = 'px-4 py-3 rounded-2xl border text-sm font-medium transition';
-    let tone = 'bg-red-100 border-red-200 text-red-700';
-    if (type === 'success') tone = 'bg-emerald-100 border-emerald-200 text-emerald-800';
-    else if (type === 'info') tone = 'bg-amber-50 border-amber-200 text-amber-700';
-    wrapper.className = base + ' ' + tone;
-    wrapper.innerHTML = message;
-    feedback.appendChild(wrapper);
-  }
+  // 🔹 Nếu người dùng đã đăng nhập, tự động chuyển hướng
+  (function () {
+    const token = localStorage.getItem('auth_token');
+    const role  = (localStorage.getItem('auth_role') || '').toLowerCase();
+    if (token && role) {
+      let target = contextPath + '/';
+      if (role === 'seller') target = contextPath + '/profile.jsp';
+      else if (role === 'admin') target = contextPath + '/admin-dashboard';
+      else if (role === 'shipper') target = contextPath + '/dashboard-shipper.jsp';
+      window.location.replace(target);
+    }
+  })();
 
-  /** Gửi request đăng nhập **/
-  form.addEventListener('submit', async function (event) {
-    event.preventDefault();
-    const formData = new FormData(form);
-    const payload = new URLSearchParams(formData);
+  (function () {
+    const form = document.getElementById('loginForm');
+    const feedback = document.getElementById('loginFeedback');
+    const submitBtn = document.getElementById('loginSubmit');
 
-    submitBtn.disabled = true;
-    submitBtn.classList.add('opacity-60', 'cursor-wait');
+    // 🔹 Hàm hiển thị thông báo
+    function showMessage(type, message) {
+      if (!feedback) return;
+      feedback.innerHTML = '';
+      const wrapper = document.createElement('div');
+      const base = 'px-4 py-3 rounded-2xl border text-sm font-medium transition';
+      let tone = 'bg-red-100 border-red-200 text-red-700';
+      if (type === 'success') tone = 'bg-emerald-100 border-emerald-200 text-emerald-800';
+      else if (type === 'info') tone = 'bg-amber-50 border-amber-200 text-amber-700';
+      wrapper.className = base + ' ' + tone;
+      wrapper.innerHTML = message;
+      feedback.appendChild(wrapper);
+    }
 
-    try {
-      const response = await fetch(contextPath + '/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: payload
-      });
+    // 🔹 Xử lý form đăng nhập
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const payload = new URLSearchParams(formData);
 
-      const text = await response.text();
-      let data = {};
-      if (text) {
-        try { data = JSON.parse(text); }
-        catch (e) { console.warn('Không thể phân tích JSON đăng nhập', e); }
-      }
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-60', 'cursor-wait');
 
-      if (response.ok && data && data.token) {
-        const username = (formData.get('username') || '').trim();
-        const role = (data.role || '').toLowerCase();
+      try {
+        const response = await fetch(contextPath + '/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload
+        });
 
-        localStorage.setItem('auth_token', data.token);
-        localStorage.setItem('auth_role', role);
-        localStorage.setItem('auth_username', username);
-
-        // For admin role, also set admin_token for admin panel
-        if (role === 'admin') {
-          localStorage.setItem('admin_token', data.token);
-          localStorage.setItem('admin_username', username);
+        const text = await response.text();
+        let data = {};
+        if (text) {
+          try { data = JSON.parse(text); }
+          catch (e) { console.warn('Không thể phân tích JSON đăng nhập', e); }
         }
 
-        showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
+        if (response.ok && data && data.token) {
+          const username = (formData.get('username') || '').trim();
+          const role = (data.role || '').toLowerCase();
 
-        let redirectUrl = contextPath + '/';
-        if (role === 'admin') redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/admin-dashboard';
-        else if (role === 'shipper') redirectUrl = contextPath + '/dashboard-shipper.jsp';
-        else redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/';
+          localStorage.setItem('auth_token', data.token);
+          localStorage.setItem('auth_role', role);
+          localStorage.setItem('auth_username', username);
 
-        setTimeout(() => window.location.href = redirectUrl, 1200);
+          // 🔹 Nếu là admin, lưu thêm admin_token
+          if (role === 'admin') {
+            localStorage.setItem('admin_token', data.token);
+            localStorage.setItem('admin_username', username);
+          }
 
-      } else {
+          showMessage('success', '✅ Đăng nhập thành công! Đang chuyển hướng...');
+
+          let redirectUrl = contextPath + '/';
+          if (role === 'admin') redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/admin-dashboard';
+          else if (role === 'shipper') redirectUrl = contextPath + '/dashboard-shipper.jsp';
+          else if (role === 'seller') redirectUrl = contextPath + '/profile.jsp';
+          else redirectUrl = data.redirect ? contextPath + data.redirect : contextPath + '/';
+
+          setTimeout(() => window.location.href = redirectUrl, 1000);
+
+        } else {
+          localStorage.clear();
+          const errorMsg = data?.error || text || 'Đăng nhập thất bại.';
+          showMessage('danger', '❌ ' + errorMsg);
+        }
+
+      } catch (error) {
+        console.error('Login error', error);
         localStorage.clear();
-        const errorMsg = data?.error || text || 'Đăng nhập thất bại.';
-        showMessage('danger', '❌ ' + errorMsg);
+        showMessage('danger', '❌ Lỗi kết nối. Vui lòng thử lại.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-60', 'cursor-wait');
       }
-    } catch (error) {
-      console.error('Login error', error);
-      localStorage.clear();
-      showMessage('danger', '❌ Lỗi kết nối. Vui lòng thử lại.');
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.classList.remove('opacity-60', 'cursor-wait');
-    }
-  });
-})();
+    });
+  })();
 </script>
 </body>
 </html>

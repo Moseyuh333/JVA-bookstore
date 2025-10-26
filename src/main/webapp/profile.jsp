@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" isELIgnored="true" %>
+<%@ page import="utils.DBUtil" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <c:set var="pageTitle" value="Hồ sơ của tôi" />
 <!DOCTYPE html>
@@ -67,6 +68,37 @@
                             <a class="nav-link" id="delete-account-tab" data-bs-toggle="pill" href="#delete-account" role="tab">
                                 <i class="fas fa-trash me-2"></i>Xóa tài khoản
                             </a>
+                            <%
+                                String ctxPath = request.getContextPath();
+                                String sessionRole = (String) session.getAttribute("role");
+                                String usernameSession = (String) session.getAttribute("username");
+
+                                if ((sessionRole == null || sessionRole.isBlank()) && usernameSession != null) {
+                                    try {
+                                        String dbRole = DBUtil.getUserRole(usernameSession);
+                                        if (dbRole != null && !dbRole.isBlank()) {
+                                            sessionRole = dbRole;
+                                            session.setAttribute("role", dbRole);
+                                        }
+                                    } catch (Exception ignored) {
+                                    }
+                                }
+
+                                boolean isSeller = sessionRole != null && sessionRole.equalsIgnoreCase("seller");
+                                if (isSeller) {
+                            %>
+                                <a href="<%= ctxPath %>/seller/dashboard" class="nav-link text-primary fw-semibold">Trang bán hàng</a>
+                                <a href="<%= ctxPath %>/seller/products" class="nav-link text-primary fw-semibold">Quản lý sản phẩm</a>
+                                <a href="<%= ctxPath %>/seller/orders" class="nav-link text-primary fw-semibold">Quản lý đơn hàng</a>
+                                <a href="<%= ctxPath %>/seller/analytics" class="nav-link text-primary fw-semibold">Thống kê doanh thu</a>
+                            <%
+                                } else {
+                            %>
+                                <a href="<%= ctxPath %>/seller/register-shop" class="btn btn-primary w-100 mt-3">Đăng ký trở thành người bán</a>
+                            <%
+                                }
+                            %>
+                   
                         </div>
                     </div>
                 </div>

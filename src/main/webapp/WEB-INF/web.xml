@@ -85,12 +85,7 @@
         <url-pattern>/api/health</url-pattern>
     </servlet-mapping>
 
-    <servlet>
-        <servlet-name>AdminServlet</servlet-name>
-        <servlet-class>web.AdminServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>AdminServlet</servlet-name>
-        <url-pattern>/api/admin/clear-users</url-pattern>
-    </servlet-mapping>
+    
+    
+
 </web-app>

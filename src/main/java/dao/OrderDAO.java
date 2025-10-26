@@ -3,6 +3,7 @@ package dao;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import models.Order;
 import models.OrderItem;
@@ -28,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.postgresql.util.PGobject;
-
 
 public final class OrderDAO {
 
@@ -78,7 +78,14 @@ public final class OrderDAO {
                     total = BigDecimal.ZERO;
                 }
                 String orderCode = generateOrderCode();
-                long orderId = insertOrder(conn, userId, normalizedMethod, notes, address, cartData, shipping, total, couponResult, orderCode);
+                
+                // Lấy shop_id từ item đầu tiên trong giỏ hàng
+                Integer shopId = null;
+                if (!cartData.items.isEmpty() && cartData.items.get(0).shopId != null) {
+                    shopId = cartData.items.get(0).shopId;
+                }
+                
+                long orderId = insertOrder(conn, userId, normalizedMethod, notes, address, cartData, shipping, total, couponResult, orderCode, shopId);
                 insertOrderItems(conn, orderId, cartData);
                 updateInventory(conn, cartData);
                 recordStatus(conn, orderId, "new", "Đặt hàng thành công", String.valueOf(userId));
@@ -195,7 +202,7 @@ public final class OrderDAO {
     }
 
     private static Order fetchOrderByIdInternal(Connection conn, long orderId, Long userId) throws SQLException {
-    StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.shipping_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
+    StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.shop_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.shipping_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
                 + "u.email AS customer_email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name "
                 + "FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?");
         if (userId != null) {
@@ -291,6 +298,48 @@ public final class OrderDAO {
             }
         }
     }
+
+
+
+    // Trong file dao.OrderDAO.java
+
+// ... (Sau các hàm listOrdersForSeller, fetchOrderById, v.v.)
+
+/**
+ * Lấy tổng doanh thu tháng này cho một Shop cụ thể.
+ * (Cần triển khai logic SQL tính tổng từ bảng orders/order_items theo shop_id và tháng hiện tại)
+ */
+public static BigDecimal getMonthlyRevenue(int shopId) throws SQLException {
+    // Đây là SQL giả định. Cần thay bằng logic tính tổng doanh thu theo shopId và tháng.
+    String sql = "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE shop_id = ? AND status = 'delivered' AND order_date >= date_trunc('month', CURRENT_DATE)";
+    try (Connection conn = DBUtil.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, shopId);
+        try (ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBigDecimal(1);
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+}
+
+/**
+ * Đếm tổng số đơn hàng đã hoàn tất (hoặc tất cả) cho một Shop cụ thể.
+ */
+public static int countTotalOrders(int shopId) throws SQLException {
+    // Chỉ đếm đơn đã confirmed/delivered để phản ánh đơn hàng thực tế
+    String sql = "SELECT COUNT(*) FROM orders WHERE shop_id = ? AND status IN ('confirmed', 'shipping', 'delivered')";
+    try (Connection conn = DBUtil.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, shopId);
+        try (ResultSet rs = stmt.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+}
+
+
 
     public static void updateOrderStatus(long orderId, String newStatus, String note, String actor) throws SQLException {
         String normalizedStatus = normalizeStatusValue(newStatus);
@@ -530,6 +579,13 @@ public final class OrderDAO {
         order.setId(rs.getLong("id"));
         order.setCode(rs.getString("code"));
         order.setUserId(rs.getLong("user_id"));
+        
+        // Đọc shop_id
+        int shopId = rs.getInt("shop_id");
+        if (!rs.wasNull()) {
+            order.setShopId(shopId);
+        }
+        
         order.setOrderDate(toLocalDateTime(rs.getTimestamp("order_date")));
         order.setStatus(rs.getString("status"));
         order.setPaymentStatus(rs.getString("payment_status"));
@@ -538,7 +594,7 @@ public final class OrderDAO {
         order.setItemsSubtotal(rs.getBigDecimal("items_subtotal"));
         order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
         order.setShippingFee(rs.getBigDecimal("shipping_fee"));
-    order.setShippingAddress(resolveShippingAddress(rs));
+        order.setShippingAddress(resolveShippingAddress(rs));
         order.setTotalAmount(rs.getBigDecimal("total_amount"));
         order.setCurrency(rs.getString("currency"));
         order.setCouponCode(rs.getString("coupon_code"));
@@ -812,6 +868,7 @@ public final class OrderDAO {
                         item.setReviewId(null);
                         item.setHasReview(false);
                     }
+                    
                     items.add(item);
                 }
                 return items;
@@ -828,6 +885,15 @@ public final class OrderDAO {
                 stmt.setInt(3, item.quantity);
                 stmt.setBigDecimal(4, item.unitPrice);
                 stmt.setBigDecimal(5, item.unitPrice.multiply(BigDecimal.valueOf(item.quantity)));
+                
+                // Lưu shop info snapshot
+                if (item.shopId != null) {
+                    stmt.setInt(6, item.shopId);
+                } else {
+                    stmt.setNull(6, java.sql.Types.INTEGER);
+                }
+                stmt.setString(7, item.shopName);
+                
                 
                 // Lưu shop info snapshot
                 if (item.shopId != null) {
@@ -871,7 +937,6 @@ public final class OrderDAO {
             stmt.executeUpdate();
         }
     }
-
     private static void restoreInventory(Connection conn, long orderId) throws SQLException {
         if (!columnExists(conn, "books", "stock_quantity")) {
             return;
@@ -968,28 +1033,36 @@ public final class OrderDAO {
     }
 
     private static long insertOrder(Connection conn, long userId, String paymentMethod, String notes, AddressSnapshot address, CartData cartData,
-                                    BigDecimal shippingFee, BigDecimal total, CouponResult coupon, String orderCode) throws SQLException {
-        String sql = "INSERT INTO orders (user_id, code, status, payment_status, payment_method, payment_provider, shipping_address_id, shipping_snapshot, cart_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, coupon_snapshot, notes) "
-                + "VALUES (?, ?, 'new', 'unpaid', ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, 'VND', ?, ?::jsonb, ?) RETURNING id";
+                                    BigDecimal shippingFee, BigDecimal total, CouponResult coupon, String orderCode, Integer shopId) throws SQLException {
+        String sql = "INSERT INTO orders (user_id, shop_id, code, status, payment_status, payment_method, payment_provider, shipping_address_id, shipping_snapshot, cart_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, coupon_snapshot, notes) "
+                + "VALUES (?, ?, ?, 'new', 'unpaid', ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, 'VND', ?, ?::jsonb, ?) RETURNING id";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, userId);
-            stmt.setString(2, orderCode);
-            stmt.setString(3, paymentMethod);
-            stmt.setString(4, providerFor(paymentMethod));
-            if (address.addressId == null) {
-                stmt.setNull(5, java.sql.Types.BIGINT);
+            
+            // Thêm shop_id
+            if (shopId != null) {
+                stmt.setInt(2, shopId);
             } else {
-                stmt.setLong(5, address.addressId);
+                stmt.setNull(2, java.sql.Types.INTEGER);
             }
-            stmt.setString(6, address.jsonSnapshot);
-            stmt.setString(7, cartData.snapshotJson);
-            stmt.setBigDecimal(8, cartData.subtotal);
-            stmt.setBigDecimal(9, coupon.discount);
-            stmt.setBigDecimal(10, shippingFee);
-            stmt.setBigDecimal(11, total);
-            stmt.setString(12, coupon.code);
-            stmt.setString(13, coupon.snapshotJson);
-            stmt.setString(14, notes);
+            
+            stmt.setString(3, orderCode);
+            stmt.setString(4, paymentMethod);
+            stmt.setString(5, providerFor(paymentMethod));
+            if (address.addressId == null) {
+                stmt.setNull(6, java.sql.Types.BIGINT);
+            } else {
+                stmt.setLong(6, address.addressId);
+            }
+            stmt.setString(7, address.jsonSnapshot);
+            stmt.setString(8, cartData.snapshotJson);
+            stmt.setBigDecimal(9, cartData.subtotal);
+            stmt.setBigDecimal(10, coupon.discount);
+            stmt.setBigDecimal(11, shippingFee);
+            stmt.setBigDecimal(12, total);
+            stmt.setString(13, coupon.code);
+            stmt.setString(14, coupon.snapshotJson);
+            stmt.setString(15, notes);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong(1);
@@ -1156,8 +1229,7 @@ public final class OrderDAO {
                     item.title = rs.getString("title");
                     item.author = rs.getString("author");
                     item.imageUrl = rs.getString("image_url");
-                    item.stockQuantity = rs.getInt("stock_quantity");
-                    
+                    item.stockQuantity = rs.getInt("stock_quantity");        
                     // Lấy thông tin shop
                     int shopIdValue = rs.getInt("shop_id");
                     if (!rs.wasNull()) {
@@ -1200,6 +1272,7 @@ public final class OrderDAO {
         }
         return USER_CANCELLABLE_STATUSES.contains(status);
     }
+
 
     private static AddressSnapshot loadAddress(Connection conn, long userId, long addressId) throws SQLException {
         String sql = "SELECT id, recipient_name, phone, line1, line2, ward, district, city, province, postal_code, country, note FROM user_addresses WHERE user_id = ? AND id = ?";
@@ -1476,5 +1549,121 @@ public final class OrderDAO {
             result.snapshotJson = null;
             return result;
         }
+    }
+
+    /**
+     * Lấy danh sách đơn hàng theo Shop ID
+     */
+    public static List<AdminOrderSummary> listOrdersForShop(int shopId, String statusFilter, String keyword, int limit) throws SQLException {
+        String normalizedStatus = normalizeStatusValue(statusFilter);
+        int safeLimit = limit <= 0 ? 50 : Math.min(limit, 200);
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT o.id, o.code, o.status, o.payment_status, o.payment_method, o.total_amount, o.shipping_fee, o.order_date, o.updated_at, ")
+                .append("u.email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name ")
+                .append("FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.shop_id = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(shopId);
+        
+        if (normalizedStatus != null && !"all".equals(normalizedStatus)) {
+            sql.append(" AND LOWER(o.status) = ?");
+            params.add(normalizedStatus);
+        }
+        if (keyword != null) {
+            String trimmed = keyword.trim();
+            if (!trimmed.isEmpty()) {
+                String pattern = "%" + trimmed.toLowerCase(Locale.US) + "%";
+                sql.append(" AND (LOWER(o.code) LIKE ? OR LOWER(COALESCE(u.email, '')) LIKE ? OR LOWER(COALESCE(u.full_name, '')) LIKE ?)");
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
+            }
+        }
+        sql.append(" ORDER BY o.order_date DESC NULLS LAST, o.id DESC LIMIT ?");
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int index = 1;
+            for (Object param : params) {
+                stmt.setObject(index++, param);
+            }
+            stmt.setInt(index, safeLimit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<AdminOrderSummary> orders = new ArrayList<>();
+                while (rs.next()) {
+                    AdminOrderSummary summary = new AdminOrderSummary();
+                    summary.id = rs.getLong("id");
+                    summary.code = rs.getString("code");
+                    summary.status = rs.getString("status");
+                    summary.paymentStatus = rs.getString("payment_status");
+                    summary.paymentMethod = rs.getString("payment_method");
+                    summary.totalAmount = rs.getBigDecimal("total_amount");
+                    summary.shippingFee = rs.getBigDecimal("shipping_fee");
+                    summary.orderDate = toLocalDateTime(rs.getTimestamp("order_date"));
+                    summary.updatedAt = toLocalDateTime(rs.getTimestamp("updated_at"));
+                    summary.customerEmail = rs.getString("email");
+                    summary.customerName = rs.getString("customer_name");
+                    orders.add(summary);
+                }
+                return orders;
+            }
+        }
+    }
+
+    /**
+     * Đếm số đơn hàng theo trạng thái của Shop
+     */
+    public static int countOrdersByStatus(int shopId, String status) throws SQLException {
+        String normalizedStatus = normalizeStatusValue(status);
+        if (normalizedStatus == null) {
+            return 0;
+        }
+        String sql = "SELECT COUNT(*) FROM orders WHERE shop_id = ? AND LOWER(status) = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, shopId);
+            stmt.setString(2, normalizedStatus);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    /**
+     * Kiểm tra đơn hàng có thuộc về Shop không
+     */
+    public static boolean orderBelongsToShop(long orderId, int shopId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM orders WHERE id = ? AND shop_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, orderId);
+            stmt.setInt(2, shopId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Lấy dữ liệu doanh thu 7 ngày gần nhất
+     */
+    public static List<Map<String, Object>> getDailySalesLast7Days(int shopId) throws SQLException {
+        String sql = "SELECT DATE(order_date) as sale_date, SUM(total_amount) as revenue " +
+                     "FROM orders WHERE shop_id = ? AND status = 'delivered' " +
+                     "AND order_date >= CURRENT_DATE - INTERVAL '7 days' " +
+                     "GROUP BY DATE(order_date) ORDER BY sale_date";
+        
+        List<Map<String, Object>> result = new ArrayList<>();
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, shopId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> dailyData = new HashMap<>();
+                    dailyData.put("date", rs.getDate("sale_date").toString());
+                    dailyData.put("revenue", rs.getBigDecimal("revenue"));
+                    result.add(dailyData);
+                }
+            }
+        }
+        return result;
     }
 }
