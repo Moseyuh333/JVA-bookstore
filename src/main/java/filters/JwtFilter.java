@@ -6,6 +6,7 @@ import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 @WebFilter(filterName = "JwtFilter", urlPatterns = {"/api/*"})
@@ -35,6 +36,14 @@ public class JwtFilter implements Filter {
             return;
         }
 
+        // Check if user is authenticated via session (for logged-in users)
+        HttpSession session = req.getSession(false);
+        if (session != null && session.getAttribute("user_id") != null) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // Fallback to JWT token
         String authHeader = req.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ") && authHeader.length() > 7) {
             String token = authHeader.substring(7);
