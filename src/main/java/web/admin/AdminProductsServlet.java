@@ -88,9 +88,12 @@ public class AdminProductsServlet extends HttpServlet {
         String searchType = req.getParameter("searchType");
         String category = req.getParameter("category");
         String shopId = req.getParameter("shop_id");
+        String status = req.getParameter("status");
         int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
         int limit = req.getParameter("limit") != null ? Integer.parseInt(req.getParameter("limit")) : 20;
         int offset = (page - 1) * limit;
+
+        boolean hasStatusFilter = status != null && !status.trim().isEmpty() && !"all".equals(status.trim());
 
         if ("status".equals(searchType) && search != null) {
             String s = search.trim().toLowerCase();
@@ -120,6 +123,13 @@ public class AdminProductsServlet extends HttpServlet {
         if (category != null && !category.trim().isEmpty()) {
             sql.append(" AND b.category ILIKE ?");
             countSql.append(" AND b.category ILIKE ?");
+        }
+        if (hasStatusFilter) {
+            String normalizedStatus = normalizeStatus(status);
+            if (normalizedStatus != null) {
+                sql.append(" AND b.status = ?");
+                countSql.append(" AND b.status = ?");
+            }
         }
         if (search != null && !search.trim().isEmpty()) {
             if ("id".equals(searchType)) {
@@ -161,6 +171,12 @@ public class AdminProductsServlet extends HttpServlet {
                     psCount.setInt(paramCount++, Integer.parseInt(shopId));
                 if (category != null && !category.trim().isEmpty())
                     psCount.setString(paramCount++, "%" + category + "%");
+                if (hasStatusFilter) {
+                    String normalizedStatus = normalizeStatus(status);
+                    if (normalizedStatus != null) {
+                        psCount.setString(paramCount++, normalizedStatus);
+                    }
+                }
                 if (search != null && !search.trim().isEmpty()) {
                     if ("id".equals(searchType)) {
                         psCount.setInt(paramCount++, Integer.parseInt(search.trim()));
@@ -195,6 +211,12 @@ public class AdminProductsServlet extends HttpServlet {
                     ps.setInt(paramIndex++, Integer.parseInt(shopId));
                 if (category != null && !category.trim().isEmpty())
                     ps.setString(paramIndex++, "%" + category + "%");
+                if (hasStatusFilter) {
+                    String normalizedStatus = normalizeStatus(status);
+                    if (normalizedStatus != null) {
+                        ps.setString(paramIndex++, normalizedStatus);
+                    }
+                }
                 if (search != null && !search.trim().isEmpty()) {
                     if ("id".equals(searchType)) {
                         ps.setInt(paramIndex++, Integer.parseInt(search.trim()));
@@ -581,6 +603,17 @@ public class AdminProductsServlet extends HttpServlet {
                 out.write("{\"error\":\"Product not found\"}");
             }
         }
+    }
+
+    // ========= Normalize status for filtering =========
+    private String normalizeStatus(String status) {
+        if (status == null || status.trim().isEmpty()) return null;
+        String s = status.trim().toLowerCase();
+        if ("active".equals(s) || s.matches(".*(ho|động|hoạt).*")) return "active";
+        if ("pending".equals(s) || s.matches(".*(ch|duy|chờ|đợi).*")) return "pending";
+        if ("inactive".equals(s) || s.matches(".*(kh|ngưng|ngh).*")) return "inactive";
+        if ("rejected".equals(s) || s.matches(".*(từ|chối|bị).*")) return "rejected";
+        return s; // fallback to original if no match
     }
 
     // ========= Escape JSON safely =========

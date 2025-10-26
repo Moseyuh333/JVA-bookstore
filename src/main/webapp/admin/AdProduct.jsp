@@ -542,6 +542,12 @@
                                 <option value="status">Trạng thái</option>
                                 <option value="shop_name">Tên shop</option>
                             </select>
+                            <select id="statusFilter" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="active">Hoạt động</option>
+                                <option value="inactive">Không hoạt động</option>
+                                <option value="pending">Đang chờ duyệt</option>
+                            </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="searchInput" placeholder="Tìm kiếm...">

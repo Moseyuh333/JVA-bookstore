@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const paginationEl = document.getElementById("pagination");
     const searchInput = document.getElementById("searchInput");
     const searchBtn = document.getElementById("searchBtn");
+    const statusFilter = document.getElementById("statusFilter");
 
     const statusLabels = {
         active: 'Active',
@@ -28,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const limit = 20;
     let currentSearch = "";
     let currentSearchType = "all";
+    let currentStatusFilter = "all";
 
     // ===== Utility =====
     const escapeHtml = (text) => {
@@ -137,11 +139,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.changePage = (page) => {
         currentPage = page;
-        loadProducts(currentPage, currentSearch);
+        loadProducts(currentPage, currentSearch, currentSearchType, currentStatusFilter);
     };
 
     // ===== Load Products =====
-    const loadProducts = async (page = 1, search = "", searchType = "all") => {
+    const loadProducts = async (page = 1, search = "", searchType = "all", statusFilter = "all") => {
         try {
             showLoading();
             const token = localStorage.getItem("admin_token"); // lấy token từ localStorage
@@ -149,6 +151,9 @@ document.addEventListener("DOMContentLoaded", () => {
             let url = `/api/admin/products?action=list&page=${page}&limit=${limit}`;
             if (search && search.trim()) {
                 url += `&search=${encodeURIComponent(search)}&searchType=${encodeURIComponent(searchType)}`;
+            }
+            if (statusFilter && statusFilter !== "all") {
+                url += `&status=${encodeURIComponent(statusFilter)}`;
             }
 
             const res = await fetch(url, {
@@ -215,10 +220,12 @@ document.addEventListener("DOMContentLoaded", () => {
         searchBtn.addEventListener("click", () => {
             const searchValue = searchInput ? searchInput.value.trim() : "";
             const type = searchType ? searchType.value : "all";
+            const status = statusFilter ? statusFilter.value : "all";
             currentSearch = searchValue;
             currentSearchType = type;
+            currentStatusFilter = status;
             currentPage = 1;
-            loadProducts(currentPage, currentSearch, currentSearchType);
+            loadProducts(currentPage, currentSearch, currentSearchType, currentStatusFilter);
         });
     }
 
@@ -226,10 +233,12 @@ document.addEventListener("DOMContentLoaded", () => {
         resetBtn.addEventListener("click", () => {
             if (searchInput) searchInput.value = "";
             if (searchType) searchType.value = "all";
+            if (statusFilter) statusFilter.value = "all";
             currentSearch = "";
             currentSearchType = "all";
+            currentStatusFilter = "all";
             currentPage = 1;
-            loadProducts(currentPage, currentSearch, currentSearchType);
+            loadProducts(currentPage, currentSearch, currentSearchType, currentStatusFilter);
         });
     }
 
@@ -237,20 +246,37 @@ document.addEventListener("DOMContentLoaded", () => {
         searchInput.addEventListener("input", () => {
             const searchValue = searchInput.value.trim();
             const type = searchType ? searchType.value : "all";
+            const status = statusFilter ? statusFilter.value : "all";
             currentSearch = searchValue;
             currentSearchType = type;
+            currentStatusFilter = status;
             currentPage = 1;
-            loadProducts(currentPage, currentSearch, currentSearchType);
+            loadProducts(currentPage, currentSearch, currentSearchType, currentStatusFilter);
         });
         searchInput.addEventListener("keypress", (e) => {
             if (e.key === "Enter") {
                 const searchValue = searchInput.value.trim();
                 const type = searchType ? searchType.value : "all";
+                const status = statusFilter ? statusFilter.value : "all";
                 currentSearch = searchValue;
                 currentSearchType = type;
+                currentStatusFilter = status;
                 currentPage = 1;
-                loadProducts(currentPage, currentSearch, currentSearchType);
+                loadProducts(currentPage, currentSearch, currentSearchType, currentStatusFilter);
             }
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener("change", () => {
+            const searchValue = searchInput ? searchInput.value.trim() : "";
+            const type = searchType ? searchType.value : "all";
+            const status = statusFilter.value;
+            currentSearch = searchValue;
+            currentSearchType = type;
+            currentStatusFilter = status;
+            currentPage = 1;
+            loadProducts(currentPage, currentSearch, currentSearchType, currentStatusFilter);
         });
     }
 
