@@ -201,8 +201,8 @@ public class AdminCommissionsServlet extends HttpServlet {
             return;
         }
 
-        BigDecimal minRevenue = minRevenueStr != null ? new BigDecimal(minRevenueStr) : BigDecimal.ZERO;
-        BigDecimal maxRevenue = maxRevenueStr != null ? new BigDecimal(maxRevenueStr) : null;
+        BigDecimal minRevenue = (minRevenueStr != null && !minRevenueStr.trim().isEmpty()) ? new BigDecimal(minRevenueStr.trim()) : BigDecimal.ZERO;
+        BigDecimal maxRevenue = (maxRevenueStr != null && !maxRevenueStr.trim().isEmpty()) ? new BigDecimal(maxRevenueStr.trim()) : null;
         BigDecimal rate = new BigDecimal(rateStr);
         if (status == null) status = "active";
 
@@ -249,8 +249,8 @@ public class AdminCommissionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        BigDecimal minRevenue = minRevenueStr != null ? new BigDecimal(minRevenueStr) : BigDecimal.ZERO;
-        BigDecimal maxRevenue = maxRevenueStr != null ? new BigDecimal(maxRevenueStr) : null;
+        BigDecimal minRevenue = (minRevenueStr != null && !minRevenueStr.trim().isEmpty()) ? new BigDecimal(minRevenueStr.trim()) : BigDecimal.ZERO;
+        BigDecimal maxRevenue = (maxRevenueStr != null && !maxRevenueStr.trim().isEmpty()) ? new BigDecimal(maxRevenueStr.trim()) : null;
         BigDecimal rate = new BigDecimal(rateStr);
 
         String sql = "UPDATE commissions SET name = ?, type = ?, min_revenue = ?, max_revenue = ?, rate = ?, status = ?, updated_at = NOW() WHERE id = ?";
