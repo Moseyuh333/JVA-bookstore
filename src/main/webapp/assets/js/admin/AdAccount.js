@@ -176,7 +176,7 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
                 `<td>${email}</td>`,
                 `<td>${phone}</td>`,
                     `<td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>`,
-                    `<td><span class="badge-custom ${statusBadgeClass}">${statusLabels[statusKey] || status}</span></td>`,
+                    `<td>${statusLabels[statusKey] || status}</td>`,
                     '<td class="actions">',
                     `<button class="btn-icon btn-edit" title="Chỉnh sửa" data-user-id="${user.id}">`,
                     '<i class="fas fa-edit"></i>',
