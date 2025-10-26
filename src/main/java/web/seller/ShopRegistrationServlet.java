@@ -59,7 +59,9 @@ public class ShopRegistrationServlet extends HttpServlet {
 
             // Kiểm tra user đã có shop chưa
             int existingShopId = ShopDAO.getShopIdByUserId(userId);
+            System.out.println("DEBUG ShopRegistrationServlet - existingShopId: " + existingShopId);
             if (existingShopId > 0) {
+                System.out.println("DEBUG ShopRegistrationServlet - User already has shop, returning 400");
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write(gson.toJson(Map.of("success", false, "message", "Bạn đã có shop rồi")));
                 return;
@@ -68,8 +70,10 @@ public class ShopRegistrationServlet extends HttpServlet {
             String name = req.getParameter("name");
             String address = req.getParameter("address");
             String description = req.getParameter("description");
+            System.out.println("DEBUG ShopRegistrationServlet - name: '" + name + "', address: '" + address + "', description: '" + description + "'");
 
             if (name == null || name.trim().isEmpty()) {
+                System.out.println("DEBUG ShopRegistrationServlet - Name is null or empty, returning 400");
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write(gson.toJson(Map.of("success", false, "message", "Tên shop là bắt buộc")));
                 return;
