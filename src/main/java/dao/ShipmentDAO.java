@@ -19,7 +19,6 @@ public class ShipmentDAO {
         String trimmed = ident.trim();
         if (trimmed.isEmpty()) return null;
 
-        // Nếu có ký tự @ -> coi là email, tra bảng users để lấy username
         if (trimmed.contains("@")) {
             try (PreparedStatement ps = con.prepareStatement(
                     "SELECT username FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1")) {
@@ -67,10 +66,9 @@ public class ShipmentDAO {
             "LIMIT ? OFFSET ?";
 
         try (Connection con = DBUtil.getConnection()) {
-            // Map email -> username (nếu cần)
             String resolvedUsername = resolveUsernameFromIdentifier(con, usernameOrEmail);
             if (resolvedUsername == null || resolvedUsername.isBlank()) {
-                return list; // rỗng
+                return list;
             }
 
             try (PreparedStatement ps = con.prepareStatement(selectSql)) {
@@ -174,12 +172,6 @@ public class ShipmentDAO {
         return list;
     }
 
-    /**
-     * Ghi sự kiện cho shipment và CẬP NHẬT trạng thái shipment tương ứng.
-     * - Chạy trong 1 transaction.
-     * - Cast enum an toàn bằng ?::shipment_status (PostgreSQL).
-     * - Cập nhật last_update_at.
-     */
     public void addEvent(long shipmentId, String status, String note, String evidenceUrl, String createdBy)
             throws SQLException {
 
@@ -361,5 +353,29 @@ public class ShipmentDAO {
                 con.setAutoCommit(true);
             }
         }
+    }
+
+    public Map<String, Object> findUserProfile(String ident) throws SQLException {
+        if (ident == null || ident.trim().isEmpty()) return null;
+        String key = ident.trim();
+
+        String sql = "SELECT username, email, COALESCE(NULLIF(full_name,''), username) AS full_name, phone " +
+                    "FROM users WHERE LOWER(username)=LOWER(?) OR LOWER(email)=LOWER(?) LIMIT 1";
+        try (Connection con = DBUtil.getConnection();
+            PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, key);
+            ps.setString(2, key);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String,Object> m = new LinkedHashMap<>();
+                    m.put("username", rs.getString("username"));
+                    m.put("email", rs.getString("email"));
+                    m.put("fullName", rs.getString("full_name"));
+                    m.put("phone", rs.getString("phone"));
+                    return m;
+                }
+            }
+        }
+        return null;
     }
 }

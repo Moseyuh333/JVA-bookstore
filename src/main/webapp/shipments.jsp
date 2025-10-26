@@ -128,7 +128,7 @@
     return `${HH}:${mm}:${ss} ${dd}/${MM}/${yyyy}`;
   }
 
-  // màu + NHÃN TIẾNG VIỆT cho badge (giống ảnh mẫu)
+
   const statusStyle = {
     'ASSIGNED':         {cls:'bg-slate-700 text-blue-200', label:'Đã phân công'},
     'PICKED_UP':        {cls:'bg-blue-700 text-white',     label:'Đã lấy hàng'},
