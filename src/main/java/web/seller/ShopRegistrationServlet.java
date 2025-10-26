@@ -33,19 +33,25 @@ public class ShopRegistrationServlet extends HttpServlet {
         PrintWriter out = resp.getWriter();
 
         try {
+            System.out.println("DEBUG ShopRegistrationServlet - doPost called");
+
             // Try session first, then JWT token
             Integer userId = (Integer) req.getSession().getAttribute("user_id");
+            System.out.println("DEBUG ShopRegistrationServlet - userId from session: " + userId);
 
             if (userId == null) {
                 // Fallback to JWT token
                 try {
                     userId = AuthUtil.resolveUserId(req).intValue();
+                    System.out.println("DEBUG ShopRegistrationServlet - userId from JWT: " + userId);
                 } catch (SQLException e) {
+                    System.err.println("DEBUG ShopRegistrationServlet - JWT resolution failed: " + e.getMessage());
                     // Ignore, will check below
                 }
             }
 
             if (userId == null) {
+                System.out.println("DEBUG ShopRegistrationServlet - No userId found, returning 401");
                 resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 out.write(gson.toJson(Map.of("success", false, "message", "Vui lòng đăng nhập trước")));
                 return;
