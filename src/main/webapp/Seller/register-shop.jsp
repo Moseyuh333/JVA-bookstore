@@ -152,7 +152,7 @@
         <div id="alertContainer"></div>
         
         <!-- <form id="shopRegisterForm"> -->
-        <form id="registerShopForm" method="POST" action="/api/seller/register-shop"></form>
+        <!-- <form id="registerShopForm" method="POST" action="/api/seller/register-shop"></form>
             <div class="form-group">
                 <label for="shopName">Tên Shop <span style="color: red;">*</span></label>
                 <input type="text" id="shopName" name="name" required 
@@ -174,7 +174,34 @@
             <button type="submit" class="btn-submit" id="submitBtn">
                 Đăng ký Shop
             </button>
-        </form>
+        </form> -->
+
+        <form id="shopRegisterForm" method="POST" action="<%= request.getContextPath() %>/api/seller/register-shop">
+    <div class="form-group">
+        <label for="shopName">Tên Shop <span style="color: red;">*</span></label>
+        <input type="text" id="shopName" name="name" required 
+               placeholder="Nhập tên shop của bạn">
+    </div>
+
+    <div class="form-group">
+        <label for="shopAddress">Địa chỉ Shop</label>
+        <input type="text" id="shopAddress" name="address" 
+               placeholder="Nhập địa chỉ shop (tùy chọn)">
+    </div>
+
+    <div class="form-group">
+        <label for="shopDescription">Mô tả Shop</label>
+        <textarea id="shopDescription" name="description" 
+                  placeholder="Giới thiệu về shop của bạn (tùy chọn)"></textarea>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submitBtn">
+        Đăng ký Shop
+    </button>
+</form>
+
+
+
         
         <div class="back-link">
             <a href="${pageContext.request.contextPath}/index.jsp">← Quay lại trang chủ</a>
