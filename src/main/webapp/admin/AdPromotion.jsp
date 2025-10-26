@@ -630,8 +630,8 @@
                 <div class="modal-label">Trạng thái</div>
                 <div style="flex:1">
                     <select id="promoActive" name="active" class="modal-input">
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
+                        <option value="true">Hoạt động</option>
+                        <option value="false">Không hoạt động</option>
                     </select>
                 </div>
             </div>
