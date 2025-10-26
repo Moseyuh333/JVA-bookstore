@@ -246,11 +246,10 @@ public class AdminUsersServlet extends HttpServlet {
 
             for (int i = 0; i < params.size(); i++) {
                 Object param = params.get(i);
-                if (param instanceof String) {
-                    pstmt.setString(i + 1, (String) param);
-                } else {
-                    // For enum status
+                if (hasStatusFilter && i == params.size() - 1) {
                     setEnumParam(pstmt, i + 1, "user_status", (String) param);
+                } else {
+                    pstmt.setString(i + 1, (String) param);
                 }
             }
 
@@ -359,6 +358,29 @@ public class AdminUsersServlet extends HttpServlet {
         String trimmed = status.trim();
         String lower = trimmed.toLowerCase(Locale.US);
         String resolved = lookup.get(lower);
+
+        // Handle Vietnamese status names
+        if (resolved == null) {
+            switch (lower) {
+                case "chờ kích hoạt":
+                case "pending":
+                    resolved = lookup.get("pending");
+                    break;
+                case "hoạt động":
+                case "active":
+                    resolved = lookup.get("active");
+                    break;
+                case "không hoạt động":
+                case "inactive":
+                    resolved = lookup.get("inactive");
+                    break;
+                case "cấm":
+                case "banned":
+                    resolved = lookup.get("banned");
+                    break;
+            }
+        }
+
         return resolved != null ? resolved : null;
     }
 
