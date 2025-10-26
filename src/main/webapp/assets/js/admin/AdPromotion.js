@@ -275,7 +275,7 @@ async function openEditPromo(id){
         // parse timestamps if present
         if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);
         if(data.end_at) document.getElementById('promoEnd').value = (new Date(data.end_at)).toISOString().slice(0,16);
-        document.getElementById('promoActive').value = data.active ? 'true' : 'false';
+        document.getElementById('promoActive').value = data.active ? 'Hoạt động' : 'Không hoạt động';
         promoTitleEl.textContent='Chỉnh sửa khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
     }catch(err){ console.error(err); alert('Lỗi khi lấy khuyến mãi'); }
 }
