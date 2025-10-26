@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const applyFilters = () => {
         const keyword = searchInput.value.toLowerCase().trim();
         const searchType = currentSearchType;
-        const statusFilter = document.getElementById('commissionStatusFilter') ? document.getElementById('commissionStatusFilter').value : 'all';
+        const statusFilter = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'all';
 
         let filtered = commissions;
 
@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const resetFilters = () => {
         if (searchInput) searchInput.value = '';
         if (searchTypeSelect) searchTypeSelect.value = 'all';
-        const statusFilter = document.getElementById('commissionStatusFilter');
+        const statusFilter = document.getElementById('statusFilter');
         if (statusFilter) statusFilter.value = 'all';
         currentSearchType = "all";
         loadCommissions();
@@ -205,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
             loadCommissions();
         });
     }
-    document.getElementById('commissionStatusFilter')?.addEventListener('change', loadCommissions);
+    document.getElementById('statusFilter')?.addEventListener('change', loadCommissions);
 
     // Init
     loadCommissions();
