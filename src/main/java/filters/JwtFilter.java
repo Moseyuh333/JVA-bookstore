@@ -77,7 +77,6 @@ public class JwtFilter implements Filter {
             case "/api/admin/clear-users":
             case "/api/test-email":
             case "/api/health":
-            case "/api/seller/register-shop":
                 return true;
             default:
                 break;
