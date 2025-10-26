@@ -28,7 +28,9 @@ public class AdminCategoriesServlet extends HttpServlet {
 
         try {
             if ("list".equals(action)) {
-                listCategories(out);
+                listCategories(req, out);
+            } else if ("get".equals(action)) {
+                getCategory(req, out);
             } else {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write("{\"error\":\"Invalid action\"}");
@@ -70,27 +72,53 @@ public class AdminCategoriesServlet extends HttpServlet {
         }
     }
 
-    private void listCategories(PrintWriter out) throws SQLException {
-        String sql = "SELECT id, name, total_products as product_count, created_at FROM categories ORDER BY name";
+    private void listCategories(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String search = req.getParameter("search");
+        String searchType = req.getParameter("searchType");
+
+        StringBuilder sql = new StringBuilder("SELECT id, name, total_products as product_count, created_at FROM categories");
+
+        boolean hasSearch = (search != null && !search.trim().isEmpty());
+
+        if (hasSearch) {
+            search = "%" + search.trim().toLowerCase() + "%";
+            if ("id".equalsIgnoreCase(searchType)) {
+                sql.append(" WHERE CAST(id AS TEXT) LIKE ?");
+            } else if ("name".equalsIgnoreCase(searchType)) {
+                sql.append(" WHERE LOWER(name) LIKE ?");
+            } else {
+                sql.append(" WHERE LOWER(name) LIKE ? OR CAST(id AS TEXT) LIKE ?");
+            }
+        }
+        sql.append(" ORDER BY id ASC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"categories\":[");
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            if (search != null && !search.trim().isEmpty()) {
+                if ("id".equalsIgnoreCase(searchType) || "name".equalsIgnoreCase(searchType)) {
+                    pstmt.setString(1, search);
+                } else {
+                    pstmt.setString(1, search);
+                    pstmt.setString(2, search);
+                }
 
-            boolean first = true;
-            while (rs.next()) {
-                if (!first) json.append(",");
-                first = false;
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    first = false;
 
-                json.append("{")
-                    .append("\"id\":").append(rs.getInt("id")).append(",")
-                    .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
-                    .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
-                    .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
-                    .append("}");
+                    json.append("{")
+                        .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
+                        .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
+                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
+                        .append("}");
+                }
             }
         }
 
@@ -98,30 +126,67 @@ public class AdminCategoriesServlet extends HttpServlet {
         out.write(json.toString());
     }
 
-    private void createCategory(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String name = req.getParameter("name");
-        String slug = req.getParameter("slug");
-        String description = req.getParameter("description");
+    private void getCategory(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String idStr = req.getParameter("id");
 
-        if (name == null || name.trim().isEmpty() || slug == null || slug.trim().isEmpty()) {
-            out.write("{\"error\":\"Name and slug are required\"}");
+        if (idStr == null) {
+            out.write("{\"error\":\"ID is required\"}");
             return;
         }
 
-        String sql = "INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)";
+        int id = Integer.parseInt(idStr);
+        String sql = "SELECT id, name, total_products as product_count, created_at FROM categories WHERE id = ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    StringBuilder json = new StringBuilder();
+                    json.append("{")
+                        .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
+                        .append("\"product_count\":").append(rs.getInt("product_count")).append(",")
+                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\"")
+                        .append("}");
+                    out.write(json.toString());
+                } else {
+                    out.write("{\"error\":\"Category not found\"}");
+                }
+            }
+        }
+    }
+
+    private void createCategory(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String name = req.getParameter("name");
+        if (name == null || name.trim().isEmpty()) {
+            out.write("{\"error\":\"Name is required\"}");
+            return;
+        }
+        String sql = "INSERT INTO categories (name) VALUES (?) RETURNING id, total_products, created_at";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, name.trim());
-            pstmt.setString(2, slug.trim());
-            pstmt.setString(3, description != null ? description.trim() : null);
 
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Category created successfully\"}");
-            } else {
-                out.write("{\"error\":\"Failed to create category\"}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int id = rs.getInt("id");
+                    int total = rs.getInt("total_products");
+                    java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                    StringBuilder json = new StringBuilder();
+                    json.append("{")
+                        .append("\"message\":\"Category created successfully\"")
+                        .append(",\"id\":").append(id)
+                        .append(",\"total_products\":").append(total)
+                        .append(",\"created_at\":\"").append(createdAt).append("\"")
+                        .append("}");
+                    out.write(json.toString());
+                } else {
+                    out.write("{\"error\":\"Failed to create category\"}");
+                }
             }
         }
     }
@@ -129,24 +194,19 @@ public class AdminCategoriesServlet extends HttpServlet {
     private void updateCategory(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
         String name = req.getParameter("name");
-        String slug = req.getParameter("slug");
-        String description = req.getParameter("description");
-
-        if (idStr == null || name == null || name.trim().isEmpty() || slug == null || slug.trim().isEmpty()) {
-            out.write("{\"error\":\"ID, name and slug are required\"}");
+        if (idStr == null || name == null || name.trim().isEmpty()) {
+            out.write("{\"error\":\"ID and name are required\"}");
             return;
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "UPDATE categories SET name = ?, total_product = ?, created_at = CURRENT_TIMESTAMP WHERE id = ?";
+        String sql = "UPDATE categories SET name = ? WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, name.trim());
-            pstmt.setString(2, slug.trim());
-            pstmt.setString(3, description != null ? description.trim() : null);
-            pstmt.setInt(4, id);
+            pstmt.setInt(2, id);
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {

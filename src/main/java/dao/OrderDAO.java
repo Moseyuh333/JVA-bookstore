@@ -3,6 +3,7 @@ package dao;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import models.Order;
 import models.OrderItem;
@@ -95,6 +96,8 @@ public final class OrderDAO {
                 if (mode == CheckoutMode.CART) {
                     clearCartAfterCheckout(conn, cartData, selections);
                 }
+                
+                new ShipmentDAO().createForNewOrderRandomShipper(conn, orderId);
                 Order order = fetchOrderByIdInternal(conn, orderId, userId);
                 conn.commit();
                 return order;
@@ -109,7 +112,7 @@ public final class OrderDAO {
 
     public static List<Order> findOrders(long userId, String statusFilter) throws SQLException {
         StringBuilder sql = new StringBuilder();
-    sql.append("SELECT id, code, user_id, shop_id, order_date, status, payment_status, payment_method, payment_provider, shipping_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
+    sql.append("SELECT id, code, user_id, order_date, status, payment_status, payment_method, payment_provider, shipping_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
                 + "FROM orders WHERE user_id = ?");
         if (statusFilter != null && !statusFilter.trim().isEmpty()) {
             sql.append(" AND status = ?");
@@ -591,7 +594,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
         order.setItemsSubtotal(rs.getBigDecimal("items_subtotal"));
         order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
         order.setShippingFee(rs.getBigDecimal("shipping_fee"));
-    order.setShippingAddress(resolveShippingAddress(rs));
+        order.setShippingAddress(resolveShippingAddress(rs));
         order.setTotalAmount(rs.getBigDecimal("total_amount"));
         order.setCurrency(rs.getString("currency"));
         order.setCouponCode(rs.getString("coupon_code"));
@@ -865,6 +868,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
                         item.setReviewId(null);
                         item.setHasReview(false);
                     }
+                    
                     items.add(item);
                 }
                 return items;
@@ -881,6 +885,15 @@ public static int countTotalOrders(int shopId) throws SQLException {
                 stmt.setInt(3, item.quantity);
                 stmt.setBigDecimal(4, item.unitPrice);
                 stmt.setBigDecimal(5, item.unitPrice.multiply(BigDecimal.valueOf(item.quantity)));
+                
+                // Lưu shop info snapshot
+                if (item.shopId != null) {
+                    stmt.setInt(6, item.shopId);
+                } else {
+                    stmt.setNull(6, java.sql.Types.INTEGER);
+                }
+                stmt.setString(7, item.shopName);
+                
                 
                 // Lưu shop info snapshot
                 if (item.shopId != null) {
@@ -924,7 +937,6 @@ public static int countTotalOrders(int shopId) throws SQLException {
             stmt.executeUpdate();
         }
     }
-
     private static void restoreInventory(Connection conn, long orderId) throws SQLException {
         if (!columnExists(conn, "books", "stock_quantity")) {
             return;
@@ -1217,8 +1229,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
                     item.title = rs.getString("title");
                     item.author = rs.getString("author");
                     item.imageUrl = rs.getString("image_url");
-                    item.stockQuantity = rs.getInt("stock_quantity");
-                    
+                    item.stockQuantity = rs.getInt("stock_quantity");        
                     // Lấy thông tin shop
                     int shopIdValue = rs.getInt("shop_id");
                     if (!rs.wasNull()) {
@@ -1261,6 +1272,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
         }
         return USER_CANCELLABLE_STATUSES.contains(status);
     }
+
 
     private static AddressSnapshot loadAddress(Connection conn, long userId, long addressId) throws SQLException {
         String sql = "SELECT id, recipient_name, phone, line1, line2, ward, district, city, province, postal_code, country, note FROM user_addresses WHERE user_id = ? AND id = ?";

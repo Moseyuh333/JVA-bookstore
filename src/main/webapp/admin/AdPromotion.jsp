@@ -169,6 +169,20 @@
             background: #78350f;
         }
 
+        /* Reuse user-management create button style for consistency */
+        .btn-create {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-create:hover {
+            background: #15803d;
+        }
+
+        #openCreatePromotionBtn {
+            margin-left: auto;
+        }
+
         .filter-bar {
             padding: 20px 24px;
             background: #fafafa;
@@ -426,6 +440,23 @@
                 min-width: 800px;
             }
         }
+    /* Modal styles (copied from AdCommission.jsp for exact parity) */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9998; }
+    .modal-overlay.active { display: block; }
+    .modal-box { display: none; position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 680px; max-width: 95%; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+    .modal-box.active { display: block; }
+    .modal-header { padding: 18px 22px; border-bottom: 1px solid #eef2f6; display:flex; justify-content:space-between; align-items:center; }
+    .modal-title { font-size:18px; font-weight:700; color:#1a202c; }
+    .modal-body { padding: 18px 22px; }
+    .modal-footer { padding: 14px 22px; border-top: 1px solid #eef2f6; text-align: right; }
+    .modal-input { width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; }
+    .btn-primary-modal { background:#92400e; color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer; }
+    .btn-secondary-modal { background:#e5e7eb; color:#374151; border:none; padding:10px 16px; border-radius:8px; margin-right:8px; cursor:pointer; }
+    .modal-row { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+    .modal-label { width:160px; font-size:14px; color:#374151; }
+    .form-feedback { margin-top:12px; padding:10px 12px; border-radius:8px; display:none; }
+    .form-feedback.success { display:block; background:#dcfce7; color:#166534; }
+    .form-feedback.error { display:block; background:#fee2e2; color:#991b1b; }
     </style>
 </head>
 <body>
@@ -467,10 +498,6 @@
                 <div class="card-custom">
                     <div class="card-header-custom">
                         <h2>Danh sách khuyến mãi</h2>
-                        <button class="btn-add" onclick="openAddModal()">
-                            <i class="fas fa-plus"></i>
-                            <span>Thêm khuyến mãi</span>
-                        </button>
                     </div>
 
                     <div class="filter-bar">
@@ -479,8 +506,14 @@
                                 <option value="all">Tất cả</option>
                                 <option value="code">Mã code</option>
                                 <option value="description">Mô tả</option>
+                                <option value="kind">Loại khuyến mãi</option>
                                 <option value="type">Loại giảm giá</option>
                                 <option value="status">Trạng thái</option>
+                            </select>
+                            <select id="statusFilter" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="true">Đang hoạt động</option>
+                                <option value="false">Không hoạt động</option>
                             </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
@@ -490,9 +523,13 @@
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>
                             </button>
-                            <button class="btn-custom btn-reset" onclick="resetFilters()">
+                            <button type="button" class="btn-custom btn-reset" onclick="resetFilters()">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
+                            </button>
+                            <button class="btn-custom btn-create" type="button" id="openCreatePromotionBtn">
+                                <i class="fas fa-plus"></i>
+                                <span>Thêm khuyến mãi</span>
                             </button>
                         </div>
                     </div>
@@ -525,7 +562,7 @@
                             <div id="emptyState" class="empty-state" style="display: none;">
                                 <i class="fas fa-inbox"></i>
                                 <h3>Không tìm thấy dữ liệu</h3>
-                                <p>Không có khuyến mãi nào phù hợp với tiêu chí tìm kiếm</p>
+                                <p id="emptyMessage">Không có khuyến mãi nào</p>
                             </div>
                         </div>
                     </div>
@@ -536,6 +573,96 @@
         <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
+<!-- Promotion modals -->
+<div id="promoModalOverlay" class="modal-overlay" style="display:none"></div>
+<div id="promoModalBox" class="modal-box" style="display:none; z-index:10000;">
+    <div class="modal-header">
+        <div id="promoModalTitle" class="modal-title">Thêm khuyến mãi</div>
+        <button id="promoModalClose" class="modal-close" aria-label="Đóng">&times;</button>
+    </div>
+    <form id="promoForm" class="modal-body" autocomplete="off">
+        <input type="hidden" id="promoId" name="id" />
+        <div class="form-grid">
+            <input type="hidden" id="promoId" name="id" />
+            <div class="modal-row">
+                <div class="modal-label">Tên chương trình <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="promoName" name="name" class="modal-input" type="text" placeholder="Tên chương trình" required /></div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Mã code <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="promoCode" name="code" class="modal-input" type="text" placeholder="Mã code (ví dụ: BOOK20)" required /></div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Loại giảm</div>
+                <div style="flex:1">
+                    <select id="promoType" name="type" class="modal-input">
+                        <option value="percent">Phần trăm</option>
+                        <option value="amount">Số tiền</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Phạm vi</div>
+                <div style="flex:1">
+                    <select id="promoKind" name="kind" class="modal-input">
+                        <option value="product">Sản phẩm</option>
+                        <option value="shipping">Phí vận chuyển</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Giá trị giảm <span style="color:#ef4444">*</span></div>
+                <div style="flex:1"><input id="promoValue" name="discount_value" class="modal-input" type="number" step="0.01" placeholder="Ví dụ: 20" required /></div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Bắt đầu</div>
+                <div style="flex:1"><input id="promoStart" name="start_at" class="modal-input" type="datetime-local" /></div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Kết thúc</div>
+                <div style="flex:1"><input id="promoEnd" name="end_at" class="modal-input" type="datetime-local" /></div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Mô tả</div>
+                <div style="flex:1"><input id="promoDescription" name="description" class="modal-input" type="text" placeholder="Mô tả ngắn" /></div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Trạng thái</div>
+                <div style="flex:1">
+                    <select id="promoActive" name="active" class="modal-input">
+                        <option value="true">Hoạt động</option>
+                        <option value="false">Không hoạt động</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div id="promoFeedback" class="form-feedback" role="alert" style="display:none"></div>
+        <div class="modal-footer">
+            <button type="button" id="promoCancel" class="btn-secondary-modal">Hủy</button>
+            <button type="submit" id="promoSave" class="btn-primary-modal">Lưu</button>
+        </div>
+    </form>
+</div>
+
+<!-- Promotion Delete modal -->
+<div id="promoDeleteOverlay" class="modal-overlay" style="display:none"></div>
+<div id="promoDeleteBox" class="modal-box" style="display:none; z-index:10001; width:420px;">
+    <div class="modal-header">
+        <div class="modal-title">Xóa khuyến mãi</div>
+        <button id="promoDeleteClose" class="modal-close" aria-label="Đóng">&times;</button>
+    </div>
+    <div class="modal-body">
+        <div class="modal-warning">
+            <strong>Bạn có chắc muốn xóa khuyến mãi này?</strong>
+        </div>
+        <div id="promoDeleteFeedback" class="form-feedback" role="alert" style="display:none"></div>
+        <div class="modal-footer">
+            <button type="button" id="promoDeleteCancel" class="btn-secondary-modal">Hủy</button>
+            <button type="button" id="promoDeleteConfirm" class="btn-primary-modal">Xóa</button>
+        </div>
+    </div>
+</div>
+
 <script src ="${pageContext.request.contextPath}/assets/js/admin/AdPromotion.js"></script>
 </body>
 </html>

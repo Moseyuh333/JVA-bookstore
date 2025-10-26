@@ -14,13 +14,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @WebServlet(name = "AdminPromotionsServlet", urlPatterns = {"/api/admin/promotions"})
 public class AdminPromotionsServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json");
+        resp.setContentType("application/json; charset=UTF-8");
+        resp.setCharacterEncoding("UTF-8");
         PrintWriter out = resp.getWriter();
 
         String action = req.getParameter("action");
@@ -36,7 +40,7 @@ public class AdminPromotionsServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
         } finally {
             out.flush();
         }
@@ -44,7 +48,8 @@ public class AdminPromotionsServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json");
+        resp.setContentType("application/json; charset=UTF-8");
+        resp.setCharacterEncoding("UTF-8");
         PrintWriter out = resp.getWriter();
 
         String action = req.getParameter("action");
@@ -62,7 +67,7 @@ public class AdminPromotionsServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
         } finally {
             out.flush();
         }
@@ -73,29 +78,42 @@ public class AdminPromotionsServlet extends HttpServlet {
         String searchType = req.getParameter("searchType");
 
         StringBuilder sql = new StringBuilder(
-            "SELECT id, code, description, type, discount_value, max_discount, min_order, " +
-            "usage_limit, used_count, start_at, end_at, active, apply_to, created_at, updated_at " +
-            "FROM coupons WHERE 1=1"
+            "SELECT id, name, code, description, " +
+            "discount_scope AS kind, " +               // product / shipping
+            "discount_type AS type, " +                 // percent / amount
+            "discount_value, max_discount_value, min_order_value, " +
+            "start_date AS start_at, end_date AS end_at, status AS active " +
+            "FROM promotions WHERE 1=1"
         );
 
         // Add search conditions
         if (search != null && !search.trim().isEmpty()) {
-            if ("code".equals(searchType)) {
+            if ("all".equals(searchType) || searchType == null) {
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+            } else if ("code".equals(searchType)) {
                 sql.append(" AND code ILIKE ?");
             } else if ("description".equals(searchType)) {
                 sql.append(" AND description ILIKE ?");
+            } else if ("kind".equals(searchType)) {
+                sql.append(" AND (discount_scope ILIKE ? OR discount_scope = CASE WHEN LOWER(?) = 'giảm phí vận chuyển' THEN 'shipping' WHEN LOWER(?) = 'giảm giá sản phẩm' THEN 'product' END)");
             } else if ("type".equals(searchType)) {
-                sql.append(" AND type ILIKE ?");
+                sql.append(" AND discount_type ILIKE ?");
+            } else if ("status".equals(searchType)) {
+                sql.append(" AND status = ?");
             } else {
-                // Default "all"
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR type ILIKE ?)");
+                // Default to all if invalid searchType
+                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
             }
         }
 
-        sql.append(" ORDER BY created_at DESC");
+
+        sql.append(" ORDER BY id ASC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"promotions\":[");
+
+        int totalPromotions = 0;
+        int activePromotions = 0;
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
@@ -103,16 +121,28 @@ public class AdminPromotionsServlet extends HttpServlet {
             // Set search parameters
             int paramIndex = 1;
             if (search != null && !search.trim().isEmpty()) {
-                String pattern = "%" + search.trim() + "%";
-                if ("code".equals(searchType) || "description".equals(searchType) || "type".equals(searchType)) {
+                if ("all".equals(searchType) || searchType == null) {
+                    String pattern = "%" + search.trim() + "%";
+                    for (int i = 0; i < 4; i++) {
+                        pstmt.setString(paramIndex++, pattern);
+                    }
+                } else if ("kind".equals(searchType)) {
+                    // For kind, search both ILIKE and exact match for Vietnamese labels
+                    String pattern = "%" + search.trim() + "%";
                     pstmt.setString(paramIndex++, pattern);
+                    pstmt.setString(paramIndex++, search.trim());
+                    pstmt.setString(paramIndex++, search.trim());
+                } else if ("status".equals(searchType)) {
+                    // For status, convert search to boolean
+                    boolean statusValue = "true".equalsIgnoreCase(search.trim()) || "active".equalsIgnoreCase(search.trim()) || "1".equals(search.trim());
+                    pstmt.setBoolean(paramIndex++, statusValue);
                 } else {
-                    // "all" search
-                    pstmt.setString(paramIndex++, pattern);
-                    pstmt.setString(paramIndex++, pattern);
+                    // For specific search types, only one parameter
+                    String pattern = "%" + search.trim() + "%";
                     pstmt.setString(paramIndex++, pattern);
                 }
             }
+
 
             try (ResultSet rs = pstmt.executeQuery()) {
 
@@ -121,28 +151,31 @@ public class AdminPromotionsServlet extends HttpServlet {
                     if (!first) json.append(",");
                     first = false;
 
+                    totalPromotions++;
+                    if (rs.getBoolean("active")) {
+                        activePromotions++;
+                    }
+
                     json.append("{")
                         .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
                         .append("\"code\":\"").append(escapeJson(rs.getString("code"))).append("\",")
                         .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
+                        .append("\"kind\":\"").append(escapeJson(rs.getString("kind"))).append("\",")
                         .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
-                        .append("\"discount_value\":").append(rs.getBigDecimal("discount_value")).append(",")
-                        .append("\"max_discount\":").append(rs.getBigDecimal("max_discount") != null ? rs.getBigDecimal("max_discount") : "null").append(",")
-                        .append("\"min_order\":").append(rs.getBigDecimal("min_order") != null ? rs.getBigDecimal("min_order") : "null").append(",")
-                        .append("\"usage_limit\":").append(rs.getInt("usage_limit") != 0 ? rs.getInt("usage_limit") : "null").append(",")
-                        .append("\"used_count\":").append(rs.getInt("used_count")).append(",")
-                        .append("\"start_at\":\"").append(rs.getTimestamp("start_at")).append("\",")
-                        .append("\"end_at\":\"").append(rs.getTimestamp("end_at")).append("\",")
-                        .append("\"active\":").append(rs.getBoolean("active")).append(",")
-                        .append("\"apply_to\":\"").append(escapeJson(rs.getString("apply_to"))).append("\",")
-                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                        .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
+                        .append("\"discount_value\":").append(rs.getBigDecimal("discount_value") != null ? rs.getBigDecimal("discount_value") : 0).append(",")
+                        .append("\"max_discount_value\":").append(rs.getBigDecimal("max_discount_value") != null ? rs.getBigDecimal("max_discount_value") : 0).append(",")
+                        .append("\"min_order_value\":").append(rs.getBigDecimal("min_order_value") != null ? rs.getBigDecimal("min_order_value") : 0).append(",")
+                        .append("\"start_at\":\"").append(rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "").append("\",")
+                        .append("\"end_at\":\"").append(rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "").append("\",")
+                        .append("\"active\":").append(rs.getBoolean("active"))
                         .append("}");
+                    
                 }
             }
         }
 
-        json.append("]}");
+        json.append("],\"total\":").append(totalPromotions).append(",\"active\":").append(activePromotions).append("}");
         out.write(json.toString());
     }
 
@@ -155,9 +188,13 @@ public class AdminPromotionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "SELECT id, code, description, type, discount_value, max_discount, min_order, " +
-                     "usage_limit, used_count, start_at, end_at, active, apply_to, created_at, updated_at " +
-                     "FROM coupons WHERE id = ?";
+    String sql = "SELECT id, name, code, description, " +
+             "       discount_type AS type, " +
+             "       discount_scope AS kind, " +
+                     "       discount_value, " +
+                     "       start_date AS start_at, end_date AS end_at, " +
+                     "       status AS active, shop_id " +
+                     "FROM promotions WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -168,20 +205,16 @@ public class AdminPromotionsServlet extends HttpServlet {
                 if (rs.next()) {
                     String json = "{"
                         + "\"id\":" + rs.getInt("id") + ","
+                        + "\"name\":\"" + escapeJson(rs.getString("name")) + "\","
                         + "\"code\":\"" + escapeJson(rs.getString("code")) + "\","
                         + "\"description\":\"" + escapeJson(rs.getString("description")) + "\","
                         + "\"type\":\"" + escapeJson(rs.getString("type")) + "\","
+                        + "\"kind\":\"" + escapeJson(rs.getString("kind")) + "\","
                         + "\"discount_value\":" + rs.getBigDecimal("discount_value") + ","
-                        + "\"max_discount\":" + (rs.getBigDecimal("max_discount") != null ? rs.getBigDecimal("max_discount") : "null") + ","
-                        + "\"min_order\":" + (rs.getBigDecimal("min_order") != null ? rs.getBigDecimal("min_order") : "null") + ","
-                        + "\"usage_limit\":" + (rs.getInt("usage_limit") != 0 ? rs.getInt("usage_limit") : "null") + ","
-                        + "\"used_count\":" + rs.getInt("used_count") + ","
-                        + "\"start_at\":\"" + rs.getTimestamp("start_at") + "\","
-                        + "\"end_at\":\"" + rs.getTimestamp("end_at") + "\","
+                        + "\"start_at\":\"" + (rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "") + "\","
+                        + "\"end_at\":\"" + (rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "") + "\","
                         + "\"active\":" + rs.getBoolean("active") + ","
-                        + "\"apply_to\":\"" + escapeJson(rs.getString("apply_to")) + "\","
-                        + "\"created_at\":\"" + rs.getTimestamp("created_at") + "\","
-                        + "\"updated_at\":\"" + rs.getTimestamp("updated_at") + "\""
+                        + "\"shop_id\":" + rs.getInt("shop_id") + ""
                         + "}";
                     out.write(json);
                 } else {
@@ -192,126 +225,108 @@ public class AdminPromotionsServlet extends HttpServlet {
     }
 
     private void createPromotion(HttpServletRequest req, PrintWriter out) throws SQLException {
+        String name = req.getParameter("name");
         String code = req.getParameter("code");
         String description = req.getParameter("description");
         String type = req.getParameter("type");
+        String kind = req.getParameter("kind");
         String discountValueStr = req.getParameter("discount_value");
-        String maxDiscountStr = req.getParameter("max_discount");
-        String minOrderStr = req.getParameter("min_order");
-        String usageLimitStr = req.getParameter("usage_limit");
         String startAt = req.getParameter("start_at");
         String endAt = req.getParameter("end_at");
         String activeStr = req.getParameter("active");
-        String applyTo = req.getParameter("apply_to");
+        String shopIdStr = req.getParameter("shop_id");
 
-        if (code == null || code.trim().isEmpty() || type == null || discountValueStr == null) {
-            out.write("{\"error\":\"Code, type and discount value are required\"}");
+        if (name == null || name.trim().isEmpty() || code == null || code.trim().isEmpty() || type == null || discountValueStr == null) {
+            out.write("{\"error\":\"Name, code, type and discount value are required\"}");
             return;
         }
 
         BigDecimal discountValue = new BigDecimal(discountValueStr);
-        BigDecimal maxDiscount = maxDiscountStr != null && !maxDiscountStr.trim().isEmpty() ? new BigDecimal(maxDiscountStr) : null;
-        BigDecimal minOrder = minOrderStr != null && !minOrderStr.trim().isEmpty() ? new BigDecimal(minOrderStr) : null;
-        Integer usageLimit = usageLimitStr != null && !usageLimitStr.trim().isEmpty() ? Integer.parseInt(usageLimitStr) : null;
         boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
+        Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
 
-        String sql = "INSERT INTO coupons (code, description, type, discount_value, max_discount, min_order, " +
-                     "usage_limit, start_at, end_at, active, apply_to) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    String sql = "INSERT INTO promotions (name, code, description, discount_type, discount_scope, discount_value, start_date, end_date, status, shop_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, start_date AS created_at";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, code.trim().toUpperCase());
-            pstmt.setString(2, description != null ? description.trim() : null);
-            pstmt.setString(3, type);
-            pstmt.setBigDecimal(4, discountValue);
-            if (maxDiscount != null) {
-                pstmt.setBigDecimal(5, maxDiscount);
-            } else {
-                pstmt.setNull(5, java.sql.Types.DECIMAL);
-            }
-            if (minOrder != null) {
-                pstmt.setBigDecimal(6, minOrder);
-            } else {
-                pstmt.setNull(6, java.sql.Types.DECIMAL);
-            }
-            if (usageLimit != null) {
-                pstmt.setInt(7, usageLimit);
-            } else {
-                pstmt.setNull(7, java.sql.Types.INTEGER);
-            }
-            pstmt.setString(8, startAt != null ? startAt : "NOW()");
-            pstmt.setString(9, endAt);
-            pstmt.setBoolean(10, active);
-            pstmt.setString(11, applyTo != null ? applyTo : "product");
+            pstmt.setString(1, name.trim());
+            pstmt.setString(2, code.trim().toUpperCase());
+            pstmt.setString(3, description != null ? description.trim() : null);
+            pstmt.setString(4, type);
+            pstmt.setString(5, kind);
+            pstmt.setBigDecimal(6, discountValue);
+            Timestamp startTimestamp = parseToTimestamp(startAt);
+            Timestamp endTimestamp = parseToTimestamp(endAt);
+            pstmt.setTimestamp(7, startTimestamp);
+            pstmt.setTimestamp(8, endTimestamp);
 
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Promotion created successfully\"}");
+            pstmt.setBoolean(9, active);
+            if (shopId != null) {
+                pstmt.setInt(10, shopId);
             } else {
-                out.write("{\"error\":\"Failed to create promotion\"}");
+                pstmt.setNull(10, java.sql.Types.INTEGER);
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int newId = rs.getInt("id");
+                    java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                    out.write("{\"id\":" + newId + ", \"created_at\":\"" + (createdAt != null ? createdAt.toString() : "") + "\", \"message\":\"Promotion created successfully\"}");
+                } else {
+                    out.write("{\"error\":\"Failed to create promotion\"}");
+                }
             }
         }
     }
 
     private void updatePromotion(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
+        String name = req.getParameter("name");
         String code = req.getParameter("code");
         String description = req.getParameter("description");
         String type = req.getParameter("type");
+        String kind = req.getParameter("kind");
         String discountValueStr = req.getParameter("discount_value");
-        String maxDiscountStr = req.getParameter("max_discount");
-        String minOrderStr = req.getParameter("min_order");
-        String usageLimitStr = req.getParameter("usage_limit");
         String startAt = req.getParameter("start_at");
         String endAt = req.getParameter("end_at");
         String activeStr = req.getParameter("active");
-        String applyTo = req.getParameter("apply_to");
+        String shopIdStr = req.getParameter("shop_id");
 
-        if (idStr == null || code == null || code.trim().isEmpty() || type == null || discountValueStr == null) {
-            out.write("{\"error\":\"ID, code, type and discount value are required\"}");
+        if (idStr == null || name == null || name.trim().isEmpty() || code == null || code.trim().isEmpty() || type == null || discountValueStr == null) {
+            out.write("{\"error\":\"ID, name, code, type and discount value are required\"}");
             return;
         }
 
         int id = Integer.parseInt(idStr);
         BigDecimal discountValue = new BigDecimal(discountValueStr);
-        BigDecimal maxDiscount = maxDiscountStr != null && !maxDiscountStr.trim().isEmpty() ? new BigDecimal(maxDiscountStr) : null;
-        BigDecimal minOrder = minOrderStr != null && !minOrderStr.trim().isEmpty() ? new BigDecimal(minOrderStr) : null;
-        Integer usageLimit = usageLimitStr != null && !usageLimitStr.trim().isEmpty() ? Integer.parseInt(usageLimitStr) : null;
         boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
+        Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
 
-        String sql = "UPDATE coupons SET code = ?, description = ?, type = ?, discount_value = ?, " +
-                     "max_discount = ?, min_order = ?, usage_limit = ?, start_at = ?, end_at = ?, " +
-                     "active = ?, apply_to = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+    String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_type = ?, discount_scope = ?, discount_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, code.trim().toUpperCase());
-            pstmt.setString(2, description != null ? description.trim() : null);
-            pstmt.setString(3, type);
-            pstmt.setBigDecimal(4, discountValue);
-            if (maxDiscount != null) {
-                pstmt.setBigDecimal(5, maxDiscount);
+            pstmt.setString(1, name.trim());
+            pstmt.setString(2, code.trim().toUpperCase());
+            pstmt.setString(3, description != null ? description.trim() : null);
+            pstmt.setString(4, type);
+            pstmt.setString(5, kind);
+            pstmt.setBigDecimal(6, discountValue);
+            Timestamp startTimestamp = parseToTimestamp(startAt);
+            Timestamp endTimestamp = parseToTimestamp(endAt);
+            pstmt.setTimestamp(7, startTimestamp);
+            pstmt.setTimestamp(8, endTimestamp);
+
+            pstmt.setBoolean(9, active);
+            if (shopId != null) {
+                pstmt.setInt(10, shopId);
             } else {
-                pstmt.setNull(5, java.sql.Types.DECIMAL);
+                pstmt.setNull(10, java.sql.Types.INTEGER);
             }
-            if (minOrder != null) {
-                pstmt.setBigDecimal(6, minOrder);
-            } else {
-                pstmt.setNull(6, java.sql.Types.DECIMAL);
-            }
-            if (usageLimit != null) {
-                pstmt.setInt(7, usageLimit);
-            } else {
-                pstmt.setNull(7, java.sql.Types.INTEGER);
-            }
-            pstmt.setString(8, startAt);
-            pstmt.setString(9, endAt);
-            pstmt.setBoolean(10, active);
-            pstmt.setString(11, applyTo != null ? applyTo : "product");
-            pstmt.setInt(12, id);
+            pstmt.setInt(11, id);
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
@@ -331,25 +346,55 @@ public class AdminPromotionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "DELETE FROM coupons WHERE id = ?";
+        String sql = "DELETE FROM promotions WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                out.write("{\"message\":\"Promotion deleted successfully\"}");
+                // 🪄 Sau khi xóa thành công → đồng bộ lại sequence
+                try (PreparedStatement ps2 = conn.prepareStatement(
+                    "SELECT setval('promotions_id_seq', COALESCE((SELECT MAX(id) FROM promotions), 0) + 1)"
+                )) {
+                    ps2.execute();
+                }
+
+                out.write("{\"message\":\"Promotion deleted successfully and sequence updated!\"}");
             } else {
                 out.write("{\"error\":\"Promotion not found\"}");
             }
         }
     }
 
+    private Timestamp parseToTimestamp(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) return null;
+
+        // Thử parse theo nhiều định dạng có thể có
+        String[] patterns = {
+            "dd/MM/yyyy hh:mm a",  // 22/10/2025 02:45 PM (AM/PM)
+            "dd/MM/yyyy HH:mm",    // 22/10/2025 14:45 (24h format)
+            "yyyy-MM-dd'T'HH:mm"   // 2025-10-22T14:45 (from datetime-local input)
+        };
+
+        for (String pattern : patterns) {
+            try {
+                DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
+                LocalDateTime dt = LocalDateTime.parse(dateStr.trim(), fmt);
+                return Timestamp.valueOf(dt);
+            } catch (Exception ignored) {}
+        }
+
+        System.err.println("⚠️ [parseToTimestamp] Unrecognized format: " + dateStr);
+        return null;
+    }
+
     private String escapeJson(String str) {
         if (str == null) return "";
-        return str.replace("\\", "\\\\")
+        return str.replaceAll("[\\x00-\\x1F\\x7F-\\x9F]", "")
+                  .replace("\\", "\\\\")
                   .replace("\"", "\\\"")
                   .replace("\n", "\\n")
                   .replace("\r", "\\r");

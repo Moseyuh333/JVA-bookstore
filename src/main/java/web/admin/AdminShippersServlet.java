@@ -39,8 +39,16 @@ public class AdminShippersServlet extends HttpServlet {
                 out.write("{\"error\":\"Invalid action\"}");
             }
         } catch (Exception e) {
+            e.printStackTrace(); // In log cho Heroku để xem lỗi SQL thật
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"" 
+                + e.getMessage()
+                    .replace("\\", "\\\\")   // escape dấu backslash
+                    .replace("\"", "\\\"")    // escape dấu nháy kép
+                    .replace("\n", "\\n")     // escape xuống dòng
+                    .replace("\r", "\\r")     // escape carriage return
+                + "\"}");
+
         } finally {
             out.flush();
         }
@@ -69,8 +77,15 @@ public class AdminShippersServlet extends HttpServlet {
                 out.write("{\"error\":\"Invalid action\"}");
             }
         } catch (Exception e) {
+            e.printStackTrace(); // In log cho Heroku để xem lỗi SQL thật
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"" 
+                + e.getMessage()
+                    .replace("\\", "\\\\")   // escape dấu backslash
+                    .replace("\"", "\\\"")    // escape dấu nháy kép
+                    .replace("\n", "\\n")     // escape xuống dòng
+                    .replace("\r", "\\r")     // escape carriage return
+                + "\"}");
         } finally {
             out.flush();
         }
@@ -208,8 +223,8 @@ public class AdminShippersServlet extends HttpServlet {
 
         BigDecimal baseFee = new BigDecimal(baseFeeStr);
 
-        String sql = "INSERT INTO shippers (name, phone, email, base_fee, service_area, estimated_time, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO shippers (name, phone, email, base_fee, service_area, estimated_time, status, updated_at) "
+           + "VALUES (?, ?, ?, ?, ?, ?, ?::shipper_status, CURRENT_TIMESTAMP) RETURNING id, created_at";
 
         try (Connection conn = DBUtil.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -222,11 +237,14 @@ public class AdminShippersServlet extends HttpServlet {
             pstmt.setString(6, estimatedTime != null ? estimatedTime.trim() : null);
             pstmt.setString(7, status != null ? status : "active");
 
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Shipper created successfully\"}");
-            } else {
-                out.write("{\"error\":\"Failed to create shipper\"}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int newId = rs.getInt("id");
+                    java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                    out.write("{\"id\":" + newId + ", \"created_at\":\"" + (createdAt != null ? createdAt.toString() : "") + "\", \"message\":\"Shipper created successfully\"}");
+                } else {
+                    out.write("{\"error\":\"Failed to create shipper\"}");
+                }
             }
         }
     }
@@ -250,7 +268,7 @@ public class AdminShippersServlet extends HttpServlet {
         BigDecimal baseFee = new BigDecimal(baseFeeStr);
 
         String sql = "UPDATE shippers SET name = ?, phone = ?, email = ?, base_fee = ?, " +
-                "service_area = ?, estimated_time = ?, status = ?, updated_at = CURRENT_TIMESTAMP " +
+                "service_area = ?, estimated_time = ?, status = ?::shipper_status, updated_at = CURRENT_TIMESTAMP " +
                 "WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();

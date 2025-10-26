@@ -1,6 +1,8 @@
 const contextPath = window.appConfig?.contextPath || '';
 let cachedUsers = [];
 let currentSearchTerm = '';
+let currentSearchType = 'all';
+let currentStatusFilter = 'all';
 let deleteTargetUser = null;
 let viewModalController = null;
 let deleteModalController = null;
@@ -8,10 +10,10 @@ let editModalController = null;
 let editTargetUser = null;
 
 const statusLabels = {
-    active: 'Đang hoạt động',
-    inactive: 'Tạm khóa',
-    banned: 'Đã khóa',
-    pending: 'Chờ duyệt'
+    active: 'Active',
+    inactive: 'Inactive',
+    banned: 'Banned',
+    pending: 'Pending'
 };
 
 const roleLabels = {
@@ -70,7 +72,7 @@ function handleUnauthorized() {
     window.location.href = `${fallback}/login.jsp`;
 }
 
-async function loadAdminUsers(searchTerm = currentSearchTerm) {
+async function loadAdminUsers(searchTerm = currentSearchTerm, searchType = currentSearchType, statusFilter = currentStatusFilter) {
     const tableBody = document.querySelector('#User');
     const loading = document.querySelector('#loadingState');
     const emptyState = document.querySelector('#emptyState');
@@ -92,6 +94,12 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
         let url = `${contextPath}/api/admin/users?action=list`;
         if (searchTerm) {
             url += `&search=${encodeURIComponent(searchTerm)}`;
+        }
+        if (searchType && searchType !== 'all') {
+            url += `&searchType=${encodeURIComponent(searchType)}`;
+        }
+        if (statusFilter && statusFilter !== 'all') {
+            url += `&status=${encodeURIComponent(statusFilter)}`;
         }
 
         const response = await fetch(url, {
@@ -146,6 +154,19 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
                 roleBadgeClass = 'badge-shipper';
             }
 
+            const status = user.status || 'active';
+            const statusKey = (status || '').toLowerCase();
+            let statusBadgeClass = 'badge-pending';
+            if (statusKey === 'active') {
+                statusBadgeClass = 'badge-seller'; // green for active
+            } else if (statusKey === 'inactive') {
+                statusBadgeClass = 'badge-banned'; // red for inactive
+            } else if (statusKey === 'banned') {
+                statusBadgeClass = 'badge-banned'; // red for banned
+            } else if (statusKey === 'pending') {
+                statusBadgeClass = 'badge-pending'; // yellow for pending
+            }
+
             return [
                 `<tr data-user-id="${user.id}">`,
                 '<td>',
@@ -163,6 +184,7 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
                 `<td>${email}</td>`,
                 `<td>${phone}</td>`,
                     `<td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>`,
+                    `<td><span class="badge ${statusKey === 'active' ? 'badge-success' : statusKey === 'inactive' ? 'badge-secondary' : statusKey === 'banned' ? 'badge-danger' : 'badge-warning'}">${statusLabels[statusKey] || status}</span></td>`,
                     '<td class="actions">',
                     `<button class="btn-icon btn-edit" title="Chỉnh sửa" data-user-id="${user.id}">`,
                     '<i class="fas fa-edit"></i>',
@@ -199,17 +221,31 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
 
 async function applyFilters() {
     const input = document.getElementById('searchInput');
+    const typeSelect = document.getElementById('searchType');
+    const statusSelect = document.getElementById('statusFilter');
     currentSearchTerm = input ? input.value.trim() : '';
-    await loadAdminUsers(currentSearchTerm);
+    currentSearchType = typeSelect ? typeSelect.value : 'all';
+    currentStatusFilter = statusSelect ? statusSelect.value : 'all';
+    await loadAdminUsers(currentSearchTerm, currentSearchType, currentStatusFilter);
 }
 
 function resetFilters() {
     const input = document.getElementById('searchInput');
+    const typeSelect = document.getElementById('searchType');
+    const statusSelect = document.getElementById('statusFilter');
     if (input) {
         input.value = '';
     }
+    if (typeSelect) {
+        typeSelect.value = 'all';
+    }
+    if (statusSelect) {
+        statusSelect.value = 'all';
+    }
     currentSearchTerm = '';
-    loadAdminUsers('');
+    currentSearchType = 'all';
+    currentStatusFilter = 'all';
+    loadAdminUsers('', 'all', 'all');
 }
 
 function updateStats() {

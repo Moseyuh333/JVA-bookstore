@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -183,14 +184,59 @@ public class AdminUsersServlet extends HttpServlet {
     
     private void listUsers(HttpServletRequest req, PrintWriter out) throws SQLException {
         String search = req.getParameter("search");
-        String sql;
+        String status = req.getParameter("status");
+        String searchType = req.getParameter("searchType");
+
         boolean hasSearch = search != null && !search.trim().isEmpty();
+        boolean hasStatusFilter = status != null && !status.trim().isEmpty() && !"all".equals(status.trim());
+        boolean hasSearchType = searchType != null && !searchType.trim().isEmpty() && !"all".equals(searchType.trim());
+
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT id, username, email, full_name, phone, role, status, email_verified, created_at, updated_at, birth_date, address FROM users");
+
+        List<String> conditions = new java.util.ArrayList<>();
+        List<Object> params = new java.util.ArrayList<>();
 
         if (hasSearch) {
-            sql = "SELECT id, username, email, full_name, phone, role, status, email_verified, created_at, updated_at, birth_date, address FROM users WHERE LOWER(username) LIKE ? OR LOWER(email) LIKE ? OR LOWER(full_name) LIKE ? OR LOWER(phone) LIKE ? ORDER BY created_at DESC";
-        } else {
-            sql = "SELECT id, username, email, full_name, phone, role, status, email_verified, created_at, updated_at, birth_date, address FROM users ORDER BY created_at DESC";
+            if (hasSearchType) {
+                // Search in specific field
+                String field = "username"; // default
+                if ("email".equals(searchType)) {
+                    field = "email";
+                } else if ("phone".equals(searchType)) {
+                    field = "phone";
+                } else if ("full_name".equals(searchType)) {
+                    field = "full_name";
+                }
+                conditions.add("LOWER(" + field + ") LIKE ?");
+                params.add("%" + search.trim().toLowerCase() + "%");
+            } else {
+                // Search in multiple fields
+                conditions.add("(LOWER(username) LIKE ? OR LOWER(email) LIKE ? OR LOWER(full_name) LIKE ? OR LOWER(phone) LIKE ?)");
+                String likeSearch = "%" + search.trim().toLowerCase() + "%";
+                params.add(likeSearch);
+                params.add(likeSearch);
+                params.add(likeSearch);
+                params.add(likeSearch);
+            }
         }
+
+        if (hasStatusFilter) {
+            String normalizedStatus = normalizeStatus(status);
+            if (normalizedStatus != null) {
+                conditions.add("status = ?");
+                params.add(normalizedStatus);
+            }
+        }
+
+        if (!conditions.isEmpty()) {
+            sqlBuilder.append(" WHERE ");
+            sqlBuilder.append(String.join(" AND ", conditions));
+        }
+
+        sqlBuilder.append(" ORDER BY created_at DESC");
+
+        String sql = sqlBuilder.toString();
 
         StringBuilder json = new StringBuilder();
         json.append("{\"users\":[");
@@ -198,12 +244,13 @@ public class AdminUsersServlet extends HttpServlet {
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            if (hasSearch) {
-                String likeSearch = "%" + search.trim().toLowerCase() + "%";
-                pstmt.setString(1, likeSearch);
-                pstmt.setString(2, likeSearch);
-                pstmt.setString(3, likeSearch);
-                pstmt.setString(4, likeSearch);
+            for (int i = 0; i < params.size(); i++) {
+                Object param = params.get(i);
+                if (hasStatusFilter && i == params.size() - 1) {
+                    setEnumParam(pstmt, i + 1, "user_status", (String) param);
+                } else {
+                    pstmt.setString(i + 1, (String) param);
+                }
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -311,6 +358,29 @@ public class AdminUsersServlet extends HttpServlet {
         String trimmed = status.trim();
         String lower = trimmed.toLowerCase(Locale.US);
         String resolved = lookup.get(lower);
+
+        // Handle Vietnamese status names
+        if (resolved == null) {
+            switch (lower) {
+                case "chờ kích hoạt":
+                case "pending":
+                    resolved = lookup.get("pending");
+                    break;
+                case "hoạt động":
+                case "active":
+                    resolved = lookup.get("active");
+                    break;
+                case "không hoạt động":
+                case "inactive":
+                    resolved = lookup.get("inactive");
+                    break;
+                case "cấm":
+                case "banned":
+                    resolved = lookup.get("banned");
+                    break;
+            }
+        }
+
         return resolved != null ? resolved : null;
     }
 

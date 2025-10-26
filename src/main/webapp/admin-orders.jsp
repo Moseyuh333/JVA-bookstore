@@ -120,38 +120,6 @@
             padding: 24px;
         }
 
-        /* Force 2-column layout */
-        @media (min-width: 992px) {
-            .row.g-4.align-items-start {
-                display: flex !important;
-                flex-wrap: nowrap !important;
-            }
-            
-            .row.g-4.align-items-start > .col-lg-7,
-            .row.g-4.align-items-start > .col-lg-5 {
-                flex-shrink: 0 !important;
-            }
-            
-            .row.g-4.align-items-start > .col-lg-7 {
-                flex: 0 0 58.33333333% !important;
-                max-width: 58.33333333% !important;
-                width: 58.33333333% !important;
-            }
-            
-            .row.g-4.align-items-start > .col-lg-5 {
-                flex: 0 0 41.66666667% !important;
-                max-width: 41.66666667% !important;
-                width: 41.66666667% !important;
-            }
-            
-            /* Extra specificity for detail column */
-            #orderDetailColumn {
-                flex: 0 0 41.66666667% !important;
-                max-width: 41.66666667% !important;
-                width: 41.66666667% !important;
-            }
-        }
-
         #orderDetailColumn {
             align-self: flex-start;
         }
@@ -252,7 +220,7 @@
                 </div>
 
                 <div class="row g-4 align-items-start">
-                    <div class="col-lg-7">
+                    <div class="col-lg-7 col-md-12">
                         <div class="card orders-card h-100">
                             <div class="card-body">
                                 <div class="filters-wrap">
@@ -279,6 +247,7 @@
                                             </button>
                                         </div>
                                     </div>
+                                </div>
 
                                 <div id="ordersFeedback" class="mb-3 small text-muted"></div>
                                 <div class="table-responsive">
@@ -301,8 +270,8 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-5" id="orderDetailColumn">
-                        <div class="card detail-card">
+                    <div class="col-lg-5 col-md-12" id="orderDetailColumn">
+                        <div class="card detail-card h-100">
                             <div class="card-header bg-white sticky-actions">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-3">
@@ -350,8 +319,6 @@
                 </div>
             </div>
         </div>
-
-        <%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
     </div>
 </div>
 
@@ -422,7 +389,7 @@
         </div>
         </div>
     </div>
-
+<%@ include file="/WEB-INF/includes/admin/footer.jsp" %>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function () {

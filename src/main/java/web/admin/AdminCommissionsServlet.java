@@ -77,40 +77,49 @@ public class AdminCommissionsServlet extends HttpServlet {
     private void listCommissions(HttpServletRequest req, PrintWriter out) throws SQLException {
         String search = req.getParameter("search");
         String searchType = req.getParameter("searchType");
+        String statusFilter = req.getParameter("status");
 
         StringBuilder sql = new StringBuilder(
-            "SELECT sd.id, sd.shop_id, s.name AS shop_name, " +
-            "sd.discount_rate AS rate, sd.start_date AS since, " +
-            "sd.end_date, sd.active, sd.description " +
-            "FROM store_discounts sd " +
-            "LEFT JOIN shops s ON sd.shop_id = s.id WHERE 1=1"
+            "SELECT id, name, type, min_revenue, max_revenue, rate, status, created_at, updated_at " +
+            "FROM commissions WHERE 1=1"
         );
 
+        if (statusFilter != null && !statusFilter.trim().isEmpty() && !"all".equals(statusFilter)) {
+            sql.append(" AND status = ?");
+        }
+
         if (search != null && !search.trim().isEmpty()) {
-            if ("shop_name".equals(searchType)) {
-                sql.append(" AND s.name ILIKE ?");
+            if ("name".equals(searchType)) {
+                sql.append(" AND name ILIKE ?");
+            } else if ("type".equals(searchType)) {
+                sql.append(" AND type ILIKE ?");
             } else if ("rate".equals(searchType)) {
-                sql.append(" AND CAST(sd.discount_rate AS TEXT) ILIKE ?");
-            } else if ("description".equals(searchType)) {
-                sql.append(" AND sd.description ILIKE ?");
+                sql.append(" AND CAST(rate AS TEXT) ILIKE ?");
             } else {
                 // Default "all"
-                sql.append(" AND (s.name ILIKE ? OR CAST(sd.discount_rate AS TEXT) ILIKE ? OR sd.description ILIKE ?)");
+                sql.append(" AND (name ILIKE ? OR type ILIKE ? OR CAST(rate AS TEXT) ILIKE ?)");
             }
         }
 
-        sql.append(" ORDER BY sd.id DESC");
+        sql.append(" ORDER BY id ASC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"commissions\":[");
+
+        int totalCommissions = 0;
+        int activeCommissions = 0;
+        double sumRate = 0.0;
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
             int param = 1;
+            if (statusFilter != null && !statusFilter.trim().isEmpty() && !"all".equals(statusFilter)) {
+                pstmt.setString(param++, statusFilter.trim());
+            }
             if (search != null && !search.trim().isEmpty()) {
                 String pattern = "%" + search.trim() + "%";
-                if ("shop_name".equals(searchType) || "rate".equals(searchType) || "description".equals(searchType)) {
+                if ("name".equals(searchType) || "type".equals(searchType) || "rate".equals(searchType)) {
                     pstmt.setString(param++, pattern);
                 } else {
                     pstmt.setString(param++, pattern);
@@ -125,20 +134,29 @@ public class AdminCommissionsServlet extends HttpServlet {
                     if (!first) json.append(",");
                     first = false;
 
+                    totalCommissions++;
+                    if ("active".equals(rs.getString("status"))) {
+                        activeCommissions++;
+                    }
+                    sumRate += rs.getBigDecimal("rate").doubleValue();
+
                     json.append("{")
                         .append("\"id\":").append(rs.getInt("id")).append(",")
-                        .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
-                        .append("\"rate\":").append(rs.getBigDecimal("rate") != null ? rs.getBigDecimal("rate") : BigDecimal.ZERO).append(",")
-                        .append("\"since\":\"").append(rs.getTimestamp("since") != null ? rs.getTimestamp("since") : "").append("\",")
-                        .append("\"end_date\":\"").append(rs.getTimestamp("end_date") != null ? rs.getTimestamp("end_date") : "").append("\",")
-                        .append("\"active\":").append(rs.getBoolean("active")).append(",")
-                        .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\"")
+                        .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
+                        .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
+                        .append("\"min_revenue\":").append(rs.getBigDecimal("min_revenue") != null ? rs.getBigDecimal("min_revenue") : 0).append(",")
+                        .append("\"max_revenue\":").append(rs.getBigDecimal("max_revenue") != null ? rs.getBigDecimal("max_revenue") : 0).append(",")
+                        .append("\"rate\":").append(rs.getBigDecimal("rate")).append(",")
+                        .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
+                        .append("\"created_at\":\"").append(rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : "").append("\",")
+                        .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toString() : "").append("\"")
                         .append("}");
                 }
             }
         }
 
-        json.append("]}");
+        double averageRate = totalCommissions > 0 ? sumRate / totalCommissions : 0;
+        json.append("],\"total\":").append(totalCommissions).append(",\"active\":").append(activeCommissions).append(",\"average_rate\":").append(averageRate).append("}");
         out.write(json.toString());
     }
 
@@ -151,13 +169,7 @@ public class AdminCommissionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql =
-            "SELECT sd.id, sd.shop_id, s.name AS shop_name, " +
-            "sd.discount_rate AS rate, sd.start_date AS since, " +
-            "sd.end_date, sd.active, sd.description " +
-            "FROM store_discounts sd " +
-            "LEFT JOIN shops s ON sd.shop_id = s.id " +
-            "WHERE sd.id = ?";
+        String sql = "SELECT id, name, type, min_revenue, max_revenue, rate, status, created_at, updated_at FROM commissions WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -166,12 +178,14 @@ public class AdminCommissionsServlet extends HttpServlet {
                 if (rs.next()) {
                     String json = "{"
                         + "\"id\":" + rs.getInt("id") + ","
-                        + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
+                        + "\"name\":\"" + escapeJson(rs.getString("name")) + "\","
+                        + "\"type\":\"" + escapeJson(rs.getString("type")) + "\","
+                        + "\"min_revenue\":" + rs.getBigDecimal("min_revenue") + ","
+                        + "\"max_revenue\":" + rs.getBigDecimal("max_revenue") + ","
                         + "\"rate\":" + rs.getBigDecimal("rate") + ","
-                        + "\"since\":\"" + rs.getTimestamp("since") + "\","
-                        + "\"end_date\":\"" + rs.getTimestamp("end_date") + "\","
-                        + "\"active\":" + rs.getBoolean("active") + ","
-                        + "\"description\":\"" + escapeJson(rs.getString("description")) + "\""
+                        + "\"status\":\"" + escapeJson(rs.getString("status")) + "\","
+                        + "\"created_at\":\"" + rs.getTimestamp("created_at") + "\","
+                        + "\"updated_at\":\"" + rs.getTimestamp("updated_at") + "\""
                         + "}";
                     out.write(json);
                 } else {
@@ -183,59 +197,85 @@ public class AdminCommissionsServlet extends HttpServlet {
 
     // ====== CREATE ======
     private void createCommission(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String shopIdStr = req.getParameter("shop_id");
-        String rateStr = req.getParameter("discount_rate");
-        String desc = req.getParameter("description");
+        String name = req.getParameter("name");
+        String type = req.getParameter("type");
+        String minRevenueStr = req.getParameter("min_revenue");
+        String maxRevenueStr = req.getParameter("max_revenue");
+        String rateStr = req.getParameter("rate");
+        String status = req.getParameter("status");
 
-        if (shopIdStr == null || rateStr == null) {
-            out.write("{\"error\":\"Shop ID and discount rate are required\"}");
+        if (name == null || name.trim().isEmpty() || rateStr == null) {
+            out.write("{\"error\":\"Name and rate are required\"}");
             return;
         }
 
-        int shopId = Integer.parseInt(shopIdStr);
+        BigDecimal minRevenue = (minRevenueStr != null && !minRevenueStr.trim().isEmpty()) ? new BigDecimal(minRevenueStr.trim()) : BigDecimal.ZERO;
+        BigDecimal maxRevenue = (maxRevenueStr != null && !maxRevenueStr.trim().isEmpty()) ? new BigDecimal(maxRevenueStr.trim()) : null;
         BigDecimal rate = new BigDecimal(rateStr);
-        boolean active = req.getParameter("active") == null || Boolean.parseBoolean(req.getParameter("active"));
+        if (status == null) status = "active";
 
-        String sql = "INSERT INTO store_discounts (shop_id, discount_rate, start_date, active, description) " +
-                     "VALUES (?, ?, NOW(), ?, ?)";
+        String sql = "INSERT INTO commissions (name, type, min_revenue, max_revenue, rate, status) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, created_at";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, shopId);
-            pstmt.setBigDecimal(2, rate);
-            pstmt.setBoolean(3, active);
-            pstmt.setString(4, desc != null ? desc.trim() : null);
+            pstmt.setString(1, name.trim());
+            pstmt.setString(2, type != null ? type : "doanh số");
+            pstmt.setBigDecimal(3, minRevenue);
+            if (maxRevenue != null) {
+                pstmt.setBigDecimal(4, maxRevenue);
+            } else {
+                pstmt.setNull(4, Types.NUMERIC);
+            }
+            pstmt.setBigDecimal(5, rate);
+            pstmt.setString(6, status);
 
-            int rows = pstmt.executeUpdate();
-            out.write(rows > 0
-                ? "{\"message\":\"Commission created successfully\"}"
-                : "{\"error\":\"Failed to create commission\"}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int newId = rs.getInt("id");
+                    Timestamp createdAt = rs.getTimestamp("created_at");
+                    out.write("{\"id\":" + newId + ",\"created_at\":\"" + createdAt + "\",\"message\":\"Commission created successfully\"}");
+                } else {
+                    out.write("{\"error\":\"Failed to create commission\"}");
+                }
+            }
         }
     }
 
     // ====== UPDATE ======
     private void updateCommission(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
-        String rateStr = req.getParameter("discount_rate");
-        String desc = req.getParameter("description");
+        String name = req.getParameter("name");
+        String type = req.getParameter("type");
+        String minRevenueStr = req.getParameter("min_revenue");
+        String maxRevenueStr = req.getParameter("max_revenue");
+        String rateStr = req.getParameter("rate");
+        String status = req.getParameter("status");
 
-        if (idStr == null || rateStr == null) {
-            out.write("{\"error\":\"ID and discount rate are required\"}");
+        if (idStr == null || name == null || name.trim().isEmpty() || rateStr == null) {
+            out.write("{\"error\":\"ID, name and rate are required\"}");
             return;
         }
 
         int id = Integer.parseInt(idStr);
+        BigDecimal minRevenue = (minRevenueStr != null && !minRevenueStr.trim().isEmpty()) ? new BigDecimal(minRevenueStr.trim()) : BigDecimal.ZERO;
+        BigDecimal maxRevenue = (maxRevenueStr != null && !maxRevenueStr.trim().isEmpty()) ? new BigDecimal(maxRevenueStr.trim()) : null;
         BigDecimal rate = new BigDecimal(rateStr);
-        boolean active = req.getParameter("active") == null || Boolean.parseBoolean(req.getParameter("active"));
 
-        String sql = "UPDATE store_discounts SET discount_rate = ?, active = ?, description = ? WHERE id = ?";
+        String sql = "UPDATE commissions SET name = ?, type = ?, min_revenue = ?, max_revenue = ?, rate = ?, status = ?, updated_at = NOW() WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setBigDecimal(1, rate);
-            pstmt.setBoolean(2, active);
-            pstmt.setString(3, desc != null ? desc.trim() : null);
-            pstmt.setInt(4, id);
+            pstmt.setString(1, name.trim());
+            pstmt.setString(2, type != null ? type : "doanh số");
+            pstmt.setBigDecimal(3, minRevenue);
+            if (maxRevenue != null) {
+                pstmt.setBigDecimal(4, maxRevenue);
+            } else {
+                pstmt.setNull(4, Types.NUMERIC);
+            }
+            pstmt.setBigDecimal(5, rate);
+            pstmt.setString(6, status != null ? status : "active");
+            pstmt.setInt(7, id);
 
             int rows = pstmt.executeUpdate();
             out.write(rows > 0
@@ -253,7 +293,7 @@ public class AdminCommissionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "DELETE FROM store_discounts WHERE id = ?";
+        String sql = "DELETE FROM commissions WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
