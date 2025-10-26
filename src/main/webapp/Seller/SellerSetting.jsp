@@ -150,9 +150,6 @@
     </div>
     
     <script>
-        // const API_URL = '<%= request.getContextPath() %>/api/seller/profile';
-        // const SHOP_ID = ${shopId};
-
         const API_URL = '<%= request.getContextPath() %>/api/seller/profile';
         const COUPON_API_URL = '<%= request.getContextPath() %>/api/seller/coupons';
         const SHOP_ID = '<c:out value="${shopId}" default="0" />';
@@ -163,6 +160,18 @@
         const couponForm = document.getElementById('couponForm');
         const couponsTableBody = document.getElementById('couponTableBody');
         const couponEmptyState = document.getElementById('couponEmptyState');
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
         async function loadShopProfile() {
             const loader = document.getElementById('loadingProfile');
@@ -177,7 +186,7 @@
             }
 
             try {
-                const response = await fetch(`${API_URL}?action=get`);
+                const response = await fetch(API_URL + '?action=get');
                 const data = await response.json();
 
                 if (data.success && data.shop) {
@@ -194,7 +203,7 @@
                         }
                     }
                     if (commissionDisplay) {
-                        commissionDisplay.textContent = `${rateText}%`;
+                        commissionDisplay.textContent = rateText + '%';
                     }
                     if (commissionInput) {
                         commissionInput.value = rateText;
@@ -217,7 +226,7 @@
             return;
         }
         try {
-            const response = await fetch(`${COUPON_API_URL}?action=list`);
+            const response = await fetch(COUPON_API_URL + '?action=list');
             const data = await response.json();
             if (data.success) {
                 renderCoupons(data.coupons || []);
@@ -248,34 +257,36 @@
         coupons.forEach((coupon) => {
             const row = document.createElement('tr');
             const usageText = coupon.usageLimit
-                ? `${coupon.usedCount || 0}/${coupon.usageLimit}`
+                ? (String(coupon.usedCount || 0) + '/' + coupon.usageLimit)
                 : (coupon.usedCount || 0);
             const valueText = coupon.discountType === 'percentage'
-                ? `${Number(coupon.discountValue || 0).toFixed(2)}%`
+                ? Number(coupon.discountValue || 0).toFixed(2) + '%'
                 : formatCurrency(coupon.discountValue);
             const minOrderText = coupon.minimumOrder ? formatCurrency(coupon.minimumOrder) : '-';
             const dateRange = buildDateRange(coupon.startDate, coupon.endDate);
+            const statusText = escapeHtml(coupon.status || 'active');
+            const codeText = escapeHtml(coupon.code);
+            const dateRangeText = escapeHtml(dateRange);
 
-            row.innerHTML = `
-                <td>${coupon.code}</td>
-                <td>${coupon.discountType === 'percentage' ? 'Phần trăm' : 'Cố định'}</td>
-                <td>${valueText}</td>
-                <td>${minOrderText}</td>
-                <td>${usageText}</td>
-                <td>${dateRange}</td>
-                <td>${coupon.status || 'active'}</td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteCoupon(${coupon.id})">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </td>
-            `;
+            row.innerHTML =
+                '<td>' + codeText + '</td>' +
+                '<td>' + (coupon.discountType === 'percentage' ? 'Phần trăm' : 'Cố định') + '</td>' +
+                '<td>' + valueText + '</td>' +
+                '<td>' + minOrderText + '</td>' +
+                '<td>' + usageText + '</td>' +
+                '<td>' + dateRangeText + '</td>' +
+                '<td>' + statusText + '</td>' +
+                '<td>' +
+                    '<button type="button" class="btn btn-sm btn-danger" onclick="deleteCoupon(' + coupon.id + ')">' +
+                        '<i class="fas fa-trash-alt"></i>' +
+                    '</button>' +
+                '</td>';
             couponsTableBody.appendChild(row);
         });
     }
 
     function buildDateRange(start, end) {
-        const format = (value) => {
+        const format = function(value) {
             if (!value) return '-';
             const date = new Date(value);
             if (Number.isNaN(date.getTime())) {
@@ -288,7 +299,7 @@
         if (startText === '-' && endText === '-') {
             return 'Không giới hạn';
         }
-        return `${startText} - ${endText}`;
+        return startText + ' - ' + endText;
     }
 
     function formatCurrency(value) {
@@ -319,7 +330,7 @@
             }
 
             try {
-                const response = await fetch(`${API_URL}?action=update`, {
+                const response = await fetch(API_URL + '?action=update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
@@ -476,8 +487,11 @@
         };
 
         function showAlert(message, type) {
-            document.getElementById('alertContainer').innerHTML = 
-                `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button></div>`;
+            const safeMessage = escapeHtml(message);
+            document.getElementById('alertContainer').innerHTML =
+                '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+                safeMessage +
+                '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button></div>';
         }
 
         document.addEventListener('DOMContentLoaded', () => {
