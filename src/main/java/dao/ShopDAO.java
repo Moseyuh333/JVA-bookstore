@@ -129,50 +129,14 @@ public class ShopDAO {
         }
     }
 
-    /**
-     * Cập nhật thông tin Shop
-     */
-    public static void updateShopProfile(int shopId, String name, String address, String description, String phone, String email, String slogan) throws SQLException {
-        // Try to update including address; if the column doesn't exist in DB, fall back to a variant without it.
-        String sqlWithAddress = "UPDATE shops SET name = ?, address = ?, description = ?, phone = ?, email = ?, slogan = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        String sqlWithoutAddress = "UPDATE shops SET name = ?, description = ?, phone = ?, email = ?, slogan = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        try (Connection conn = DBUtil.getConnection()) {
-            try (PreparedStatement ps = conn.prepareStatement(sqlWithAddress)) {
-                ps.setString(1, name);
-                ps.setString(2, address);
-                ps.setString(3, description);
-                ps.setString(4, phone);
-                ps.setString(5, email);
-                ps.setString(6, slogan);
-                ps.setInt(7, shopId);
-                ps.executeUpdate();
-                return;
-            } catch (SQLException e) {
-                // If address column is missing, try without it
-                String msg = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
-                if (msg.contains("column \"address\" does not exist") || msg.contains("column \"address\"")) {
-                    try (PreparedStatement ps2 = conn.prepareStatement(sqlWithoutAddress)) {
-                        ps2.setString(1, name);
-                        ps2.setString(2, description);
-                        ps2.setString(3, phone);
-                        ps2.setString(4, email);
-                        ps2.setString(5, slogan);
-                        ps2.setInt(6, shopId);
-                        ps2.executeUpdate();
-                        return;
-                    }
-                }
-                throw e;
-            }
-        }
-    }
+
 
     /**
      * Tạo Shop mới
      */
     public static int createShop(int ownerId, String name, String address, String description) throws SQLException {
-        String sqlWithAddress = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) VALUES (?, ?, ?, ?, 'pending', 10.00) RETURNING id";
-        String sqlWithoutAddress = "INSERT INTO shops (owner_id, name, description, status, commission_rate) VALUES (?, ?, ?, 'pending', 10.00) RETURNING id";
+        String sqlWithAddress = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) VALUES (?, ?, ?, ?, 'active', 10.00) RETURNING id";
+        String sqlWithoutAddress = "INSERT INTO shops (owner_id, name, description, status, commission_rate) VALUES (?, ?, ?, 'active', 10.00) RETURNING id";
         try (Connection conn = DBUtil.getConnection()) {
             try (PreparedStatement ps = conn.prepareStatement(sqlWithAddress)) {
                 ps.setInt(1, ownerId);
@@ -201,7 +165,22 @@ public class ShopDAO {
         }
     }
 
-
-
-
+    /**
+     * Cập nhật thông tin Shop
+     */
+    public static void updateShopProfile(int shopId, String name, String address, String description,
+                                       String phone, String email, String slogan) throws SQLException {
+        String sql = "UPDATE shops SET name = ?, address = ?, description = ?, phone = ?, email = ?, slogan = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, name);
+            ps.setString(2, address);
+            ps.setString(3, description);
+            ps.setString(4, phone);
+            ps.setString(5, email);
+            ps.setString(6, slogan);
+            ps.setInt(7, shopId);
+            ps.executeUpdate();
+        }
+    }
 }

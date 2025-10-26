@@ -76,8 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${escapeHtml(shop)}</td>
         <td>${commission}</td>
         <td>
-          <button class="btn btn-sm btn-warning mr-1"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+          <button class="btn btn-sm btn-warning mr-1" onclick="openEditModal(${p.id})"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>
         </td>`;
             tableBody.appendChild(tr);
         });
@@ -214,6 +214,95 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // ===== Modal Functions =====
+    window.openAddModal = () => {
+        document.getElementById('productModalLabel').textContent = 'Thêm sản phẩm mới';
+        document.getElementById('productForm').reset();
+        document.getElementById('productId').value = '';
+        $('#productModal').modal('show');
+    };
+
+    window.openEditModal = (productId) => {
+        const product = products.find(p => p.id == productId);
+        if (!product) return;
+
+        document.getElementById('productModalLabel').textContent = 'Chỉnh sửa sản phẩm';
+        document.getElementById('productId').value = product.id;
+        document.getElementById('title').value = product.title || '';
+        document.getElementById('author').value = product.author || '';
+        document.getElementById('genre').value = product.category || '';
+        document.getElementById('price').value = product.price || '';
+        document.getElementById('stock').value = product.stock || product.stock_quantity || '';
+        document.getElementById('isbn').value = product.isbn || '';
+        document.getElementById('description').value = product.description || '';
+        $('#productModal').modal('show');
+    };
+
+    // ===== Save Product =====
+    const saveProductBtn = document.getElementById('saveProductBtn');
+    if (saveProductBtn) {
+        saveProductBtn.addEventListener('click', async () => {
+            const formData = new FormData(document.getElementById('productForm'));
+            const productData = Object.fromEntries(formData.entries());
+
+            const isEdit = productData.productId;
+            const url = isEdit ? `/api/seller/products?action=update` : `/api/seller/products?action=add`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(productData)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    $('#productModal').modal('hide');
+                    loadProducts(currentPage, currentSearch, currentSearchType);
+                    loadStats();
+                    alert(isEdit ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm thành công!');
+                } else {
+                    alert('Lỗi: ' + (result.message || 'Không thể lưu sản phẩm'));
+                }
+            } catch (error) {
+                console.error('Error saving product:', error);
+                alert('Có lỗi xảy ra khi lưu sản phẩm');
+            }
+        });
+    }
+
+    // ===== Delete Product =====
+    window.deleteProduct = async (productId) => {
+        if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
+
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(`/api/seller/products?action=delete&id=${productId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                loadProducts(currentPage, currentSearch, currentSearchType);
+                loadStats();
+                alert('Xóa sản phẩm thành công!');
+            } else {
+                alert('Lỗi: ' + (result.message || 'Không thể xóa sản phẩm'));
+            }
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            alert('Có lỗi xảy ra khi xóa sản phẩm');
+        }
+    };
 
     // ===== Init =====
     loadProducts();

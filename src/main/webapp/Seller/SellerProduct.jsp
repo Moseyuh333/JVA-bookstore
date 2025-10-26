@@ -352,6 +352,57 @@
     </div>
 </div>
 
+<!-- Modal for Add/Edit Product -->
+<div class="modal fade" id="productModal" tabindex="-1" role="dialog" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalLabel">Thêm sản phẩm mới</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <input type="hidden" id="productId" name="productId">
+                    <div class="form-group">
+                        <label for="title">Tên sách</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="author">Tác giả</label>
+                        <input type="text" class="form-control" id="author" name="author" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="genre">Thể loại</label>
+                        <input type="text" class="form-control" id="genre" name="genre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Giá</label>
+                        <input type="number" class="form-control" id="price" name="price" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stock">Tồn kho</label>
+                        <input type="number" class="form-control" id="stock" name="stock" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="isbn">ISBN</label>
+                        <input type="text" class="form-control" id="isbn" name="isbn">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Mô tả</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveProductBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <%-- CHÚ Ý: Sử dụng JS mới là SellerProduct.js, không phải AdProduct.js --%>
 <script src="${pageContext.request.contextPath}/assets/js/seller/SellerProduct.js"></script>
 <script>

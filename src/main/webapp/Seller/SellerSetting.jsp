@@ -106,11 +106,34 @@
             }
         }
 
-        // HàmshowAlert và handle form submit (cần triển khai logic update)
-        document.getElementById('shopProfileForm').addEventListener('submit', function(e) {
+        // Handle form submit
+        document.getElementById('shopProfileForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            alert('Logic cập nhật sẽ được gửi đến POST /api/seller/profile?action=update');
-            // Thêm logic fetch POST/PUT ở đây
+
+            const formData = new FormData(this);
+            const shopData = Object.fromEntries(formData.entries());
+
+            try {
+                const token = localStorage.getItem('seller_token') || localStorage.getItem('auth_token');
+                const response = await fetch(`${API_URL}?action=update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(shopData)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('Cập nhật thông tin Shop thành công!', 'success');
+                } else {
+                    showAlert('Lỗi: ' + (result.message || 'Không thể cập nhật thông tin Shop'), 'danger');
+                }
+            } catch (error) {
+                console.error('Error updating shop profile:', error);
+                showAlert('Có lỗi xảy ra khi cập nhật thông tin Shop', 'danger');
+            }
         });
 
         function showAlert(message, type) {

@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý danh mục - Bookish Admin</title>
+    <title>Quản lý đơn hàng - Bookish Admin</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -504,8 +504,8 @@
         <div id="content">
             <div class="container-fluid">
                 <div class="page-title">
-                    <h1>Quản lý danh mục</h1>
-                    <p>Thêm, sửa, xóa danh mục sản phẩm (Sách, Tiểu thuyết, Manga, ...)</p>
+                    <h1>Quản lý đơn hàng</h1>
+                    <p>Quản lý và theo dõi đơn hàng của cửa hàng</p>
                 </div>
 
                 <div class="stats-grid">
@@ -514,8 +514,8 @@
                             <i class="fas fa-list"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>Tổng danh mục</h3>
-                            <div class="number" id="totalCategories">0</div>
+                            <h3>Tổng đơn hàng</h3>
+                            <div class="number" id="totalOrders">0</div>
                         </div>
                     </div>
                     <div class="stat-box active">
@@ -523,32 +523,28 @@
                             <i class="fas fa-check-circle"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>Đang hoạt động</h3>
-                            <div class="number" id="activeCategories">0</div>
+                            <h3>Đơn hàng đã giao</h3>
+                            <div class="number" id="deliveredOrders">0</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="card-custom">
                     <div class="card-header-custom">
-                        <h2>Danh sách danh mục</h2>
-                        <button class="btn-add" onclick="openAddModal()">
-                            <i class="fas fa-plus"></i>
-                            <span>Thêm danh mục</span>
-                        </button>
+                        <h2>Danh sách đơn hàng</h2>
                     </div>
 
                     <div class="filter-bar">
                         <div class="filter-form">
                             <select id="searchType" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
                                 <option value="all">Tất cả</option>
-                                <option value="name">Tên danh mục</option>
-                                <option value="description">Mô tả</option>
+                                <option value="orderId">Mã đơn hàng</option>
+                                <option value="customerName">Tên khách hàng</option>
                                 <option value="status">Trạng thái</option>
                             </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên danh mục...">
+                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo mã đơn hàng...">
                             </div>
                             <button class="btn-custom btn-search" onclick="applyFilters()">
                                 <i class="fas fa-search"></i>
@@ -571,14 +567,15 @@
                             <table class="table-custom">
                                 <thead>
                                     <tr>
-                                        <th>Mã danh mục</th>
-                                        <th>Tên danh mục</th>
-                                        <th>Số sản phẩm</th>
-                                        <th>Ngày tạo</th>
+                                        <th>Mã đơn hàng</th>
+                                        <th>Khách hàng</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày đặt</th>
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody id="categoryList">
+                                <tbody id="orderList">
                                     <!-- Data will be loaded dynamically -->
                                 </tbody>
                             </table>
@@ -586,7 +583,7 @@
                             <div id="emptyState" class="empty-state" style="display: none;">
                                 <i class="fas fa-inbox"></i>
                                 <h3>Không tìm thấy dữ liệu</h3>
-                                <p>Không có danh mục nào phù hợp với tiêu chí tìm kiếm</p>
+                                <p>Không có đơn hàng nào phù hợp với tiêu chí tìm kiếm</p>
                             </div>
                         </div>
                     </div>
