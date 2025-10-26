@@ -16,6 +16,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById("searchInput");
     const searchBtn = document.getElementById("searchBtn");
 
+    const statusLabels = {
+        active: 'Active',
+        inactive: 'Inactive',
+        pending: 'Pending',
+        banned: 'Banned'
+    };
+
     let products = [];
     let currentPage = 1;
     const limit = 20;
@@ -75,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const commission = p.commission_rate ? p.commission_rate + "%" : "-";
 
             const status = p.status || "active"; // Default to active if not set
-            const statusDisplay = status === "active" ? "Hoạt động" : status === "inactive" ? "Không hoạt động" : status === "pending" ? "Đang chờ duyệt" : status;
+            const statusKey = (status || '').toLowerCase();
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -85,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${escapeHtml(p.category || "-")}</td>
                 <td>${price}</td>
                 <td>${stock}</td>
-                <td>${escapeHtml(statusDisplay)}</td>
+                <td><span class="badge ${statusKey === 'active' ? 'badge-success' : statusKey === 'inactive' ? 'badge-secondary' : statusKey === 'banned' ? 'badge-danger' : 'badge-warning'}">${statusLabels[statusKey] || status}</span></td>
                 <td>${escapeHtml(shop)}</td>
                 <td class="actions">
                     <button class="btn-icon btn-edit" title="Sửa" data-id="${p.id}">
