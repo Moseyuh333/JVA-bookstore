@@ -1,6 +1,13 @@
 // ========== ADSHIPPER.JS ==========
 // Quản lý danh sách nhà vận chuyển
 
+const statusLabels = {
+    active: 'Active',
+    inactive: 'Inactive',
+    pending: 'Pending',
+    banned: 'Banned'
+};
+
 // ========================
 // 📥 LOAD SHIPPERS FROM API
 // ========================
@@ -63,8 +70,8 @@ async function loadShippers(search = "", searchType = "all", statusFilter = "all
                     <td>${baseFee}</td>
                     <td>${s.estimated_time || '-'}</td>
                     <td>
-                        <span class="badge ${s.status === 'active' ? 'badge-active' : 'badge-inactive'}">
-                            ${s.status === 'active' ? 'Đang hoạt động' : 'Tạm khóa'}
+                        <span class="badge ${s.status === 'active' ? 'badge-success' : s.status === 'inactive' ? 'badge-secondary' : s.status === 'banned' ? 'badge-danger' : 'badge-warning'}">
+                            ${statusLabels[s.status] || s.status}
                         </span>
                     </td>
                     <td>${created}</td>
@@ -99,7 +106,7 @@ function updateStats(total) {
 
     const activeEl = document.getElementById('activeShippers');
     if (activeEl) {
-        const activeCount = document.querySelectorAll('#ShipperTable tr .badge-active').length;
+        const activeCount = document.querySelectorAll('#ShipperTable tr .badge-success').length;
         activeEl.textContent = activeCount;
     }
 }
