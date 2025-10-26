@@ -142,7 +142,7 @@ public class AuthServlet extends HttpServlet {
              } else if ("seller".equals(role)) {
                  response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"seller\", \"redirect\":\"/seller/dashboard\"}";
             } else {
-                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"user\"}";
+                response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"customer\"}";
             }
             
 
