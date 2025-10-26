@@ -1,6 +1,7 @@
 package web.seller;
 
 import dao.ShopDAO;
+import models.Shop;
 import utils.DBUtil;
 import utils.AuthUtil;
 import com.google.gson.Gson;
@@ -61,10 +62,30 @@ public class ShopRegistrationServlet extends HttpServlet {
             int existingShopId = ShopDAO.getShopIdByUserId(userId);
             System.out.println("DEBUG ShopRegistrationServlet - existingShopId: " + existingShopId);
             if (existingShopId > 0) {
-                System.out.println("DEBUG ShopRegistrationServlet - User already has shop, returning 400");
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write(gson.toJson(Map.of("success", false, "message", "Bạn đã có shop rồi")));
-                return;
+                // Check if the shop is pending - if so, allow re-registration
+                try {
+                    Shop existingShop = ShopDAO.getShopById(existingShopId);
+                    if (existingShop != null && "pending".equals(existingShop.getStatus())) {
+                        System.out.println("DEBUG ShopRegistrationServlet - User has pending shop, allowing re-registration");
+                        // Delete the pending shop to allow new registration
+                        try (Connection conn = DBUtil.getConnection();
+                             PreparedStatement ps = conn.prepareStatement("DELETE FROM shops WHERE id = ?")) {
+                            ps.setInt(1, existingShopId);
+                            ps.executeUpdate();
+                            System.out.println("DEBUG ShopRegistrationServlet - Deleted pending shop, proceeding with new registration");
+                        }
+                    } else {
+                        System.out.println("DEBUG ShopRegistrationServlet - User has active shop, returning 400");
+                        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        out.write(gson.toJson(Map.of("success", false, "message", "Bạn đã có shop rồi")));
+                        return;
+                    }
+                } catch (SQLException e) {
+                    System.err.println("DEBUG ShopRegistrationServlet - Error checking shop status: " + e.getMessage());
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    out.write(gson.toJson(Map.of("success", false, "message", "Bạn đã có shop rồi")));
+                    return;
+                }
             }
 
             String name = req.getParameter("name");
