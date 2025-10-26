@@ -80,7 +80,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const renderTable = (list) => {
         tableBody.innerHTML = "";
         if (list.length === 0) {
-            showEmpty();
+            const message = isSearching ? "Không tìm thấy khuyến mãi nào phù hợp với từ khóa tìm kiếm" : "Không có khuyến mãi nào";
+            showEmpty(message);
             return;
         }
 
@@ -207,14 +208,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 hideLoading();
             }
         } else {
-            isSearching = false;
-            // No search, load all and apply status filter
+            // No search, apply status filter client-side
             let filtered = [...promotions];
 
             // Apply status filter client-side
             if (statusFilter !== 'all') {
                 const isActive = statusFilter === 'true';
                 filtered = filtered.filter(p => p.active === isActive);
+                isSearching = true; // Treat status filter as a search for empty message
+            } else {
+                isSearching = false;
             }
 
             filteredPromotions = filtered;
