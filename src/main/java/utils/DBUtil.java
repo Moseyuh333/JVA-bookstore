@@ -107,6 +107,28 @@ public class DBUtil {
                     }
                 }
 
+                // Add role column if missing
+                try {
+                    String addRoleSQL = "ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'customer'";
+                    stmt.execute(addRoleSQL);
+                } catch (SQLException e) {
+                    // Ignore if column already exists
+                    if (!e.getMessage().contains("already exists")) {
+                        throw e;
+                    }
+                }
+
+                // Add status column if missing
+                try {
+                    String addStatusSQL = "ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'pending'";
+                    stmt.execute(addStatusSQL);
+                } catch (SQLException e) {
+                    // Ignore if column already exists
+                    if (!e.getMessage().contains("already exists")) {
+                        throw e;
+                    }
+                }
+
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)");
@@ -1161,6 +1183,25 @@ public class DBUtil {
         stmt.executeUpdate();
     }
 }
+
+    /**
+     * Lấy status của user theo username
+     * @param username Username cần tìm
+     * @return Status hoặc null nếu không tìm thấy
+     */
+    public static String getUserStatus(String username) throws SQLException {
+        String sql = "SELECT status FROM users WHERE username = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("status");
+                }
+                return null;
+            }
+        }
+    }
 
 
 

@@ -109,12 +109,22 @@ public class AuthServlet extends HttpServlet {
                 //     response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\"}";
                 // }
 
-                // Check user role for redirect
+            // Check user role for redirect
             String role = DBUtil.getUserRole(username);
             int userId = DBUtil.getUserIdByUsername(username);
             System.out.println("DEBUG Login - User role: " + role);
             System.out.println("DEBUG Login - User ID: " + userId);
 
+            // Check seller status - only allow active sellers to access dashboard
+            String sellerStatus = null;
+            if ("seller".equals(role)) {
+                try {
+                    sellerStatus = DBUtil.getUserStatus(username);
+                    System.out.println("DEBUG Login - Seller status: " + sellerStatus);
+                } catch (Exception e) {
+                    System.out.println("DEBUG Login - Failed to get seller status: " + e.getMessage());
+                }
+            }
 
                     // ✅ Tạo session để JSP biết người đang đăng nhập
             HttpSession session = req.getSession(true);
@@ -135,12 +145,17 @@ public class AuthServlet extends HttpServlet {
                     System.out.println("DEBUG Login - Failed to get shop_id: " + e.getMessage());
                 }
             }
-            
+
             String response;
             if ("admin".equals(role)) {
                 response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"admin\", \"redirect\":\"/admin-dashboard\"}";
              } else if ("seller".equals(role)) {
-                 response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"seller\", \"redirect\":\"/seller/dashboard\"}";
+                 // Only redirect active sellers to dashboard
+                 if ("active".equalsIgnoreCase(sellerStatus)) {
+                     response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"seller\", \"redirect\":\"/seller/dashboard\"}";
+                 } else {
+                     response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"seller\", \"redirect\":\"/seller/pending\"}";
+                 }
             } else {
                 response = "{\"token\":\"" + token + "\", \"message\":\"Login successful\", \"role\":\"customer\"}";
             }
@@ -188,7 +203,15 @@ public class AuthServlet extends HttpServlet {
 
         // Create user without verification - set as verified immediately
         DBUtil.createUserVerified(username, email, hash);
-        
+
+        // Set status to active for normal customers
+        try {
+            int userId = DBUtil.getUserIdByUsername(username);
+            DBUtil.updateUserRole(userId, "customer", "active");
+        } catch (SQLException e) {
+            System.err.println("Failed to set user status: " + e.getMessage());
+        }
+
         // Send welcome email (optional)
         try {
             EmailUtil.sendWelcomeEmail(email, username);
@@ -332,14 +355,22 @@ public class AuthServlet extends HttpServlet {
             // Create user account
             String hash = BCrypt.hashpw(password, BCrypt.gensalt());
             DBUtil.createUserVerified(username, email, hash);
-            
+
+            // Set status to active for normal customers
+            try {
+                int userId = DBUtil.getUserIdByUsername(username);
+                DBUtil.updateUserRole(userId, "customer", "active");
+            } catch (SQLException e) {
+                System.err.println("Failed to set user status: " + e.getMessage());
+            }
+
             // Send welcome email
             try {
                 EmailUtil.sendWelcomeEmail(email, username);
             } catch (Exception e) {
                 System.err.println("Failed to send welcome email: " + e.getMessage());
             }
-            
+
             System.out.println("User registered successfully: " + username);
             out.write("{\"message\":\"Registration successful! You can now login.\"}");
         } else {

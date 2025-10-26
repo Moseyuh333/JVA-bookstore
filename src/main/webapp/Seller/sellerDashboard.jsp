@@ -1,5 +1,77 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="java.sql.*, utils.DBUtil, java.util.*" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%
+    // Check if user is logged in and is a seller
+    String username = (String) session.getAttribute("username");
+    String role = (String) session.getAttribute("role");
+    Integer userId = (Integer) session.getAttribute("user_id");
+
+    if (username == null || !"seller".equals(role)) {
+        response.sendRedirect(request.getContextPath() + "/login.jsp");
+        return;
+    }
+
+    // Get seller status
+    String sellerStatus = null;
+    try {
+        sellerStatus = DBUtil.getUserStatus(username);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    // If seller is not active, show pending message
+    if (!"active".equalsIgnoreCase(sellerStatus)) {
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard - Pending Approval</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="mb-0"><i class="fas fa-clock"></i> Account Pending Approval</h4>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-user-clock fa-4x text-warning"></i>
+                        </div>
+                        <h5 class="card-title">Your seller account is under review</h5>
+                        <p class="card-text">
+                            Thank you for registering as a seller. Your account is currently pending approval from our administrators.
+                            You will be able to access the seller dashboard once your account is approved.
+                        </p>
+                        <div class="alert alert-info">
+                            <strong>Current Status:</strong> <%= sellerStatus != null ? sellerStatus.toUpperCase() : "PENDING" %>
+                        </div>
+                        <div class="mt-4">
+                            <a href="<%= request.getContextPath() %>/index.jsp" class="btn btn-primary">
+                                <i class="fas fa-home"></i> Back to Home
+                            </a>
+                            <a href="<%= request.getContextPath() %>/logout" class="btn btn-secondary ms-2">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+<%
+        return;
+    }
+%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
