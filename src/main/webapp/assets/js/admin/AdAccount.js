@@ -146,6 +146,19 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
                 roleBadgeClass = 'badge-shipper';
             }
 
+            const status = user.status || 'active';
+            const statusKey = (status || '').toLowerCase();
+            let statusBadgeClass = 'badge-pending';
+            if (statusKey === 'active') {
+                statusBadgeClass = 'badge-seller'; // green for active
+            } else if (statusKey === 'inactive') {
+                statusBadgeClass = 'badge-banned'; // red for inactive
+            } else if (statusKey === 'banned') {
+                statusBadgeClass = 'badge-banned'; // red for banned
+            } else if (statusKey === 'pending') {
+                statusBadgeClass = 'badge-pending'; // yellow for pending
+            }
+
             return [
                 `<tr data-user-id="${user.id}">`,
                 '<td>',
@@ -163,6 +176,7 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
                 `<td>${email}</td>`,
                 `<td>${phone}</td>`,
                     `<td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>`,
+                    `<td><span class="badge-custom ${statusBadgeClass}">${statusLabels[statusKey] || status}</span></td>`,
                     '<td class="actions">',
                     `<button class="btn-icon btn-edit" title="Chỉnh sửa" data-user-id="${user.id}">`,
                     '<i class="fas fa-edit"></i>',

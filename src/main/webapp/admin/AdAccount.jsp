@@ -815,6 +815,7 @@
                                         <th>Email</th>
                                         <th>Số điện thoại</th>
                                         <th>Quyền</th>
+                                        <th>Trạng thái</th>
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
