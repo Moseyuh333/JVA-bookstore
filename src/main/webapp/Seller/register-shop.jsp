@@ -224,7 +224,8 @@
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    body: new URLSearchParams(formData)
+                    body: new URLSearchParams(formData),
+                    credentials: 'include' // ✅ thêm dòng này
                 });
                 
                 const data = await response.json();
