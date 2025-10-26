@@ -128,7 +128,8 @@ public class SellerProfileServlet extends HttpServlet {
         shopData.put("name", shop.getName());
         shopData.put("address", shop.getAddress());
         shopData.put("description", shop.getDescription());
-        shopData.put("commissionRate", shop.getCommissionRate());
+        double sanitizedRate = normalizeStoredCommissionRate(shop.getCommissionRate());
+        shopData.put("commissionRate", sanitizedRate);
         shopData.put("phone", shop.getPhone());
         shopData.put("email", shop.getEmail());
         shopData.put("logoUrl", shop.getLogoUrl());
@@ -186,13 +187,32 @@ public class SellerProfileServlet extends HttpServlet {
             return;
         }
 
-        double normalized = ratePercent / 100.0;
-        ShopDAO.updateCommissionRate(shopId, normalized);
+        double roundedRate = Math.round(ratePercent * 100.0) / 100.0;
+        if (roundedRate > 100.0) {
+            roundedRate = 100.0;
+        }
+        ShopDAO.updateCommissionRate(shopId, roundedRate);
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("success", true);
         response.put("message", "Commission rate updated successfully");
-        response.put("commissionRate", normalized);
+        response.put("commissionRate", roundedRate);
         out.write(gson.toJson(response));
+    }
+
+    private static double normalizeStoredCommissionRate(double rawRate) {
+        if (Double.isNaN(rawRate)) {
+            return 0.0;
+        }
+        if (rawRate < 0.0) {
+            return 0.0;
+        }
+        if (rawRate <= 1.0) {
+            return Math.round(rawRate * 10000.0) / 100.0;
+        }
+        if (rawRate > 100.0) {
+            return 100.0;
+        }
+        return Math.round(rawRate * 100.0) / 100.0;
     }
 }

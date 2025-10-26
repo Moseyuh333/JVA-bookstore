@@ -199,7 +199,8 @@
                     if (commissionRaw !== null && commissionRaw !== undefined) {
                         const numeric = Number(commissionRaw);
                         if (!Number.isNaN(numeric)) {
-                            rateText = (numeric * 100).toFixed(2);
+                            const clamped = Math.min(100, Math.max(0, numeric));
+                            rateText = clamped.toFixed(2);
                         }
                     }
                     if (commissionDisplay) {
@@ -388,9 +389,23 @@
                     });
                     const result = await response.json();
                     if (result.success) {
-                        const percentText = parseFloat(value).toFixed(2) + '%';
-                        if (commissionDisplay) {
-                            commissionDisplay.textContent = percentText;
+                        const latestRate = Number(result.commissionRate);
+                        if (Number.isNaN(latestRate)) {
+                            const fallback = parseFloat(value).toFixed(2);
+                            if (commissionDisplay) {
+                                commissionDisplay.textContent = `${fallback}%`;
+                            }
+                            if (commissionInput) {
+                                commissionInput.value = fallback;
+                            }
+                        } else {
+                            const rateText = latestRate.toFixed(2);
+                            if (commissionDisplay) {
+                                commissionDisplay.textContent = `${rateText}%`;
+                            }
+                            if (commissionInput) {
+                                commissionInput.value = rateText;
+                            }
                         }
                         showAlert('Cập nhật tỉ lệ chiết khấu thành công!', 'success');
                     } else {

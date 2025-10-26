@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS shops (
     description TEXT,
     logo_url VARCHAR(500),
     status VARCHAR(20) DEFAULT 'active',
-    commission_rate DECIMAL(5,2) DEFAULT 10.00,
+    commission_rate DECIMAL(5,2) DEFAULT 100.00,
     phone VARCHAR(20),
     email VARCHAR(100),
     address TEXT,

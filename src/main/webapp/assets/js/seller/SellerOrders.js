@@ -75,7 +75,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (Number.isNaN(number)) {
             return `${value}₫`;
         }
-        return `${new Intl.NumberFormat("vi-VN").format(number)}₫`;
+        const rounded = Math.round(number);
+        return `${new Intl.NumberFormat("vi-VN").format(rounded)}₫`;
     };
 
     const formatDate = (value) => {

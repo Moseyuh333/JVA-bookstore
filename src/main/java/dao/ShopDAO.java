@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Locale;
 
 public class ShopDAO {
 
@@ -135,8 +136,8 @@ public class ShopDAO {
      * Tạo Shop mới
      */
     public static int createShop(int ownerId, String name, String address, String description) throws SQLException {
-        String sqlWithAddress = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) VALUES (?, ?, ?, ?, 'active', 10.00) RETURNING id";
-        String sqlWithoutAddress = "INSERT INTO shops (owner_id, name, description, status, commission_rate) VALUES (?, ?, ?, 'active', 10.00) RETURNING id";
+        String sqlWithAddress = "INSERT INTO shops (owner_id, name, address, description, status, commission_rate) VALUES (?, ?, ?, ?, 'active', 100.00) RETURNING id";
+        String sqlWithoutAddress = "INSERT INTO shops (owner_id, name, description, status, commission_rate) VALUES (?, ?, ?, 'active', 100.00) RETURNING id";
         try (Connection conn = DBUtil.getConnection()) {
             try (PreparedStatement ps = conn.prepareStatement(sqlWithAddress)) {
                 ps.setInt(1, ownerId);
@@ -171,16 +172,33 @@ public class ShopDAO {
     public static void updateShopProfile(int shopId, String name, String address, String description,
                                        String phone, String email, String slogan) throws SQLException {
         String sql = "UPDATE shops SET name = ?, address = ?, description = ?, phone = ?, email = ?, slogan = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, name);
-            ps.setString(2, address);
-            ps.setString(3, description);
-            ps.setString(4, phone);
-            ps.setString(5, email);
-            ps.setString(6, slogan);
-            ps.setInt(7, shopId);
-            ps.executeUpdate();
+        String legacySql = "UPDATE shops SET name = ?, address = ?, description = ?, phone = ?, email = ?, slogan = ? WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, name);
+                ps.setString(2, address);
+                ps.setString(3, description);
+                ps.setString(4, phone);
+                ps.setString(5, email);
+                ps.setString(6, slogan);
+                ps.setInt(7, shopId);
+                ps.executeUpdate();
+            }
+        } catch (SQLException ex) {
+            if (!isMissingColumn(ex, "updated_at")) {
+                throw ex;
+            }
+            try (Connection conn = DBUtil.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(legacySql)) {
+                ps.setString(1, name);
+                ps.setString(2, address);
+                ps.setString(3, description);
+                ps.setString(4, phone);
+                ps.setString(5, email);
+                ps.setString(6, slogan);
+                ps.setInt(7, shopId);
+                ps.executeUpdate();
+            }
         }
     }
 
@@ -192,5 +210,18 @@ public class ShopDAO {
             ps.setInt(2, shopId);
             ps.executeUpdate();
         }
+    }
+
+    private static boolean isMissingColumn(SQLException ex, String columnName) {
+        if (ex == null || columnName == null) {
+            return false;
+        }
+        String message = ex.getMessage();
+        if (message == null) {
+            return false;
+        }
+        String normalized = columnName.toLowerCase(Locale.US);
+        String marker = "column \"" + normalized + "\" does not exist";
+        return message.toLowerCase(Locale.US).contains(marker);
     }
 }

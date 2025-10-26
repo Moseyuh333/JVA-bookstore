@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import com.google.gson.Gson;
 public class SellerOrdersServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(SellerOrdersServlet.class.getName());
     private final Gson gson = new Gson();
+    private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     private void setEncoding(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         req.setCharacterEncoding("UTF-8");
@@ -149,11 +151,30 @@ public class SellerOrdersServlet extends HttpServlet {
         }
 
         List<OrderDAO.AdminOrderSummary> orders = OrderDAO.listOrdersForShop(shopId, status, keyword, limit);
+        List<Map<String, Object>> serialized = new ArrayList<>(orders.size());
+
+        for (OrderDAO.AdminOrderSummary summary : orders) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", summary.id);
+            item.put("code", summary.code);
+            item.put("status", summary.status);
+            item.put("paymentStatus", summary.paymentStatus);
+            item.put("paymentMethod", summary.paymentMethod);
+            item.put("totalAmount", summary.totalAmount);
+            item.put("shippingFee", summary.shippingFee);
+            final String orderDate = summary.orderDate != null ? summary.orderDate.format(ISO_DATE_TIME) : null;
+            item.put("orderDate", orderDate);
+            item.put("createdAt", orderDate);
+            item.put("updatedAt", summary.updatedAt != null ? summary.updatedAt.format(ISO_DATE_TIME) : null);
+            item.put("customerName", summary.customerName);
+            item.put("customerEmail", summary.customerEmail);
+            serialized.add(item);
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put("orders", orders);
-        response.put("total", orders.size());
+        response.put("orders", serialized);
+        response.put("total", serialized.size());
 
         out.write(gson.toJson(response));
     }
