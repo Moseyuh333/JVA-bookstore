@@ -1,6 +1,8 @@
 const contextPath = window.appConfig?.contextPath || '';
 let cachedUsers = [];
 let currentSearchTerm = '';
+let currentSearchType = 'all';
+let currentStatusFilter = 'all';
 let deleteTargetUser = null;
 let viewModalController = null;
 let deleteModalController = null;
@@ -70,7 +72,7 @@ function handleUnauthorized() {
     window.location.href = `${fallback}/login.jsp`;
 }
 
-async function loadAdminUsers(searchTerm = currentSearchTerm) {
+async function loadAdminUsers(searchTerm = currentSearchTerm, searchType = currentSearchType, statusFilter = currentStatusFilter) {
     const tableBody = document.querySelector('#User');
     const loading = document.querySelector('#loadingState');
     const emptyState = document.querySelector('#emptyState');
@@ -92,6 +94,12 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
         let url = `${contextPath}/api/admin/users?action=list`;
         if (searchTerm) {
             url += `&search=${encodeURIComponent(searchTerm)}`;
+        }
+        if (searchType && searchType !== 'all') {
+            url += `&searchType=${encodeURIComponent(searchType)}`;
+        }
+        if (statusFilter && statusFilter !== 'all') {
+            url += `&status=${encodeURIComponent(statusFilter)}`;
         }
 
         const response = await fetch(url, {
@@ -213,17 +221,31 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
 
 async function applyFilters() {
     const input = document.getElementById('searchInput');
+    const typeSelect = document.getElementById('searchType');
+    const statusSelect = document.getElementById('statusFilter');
     currentSearchTerm = input ? input.value.trim() : '';
-    await loadAdminUsers(currentSearchTerm);
+    currentSearchType = typeSelect ? typeSelect.value : 'all';
+    currentStatusFilter = statusSelect ? statusSelect.value : 'all';
+    await loadAdminUsers(currentSearchTerm, currentSearchType, currentStatusFilter);
 }
 
 function resetFilters() {
     const input = document.getElementById('searchInput');
+    const typeSelect = document.getElementById('searchType');
+    const statusSelect = document.getElementById('statusFilter');
     if (input) {
         input.value = '';
     }
+    if (typeSelect) {
+        typeSelect.value = 'all';
+    }
+    if (statusSelect) {
+        statusSelect.value = 'all';
+    }
     currentSearchTerm = '';
-    loadAdminUsers('');
+    currentSearchType = 'all';
+    currentStatusFilter = 'all';
+    loadAdminUsers('', 'all', 'all');
 }
 
 function updateStats() {
