@@ -331,7 +331,7 @@
                     </a>
                 </li>
 
-                <a href="${pageContext.request.contextPath}/seller/create-post.jsp" class="btn">✍️ Đăng bài viết mới</a>
+                <a href="${pageContext.request.contextPath}/Seller/create-post.jsp" class="btn">✍️ Đăng bài viết mới</a>
 
             </ul>
         </nav>
