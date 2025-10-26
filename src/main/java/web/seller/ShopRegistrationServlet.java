@@ -2,6 +2,7 @@ package web.seller;
 
 import dao.ShopDAO;
 import utils.DBUtil;
+import utils.AuthUtil;
 import com.google.gson.Gson;
 
 import javax.servlet.ServletException;
@@ -32,7 +33,17 @@ public class ShopRegistrationServlet extends HttpServlet {
         PrintWriter out = resp.getWriter();
 
         try {
+            // Try session first, then JWT token
             Integer userId = (Integer) req.getSession().getAttribute("user_id");
+
+            if (userId == null) {
+                // Fallback to JWT token
+                try {
+                    userId = AuthUtil.resolveUserId(req).intValue();
+                } catch (SQLException e) {
+                    // Ignore, will check below
+                }
+            }
 
             if (userId == null) {
                 resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
