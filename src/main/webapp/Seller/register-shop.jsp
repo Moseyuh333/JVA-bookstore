@@ -151,7 +151,8 @@
         
         <div id="alertContainer"></div>
         
-        <form id="shopRegisterForm">
+        <!-- <form id="shopRegisterForm"> -->
+        <form id="registerShopForm" method="POST" action="/api/seller/register-shop"></form>
             <div class="form-group">
                 <label for="shopName">Tên Shop <span style="color: red;">*</span></label>
                 <input type="text" id="shopName" name="name" required 
@@ -201,11 +202,19 @@
                 
                 const data = await response.json();
                 
-                if (data.success) {
-                    showAlert('Shop đã được tạo thành công! Đang chuyển hướng...', 'success');
-                    setTimeout(() => {
-                        window.location.href = '<%= request.getContextPath() %>/seller/dashboard';
-                    }, 1500);
+                // if (data.success) {
+                //     showAlert('Shop đã được tạo thành công! Đang chuyển hướng...', 'success');
+                //     setTimeout(() => {
+                //         window.location.href = '<%= request.getContextPath() %>/seller/dashboard';
+                //     }, 1500);
+
+                    if (data.success) {
+        showAlert('Yêu cầu đăng ký shop đã được gửi. Vui lòng chờ admin duyệt.', 'success');
+        setTimeout(() => {
+            window.location.href = '<%= request.getContextPath() %>/index.jsp';
+        }, 2000);
+    
+
                 } else {
                     showAlert(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.', 'error');
                     submitBtn.disabled = false;
