@@ -200,9 +200,6 @@
     </button>
 </form>
 
-
-
-        
         <div class="back-link">
             <a href="${pageContext.request.contextPath}/index.jsp">← Quay lại trang chủ</a>
         </div>
