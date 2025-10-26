@@ -510,6 +510,11 @@
                                 <option value="type">Loại giảm giá</option>
                                 <option value="status">Trạng thái</option>
                             </select>
+                            <select id="statusFilter" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="true">Đang hoạt động</option>
+                                <option value="false">Tạm khóa</option>
+                            </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="promotionSearchInput" placeholder="Tìm kiếm theo mã code, mô tả, loại...">

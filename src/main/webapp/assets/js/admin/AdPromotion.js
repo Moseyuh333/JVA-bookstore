@@ -168,20 +168,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const applyFilters = async () => {
         const keyword = searchInput.value.toLowerCase().trim();
         const searchType = searchTypeSelect ? searchTypeSelect.value : 'all';
+        const statusFilter = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'all';
+
         if (keyword) {
             // Server-side search
             try {
                 showLoading();
                 const response = await api.getPromotions(keyword, searchType);
                 if (response.promotions) {
-                    filteredPromotions = response.promotions;
+                    let filtered = response.promotions;
+
+                    // Apply status filter client-side
+                    if (statusFilter !== 'all') {
+                        const isActive = statusFilter === 'true';
+                        filtered = filtered.filter(p => p.active === isActive);
+                    }
+
+                    filteredPromotions = filtered;
                     renderTable(filteredPromotions);
 
                     // Update stats for filtered results
                     const totalPromoEl = document.getElementById("totalPromo");
                     const activePromoEl = document.getElementById("activePromo");
-                    if (totalPromoEl) totalPromoEl.textContent = response.total || 0;
-                    if (activePromoEl) activePromoEl.textContent = response.active || 0;
+                    if (totalPromoEl) totalPromoEl.textContent = filtered.length;
+                    if (activePromoEl) activePromoEl.textContent = filtered.filter(p => p.active).length;
                 } else {
                     console.error("Invalid response format:", response);
                     showEmpty();
@@ -193,8 +203,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 hideLoading();
             }
         } else {
-            // No search, load all
-            filteredPromotions = [...promotions];
+            // No search, load all and apply status filter
+            let filtered = [...promotions];
+
+            // Apply status filter client-side
+            if (statusFilter !== 'all') {
+                const isActive = statusFilter === 'true';
+                filtered = filtered.filter(p => p.active === isActive);
+            }
+
+            filteredPromotions = filtered;
             renderTable(filteredPromotions);
         }
     };
@@ -203,6 +221,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const resetFilters = () => {
         if (searchInput) searchInput.value = '';
         if (searchTypeSelect) searchTypeSelect.value = 'all';
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) statusFilter.value = 'all';
         loadPromotions();
     };
 
@@ -214,6 +234,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (searchInput) {
         searchInput.addEventListener("input", applyFilters);
     }
+    if (searchTypeSelect) {
+        searchTypeSelect.addEventListener("change", applyFilters);
+    }
+    document.getElementById('statusFilter')?.addEventListener('change', applyFilters);
 
     // Init
     loadPromotions();

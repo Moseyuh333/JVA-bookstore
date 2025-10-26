@@ -4,7 +4,7 @@
 // ========================
 // 📥 LOAD SHIPPERS FROM API
 // ========================
-async function loadShippers(search = "", searchType = "all") {
+async function loadShippers(search = "", searchType = "all", statusFilter = "all") {
     const tbody = document.querySelector('#ShipperTable');
     const empty = document.querySelector('#emptyState');
     const loading = document.querySelector('#loadingState');
@@ -35,15 +35,22 @@ async function loadShippers(search = "", searchType = "all") {
         if (!res.ok) throw new Error("Server trả lỗi: " + res.status);
         const data = await res.json();
 
+        let shippers = data.shippers || [];
+
+        // Apply status filter
+        if (statusFilter !== 'all') {
+            shippers = shippers.filter(s => s.status === statusFilter);
+        }
+
         // Không có dữ liệu
-        if (!data.shippers || data.shippers.length === 0) {
+        if (shippers.length === 0) {
             empty.style.display = 'block';
             updateStats(0);
             return;
         }
 
         // Render bảng
-        data.shippers.forEach(s => {
+        shippers.forEach(s => {
             const baseFee = s.base_fee ? Number(s.base_fee).toLocaleString('vi-VN') + "₫" : "-";
             const created = s.created_at ? new Date(s.created_at).toLocaleDateString('vi-VN') : "-";
 
@@ -56,8 +63,8 @@ async function loadShippers(search = "", searchType = "all") {
                     <td>${baseFee}</td>
                     <td>${s.estimated_time || '-'}</td>
                     <td>
-                        <span class="badge ${s.status === 'active' ? 'badge-success' : 'badge-secondary'}">
-                            ${s.status}
+                        <span class="badge ${s.status === 'active' ? 'badge-active' : 'badge-inactive'}">
+                            ${s.status === 'active' ? 'Đang hoạt động' : 'Tạm khóa'}
                         </span>
                     </td>
                     <td>${created}</td>
@@ -72,7 +79,7 @@ async function loadShippers(search = "", searchType = "all") {
                 </tr>`;
         });
 
-        updateStats(data.shippers.length);
+        updateStats(shippers.length);
 
     } catch (err) {
         console.error("❌ Lỗi khi tải dữ liệu:", err);
@@ -92,7 +99,7 @@ function updateStats(total) {
 
     const activeEl = document.getElementById('activeShippers');
     if (activeEl) {
-        const activeCount = document.querySelectorAll('#ShipperTable tr .badge-success').length;
+        const activeCount = document.querySelectorAll('#ShipperTable tr .badge-active').length;
         activeEl.textContent = activeCount;
     }
 }
@@ -103,13 +110,15 @@ function updateStats(total) {
 function applyFilter() {
     const search = document.getElementById('searchInput').value.trim();
     const searchType = document.getElementById('searchType') ? document.getElementById('searchType').value : "all";
-    loadShippers(search, searchType);
+    const statusFilter = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : "all";
+    loadShippers(search, searchType, statusFilter);
 }
 
 function resetFilter() {
     document.getElementById('searchInput').value = '';
     if (document.getElementById('searchType')) document.getElementById('searchType').value = 'all';
-    loadShippers();
+    if (document.getElementById('statusFilter')) document.getElementById('statusFilter').value = 'all';
+    loadShippers('', 'all', 'all');
 }
 
 // ========================
@@ -122,6 +131,8 @@ window.addEventListener('load', () => {
     document.getElementById('searchInput')?.addEventListener('input', e => {
         if (e.target.value.length === 0 || e.target.value.length >= 2) applyFilter();
     });
+
+    document.getElementById('statusFilter')?.addEventListener('change', applyFilter);
 
     document.getElementById('btnReset')?.addEventListener('click', resetFilter);
 });

@@ -491,6 +491,11 @@
                                 <option value="type">Loại</option>
                                 <option value="rate">Tỷ lệ</option>
                             </select>
+                            <select id="commissionStatusFilter" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="active">Đang hoạt động</option>
+                                <option value="inactive">Tạm khóa</option>
+                            </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="commissionSearchInput" placeholder="Tìm kiếm...">

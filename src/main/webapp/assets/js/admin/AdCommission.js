@@ -149,34 +149,45 @@ document.addEventListener("DOMContentLoaded", () => {
     const applyFilters = () => {
         const keyword = searchInput.value.toLowerCase().trim();
         const searchType = currentSearchType;
+        const statusFilter = document.getElementById('commissionStatusFilter') ? document.getElementById('commissionStatusFilter').value : 'all';
 
+        let filtered = commissions;
+
+        // Apply status filter
+        if (statusFilter !== 'all') {
+            filtered = filtered.filter(c => c.status === statusFilter);
+        }
+
+        // Apply search filter
         if (searchType === "all") {
-            filteredCommissions = commissions.filter(c =>
+            filtered = filtered.filter(c =>
                 (c.name || '').toLowerCase().includes(keyword) ||
                 (c.type || '').toLowerCase().includes(keyword) ||
                 (c.rate || '').toString().toLowerCase().includes(keyword)
             );
         } else if (searchType === "name") {
-            filteredCommissions = commissions.filter(c =>
+            filtered = filtered.filter(c =>
                 (c.name || '').toLowerCase().includes(keyword)
             );
         } else if (searchType === "type") {
-            filteredCommissions = commissions.filter(c =>
+            filtered = filtered.filter(c =>
                 (c.type || '').toLowerCase().includes(keyword)
             );
         } else if (searchType === "rate") {
-            filteredCommissions = commissions.filter(c =>
+            filtered = filtered.filter(c =>
                 (c.rate || '').toString().toLowerCase().includes(keyword)
             );
-        } else {
-            filteredCommissions = [...commissions];
         }
+
+        filteredCommissions = filtered;
         renderTable(filteredCommissions);
     };
 
     const resetFilters = () => {
         if (searchInput) searchInput.value = '';
         if (searchTypeSelect) searchTypeSelect.value = 'all';
+        const statusFilter = document.getElementById('commissionStatusFilter');
+        if (statusFilter) statusFilter.value = 'all';
         currentSearchType = "all";
         loadCommissions();
     };
@@ -194,6 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
             loadCommissions();
         });
     }
+    document.getElementById('commissionStatusFilter')?.addEventListener('change', loadCommissions);
 
     // Init
     loadCommissions();
