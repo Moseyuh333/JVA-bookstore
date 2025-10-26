@@ -513,7 +513,7 @@
                             <select id="statusFilter" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
                                 <option value="all">Tất cả trạng thái</option>
                                 <option value="true">Đang hoạt động</option>
-                                <option value="false">Tạm khóa</option>
+                                <option value="false">Không hoạt động</option>
                             </select>
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
