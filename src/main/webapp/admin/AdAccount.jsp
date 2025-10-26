@@ -776,11 +776,7 @@
                                 <option value="email">Email</option>
                                 <option value="phone">Số điện thoại</option>
                                 <option value="role">Quyền</option>
-                            </select>
-                            <div class="search-box">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên, email, số điện thoại...">
-                            </div>
+                            </select>                            
                             <select id="statusFilter" class="btn-custom" style="background: white; color: #4b5563; border: 1px solid #e5e7eb;">
                                 <option value="all">Tất cả trạng thái</option>
                                 <option value="active">Đang hoạt động</option>
@@ -788,6 +784,11 @@
                                 <option value="pending">Chờ kích hoạt</option>
                                 <option value="banned">Đã khóa vĩnh viễn</option>
                             </select>
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên, email, số điện thoại...">
+                            </div>
+
                             <button class="btn-custom btn-search" onclick="applyFilters()">
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>
