@@ -77,11 +77,16 @@ public class AdminCommissionsServlet extends HttpServlet {
     private void listCommissions(HttpServletRequest req, PrintWriter out) throws SQLException {
         String search = req.getParameter("search");
         String searchType = req.getParameter("searchType");
+        String statusFilter = req.getParameter("status");
 
         StringBuilder sql = new StringBuilder(
             "SELECT id, name, type, min_revenue, max_revenue, rate, status, created_at, updated_at " +
             "FROM commissions WHERE 1=1"
         );
+
+        if (statusFilter != null && !statusFilter.trim().isEmpty() && !"all".equals(statusFilter)) {
+            sql.append(" AND status = ?");
+        }
 
         if (search != null && !search.trim().isEmpty()) {
             if ("name".equals(searchType)) {
@@ -109,6 +114,9 @@ public class AdminCommissionsServlet extends HttpServlet {
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
             int param = 1;
+            if (statusFilter != null && !statusFilter.trim().isEmpty() && !"all".equals(statusFilter)) {
+                pstmt.setString(param++, statusFilter.trim());
+            }
             if (search != null && !search.trim().isEmpty()) {
                 String pattern = "%" + search.trim() + "%";
                 if ("name".equals(searchType) || "type".equals(searchType) || "rate".equals(searchType)) {
