@@ -108,7 +108,7 @@ public final class OrderDAO {
 
     public static List<Order> findOrders(long userId, String statusFilter) throws SQLException {
         StringBuilder sql = new StringBuilder();
-    sql.append("SELECT id, code, user_id, order_date, status, payment_status, payment_method, payment_provider, payment_metadata, shipping_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
+    sql.append("SELECT id, code, user_id, shop_id, order_date, status, payment_status, payment_method, payment_provider, payment_metadata, shipping_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
                 + "FROM orders WHERE user_id = ?");
         if (statusFilter != null && !statusFilter.trim().isEmpty()) {
             sql.append(" AND status = ?");
