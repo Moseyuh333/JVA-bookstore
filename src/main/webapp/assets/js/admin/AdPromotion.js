@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let promotions = [];
     let filteredPromotions = [];
     let isSearching = false;
+    let isStatusFiltering = false;
 
     // API functions
     const api = {
@@ -80,7 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const renderTable = (list) => {
         tableBody.innerHTML = "";
         if (list.length === 0) {
-            const message = isSearching ? "Không tìm thấy khuyến mãi nào phù hợp với từ khóa tìm kiếm" : "Không có khuyến mãi nào";
+            let message = "Không có khuyến mãi nào";
+            if (isSearching) {
+                message = "Không tìm thấy khuyến mãi nào phù hợp với từ khóa tìm kiếm";
+            } else if (isStatusFiltering) {
+                message = "Không tìm thấy khuyến mãi nào phù hợp với bộ lọc trạng thái";
+            }
             showEmpty(message);
             return;
         }
@@ -215,9 +221,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (statusFilter !== 'all') {
                 const isActive = statusFilter === 'true';
                 filtered = filtered.filter(p => p.active === isActive);
-                isSearching = true; // Treat status filter as a search for empty message
+                isStatusFiltering = true;
+                isSearching = false;
             } else {
                 isSearching = false;
+                isStatusFiltering = false;
             }
 
             filteredPromotions = filtered;
@@ -231,6 +239,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (searchTypeSelect) searchTypeSelect.value = 'all';
         const statusFilter = document.getElementById('statusFilter');
         if (statusFilter) statusFilter.value = 'all';
+        isSearching = false;
+        isStatusFiltering = false;
         loadPromotions();
     };
 
