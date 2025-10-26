@@ -18,11 +18,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // API functions
     const api = {
-        getCommissions: (search, searchType) => {
+        getCommissions: (search, searchType, statusFilter) => {
             const token = localStorage.getItem("admin_token");
             let url = `${window.appConfig?.contextPath || ''}/api/admin/commissions?action=list`;
             if (search && search.trim()) {
                 url += `&search=${encodeURIComponent(search.trim())}&searchType=${encodeURIComponent(searchType)}`;
+            }
+            if (statusFilter && statusFilter !== 'all') {
+                url += `&status=${encodeURIComponent(statusFilter)}`;
             }
             return fetch(url, {
                 headers: {
@@ -119,7 +122,8 @@ document.addEventListener("DOMContentLoaded", () => {
             showLoading();
             const search = searchInput.value.trim();
             const searchType = currentSearchType;
-            const response = await api.getCommissions(search, searchType);
+            const statusFilter = document.getElementById('commissionStatusFilter') ? document.getElementById('commissionStatusFilter').value : 'all';
+            const response = await api.getCommissions(search, searchType, statusFilter);
 
             if (response.commissions) {
                 commissions = response.commissions;
@@ -149,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const applyFilters = () => {
         const keyword = searchInput.value.toLowerCase().trim();
         const searchType = currentSearchType;
-        const statusFilter = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'all';
+        const statusFilter = document.getElementById('commissionStatusFilter') ? document.getElementById('commissionStatusFilter').value : 'all';
 
         let filtered = commissions;
 
@@ -186,7 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const resetFilters = () => {
         if (searchInput) searchInput.value = '';
         if (searchTypeSelect) searchTypeSelect.value = 'all';
-        const statusFilter = document.getElementById('statusFilter');
+        const statusFilter = document.getElementById('commissionStatusFilter');
         if (statusFilter) statusFilter.value = 'all';
         currentSearchType = "all";
         loadCommissions();
@@ -205,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
             loadCommissions();
         });
     }
-    document.getElementById('statusFilter')?.addEventListener('change', loadCommissions);
+    document.getElementById('commissionStatusFilter')?.addEventListener('change', loadCommissions);
 
     // Init
     loadCommissions();
