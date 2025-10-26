@@ -100,7 +100,7 @@
             }
             try {
                 // Giả định API /api/seller/analytics?action=summary trả về tất cả data
-                const url = `${API_URL}?action=summary&shop_id=${encodeURIComponent(SHOP_ID)}`;
+                const url = API_URL + '?action=summary&shop_id=' + encodeURIComponent(SHOP_ID);
                 const token = resolveSellerToken();
                 const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
                 const response = await fetch(url, {
