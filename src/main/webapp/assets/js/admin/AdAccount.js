@@ -8,10 +8,10 @@ let editModalController = null;
 let editTargetUser = null;
 
 const statusLabels = {
-    active: 'Đang hoạt động',
-    inactive: 'Tạm khóa',
-    banned: 'Đã khóa',
-    pending: 'Chờ duyệt'
+    active: 'Active',
+    inactive: 'Inactive',
+    banned: 'Banned',
+    pending: 'Pending'
 };
 
 const roleLabels = {
@@ -176,7 +176,7 @@ async function loadAdminUsers(searchTerm = currentSearchTerm) {
                 `<td>${email}</td>`,
                 `<td>${phone}</td>`,
                     `<td><span class="badge-custom ${roleBadgeClass}">${role}</span></td>`,
-                    `<td>${statusLabels[statusKey] || status}</td>`,
+                    `<td><span class="badge ${statusKey === 'active' ? 'badge-success' : statusKey === 'inactive' ? 'badge-secondary' : statusKey === 'banned' ? 'badge-danger' : 'badge-warning'}">${statusLabels[statusKey] || status}</span></td>`,
                     '<td class="actions">',
                     `<button class="btn-icon btn-edit" title="Chỉnh sửa" data-user-id="${user.id}">`,
                     '<i class="fas fa-edit"></i>',
