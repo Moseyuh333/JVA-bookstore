@@ -41,8 +41,9 @@ public final class ShopCouponDAO {
             throw new IllegalArgumentException("Connection is required");
         }
         String sql = "SELECT sc.id, sc.shop_id, sc.code, sc.description, sc.discount_type, sc.discount_value, sc.minimum_order, " +
-                "sc.usage_limit, sc.used_count, sc.status, sc.start_date, sc.end_date, sc.created_at, sc.updated_at, s.name AS shop_name " +
-                "FROM shop_coupons sc LEFT JOIN shops s ON s.id = sc.shop_id WHERE sc.shop_id = ? AND UPPER(sc.code) = UPPER(?)";
+                "sc.usage_limit, sc.used_count, sc.status, sc.start_date, sc.end_date, sc.created_at, sc.updated_at, " +
+                "(SELECT name FROM shops WHERE id = sc.shop_id) AS shop_name " +
+                "FROM shop_coupons sc WHERE sc.shop_id = ? AND UPPER(sc.code) = UPPER(?)";
         if (lockForUpdate) {
             sql += " FOR UPDATE";
         }
