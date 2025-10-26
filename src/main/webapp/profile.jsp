@@ -484,6 +484,23 @@
             status: 'all',
             orders: []
         };
+        const AUTH_STORAGE_KEY = 'auth_token';
+        function getAuthToken() {
+            const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+            if (!raw) {
+                return null;
+            }
+            const trimmed = raw.trim();
+            return trimmed.length > 0 && trimmed !== 'null' && trimmed !== 'undefined' ? trimmed : null;
+        }
+        function buildAuthHeaders(base) {
+            const headers = Object.assign({}, base || {});
+            const token = getAuthToken();
+            if (token && !headers.Authorization) {
+                headers.Authorization = 'Bearer ' + token;
+            }
+            return headers;
+        }
         const favoritesState = {
             data: [],
             loading: false
@@ -739,15 +756,14 @@
                     </div>
                 `;
             }
-            const token = localStorage.getItem('auth_token');
             let url = `${contextPath}/api/profile/orders`;
             if (orderHistoryState.status && orderHistoryState.status !== 'all') {
                 url += `?status=${encodeURIComponent(orderHistoryState.status)}`;
             }
+            const headers = buildAuthHeaders();
             fetch(url, {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
+                headers: headers,
+                credentials: 'include'
             })
                 .then(response => response.json())
                 .then(data => {

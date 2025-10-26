@@ -16,14 +16,28 @@ public final class AuthUtil {
 
     public static String getTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ") && bearerToken.length() > 7) {
-            return bearerToken.substring(7);
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            String raw = bearerToken.length() > 7 ? bearerToken.substring(7) : "";
+            String normalized = raw == null ? null : raw.trim();
+            if (normalized != null && !normalized.isEmpty()
+                    && !"null".equalsIgnoreCase(normalized)
+                    && !"undefined".equalsIgnoreCase(normalized)) {
+                return normalized;
+            }
         }
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if ("auth_token".equals(cookie.getName())) {
-                    return cookie.getValue();
+                    String value = cookie.getValue();
+                    if (value != null) {
+                        String normalizedCookie = value.trim();
+                        if (!normalizedCookie.isEmpty()
+                                && !"null".equalsIgnoreCase(normalizedCookie)
+                                && !"undefined".equalsIgnoreCase(normalizedCookie)) {
+                            return normalizedCookie;
+                        }
+                    }
                 }
             }
         }

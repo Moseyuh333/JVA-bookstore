@@ -219,8 +219,11 @@ public final class CartDAO {
 
     private static List<CartItem> loadItems(Connection conn, long cartId) throws SQLException {
         String sql = "SELECT ci.id, ci.cart_id, ci.book_id, ci.quantity, ci.unit_price, ci.created_at, ci.updated_at, "
-                + "b.title, b.author, b.image_url "
-                + "FROM cart_items ci INNER JOIN books b ON b.id = ci.book_id WHERE ci.cart_id = ? ORDER BY ci.created_at";
+                + "b.title, b.author, b.image_url, b.shop_id, s.name AS shop_name "
+                + "FROM cart_items ci "
+                + "INNER JOIN books b ON b.id = ci.book_id "
+                + "LEFT JOIN shops s ON s.id = b.shop_id "
+                + "WHERE ci.cart_id = ? ORDER BY ci.created_at";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, cartId);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -237,6 +240,9 @@ public final class CartDAO {
                     item.setTitle(rs.getString("title"));
                     item.setAuthor(rs.getString("author"));
                     item.setImageUrl(rs.getString("image_url"));
+                    int shopIdValue = rs.getInt("shop_id");
+                    item.setShopId(rs.wasNull() ? null : shopIdValue);
+                    item.setShopName(rs.getString("shop_name"));
                     items.add(item);
                 }
                 return items;

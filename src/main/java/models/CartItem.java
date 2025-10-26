@@ -10,6 +10,8 @@ public class CartItem {
     private String title;
     private String author;
     private String imageUrl;
+    private Integer shopId;
+    private String shopName;
     private BigDecimal unitPrice;
     private int quantity;
     private LocalDateTime createdAt;
@@ -69,6 +71,22 @@ public class CartItem {
 
     public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
+    }
+
+    public Integer getShopId() {
+        return shopId;
+    }
+
+    public void setShopId(Integer shopId) {
+        this.shopId = shopId;
+    }
+
+    public String getShopName() {
+        return shopName;
+    }
+
+    public void setShopName(String shopName) {
+        this.shopName = shopName;
     }
 
     public int getQuantity() {

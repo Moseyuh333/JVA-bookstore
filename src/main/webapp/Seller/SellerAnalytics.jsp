@@ -81,6 +81,18 @@
             });
         }
 
+        function resolveSellerToken() {
+            var primary = localStorage.getItem('seller_token');
+            if (primary && primary.trim().length > 0 && primary !== 'null') {
+                return primary.trim();
+            }
+            var fallback = localStorage.getItem('auth_token');
+            if (fallback && fallback.trim().length > 0 && fallback !== 'null') {
+                return fallback.trim();
+            }
+            return null;
+        }
+
         async function loadAnalyticsData() {
             if (!SHOP_ID || SHOP_ID === '0') {
                 console.warn('Missing shop id for analytics dashboard');
@@ -89,10 +101,10 @@
             try {
                 // Giả định API /api/seller/analytics?action=summary trả về tất cả data
                 const url = `${API_URL}?action=summary&shop_id=${encodeURIComponent(SHOP_ID)}`;
+                const token = resolveSellerToken();
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
                 const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('seller_token') || ''}`
-                    },
+                    headers: headers,
                     credentials: 'same-origin'
                 });
                 const data = await response.json();
