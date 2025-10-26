@@ -14,6 +14,7 @@ public class ShopCoupon {
     private Integer usageLimit;
     private Integer usedCount;
     private String status;
+    private String shopName;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private LocalDateTime createdAt;
@@ -129,5 +130,13 @@ public class ShopCoupon {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getShopName() {
+        return shopName;
+    }
+
+    public void setShopName(String shopName) {
+        this.shopName = shopName;
     }
 }

@@ -3,11 +3,12 @@ package dao;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dao.ShopCouponDAO;
 import models.Order;
 import models.OrderItem;
 import models.OrderStatusHistory;
+import models.ShopCoupon;
 import utils.DBUtil;
 
 import java.math.BigDecimal;
@@ -50,7 +51,7 @@ public final class OrderDAO {
     private OrderDAO() {
     }
 
-    public static Order checkout(long userId, long addressId, String paymentMethod, String couponCode, String notes,
+    public static Order checkout(long userId, long addressId, String paymentMethod, PaymentDetails paymentDetails, String couponCode, String notes,
                                  String sessionId, List<ItemSelection> selections, String modeRaw, BigDecimal shippingFee) throws SQLException {
         if (selections == null || selections.isEmpty()) {
             throw new SQLException("Không có sản phẩm để thanh toán");
@@ -68,9 +69,10 @@ public final class OrderDAO {
                     throw new SQLException("Không có sản phẩm hợp lệ để thanh toán");
                 }
                 AddressSnapshot address = loadAddress(conn, userId, addressId);
+                Integer shopId = resolvePrimaryShopId(cartData);
                 CouponResult couponResult = CouponResult.empty();
                 if (couponCode != null && !couponCode.trim().isEmpty()) {
-                    couponResult = applyCoupon(conn, userId, couponCode.trim(), cartData.subtotal);
+                    couponResult = applyCoupon(conn, userId, couponCode.trim(), cartData.subtotal, shopId);
                 }
                 BigDecimal shipping = cartData.items.isEmpty() ? BigDecimal.ZERO : effectiveShipping;
                 BigDecimal total = cartData.subtotal.add(shipping).subtract(couponResult.discount);
@@ -78,19 +80,13 @@ public final class OrderDAO {
                     total = BigDecimal.ZERO;
                 }
                 String orderCode = generateOrderCode();
-                
-                // Lấy shop_id từ item đầu tiên trong giỏ hàng
-                Integer shopId = null;
-                if (!cartData.items.isEmpty() && cartData.items.get(0).shopId != null) {
-                    shopId = cartData.items.get(0).shopId;
-                }
-                
-                long orderId = insertOrder(conn, userId, normalizedMethod, notes, address, cartData, shipping, total, couponResult, orderCode, shopId);
+
+                long orderId = insertOrder(conn, userId, normalizedMethod, paymentDetails, notes, address, cartData, shipping, total, couponResult, orderCode, shopId);
                 insertOrderItems(conn, orderId, cartData);
                 updateInventory(conn, cartData);
                 recordStatus(conn, orderId, "new", "Đặt hàng thành công", String.valueOf(userId));
                 createPaymentRecord(conn, orderId, normalizedMethod, total);
-                if (couponResult.couponId != null) {
+                if (couponResult.hasCoupon()) {
                     recordCouponUsage(conn, orderId, couponResult);
                 }
                 if (mode == CheckoutMode.CART) {
@@ -112,7 +108,7 @@ public final class OrderDAO {
 
     public static List<Order> findOrders(long userId, String statusFilter) throws SQLException {
         StringBuilder sql = new StringBuilder();
-    sql.append("SELECT id, code, user_id, order_date, status, payment_status, payment_method, payment_provider, shipping_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
+    sql.append("SELECT id, code, user_id, order_date, status, payment_status, payment_method, payment_provider, payment_metadata, shipping_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
                 + "FROM orders WHERE user_id = ?");
         if (statusFilter != null && !statusFilter.trim().isEmpty()) {
             sql.append(" AND status = ?");
@@ -202,7 +198,7 @@ public final class OrderDAO {
     }
 
     private static Order fetchOrderByIdInternal(Connection conn, long orderId, Long userId) throws SQLException {
-    StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.shop_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.shipping_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
+        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.shop_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.payment_metadata, o.shipping_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
                 + "u.email AS customer_email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name "
                 + "FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?");
         if (userId != null) {
@@ -251,7 +247,7 @@ public final class OrderDAO {
         String normalizedStatus = normalizeStatusValue(statusFilter);
         int safeLimit = limit <= 0 ? 50 : Math.min(limit, 200);
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT o.id, o.code, o.status, o.payment_status, o.payment_method, o.total_amount, o.shipping_fee, o.order_date, o.updated_at, ")
+        sql.append("SELECT o.id, o.code, o.status, o.payment_status, o.payment_method, o.total_amount, o.shipping_fee, o.order_date, o.updated_at, o.payment_metadata, ")
                 .append("u.email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name ")
                 .append("FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE 1=1");
         List<Object> params = new ArrayList<>();
@@ -591,6 +587,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
         order.setPaymentStatus(rs.getString("payment_status"));
         order.setPaymentMethod(rs.getString("payment_method"));
         order.setPaymentProvider(rs.getString("payment_provider"));
+        order.setPaymentMetadata(rs.getString("payment_metadata"));
         order.setItemsSubtotal(rs.getBigDecimal("items_subtotal"));
         order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
         order.setShippingFee(rs.getBigDecimal("shipping_fee"));
@@ -1019,7 +1016,11 @@ public static int countTotalOrders(int shopId) throws SQLException {
             }
             stmt.setString(3, coupon.code);
             stmt.setBigDecimal(4, coupon.discount);
-            stmt.setString(5, coupon.snapshotJson);
+            if (coupon.snapshotJson != null) {
+                stmt.setString(5, coupon.snapshotJson);
+            } else {
+                stmt.setNull(5, java.sql.Types.OTHER);
+            }
             stmt.executeUpdate();
         }
         if (coupon.couponId != null) {
@@ -1030,12 +1031,15 @@ public static int countTotalOrders(int shopId) throws SQLException {
                 stmt.executeUpdate();
             }
         }
+        if (coupon.shopCouponId != null) {
+            ShopCouponDAO.incrementUsage(conn, coupon.shopCouponId.intValue());
+        }
     }
 
-    private static long insertOrder(Connection conn, long userId, String paymentMethod, String notes, AddressSnapshot address, CartData cartData,
+    private static long insertOrder(Connection conn, long userId, String paymentMethod, PaymentDetails paymentDetails, String notes, AddressSnapshot address, CartData cartData,
                                     BigDecimal shippingFee, BigDecimal total, CouponResult coupon, String orderCode, Integer shopId) throws SQLException {
-        String sql = "INSERT INTO orders (user_id, shop_id, code, status, payment_status, payment_method, payment_provider, shipping_address_id, shipping_snapshot, cart_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, coupon_snapshot, notes) "
-                + "VALUES (?, ?, ?, 'new', 'unpaid', ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, 'VND', ?, ?::jsonb, ?) RETURNING id";
+        String sql = "INSERT INTO orders (user_id, shop_id, code, status, payment_status, payment_method, payment_provider, shipping_address_id, shipping_snapshot, cart_snapshot, payment_metadata, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, coupon_snapshot, notes) "
+                + "VALUES (?, ?, ?, 'new', 'unpaid', ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, 'VND', ?, ?::jsonb, ?) RETURNING id";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, userId);
             
@@ -1056,13 +1060,18 @@ public static int countTotalOrders(int shopId) throws SQLException {
             }
             stmt.setString(7, address.jsonSnapshot);
             stmt.setString(8, cartData.snapshotJson);
-            stmt.setBigDecimal(9, cartData.subtotal);
-            stmt.setBigDecimal(10, coupon.discount);
-            stmt.setBigDecimal(11, shippingFee);
-            stmt.setBigDecimal(12, total);
-            stmt.setString(13, coupon.code);
-            stmt.setString(14, coupon.snapshotJson);
-            stmt.setString(15, notes);
+            if (paymentDetails != null && paymentDetails.hasMetadata()) {
+                stmt.setString(9, paymentDetails.toJson());
+            } else {
+                stmt.setNull(9, java.sql.Types.OTHER);
+            }
+            stmt.setBigDecimal(10, cartData.subtotal);
+            stmt.setBigDecimal(11, coupon.discount);
+            stmt.setBigDecimal(12, shippingFee);
+            stmt.setBigDecimal(13, total);
+            stmt.setString(14, coupon.code);
+            stmt.setString(15, coupon.snapshotJson);
+            stmt.setString(16, notes);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong(1);
@@ -1303,13 +1312,27 @@ public static int countTotalOrders(int shopId) throws SQLException {
         }
     }
 
-    private static CouponResult applyCoupon(Connection conn, long userId, String code, BigDecimal subtotal) throws SQLException {
+    private static CouponResult applyCoupon(Connection conn, long userId, String code, BigDecimal subtotal, Integer shopId) throws SQLException {
+        CouponResult platformCoupon = tryLoadPlatformCoupon(conn, userId, code, subtotal);
+        if (platformCoupon != null) {
+            return platformCoupon;
+        }
+        if (shopId != null && shopId > 0) {
+            CouponResult shopCoupon = tryLoadShopCoupon(conn, userId, shopId, code, subtotal);
+            if (shopCoupon != null) {
+                return shopCoupon;
+            }
+        }
+        throw new SQLException("Mã giảm giá không áp dụng được cho đơn hàng này");
+    }
+
+    private static CouponResult tryLoadPlatformCoupon(Connection conn, long userId, String code, BigDecimal subtotal) throws SQLException {
         String sql = "SELECT id, coupon_type, value, max_discount, minimum_order, usage_limit, per_user_limit, start_date, end_date, status, description FROM coupon_codes WHERE code = ? FOR UPDATE";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, code);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (!rs.next()) {
-                    throw new SQLException("Mã giảm giá không hợp lệ");
+                    return null;
                 }
                 CouponResult result = new CouponResult();
                 result.code = code;
@@ -1337,6 +1360,43 @@ public static int countTotalOrders(int shopId) throws SQLException {
         }
     }
 
+    private static CouponResult tryLoadShopCoupon(Connection conn, long userId, int shopId, String code, BigDecimal subtotal) throws SQLException {
+        ShopCoupon shopCoupon = ShopCouponDAO.findActiveForShop(conn, shopId, code, true);
+        if (shopCoupon == null) {
+            return null;
+        }
+        CouponResult result = new CouponResult();
+        result.shopCoupon = true;
+        result.shopCouponId = shopCoupon.getId();
+        result.shopId = shopCoupon.getShopId();
+        result.shopName = shopCoupon.getShopName();
+        result.code = code;
+        result.userId = userId;
+        result.type = shopCoupon.getDiscountType();
+        result.value = shopCoupon.getDiscountValue();
+        result.minimumOrder = shopCoupon.getMinimumOrder();
+        result.usageLimit = shopCoupon.getUsageLimit();
+        result.usedCount = shopCoupon.getUsedCount();
+        result.status = shopCoupon.getStatus();
+        result.startDate = shopCoupon.getStartDate();
+        result.endDate = shopCoupon.getEndDate();
+        validateCoupon(conn, result, subtotal);
+        result.discount = calculateDiscount(result, subtotal);
+        JsonObject snapshot = new JsonObject();
+        snapshot.addProperty("type", result.type);
+        snapshot.addProperty("value", result.value);
+        snapshot.addProperty("discount", result.discount);
+        if (shopCoupon.getDescription() != null) {
+            snapshot.addProperty("description", shopCoupon.getDescription());
+        }
+        snapshot.addProperty("shopId", shopCoupon.getShopId());
+        if (shopCoupon.getShopName() != null) {
+            snapshot.addProperty("shopName", shopCoupon.getShopName());
+        }
+        result.snapshotJson = GSON.toJson(snapshot);
+        return result;
+    }
+
     private static void validateCoupon(Connection conn, CouponResult coupon, BigDecimal subtotal) throws SQLException {
         LocalDateTime now = LocalDateTime.now();
         if (!"active".equalsIgnoreCase(coupon.status)) {
@@ -1352,12 +1412,19 @@ public static int countTotalOrders(int shopId) throws SQLException {
             throw new SQLException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã giảm giá");
         }
         if (coupon.usageLimit != null) {
-            int used = countUsage(conn, coupon.couponId, null);
-            if (used >= coupon.usageLimit) {
-                throw new SQLException("Mã giảm giá đã đạt số lần sử dụng tối đa");
+            if (coupon.shopCoupon) {
+                int used = coupon.usedCount != null ? coupon.usedCount : 0;
+                if (used >= coupon.usageLimit) {
+                    throw new SQLException("Mã giảm giá của shop đã hết lượt sử dụng");
+                }
+            } else if (coupon.couponId != null) {
+                int used = countUsage(conn, coupon.couponId, null);
+                if (used >= coupon.usageLimit) {
+                    throw new SQLException("Mã giảm giá đã đạt số lần sử dụng tối đa");
+                }
             }
         }
-        if (coupon.perUserLimit != null) {
+        if (!coupon.shopCoupon && coupon.perUserLimit != null && coupon.couponId != null) {
             int usedByUser = countUsage(conn, coupon.couponId, coupon.userId);
             if (usedByUser >= coupon.perUserLimit) {
                 throw new SQLException("Bạn đã sử dụng mã giảm giá này tối đa số lần cho phép");
@@ -1520,9 +1587,92 @@ public static int countTotalOrders(int shopId) throws SQLException {
         private String shopName;
     }
 
+    private static Integer resolvePrimaryShopId(CartData cartData) {
+        if (cartData == null || cartData.items.isEmpty()) {
+            return null;
+        }
+        Integer shopId = null;
+        for (CartLine line : cartData.items) {
+            if (line.shopId == null) {
+                continue;
+            }
+            if (shopId == null) {
+                shopId = line.shopId;
+            } else if (!shopId.equals(line.shopId)) {
+                return null;
+            }
+        }
+        return shopId;
+    }
+
     private static class AddressSnapshot {
         private Long addressId;
         private String jsonSnapshot;
+    }
+
+    public static final class PaymentDetails {
+        private final String method;
+        private final String maskedPan;
+        private final String last4;
+        private final String expiryMonth;
+        private final String expiryYear;
+
+        private PaymentDetails(String method, String maskedPan, String last4, String expiryMonth, String expiryYear) {
+            this.method = method;
+            this.maskedPan = maskedPan;
+            this.last4 = last4;
+            this.expiryMonth = expiryMonth;
+            this.expiryYear = expiryYear;
+        }
+
+        public static PaymentDetails wallet(String method, String cardNumber, String expiryMonth, String expiryYear) {
+            String digits = cardNumber == null ? "" : cardNumber.replaceAll("\\D", "");
+            String normalizedMethod = method == null ? null : method.trim().toLowerCase(Locale.US);
+            String last4 = digits.length() >= 4 ? digits.substring(digits.length() - 4) : (digits.isEmpty() ? null : digits);
+            String masked = digits.isEmpty() ? null : maskDigits(digits);
+            return new PaymentDetails(normalizedMethod, masked, last4, sanitize(expiryMonth), sanitize(expiryYear));
+        }
+
+        private static String maskDigits(String digits) {
+            int length = digits.length();
+            if (length <= 4) {
+                return digits;
+            }
+            StringBuilder builder = new StringBuilder(length);
+            for (int i = 0; i < length - 4; i++) {
+                builder.append('*');
+            }
+            builder.append(digits.substring(length - 4));
+            return builder.toString();
+        }
+
+        private static String sanitize(String value) {
+            return hasText(value) ? value.trim() : null;
+        }
+
+        public boolean hasMetadata() {
+            return hasText(maskedPan) || hasText(last4) || hasText(expiryMonth) || hasText(expiryYear);
+        }
+
+        public String toJson() {
+            JsonObject json = new JsonObject();
+            if (hasText(method)) {
+                json.addProperty("method", method);
+            }
+            if (hasText(maskedPan)) {
+                json.addProperty("cardMasked", maskedPan);
+            }
+            if (hasText(last4)) {
+                json.addProperty("cardLast4", last4);
+            }
+            if (hasText(expiryMonth)) {
+                json.addProperty("expiryMonth", expiryMonth);
+            }
+            if (hasText(expiryYear)) {
+                json.addProperty("expiryYear", expiryYear);
+            }
+            return json.size() == 0 ? null : json.toString();
+        }
     }
 
     private static class CouponResult {
@@ -1540,6 +1690,21 @@ public static int countTotalOrders(int shopId) throws SQLException {
         private String status;
         private BigDecimal discount = BigDecimal.ZERO;
         private String snapshotJson;
+        private Integer shopCouponId;
+        private Integer shopId;
+        private Integer usedCount;
+        private boolean shopCoupon;
+        private String shopName;
+
+        private boolean hasCoupon() {
+            if (couponId != null) {
+                return true;
+            }
+            if (shopCouponId != null) {
+                return true;
+            }
+            return code != null && !code.trim().isEmpty();
+        }
 
         private static CouponResult empty() {
             CouponResult result = new CouponResult();
@@ -1547,6 +1712,11 @@ public static int countTotalOrders(int shopId) throws SQLException {
             result.code = null;
             result.discount = BigDecimal.ZERO;
             result.snapshotJson = null;
+            result.shopCouponId = null;
+            result.shopId = null;
+            result.usedCount = null;
+            result.shopCoupon = false;
+            result.shopName = null;
             return result;
         }
     }

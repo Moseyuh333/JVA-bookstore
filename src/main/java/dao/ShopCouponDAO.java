@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public final class ShopCouponDAO {
 
@@ -18,9 +19,9 @@ public final class ShopCouponDAO {
     }
 
     public static List<ShopCoupon> listByShop(int shopId) throws SQLException {
-        String sql = "SELECT id, shop_id, code, description, discount_type, discount_value, minimum_order, " +
-                "usage_limit, used_count, status, start_date, end_date, created_at, updated_at " +
-                "FROM shop_coupons WHERE shop_id = ? ORDER BY created_at DESC";
+        String sql = "SELECT sc.id, sc.shop_id, sc.code, sc.description, sc.discount_type, sc.discount_value, sc.minimum_order, " +
+                "sc.usage_limit, sc.used_count, sc.status, sc.start_date, sc.end_date, sc.created_at, sc.updated_at, s.name AS shop_name " +
+                "FROM shop_coupons sc LEFT JOIN shops s ON s.id = sc.shop_id WHERE sc.shop_id = ? ORDER BY sc.created_at DESC";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -32,6 +33,67 @@ public final class ShopCouponDAO {
                 }
                 return coupons;
             }
+        }
+    }
+
+    public static ShopCoupon findActiveForShop(Connection conn, int shopId, String code, boolean lockForUpdate) throws SQLException {
+        if (conn == null) {
+            throw new IllegalArgumentException("Connection is required");
+        }
+        String sql = "SELECT sc.id, sc.shop_id, sc.code, sc.description, sc.discount_type, sc.discount_value, sc.minimum_order, " +
+                "sc.usage_limit, sc.used_count, sc.status, sc.start_date, sc.end_date, sc.created_at, sc.updated_at, s.name AS shop_name " +
+                "FROM shop_coupons sc LEFT JOIN shops s ON s.id = sc.shop_id WHERE sc.shop_id = ? AND UPPER(sc.code) = UPPER(?)";
+        if (lockForUpdate) {
+            sql += " FOR UPDATE";
+        }
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, shopId);
+            stmt.setString(2, code.toUpperCase(Locale.ROOT));
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    public static ShopCoupon findActiveForShop(int shopId, String code) throws SQLException {
+        try (Connection conn = DBUtil.getConnection()) {
+            return findActiveForShop(conn, shopId, code, false);
+        }
+    }
+
+    public static List<ShopCoupon> listActiveForShop(int shopId) throws SQLException {
+        String sql = "SELECT sc.id, sc.shop_id, sc.code, sc.description, sc.discount_type, sc.discount_value, sc.minimum_order, " +
+                "sc.usage_limit, sc.used_count, sc.status, sc.start_date, sc.end_date, sc.created_at, sc.updated_at, s.name AS shop_name " +
+                "FROM shop_coupons sc LEFT JOIN shops s ON s.id = sc.shop_id " +
+                "WHERE sc.shop_id = ? AND sc.status = 'active' " +
+                "AND (sc.start_date IS NULL OR sc.start_date <= CURRENT_TIMESTAMP) " +
+                "AND (sc.end_date IS NULL OR sc.end_date >= CURRENT_TIMESTAMP) " +
+                "AND (sc.usage_limit IS NULL OR sc.used_count < sc.usage_limit) " +
+                "ORDER BY sc.end_date NULLS LAST, sc.created_at DESC";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, shopId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<ShopCoupon> coupons = new ArrayList<>();
+                while (rs.next()) {
+                    coupons.add(mapRow(rs));
+                }
+                return coupons;
+            }
+        }
+    }
+
+    public static void incrementUsage(Connection conn, int couponId) throws SQLException {
+        if (conn == null) {
+            throw new IllegalArgumentException("Connection is required");
+        }
+        String sql = "UPDATE shop_coupons SET used_count = COALESCE(used_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, couponId);
+            stmt.executeUpdate();
         }
     }
 
@@ -103,8 +165,10 @@ public final class ShopCouponDAO {
         coupon.setDiscountValue(rs.getBigDecimal("discount_value"));
         coupon.setMinimumOrder(rs.getBigDecimal("minimum_order"));
         int usageLimit = rs.getInt("usage_limit");
-        coupon.setUsageLimit(rs.wasNull() ? null : usageLimit);
-        coupon.setUsedCount(rs.getInt("used_count"));
+        boolean usageLimitWasNull = rs.wasNull();
+        coupon.setUsageLimit(usageLimitWasNull ? null : usageLimit);
+        int usedCount = rs.getInt("used_count");
+        coupon.setUsedCount(rs.wasNull() ? 0 : usedCount);
         coupon.setStatus(rs.getString("status"));
         Timestamp start = rs.getTimestamp("start_date");
         Timestamp end = rs.getTimestamp("end_date");
@@ -114,6 +178,18 @@ public final class ShopCouponDAO {
         coupon.setEndDate(end != null ? end.toLocalDateTime() : null);
         coupon.setCreatedAt(created != null ? created.toLocalDateTime() : null);
         coupon.setUpdatedAt(updated != null ? updated.toLocalDateTime() : null);
+        if (hasColumn(rs, "shop_name")) {
+            coupon.setShopName(rs.getString("shop_name"));
+        }
         return coupon;
+    }
+
+    private static boolean hasColumn(ResultSet rs, String columnLabel) {
+        try {
+            rs.findColumn(columnLabel);
+            return true;
+        } catch (SQLException ex) {
+            return false;
+        }
     }
 }

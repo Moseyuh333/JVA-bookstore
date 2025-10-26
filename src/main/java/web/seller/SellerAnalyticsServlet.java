@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import com.google.gson.Gson;
 import dao.OrderDAO;
 import dao.BookDAO;
+import dao.ShopDAO;
 import static javax.servlet.http.HttpServletResponse.*;
 
 @WebServlet("/api/seller/analytics")
@@ -24,18 +25,30 @@ public class SellerAnalyticsServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(SellerAnalyticsServlet.class.getName());
     private final Gson gson = new Gson();
 
-    private int getShopIdFromSession(HttpServletRequest req) {
-        Integer shopId = (Integer) req.getSession().getAttribute("shop_id");
-        return shopId != null ? shopId : 0;
-    }
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json; charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
         PrintWriter out = resp.getWriter();
-        
-        int shopId = getShopIdFromSession(req);
+
+        Integer userId = (Integer) req.getSession().getAttribute("user_id");
+        String role = (String) req.getSession().getAttribute("role");
+        if (userId == null || role == null || !"seller".equalsIgnoreCase(role)) {
+            resp.setStatus(SC_FORBIDDEN);
+            out.write(gson.toJson(Map.of("success", false, "message", "Access denied")));
+            return;
+        }
+
+        int shopId;
+        try {
+            shopId = resolveShopId(req, userId.intValue());
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database error resolving shop id", e);
+            resp.setStatus(SC_INTERNAL_SERVER_ERROR);
+            out.write(gson.toJson(Map.of("success", false, "message", "Database error: " + e.getMessage())));
+            return;
+        }
+
         if (shopId <= 0) {
             resp.setStatus(SC_FORBIDDEN);
             out.write(gson.toJson(Map.of("success", false, "message", "Shop ID not linked to user.")));
@@ -60,6 +73,21 @@ public class SellerAnalyticsServlet extends HttpServlet {
             resp.setStatus(SC_INTERNAL_SERVER_ERROR);
             out.write(gson.toJson(Map.of("success", false, "message", "Database error: " + e.getMessage())));
         }
+    }
+
+    private int resolveShopId(HttpServletRequest req, int userId) throws SQLException {
+        Object cached = req.getSession().getAttribute("shop_id");
+        if (cached instanceof Integer) {
+            int existing = (Integer) cached;
+            if (existing > 0) {
+                return existing;
+            }
+        }
+        int resolved = ShopDAO.getShopIdByUserId(userId);
+        if (resolved > 0) {
+            req.getSession().setAttribute("shop_id", resolved);
+        }
+        return resolved;
     }
     
     /**

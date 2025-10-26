@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @WebServlet(name = "CheckoutServlet", urlPatterns = {"/api/checkout", "/checkout"})
@@ -49,6 +50,13 @@ public class CheckoutServlet extends HttpServlet {
                 sendBadRequest(response, "Vui lòng chọn phương thức thanh toán");
                 return;
             }
+            OrderDAO.PaymentDetails paymentDetails;
+            try {
+                paymentDetails = parsePaymentDetails(paymentMethod, payload.get("paymentDetails"));
+            } catch (IllegalArgumentException ex) {
+                sendBadRequest(response, ex.getMessage());
+                return;
+            }
             String couponCode = stringValue(payload.get("couponCode"));
             String notes = stringValue(payload.get("notes"));
             String mode = stringValue(payload.get("mode"));
@@ -66,7 +74,7 @@ public class CheckoutServlet extends HttpServlet {
             if (shipping == null || shipping.compareTo(BigDecimal.ZERO) < 0 || selections.isEmpty()) {
                 shipping = BigDecimal.ZERO;
             }
-            Order order = OrderDAO.checkout(userId, addressId, paymentMethod, couponCode, notes, sessionId, selections, mode, shipping);
+            Order order = OrderDAO.checkout(userId, addressId, paymentMethod, paymentDetails, couponCode, notes, sessionId, selections, mode, shipping);
             if (MODE_BUY_NOW.equals(mode)) {
                 session.removeAttribute(BuyNowServlet.SESSION_KEY);
             }
@@ -138,6 +146,38 @@ public class CheckoutServlet extends HttpServlet {
             items.add(new OrderDAO.ItemSelection(bookId, quantity));
         }
         return items;
+    }
+
+    private OrderDAO.PaymentDetails parsePaymentDetails(String paymentMethod, Object rawDetails) {
+        if (paymentMethod == null) {
+            return null;
+        }
+        String normalized = paymentMethod.trim().toLowerCase(Locale.ROOT);
+        if (!"vnpay".equals(normalized) && !"momo".equals(normalized)) {
+            return null;
+        }
+        Map<String, Object> map = asMap(rawDetails);
+        if (map == null) {
+            throw new IllegalArgumentException("Vui lòng nhập thông tin ví điện tử.");
+        }
+        String cardNumber = stringValue(map.get("cardNumber"));
+        String expiryMonth = stringValue(map.get("expiryMonth"));
+        String expiryYear = stringValue(map.get("expiryYear"));
+        if (cardNumber == null || cardNumber.replaceAll("\\D", "").length() < 12) {
+            throw new IllegalArgumentException("Số thẻ/ ví không hợp lệ.");
+        }
+        if (expiryMonth == null || expiryYear == null) {
+            throw new IllegalArgumentException("Thiếu thông tin hạn thẻ.");
+        }
+        return OrderDAO.PaymentDetails.wallet(normalized, cardNumber, expiryMonth, expiryYear);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> asMap(Object value) {
+        if (value instanceof Map) {
+            return (Map<String, Object>) value;
+        }
+        return null;
     }
 
     private Integer parseQuantity(Object raw) {

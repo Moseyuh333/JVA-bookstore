@@ -49,6 +49,36 @@
                         </label>
                     </div>
 
+                    <div id="walletPaymentDetails" class="space-y-3 hidden" data-wallet-details>
+                        <div>
+                            <label for="walletCardNumber" class="text-sm font-medium text-gray-700">Số thẻ / ví</label>
+                            <input type="text" id="walletCardNumber" maxlength="23" inputmode="numeric" autocomplete="cc-number"
+                                   class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                   placeholder="Nhập số thẻ hoặc số ví">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label for="walletExpiryMonth" class="text-sm font-medium text-gray-700">Tháng hết hạn</label>
+                                <input type="text" id="walletExpiryMonth" inputmode="numeric" maxlength="2" autocomplete="cc-exp-month"
+                                       class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                       placeholder="MM">
+                            </div>
+                            <div>
+                                <label for="walletExpiryYear" class="text-sm font-medium text-gray-700">Năm hết hạn</label>
+                                <input type="text" id="walletExpiryYear" inputmode="numeric" maxlength="4" autocomplete="cc-exp-year"
+                                       class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                       placeholder="YYYY">
+                            </div>
+                            <div>
+                                <label for="walletCvv" class="text-sm font-medium text-gray-700">Mã CVV/CVC</label>
+                                <input type="password" id="walletCvv" inputmode="numeric" maxlength="4" autocomplete="cc-csc"
+                                       class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                       placeholder="CVV" data-sensitive-field>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Thông tin thẻ chỉ dùng để xác nhận giao dịch. Chúng tôi chỉ lưu 4 số cuối cho mục đích đối soát.</p>
+                    </div>
+
                     <div class="space-y-2">
                         <label for="checkoutNotes" class="text-sm font-medium text-gray-700">Ghi chú cho cửa hàng</label>
                         <textarea id="checkoutNotes" rows="3" class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi tới..."></textarea>

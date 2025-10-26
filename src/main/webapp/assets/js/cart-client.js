@@ -167,6 +167,12 @@
         if (payload.mode) {
             requestBody.mode = String(payload.mode);
         }
+        if (payload.paymentDetails) {
+            requestBody.paymentDetails = payload.paymentDetails;
+        }
+        if (payload.shopId) {
+            requestBody.shopId = payload.shopId;
+        }
         return apiClient.post('/checkout', requestBody);
     }
 

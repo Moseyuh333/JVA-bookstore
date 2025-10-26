@@ -26,11 +26,19 @@
     var couponSelectEl;
     var couponApplyBtn;
     var couponFeedbackEl;
+    var walletDetailsEl;
+    var walletCardNumberEl;
+    var walletExpiryMonthEl;
+    var walletExpiryYearEl;
+    var walletCvvEl;
 
     var mode = MODE_CART;
     var cartState = {
         items: [],
-        selected: new Set()
+        selected: new Set(),
+        activeShopId: null,
+        activeShopName: '',
+        lastFetchedShopId: null
     };
 
     var couponState = {
@@ -38,7 +46,8 @@
         selectedCode: null,
         selectedCoupon: null,
         lastSubtotal: 0,
-        discount: 0
+        discount: 0,
+        loadedShopId: null
     };
 
     appShell.onReady(function () {
@@ -56,10 +65,16 @@
         couponSelectEl = document.getElementById('checkoutCouponSelect');
         couponApplyBtn = document.getElementById('applyCouponBtn');
         couponFeedbackEl = document.getElementById('couponFeedback');
+        walletDetailsEl = document.querySelector('[data-wallet-details]');
+        walletCardNumberEl = document.getElementById('walletCardNumber');
+        walletExpiryMonthEl = document.getElementById('walletExpiryMonth');
+        walletExpiryYearEl = document.getElementById('walletExpiryYear');
+        walletCvvEl = document.getElementById('walletCvv');
 
         mode = getQueryParam('mode') === MODE_BUY_NOW ? MODE_BUY_NOW : MODE_CART;
 
         bindSelectionEvents();
+        bindPaymentMethodEvents();
         bindPlaceOrder();
         bindCouponEvents();
 
@@ -150,7 +165,10 @@
             if (!response || response.success !== true) {
                 throw new Error('Không thể tải mã giảm giá');
             }
-            couponState.coupons = Array.isArray(response.coupons) ? response.coupons : [];
+            var coupons = Array.isArray(response.coupons) ? response.coupons : [];
+            couponState.coupons = coupons.map(function (coupon) {
+                return normalizeCoupon(coupon, 'global');
+            });
             renderCouponOptions();
             updateCouponFeedback();
         } catch (error) {
@@ -184,6 +202,9 @@
             parts.push((coupon.value || 0) + '%');
         } else if (coupon.type === 'fixed') {
             parts.push(appShell.formatCurrency(toNumber(coupon.value || 0)));
+        }
+        if (coupon.shopName) {
+            parts.push('Shop: ' + coupon.shopName);
         }
         return parts.join(' - ');
     }
@@ -264,15 +285,20 @@
         }
         
         try {
-            var response = await apiClient.get('/api/coupons/validate?code=' + encodeURIComponent(code));
+            var params = new URLSearchParams({ code: code });
+            if (cartState.activeShopId) {
+                params.set('shopId', String(cartState.activeShopId));
+            }
+            var response = await apiClient.get('/api/coupons/validate?' + params.toString());
             if (!response || !response.success || !response.coupon) {
                 throw new Error(response && response.message ? response.message : 'Mã giảm giá không hợp lệ');
             }
-            
-            var coupon = response.coupon;
+
+            var scope = response.coupon.scope || (response.coupon.shopId ? 'shop' : null);
+            var coupon = normalizeCoupon(response.coupon, scope);
             couponState.selectedCode = code;
             couponState.selectedCoupon = coupon;
-            
+
             if (couponState.coupons.findIndex(function (c) { return c.code === code; }) === -1) {
                 couponState.coupons.push(coupon);
                 renderCouponOptions();
@@ -322,6 +348,19 @@
         if (!coupon || subtotal <= 0) {
             result.message = 'Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã giảm giá.';
             return result;
+        }
+        if (coupon.scope === 'shop') {
+            if (!cartState.activeShopId || (coupon.shopId && coupon.shopId !== cartState.activeShopId)) {
+                result.message = 'Mã giảm giá chỉ áp dụng cho cửa hàng ' + (coupon.shopName || '');
+                return result;
+            }
+            if (coupon.remaining != null) {
+                var remaining = toNumber(coupon.remaining);
+                if (Number.isFinite(remaining) && remaining <= 0) {
+                    result.message = 'Mã giảm giá của cửa hàng đã hết lượt sử dụng.';
+                    return result;
+                }
+            }
         }
         if (coupon.status && coupon.status !== 'active') {
             result.message = 'Mã giảm giá không còn hiệu lực.';
@@ -454,13 +493,17 @@
             if (normalizedId === null) {
                 return;
             }
+            var rawShopId = item.shopId != null ? item.shopId : (item.shop_id != null ? item.shop_id : null);
+            var parsedShopId = parseInt(rawShopId, 10);
             var entry = {
                 bookId: normalizedId,
                 title: item.title || 'Sách chưa cập nhật',
                 quantity: item.quantity || 0,
                 unitPrice: toNumber(item.unitPrice),
                 author: item.author || '',
-                imageUrl: item.imageUrl || ''
+                imageUrl: item.imageUrl || '',
+                shopId: Number.isFinite(parsedShopId) && parsedShopId > 0 ? parsedShopId : null,
+                shopName: item.shopName || item.shop_name || ''
             };
             cartState.items.push(entry);
             if (shouldSelectAll || previousSelection.has(entry.bookId)) {
@@ -492,13 +535,17 @@
             if (normalizedId === null) {
                 return;
             }
+            var rawShopId = item.shopId != null ? item.shopId : (item.shop_id != null ? item.shop_id : null);
+            var parsedShopId = parseInt(rawShopId, 10);
             var entry = {
                 bookId: normalizedId,
                 title: item.title || 'Sách chưa cập nhật',
                 quantity: parseInt(item.quantity, 10) || 1,
                 unitPrice: toNumber(item.unitPrice),
                 author: item.author || '',
-                imageUrl: item.imageUrl || ''
+                imageUrl: item.imageUrl || '',
+                shopId: Number.isFinite(parsedShopId) && parsedShopId > 0 ? parsedShopId : null,
+                shopName: item.shopName || item.shop_name || ''
             };
             cartState.items.push(entry);
             cartState.selected.add(entry.bookId);
@@ -565,6 +612,99 @@
         });
     }
 
+    function bindPaymentMethodEvents() {
+        var inputs = document.querySelectorAll('input[name="paymentMethod"]');
+        if (!inputs || inputs.length === 0) {
+            return;
+        }
+        inputs.forEach(function (input) {
+            input.addEventListener('change', updatePaymentDetailsVisibility);
+        });
+        updatePaymentDetailsVisibility();
+    }
+
+    function updatePaymentDetailsVisibility() {
+        var method = getSelectedPaymentMethod();
+        var requiresWalletDetails = method === 'vnpay' || method === 'momo';
+        if (walletDetailsEl) {
+            if (requiresWalletDetails) {
+                walletDetailsEl.classList.remove('hidden');
+            } else {
+                walletDetailsEl.classList.add('hidden');
+                resetWalletFields();
+            }
+        }
+    }
+
+    function resetWalletFields() {
+        if (walletCardNumberEl) {
+            walletCardNumberEl.value = '';
+        }
+        if (walletExpiryMonthEl) {
+            walletExpiryMonthEl.value = '';
+        }
+        if (walletExpiryYearEl) {
+            walletExpiryYearEl.value = '';
+        }
+        if (walletCvvEl) {
+            walletCvvEl.value = '';
+        }
+    }
+
+    function collectPaymentDetails(method) {
+        if (method !== 'vnpay' && method !== 'momo') {
+            return null;
+        }
+        if (!walletCardNumberEl || !walletExpiryMonthEl || !walletExpiryYearEl || !walletCvvEl) {
+            showFeedback('error', 'Không tìm thấy trường nhập thông tin ví điện tử.');
+            throw new Error('Missing wallet fields');
+        }
+        var rawNumber = (walletCardNumberEl.value || '').replace(/\D+/g, '');
+        if (rawNumber.length < 12 || rawNumber.length > 19) {
+            showFeedback('error', 'Số thẻ/ ví phải từ 12 đến 19 chữ số.');
+            throw new Error('Invalid card number');
+        }
+        var monthRaw = (walletExpiryMonthEl.value || '').trim();
+        var yearRaw = (walletExpiryYearEl.value || '').trim();
+        if (!/^\d{1,2}$/.test(monthRaw)) {
+            showFeedback('error', 'Vui lòng nhập tháng hết hạn hợp lệ (MM).');
+            throw new Error('Invalid expiry month');
+        }
+        var month = parseInt(monthRaw, 10);
+        if (!Number.isFinite(month) || month < 1 || month > 12) {
+            showFeedback('error', 'Tháng hết hạn phải nằm trong khoảng 01-12.');
+            throw new Error('Invalid expiry month range');
+        }
+        if (!/^\d{2,4}$/.test(yearRaw)) {
+            showFeedback('error', 'Vui lòng nhập năm hết hạn hợp lệ (YY hoặc YYYY).');
+            throw new Error('Invalid expiry year');
+        }
+        var normalizedYear = yearRaw.length === 2 ? parseInt('20' + yearRaw, 10) : parseInt(yearRaw, 10);
+        if (!Number.isFinite(normalizedYear) || normalizedYear < 2000) {
+            showFeedback('error', 'Năm hết hạn không hợp lệ.');
+            throw new Error('Invalid expiry year value');
+        }
+        var today = new Date();
+        var expiryDate = new Date(normalizedYear, month - 1, 1);
+        if (expiryDate < new Date(today.getFullYear(), today.getMonth(), 1)) {
+            showFeedback('error', 'Thẻ/ ví đã hết hạn.');
+            throw new Error('Card expired');
+        }
+        var cvv = (walletCvvEl.value || '').trim();
+        if (!/^\d{3,4}$/.test(cvv)) {
+            showFeedback('error', 'Mã CVV/CVC phải gồm 3 hoặc 4 chữ số.');
+            throw new Error('Invalid CVV');
+        }
+        return {
+            method: method,
+            cardNumber: rawNumber,
+            expiryMonth: String(month).padStart(2, '0'),
+            expiryYear: String(normalizedYear),
+            cvv: cvv,
+            last4: rawNumber.slice(-4)
+        };
+    }
+
     function updateCartSummaryLabel() {
         if (!itemsCountEl) {
             return;
@@ -591,6 +731,7 @@
                 disablePlaceOrder();
             }
         }
+        syncActiveShopContext();
     }
 
     function updateOrderTotals(subtotal, shipping, discount) {
@@ -610,6 +751,122 @@
         if (totalEl) {
             totalEl.textContent = appShell.formatCurrency(total);
         }
+    }
+
+    function resolveActiveShopContext() {
+        if (mode === MODE_BUY_NOW) {
+            var single = cartState.items.length > 0 ? cartState.items[0] : null;
+            if (single && single.shopId) {
+                return { shopId: single.shopId, shopName: single.shopName || '' };
+            }
+            return { shopId: null, shopName: '' };
+        }
+        if (cartState.selected.size === 0) {
+            return { shopId: null, shopName: '' };
+        }
+        var currentId = null;
+        var currentName = '';
+        var multiShop = false;
+        cartState.items.forEach(function (item) {
+            if (!cartState.selected.has(item.bookId)) {
+                return;
+            }
+            var itemShopId = typeof item.shopId === 'number' ? item.shopId : null;
+            if (!itemShopId) {
+                multiShop = true;
+                return;
+            }
+            if (currentId === null) {
+                currentId = itemShopId;
+                currentName = item.shopName || '';
+            } else if (currentId !== itemShopId) {
+                multiShop = true;
+            }
+        });
+        if (multiShop) {
+            return { shopId: null, shopName: '' };
+        }
+        return { shopId: currentId, shopName: currentName };
+    }
+
+    function syncActiveShopContext() {
+        var context = resolveActiveShopContext();
+        cartState.activeShopId = context.shopId;
+        cartState.activeShopName = context.shopName;
+        if (!context.shopId) {
+            couponState.loadedShopId = null;
+            return;
+        }
+        if (context.shopId && couponState.loadedShopId !== context.shopId) {
+            refreshSellerCoupons(context.shopId);
+        }
+    }
+
+    async function refreshSellerCoupons(shopId) {
+        if (!shopId || couponState.loadedShopId === shopId) {
+            return;
+        }
+        couponState.loadedShopId = shopId;
+        try {
+            var response = await apiClient.get('/profile/shop-coupons?shopId=' + encodeURIComponent(shopId));
+            if (response && response.success && Array.isArray(response.coupons)) {
+                mergeCouponList(response.coupons, 'shop');
+            }
+        } catch (error) {
+            console.warn('Không thể tải mã giảm giá của shop', error);
+        }
+    }
+
+    function mergeCouponList(coupons, scope) {
+        if (!Array.isArray(coupons) || coupons.length === 0) {
+            return;
+        }
+        var changed = false;
+        coupons.forEach(function (coupon) {
+            var normalized = normalizeCoupon(coupon, scope);
+            if (!normalized.code) {
+                return;
+            }
+            var index = couponState.coupons.findIndex(function (existing) {
+                return existing.code === normalized.code;
+            });
+            if (index === -1) {
+                couponState.coupons.push(normalized);
+                changed = true;
+            } else {
+                couponState.coupons[index] = Object.assign({}, couponState.coupons[index], normalized);
+                changed = true;
+            }
+        });
+        if (changed) {
+            renderCouponOptions();
+            updateCouponFeedback();
+        }
+    }
+
+    function normalizeCoupon(coupon, scope) {
+        if (!coupon) {
+            return {};
+        }
+        var normalizedType = coupon.type || coupon.discountType || 'fixed';
+        var normalized = {
+            code: coupon.code ? String(coupon.code).toUpperCase() : '',
+            description: coupon.description || '',
+            type: normalizedType,
+            value: toNumber(coupon.value != null ? coupon.value : coupon.discountValue),
+            maxDiscount: toNumber(coupon.maxDiscount != null ? coupon.maxDiscount : coupon.maxDiscountValue),
+            minimumOrder: toNumber(coupon.minimumOrder != null ? coupon.minimumOrder : coupon.minOrderValue),
+            status: coupon.status || 'active',
+            userStatus: coupon.userStatus || coupon.user_status || null,
+            startDate: coupon.startDate || coupon.start_date || null,
+            endDate: coupon.endDate || coupon.end_date || null,
+            scope: scope || coupon.scope || 'global',
+            shopId: coupon.shopId || coupon.shop_id || null,
+            shopName: coupon.shopName || coupon.shop_name || '',
+            usageLimit: coupon.usageLimit != null ? coupon.usageLimit : coupon.usage_limit,
+            remaining: coupon.remaining != null ? coupon.remaining : null
+        };
+        return normalized;
     }
 
     function renderAddresses(addresses) {
@@ -667,6 +924,13 @@
             }
             var paymentMethod = getSelectedPaymentMethod();
             var notes = notesEl ? notesEl.value.trim() : '';
+            var paymentDetails = null;
+            try {
+                paymentDetails = collectPaymentDetails(paymentMethod);
+            } catch (validationError) {
+                console.warn('Payment validation failed', validationError);
+                return;
+            }
             placeOrderBtn.disabled = true;
             placeOrderBtn.classList.add('opacity-60');
             placeOrderBtn.textContent = 'Đang xử lý...';
@@ -678,7 +942,9 @@
                     notes: notes || null,
                     couponCode: couponState.selectedCode || null,
                     items: payloadItems,
-                    mode: mode
+                    mode: mode,
+                    paymentDetails: paymentDetails,
+                    shopId: cartState.activeShopId || null
                 });
                 if (result && result.success) {
                     if (mode === MODE_BUY_NOW) {

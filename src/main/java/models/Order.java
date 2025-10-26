@@ -15,6 +15,7 @@ public class Order {
     private String paymentStatus;
     private String paymentMethod;
     private String paymentProvider;
+    private String paymentMetadata;
     private BigDecimal itemsSubtotal;
     private BigDecimal discountAmount;
     private BigDecimal shippingFee;
@@ -99,6 +100,14 @@ public class Order {
 
     public void setPaymentProvider(String paymentProvider) {
         this.paymentProvider = paymentProvider;
+    }
+
+    public String getPaymentMetadata() {
+        return paymentMetadata;
+    }
+
+    public void setPaymentMetadata(String paymentMetadata) {
+        this.paymentMetadata = paymentMetadata;
     }
 
     public BigDecimal getItemsSubtotal() {

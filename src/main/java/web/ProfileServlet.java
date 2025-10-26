@@ -4,9 +4,11 @@ import dao.CouponDAO;
 import dao.FavoriteDAO;
 import dao.OrderDAO;
 import dao.RecentViewDAO;
+import dao.ShopCouponDAO;
 import dao.UserAddressDAO;
 import models.Order;
 import models.OrderStatusHistory;
+import models.ShopCoupon;
 import models.UserAddress;
 import utils.AuthUtil;
 import utils.DBUtil;
@@ -75,6 +77,9 @@ public class ProfileServlet extends HttpServlet {
                     break;
                 case "coupons":
                     listCoupons(request, response);
+                    break;
+                case "shop-coupons":
+                    listShopCouponsForShop(request, response);
                     break;
                 default:
                     sendNotFound(response);
@@ -767,6 +772,50 @@ public class ProfileServlet extends HttpServlet {
         List<CouponDAO.CouponRecord> coupons = CouponDAO.listActiveCoupons(userId);
         responseMap.put("success", true);
         responseMap.put("coupons", coupons);
+        response.getWriter().write(gson.toJson(responseMap));
+    }
+
+    private void listShopCouponsForShop(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, SQLException {
+        Map<String, Object> responseMap = new HashMap<>();
+        Long userId = getRequiredUserId(request, response, responseMap);
+        if (userId == null) {
+            return;
+        }
+
+        Long shopIdRaw = parseId(request.getParameter("shopId"));
+        if (shopIdRaw == null || shopIdRaw <= 0) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            responseMap.put("success", false);
+            responseMap.put("message", "Thiếu tham số shopId hợp lệ");
+            response.getWriter().write(gson.toJson(responseMap));
+            return;
+        }
+
+        int shopId = shopIdRaw.intValue();
+        List<ShopCoupon> coupons = ShopCouponDAO.listActiveForShop(shopId);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ShopCoupon coupon : coupons) {
+            Map<String, Object> node = new HashMap<>();
+            node.put("code", coupon.getCode());
+            node.put("description", coupon.getDescription());
+            node.put("type", coupon.getDiscountType());
+            node.put("value", coupon.getDiscountValue());
+            node.put("minimumOrder", coupon.getMinimumOrder());
+            node.put("usageLimit", coupon.getUsageLimit());
+            if (coupon.getUsageLimit() != null) {
+                int used = coupon.getUsedCount() != null ? coupon.getUsedCount() : 0;
+                node.put("remaining", Math.max(0, coupon.getUsageLimit() - used));
+            }
+            node.put("startDate", coupon.getStartDate());
+            node.put("endDate", coupon.getEndDate());
+            node.put("shopId", coupon.getShopId());
+            node.put("shopName", coupon.getShopName());
+            node.put("scope", "shop");
+            result.add(node);
+        }
+        responseMap.put("success", true);
+        responseMap.put("coupons", result);
         response.getWriter().write(gson.toJson(responseMap));
     }
 

@@ -53,7 +53,7 @@
         // const API_URL = '<%= request.getContextPath() %>/api/seller/analytics';
         // const SHOP_ID = ${shopId};
 
-        const API_URL = '<%= request.getContextPath() %>/api/seller/profile';
+        const API_URL = '<%= request.getContextPath() %>/api/seller/analytics';
 
     // SỬA DÒNG 4: Sử dụng JSTL c:out để đảm bảo giá trị shopId luôn là chuỗi (hoặc số) an toàn
         const SHOP_ID = '<c:out value="${shopId}" default="0" />';
@@ -82,26 +82,44 @@
         }
 
         async function loadAnalyticsData() {
-            if (SHOP_ID === 0) return;
+            if (!SHOP_ID || SHOP_ID === '0') {
+                console.warn('Missing shop id for analytics dashboard');
+                return;
+            }
             try {
                 // Giả định API /api/seller/analytics?action=summary trả về tất cả data
-                const response = await fetch(`${API_URL}?action=summary&shop_id=${SHOP_ID}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('seller_token')}` } });
+                const url = `${API_URL}?action=summary&shop_id=${encodeURIComponent(SHOP_ID)}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('seller_token') || ''}`
+                    },
+                    credentials: 'same-origin'
+                });
                 const data = await response.json();
                 
                 if (data.success && data.summary) {
                     const summary = data.summary;
-                    document.getElementById('currentRevenue').textContent = formatCurrency(summary.monthlyRevenue);
-                    document.getElementById('totalOrders').textContent = summary.totalOrders;
-                    document.getElementById('bestSeller').textContent = summary.bestSellerTitle || 'Chưa có';
+                    const revenueEl = document.getElementById('currentRevenue');
+                    if (revenueEl) {
+                        revenueEl.textContent = formatCurrency(summary.monthlyRevenue);
+                    }
+                    const totalOrdersEl = document.getElementById('totalOrders');
+                    if (totalOrdersEl) {
+                        totalOrdersEl.textContent = summary.totalOrders != null ? summary.totalOrders : 0;
+                    }
+                    const bestSellerEl = document.getElementById('bestSeller');
+                    if (bestSellerEl) {
+                        bestSellerEl.textContent = summary.bestSellerTitle || 'Chua co';
+                    }
 
                     // 1. Biểu đồ Doanh thu (dữ liệu giả định)
-                    const revenueLabels = summary.dailySales.map(d => d.date);
-                    const revenueData = summary.dailySales.map(d => d.revenue);
+                    const revenueLabels = (Array.isArray(summary.dailySales) ? summary.dailySales : []).map(d => d.date);
+                    const revenueData = (Array.isArray(summary.dailySales) ? summary.dailySales : []).map(d => Number(d.revenue || 0));
                     drawChart('revenueChart', 'line', revenueLabels, revenueData, 'Doanh thu');
 
                     // 2. Biểu đồ Top Sản phẩm (dữ liệu giả định)
-                    const productLabels = summary.topProducts.map(p => p.title);
-                    const productData = summary.topProducts.map(p => p.sold);
+                    const productLabels = (Array.isArray(summary.topProducts) ? summary.topProducts : []).map(p => p.title);
+                    const productData = (Array.isArray(summary.topProducts) ? summary.topProducts : []).map(p => Number(p.sold || 0));
                     drawChart('topProductsChart', 'bar', productLabels, productData, 'Số lượng bán');
 
                 } else {
@@ -114,11 +132,16 @@
         }
 
         function formatCurrency(value) {
-            const number = Number(value);
-            return number.toLocaleString('vi-VN') + 'đ';
+            const numeric = Number(value || 0);
+            if (!Number.isFinite(numeric)) {
+                return '0 VND';
+            }
+            const rounded = Math.round(numeric);
+            return new Intl.NumberFormat('vi-VN').format(rounded) + ' VND';
         }
 
         document.addEventListener('DOMContentLoaded', loadAnalyticsData);
     </script>
 </body>
 </html>
+

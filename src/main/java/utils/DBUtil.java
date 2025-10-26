@@ -193,6 +193,7 @@ public class DBUtil {
                     "status VARCHAR(50) DEFAULT 'pending'," +
                     "shipping_address TEXT," +
                     "payment_method VARCHAR(50)," +
+                    "payment_metadata JSONB," +
                     "notes TEXT," +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                     "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
@@ -381,6 +382,9 @@ public class DBUtil {
             }
             if (!columnExists(conn, "orders", "cart_snapshot")) {
                 stmt.execute("ALTER TABLE orders ADD COLUMN cart_snapshot JSONB");
+            }
+            if (!columnExists(conn, "orders", "payment_metadata")) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN payment_metadata JSONB");
             }
             if (!columnExists(conn, "orders", "items_subtotal")) {
                 stmt.execute("ALTER TABLE orders ADD COLUMN items_subtotal DECIMAL(12, 2) NOT NULL DEFAULT 0");

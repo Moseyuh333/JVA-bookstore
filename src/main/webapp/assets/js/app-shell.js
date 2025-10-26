@@ -39,12 +39,17 @@
 
     function formatCurrency(value) {
         if (value === null || value === undefined) {
-            return 'Liên hệ';
+            return 'Lien he';
         }
+        var numeric = Number(value);
+        if (!Number.isFinite(numeric)) {
+            return 'Lien he';
+        }
+        var rounded = Math.round(numeric);
         try {
-            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+            return new Intl.NumberFormat('vi-VN').format(rounded) + ' VND';
         } catch (error) {
-            return value.toString();
+            return String(rounded) + ' VND';
         }
     }
 

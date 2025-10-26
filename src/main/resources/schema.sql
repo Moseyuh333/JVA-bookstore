@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS orders (
     shipping_address_id INTEGER REFERENCES user_addresses(id) ON DELETE SET NULL,
     shipping_snapshot JSONB,
     cart_snapshot JSONB,
+    payment_metadata JSONB,
     items_subtotal DECIMAL(12, 2) NOT NULL DEFAULT 0,
     discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
     shipping_fee DECIMAL(12, 2) NOT NULL DEFAULT 0,
