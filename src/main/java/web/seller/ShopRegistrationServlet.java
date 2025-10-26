@@ -112,7 +112,7 @@ public class ShopRegistrationServlet extends HttpServlet {
             // ✅ Cập nhật role = seller và status = pending
             try (Connection conn = DBUtil.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
-                         "UPDATE users SET role = ?, status = ? WHERE id = ?")) {
+                         "UPDATE users SET role = ?::user_role, status = ?::user_status WHERE id = ?")) {
 
                 ps.setString(1, "seller");
                 ps.setString(2, "pending");
