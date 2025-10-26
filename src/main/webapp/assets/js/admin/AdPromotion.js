@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let promotions = [];
     let filteredPromotions = [];
+    let isSearching = false;
 
     // API functions
     const api = {
@@ -64,9 +65,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (tableContainer) tableContainer.style.display = 'block';
     };
 
-    const showEmpty = () => {
+    const showEmpty = (message = "Không có khuyến mãi nào") => {
         if (emptyState) emptyState.style.display = 'block';
         if (tableContainer) tableContainer.style.display = 'none';
+        const emptyMessageEl = document.getElementById('emptyMessage');
+        if (emptyMessageEl) emptyMessageEl.textContent = message;
     };
 
     const hideEmpty = () => {
@@ -171,6 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const statusFilter = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'all';
 
         if (keyword) {
+            isSearching = true;
             // Server-side search
             try {
                 showLoading();
@@ -194,15 +198,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (activePromoEl) activePromoEl.textContent = filtered.filter(p => p.active).length;
                 } else {
                     console.error("Invalid response format:", response);
-                    showEmpty();
+                    showEmpty("Không tìm thấy khuyến mãi nào phù hợp với từ khóa tìm kiếm");
                 }
             } catch (error) {
                 console.error("Error searching promotions:", error);
-                showEmpty();
+                showEmpty("Không tìm thấy khuyến mãi nào phù hợp với từ khóa tìm kiếm");
             } finally {
                 hideLoading();
             }
         } else {
+            isSearching = false;
             // No search, load all and apply status filter
             let filtered = [...promotions];
 
