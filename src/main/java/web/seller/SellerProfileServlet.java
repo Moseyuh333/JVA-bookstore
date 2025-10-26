@@ -99,6 +99,8 @@ public class SellerProfileServlet extends HttpServlet {
 
             if ("update".equals(action)) {
                 updateShopProfile(req, out, shopId);
+            } else if ("update_commission".equals(action)) {
+                updateCommissionRate(req, out, shopId);
             } else {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write(gson.toJson(java.util.Map.of("success", false, "message", "Invalid action")));
@@ -161,5 +163,36 @@ public class SellerProfileServlet extends HttpServlet {
                                  slogan != null ? slogan.trim() : null);
 
         out.write(gson.toJson(java.util.Map.of("success", true, "message", "Shop profile updated successfully")));
+    }
+
+    private void updateCommissionRate(HttpServletRequest req, PrintWriter out, int shopId) throws SQLException {
+        String rateParam = req.getParameter("commissionRate");
+
+        if (rateParam == null || rateParam.trim().isEmpty()) {
+            out.write(gson.toJson(java.util.Map.of("success", false, "message", "Commission rate is required")));
+            return;
+        }
+
+        double ratePercent;
+        try {
+            ratePercent = Double.parseDouble(rateParam.trim());
+        } catch (NumberFormatException ex) {
+            out.write(gson.toJson(java.util.Map.of("success", false, "message", "Invalid commission rate")));
+            return;
+        }
+
+        if (ratePercent < 0 || ratePercent > 100) {
+            out.write(gson.toJson(java.util.Map.of("success", false, "message", "Commission rate must be between 0 and 100")));
+            return;
+        }
+
+        double normalized = ratePercent / 100.0;
+        ShopDAO.updateCommissionRate(shopId, normalized);
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("success", true);
+        response.put("message", "Commission rate updated successfully");
+        response.put("commissionRate", normalized);
+        out.write(gson.toJson(response));
     }
 }

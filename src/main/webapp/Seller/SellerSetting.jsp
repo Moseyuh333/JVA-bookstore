@@ -52,16 +52,98 @@
             <div id="loadingProfile" class="spinner-border spinner-border-sm mt-3 d-none"></div>
         </div>
 
-        <%-- Card 2: Cài đặt Thanh toán/Chiết khấu (Chỉ hiển thị, thường được Admin quản lý) --%>
+        <%-- Card 2: Cấu hình Chiết khấu/Thanh toán --%>
         <div class="setting-card">
             <h2>Cấu hình Chiết khấu/Thanh toán</h2>
-            <p class="text-muted small">Chiết khấu/Phí dịch vụ thường được cố định và quản lý bởi hệ thống.</p>
-            <div class="row">
+            <p class="text-muted small">Thiết lập tỉ lệ chiết khấu áp dụng cho các đơn hàng của shop bạn.</p>
+            <div class="mb-3">
+                <strong>Tỷ lệ chiết khấu hiện tại:</strong>
+                <span id="commissionRateDisplay">--%</span>
+            </div>
+            <form id="commissionForm" class="row g-3">
                 <div class="col-md-6">
-                    <strong>Tỷ lệ Chiết khấu (Commission):</strong> <span id="commissionRate">--</span>
+                    <label for="commissionRateInput">Tỷ lệ chiết khấu (%)</label>
+                    <div class="input-group">
+                        <input type="number" min="0" max="100" step="0.1" class="form-control" id="commissionRateInput" name="commissionRate" placeholder="Ví dụ: 10 cho 10%" required>
+                        <div class="input-group-append">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <strong>Phương thức Thanh toán:</strong> <span class="badge badge-success">Thanh toán khi nhận hàng (COD)</span>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-save mr-1"></i>Lưu chiết khấu
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <%-- Card 3: Quản lý mã giảm giá --%>
+        <div class="setting-card">
+            <h2>Quản lý mã giảm giá</h2>
+            <p class="text-muted small">Tạo và quản lý các mã khuyến mãi áp dụng riêng cho shop của bạn.</p>
+
+            <form id="couponForm" class="row">
+                <div class="form-group col-md-3">
+                    <label for="couponCode">Mã giảm giá</label>
+                    <input type="text" class="form-control" id="couponCode" name="code" placeholder="VD: SALE10" required>
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="discountType">Loại giảm</label>
+                    <select class="form-control" id="discountType" name="discountType">
+                        <option value="percentage">Phần trăm (%)</option>
+                        <option value="fixed">Số tiền cố định</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="discountValue">Giá trị giảm</label>
+                    <input type="number" class="form-control" id="discountValue" name="discountValue" min="0" step="0.01" required>
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="minimumOrder">Đơn hàng tối thiểu</label>
+                    <input type="number" class="form-control" id="minimumOrder" name="minimumOrder" min="0" step="0.01">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="usageLimit">Giới hạn sử dụng</label>
+                    <input type="number" class="form-control" id="usageLimit" name="usageLimit" min="1" placeholder="Để trống nếu không giới hạn">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="startDate">Ngày bắt đầu</label>
+                    <input type="date" class="form-control" id="startDate" name="startDate">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="endDate">Ngày kết thúc</label>
+                    <input type="date" class="form-control" id="endDate" name="endDate">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="couponDescription">Mô tả</label>
+                    <input type="text" class="form-control" id="couponDescription" name="description" placeholder="Nội dung mô tả ngắn gọn">
+                </div>
+                <div class="form-group col-md-12 text-right">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus mr-1"></i>Tạo mã giảm giá
+                    </button>
+                </div>
+            </form>
+
+            <div class="table-responsive mt-4">
+                <table class="table table-striped table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Mã</th>
+                            <th>Loại</th>
+                            <th>Giá trị</th>
+                            <th>Đơn tối thiểu</th>
+                            <th>Giới hạn</th>
+                            <th>Hiệu lực</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="couponTableBody"></tbody>
+                </table>
+                <div id="couponEmptyState" class="text-center text-muted" style="display: none;">
+                    Chưa có mã giảm giá nào.
                 </div>
             </div>
         </div>
@@ -72,76 +154,336 @@
         // const SHOP_ID = ${shopId};
 
         const API_URL = '<%= request.getContextPath() %>/api/seller/profile';
-
-    // SỬA DÒNG 4: Sử dụng JSTL c:out để đảm bảo giá trị shopId luôn là chuỗi (hoặc số) an toàn
+        const COUPON_API_URL = '<%= request.getContextPath() %>/api/seller/coupons';
         const SHOP_ID = '<c:out value="${shopId}" default="0" />';
+        const HAS_SHOP = SHOP_ID && SHOP_ID !== '0';
+        const commissionDisplay = document.getElementById('commissionRateDisplay');
+        const commissionInput = document.getElementById('commissionRateInput');
+        const commissionForm = document.getElementById('commissionForm');
+        const couponForm = document.getElementById('couponForm');
+        const couponsTableBody = document.getElementById('couponTableBody');
+        const couponEmptyState = document.getElementById('couponEmptyState');
 
         async function loadShopProfile() {
-            const token = localStorage.getItem('seller_token');
-            if (!token || SHOP_ID === 0) return;
+            const loader = document.getElementById('loadingProfile');
+            if (loader) {
+                loader.classList.remove('d-none');
+            }
 
-            document.getElementById('loadingProfile').classList.remove('d-none');
-            
+            if (!HAS_SHOP) {
+                showAlert('Bạn chưa hoàn tất đăng ký shop. Vui lòng tạo shop để cập nhật thông tin.', 'warning');
+                if (loader) loader.classList.add('d-none');
+                return;
+            }
+
             try {
-                // Giả định bạn có một API để lấy chi tiết Shop
-                const response = await fetch(`${API_URL}?action=get&shop_id=${SHOP_ID}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
+                const response = await fetch(`${API_URL}?action=get`);
                 const data = await response.json();
-                
+
                 if (data.success && data.shop) {
-                    // Điền dữ liệu vào form
                     document.getElementById('shopName').value = data.shop.name || '';
                     document.getElementById('shopAddress').value = data.shop.address || '';
                     document.getElementById('shopDescription').value = data.shop.description || '';
-                    document.getElementById('commissionRate').textContent = (data.shop.commissionRate * 100).toFixed(2) + '%';
+
+                    const commissionRaw = data.shop.commissionRate;
+                    let rateText = '0.00';
+                    if (commissionRaw !== null && commissionRaw !== undefined) {
+                        const numeric = Number(commissionRaw);
+                        if (!Number.isNaN(numeric)) {
+                            rateText = (numeric * 100).toFixed(2);
+                        }
+                    }
+                    if (commissionDisplay) {
+                        commissionDisplay.textContent = `${rateText}%`;
+                    }
+                    if (commissionInput) {
+                        commissionInput.value = rateText;
+                    }
                 } else {
                     showAlert('Không thể tải thông tin Shop: ' + (data.message || 'Lỗi kết nối.'), 'danger');
                 }
             } catch (error) {
-                showAlert('Lỗi mạng khi tải hồ sơ.', 'danger');
+                console.error('loadShopProfile error:', error);
+                showAlert('Lỗi mạng khi tải thông tin shop.', 'danger');
             } finally {
-                document.getElementById('loadingProfile').classList.add('d-none');
+                if (loader) {
+                    loader.classList.add('d-none');
+                }
+        }
+    }
+
+    async function loadCoupons() {
+        if (!HAS_SHOP || !couponsTableBody) {
+            return;
+        }
+        try {
+            const response = await fetch(`${COUPON_API_URL}?action=list`);
+            const data = await response.json();
+            if (data.success) {
+                renderCoupons(data.coupons || []);
+            } else {
+                showAlert('Không thể tải danh sách mã giảm giá: ' + (data.message || 'Lỗi không xác định'), 'danger');
             }
+        } catch (error) {
+            console.error('loadCoupons error:', error);
+            showAlert('Lỗi mạng khi tải mã giảm giá.', 'danger');
+        }
+    }
+
+    function renderCoupons(coupons) {
+        if (!couponsTableBody) {
+            return;
+        }
+        couponsTableBody.innerHTML = '';
+        if (!coupons || coupons.length === 0) {
+            if (couponEmptyState) {
+                couponEmptyState.style.display = 'block';
+            }
+            return;
+        }
+        if (couponEmptyState) {
+            couponEmptyState.style.display = 'none';
         }
 
-        // Handle form submit
-        document.getElementById('shopProfileForm').addEventListener('submit', async function(e) {
+        coupons.forEach((coupon) => {
+            const row = document.createElement('tr');
+            const usageText = coupon.usageLimit
+                ? `${coupon.usedCount || 0}/${coupon.usageLimit}`
+                : (coupon.usedCount || 0);
+            const valueText = coupon.discountType === 'percentage'
+                ? `${Number(coupon.discountValue || 0).toFixed(2)}%`
+                : formatCurrency(coupon.discountValue);
+            const minOrderText = coupon.minimumOrder ? formatCurrency(coupon.minimumOrder) : '-';
+            const dateRange = buildDateRange(coupon.startDate, coupon.endDate);
+
+            row.innerHTML = `
+                <td>${coupon.code}</td>
+                <td>${coupon.discountType === 'percentage' ? 'Phần trăm' : 'Cố định'}</td>
+                <td>${valueText}</td>
+                <td>${minOrderText}</td>
+                <td>${usageText}</td>
+                <td>${dateRange}</td>
+                <td>${coupon.status || 'active'}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteCoupon(${coupon.id})">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            couponsTableBody.appendChild(row);
+        });
+    }
+
+    function buildDateRange(start, end) {
+        const format = (value) => {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return value;
+            }
+            return date.toLocaleDateString('vi-VN');
+        };
+        const startText = format(start);
+        const endText = format(end);
+        if (startText === '-' && endText === '-') {
+            return 'Không giới hạn';
+        }
+        return `${startText} - ${endText}`;
+    }
+
+    function formatCurrency(value) {
+        const number = Number(value);
+        if (Number.isNaN(number)) {
+            return value || '0';
+        }
+        return new Intl.NumberFormat('vi-VN').format(number) + '₫';
+    }
+
+        document.getElementById('shopProfileForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
+            if (!HAS_SHOP) {
+                showAlert('Bạn chưa có shop để cập nhật thông tin.', 'warning');
+                return;
+            }
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+
             const formData = new FormData(this);
-            const shopData = Object.fromEntries(formData.entries());
+            const payload = new URLSearchParams();
+            for (const [key, value] of formData.entries()) {
+                payload.append(key, (value || '').toString().trim());
+            }
 
             try {
-                const token = localStorage.getItem('seller_token') || localStorage.getItem('auth_token');
                 const response = await fetch(`${API_URL}?action=update`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
                     },
-                    body: JSON.stringify(shopData)
+                    body: payload.toString()
                 });
 
                 const result = await response.json();
                 if (result.success) {
                     showAlert('Cập nhật thông tin Shop thành công!', 'success');
+                    await loadShopProfile();
                 } else {
                     showAlert('Lỗi: ' + (result.message || 'Không thể cập nhật thông tin Shop'), 'danger');
                 }
             } catch (error) {
-                console.error('Error updating shop profile:', error);
+                console.error('updateShopProfile error:', error);
                 showAlert('Có lỗi xảy ra khi cập nhật thông tin Shop', 'danger');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
             }
         });
+
+        if (commissionForm) {
+            commissionForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!HAS_SHOP) {
+                    showAlert('Bạn chưa có shop để cập nhật chiết khấu.', 'warning');
+                    return;
+                }
+
+                const value = commissionInput ? commissionInput.value : '';
+                if (!value) {
+                    showAlert('Vui lòng nhập tỉ lệ chiết khấu.', 'warning');
+                    return;
+                }
+
+                const submitBtn = commissionForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                }
+
+                const payload = new URLSearchParams();
+                payload.append('action', 'update_commission');
+                payload.append('commissionRate', value);
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                        },
+                        body: payload.toString()
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        const percentText = parseFloat(value).toFixed(2) + '%';
+                        if (commissionDisplay) {
+                            commissionDisplay.textContent = percentText;
+                        }
+                        showAlert('Cập nhật tỉ lệ chiết khấu thành công!', 'success');
+                    } else {
+                        showAlert('Lỗi: ' + (result.message || 'Không thể cập nhật chiết khấu'), 'danger');
+                    }
+                } catch (error) {
+                    console.error('updateCommissionRate error:', error);
+                    showAlert('Có lỗi xảy ra khi cập nhật chiết khấu', 'danger');
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                    }
+                }
+            });
+        }
+
+        if (couponForm) {
+            couponForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!HAS_SHOP) {
+                    showAlert('Bạn chưa có shop để tạo mã giảm giá.', 'warning');
+                    return;
+                }
+
+                const submitBtn = couponForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                }
+
+                const formData = new FormData(couponForm);
+                const payload = new URLSearchParams();
+                payload.append('action', 'create');
+                for (const [key, value] of formData.entries()) {
+                    payload.append(key, (value || '').toString().trim());
+                }
+
+                try {
+                    const response = await fetch(COUPON_API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                        },
+                        body: payload.toString()
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showAlert('Tạo mã giảm giá thành công!', 'success');
+                        couponForm.reset();
+                        await loadCoupons();
+                    } else {
+                        showAlert('Lỗi: ' + (result.message || 'Không thể tạo mã giảm giá'), 'danger');
+                    }
+                } catch (error) {
+                    console.error('createCoupon error:', error);
+                    showAlert('Có lỗi xảy ra khi tạo mã giảm giá', 'danger');
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                    }
+                }
+            });
+        }
+
+        window.deleteCoupon = async (couponId) => {
+            if (!couponId || !HAS_SHOP) {
+                return;
+            }
+            if (!confirm('Bạn có chắc chắn muốn xóa mã giảm giá này?')) {
+                return;
+            }
+            try {
+                const payload = new URLSearchParams();
+                payload.append('action', 'delete');
+                payload.append('couponId', couponId);
+
+                const response = await fetch(COUPON_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                    },
+                    body: payload.toString()
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('Đã xóa mã giảm giá.', 'success');
+                    await loadCoupons();
+                } else {
+                    showAlert('Lỗi: ' + (result.message || 'Không thể xóa mã giảm giá'), 'danger');
+                }
+            } catch (error) {
+                console.error('deleteCoupon error:', error);
+                showAlert('Có lỗi xảy ra khi xóa mã giảm giá', 'danger');
+            }
+        };
 
         function showAlert(message, type) {
             document.getElementById('alertContainer').innerHTML = 
                 `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button></div>`;
         }
 
-        document.addEventListener('DOMContentLoaded', loadShopProfile);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadShopProfile();
+            loadCoupons();
+        });
     </script>
 </body>
 </html>

@@ -183,4 +183,14 @@ public class ShopDAO {
             ps.executeUpdate();
         }
     }
+
+    public static void updateCommissionRate(int shopId, double commissionRate) throws SQLException {
+        String sql = "UPDATE shops SET commission_rate = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, commissionRate);
+            ps.setInt(2, shopId);
+            ps.executeUpdate();
+        }
+    }
 }

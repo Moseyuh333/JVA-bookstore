@@ -546,11 +546,11 @@
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="searchInput" placeholder="Tìm kiếm theo mã đơn hàng...">
                             </div>
-                            <button class="btn-custom btn-search" onclick="applyFilters()">
+                            <button type="button" class="btn-custom btn-search" onclick="applyFilters()">
                                 <i class="fas fa-search"></i>
                                 <span>Tìm kiếm</span>
                             </button>
-                            <button class="btn-custom btn-reset" onclick="resetFilters()">
+                            <button type="button" class="btn-custom btn-reset" onclick="resetFilters()">
                                 <i class="fas fa-redo"></i>
                                 <span>Đặt lại</span>
                             </button>
@@ -610,6 +610,32 @@
         </footer>
     </div>
 </div>
+
+<div class="modal fade" id="orderDetailModal" tabindex="-1" role="dialog" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailModalLabel">Chi tiết đơn hàng</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="orderDetailContent">
+                <p class="text-muted mb-0">Đang tải chi tiết đơn hàng...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.appConfig = window.appConfig || {};
+    window.appConfig.contextPath = '${pageContext.request.contextPath}';
+</script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/seller/SellerOrders.js"></script>
 <script>
     if (typeof feather !== "undefined") feather.replace();

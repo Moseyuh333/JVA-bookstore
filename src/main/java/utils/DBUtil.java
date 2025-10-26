@@ -516,6 +516,28 @@ public class DBUtil {
             stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_coupons_user ON user_coupons(user_id)");
             stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_coupons_status ON user_coupons(status)");
 
+            String createShopCouponsSql = "CREATE TABLE IF NOT EXISTS shop_coupons (" +
+                "id SERIAL PRIMARY KEY," +
+                "shop_id INTEGER NOT NULL REFERENCES shops(id) ON DELETE CASCADE," +
+                "code VARCHAR(60) NOT NULL," +
+                "description TEXT," +
+                "discount_type VARCHAR(20) NOT NULL DEFAULT 'percentage'," +
+                "discount_value DECIMAL(10, 2) NOT NULL," +
+                "minimum_order DECIMAL(10, 2) DEFAULT 0," +
+                "usage_limit INTEGER," +
+                "used_count INTEGER DEFAULT 0," +
+                "start_date TIMESTAMP," +
+                "end_date TIMESTAMP," +
+                "status VARCHAR(20) DEFAULT 'active'," +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                ")";
+            stmt.execute(createShopCouponsSql);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_shop_coupons_shop ON shop_coupons(shop_id)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_shop_coupons_status ON shop_coupons(status)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_shop_coupons_date ON shop_coupons(start_date, end_date)");
+            stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_shop_coupons_code ON shop_coupons(shop_id, code)");
+
             String createOrderCouponsSql = "CREATE TABLE IF NOT EXISTS order_coupons (" +
                 "id SERIAL PRIMARY KEY," +
                 "order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE," +

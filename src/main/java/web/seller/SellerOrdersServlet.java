@@ -2,6 +2,8 @@ package web.seller;
 
 import dao.OrderDAO;
 import dao.ShopDAO;
+import models.Order;
+import models.OrderItem;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -11,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +62,8 @@ public class SellerOrdersServlet extends HttpServlet {
                 listOrders(req, out, shopId);
             } else if ("stats".equals(action)) {
                 getOrderStats(out, shopId);
+            } else if ("detail".equals(action)) {
+                getOrderDetail(req, resp, out, shopId);
             } else {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write(gson.toJson(Map.of("success", false, "message", "Invalid action")));
@@ -117,7 +122,31 @@ public class SellerOrdersServlet extends HttpServlet {
     private void listOrders(HttpServletRequest req, PrintWriter out, int shopId) throws SQLException {
         String status = req.getParameter("status");
         String keyword = req.getParameter("keyword");
+        String searchType = req.getParameter("searchType");
         int limit = req.getParameter("limit") != null ? Integer.parseInt(req.getParameter("limit")) : 50;
+
+        if (searchType != null && keyword != null && !keyword.trim().isEmpty()) {
+            String trimmed = keyword.trim();
+            switch (searchType) {
+                case "status":
+                    status = trimmed;
+                    keyword = null;
+                    break;
+                case "orderId":
+                case "customerName":
+                case "all":
+                default:
+                    keyword = trimmed;
+                    break;
+            }
+        }
+
+        if (status != null && status.trim().isEmpty()) {
+            status = null;
+        }
+        if (keyword != null && keyword.trim().isEmpty()) {
+            keyword = null;
+        }
 
         List<OrderDAO.AdminOrderSummary> orders = OrderDAO.listOrdersForShop(shopId, status, keyword, limit);
 
@@ -151,6 +180,83 @@ public class SellerOrdersServlet extends HttpServlet {
         response.put("success", true);
         response.put("stats", stats);
 
+        out.write(gson.toJson(response));
+    }
+
+    private void getOrderDetail(HttpServletRequest req, HttpServletResponse resp, PrintWriter out, int shopId)
+            throws SQLException {
+        String orderIdParam = req.getParameter("order_id");
+        if (orderIdParam == null || orderIdParam.isBlank()) {
+            orderIdParam = req.getParameter("id");
+        }
+
+        if (orderIdParam == null || orderIdParam.isBlank()) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write(gson.toJson(Map.of("success", false, "message", "Missing order id")));
+            return;
+        }
+
+        long orderId;
+        try {
+            orderId = Long.parseLong(orderIdParam);
+        } catch (NumberFormatException ex) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write(gson.toJson(Map.of("success", false, "message", "Invalid order id")));
+            return;
+        }
+
+        if (!OrderDAO.orderBelongsToShop(orderId, shopId)) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            out.write(gson.toJson(Map.of("success", false, "message", "Order not found or access denied")));
+            return;
+        }
+
+        Order order = OrderDAO.fetchOrderForAdmin(orderId);
+        if (order == null) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            out.write(gson.toJson(Map.of("success", false, "message", "Order not found")));
+            return;
+        }
+
+        Map<String, Object> orderData = new HashMap<>();
+        orderData.put("id", order.getId());
+        orderData.put("code", order.getCode());
+        orderData.put("status", order.getStatus());
+        orderData.put("paymentStatus", order.getPaymentStatus());
+        orderData.put("paymentMethod", order.getPaymentMethod());
+        orderData.put("paymentProvider", order.getPaymentProvider());
+        orderData.put("itemsSubtotal", order.getItemsSubtotal());
+        orderData.put("discountAmount", order.getDiscountAmount());
+        orderData.put("shippingFee", order.getShippingFee());
+        orderData.put("totalAmount", order.getTotalAmount());
+        orderData.put("currency", order.getCurrency());
+        orderData.put("couponCode", order.getCouponCode());
+        orderData.put("customerName", order.getCustomerName());
+        orderData.put("customerEmail", order.getCustomerEmail());
+        orderData.put("notes", order.getNotes());
+        orderData.put("shippingAddress", order.getShippingAddress());
+        orderData.put("orderDate", order.getOrderDate() != null ? order.getOrderDate().toString() : null);
+        orderData.put("createdAt", order.getCreatedAt() != null ? order.getCreatedAt().toString() : null);
+        orderData.put("updatedAt", order.getUpdatedAt() != null ? order.getUpdatedAt().toString() : null);
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (OrderItem item : order.getItems()) {
+            Map<String, Object> itemData = new HashMap<>();
+            itemData.put("id", item.getId());
+            itemData.put("bookId", item.getBookId());
+            itemData.put("title", item.getTitle());
+            itemData.put("author", item.getAuthor());
+            itemData.put("quantity", item.getQuantity());
+            itemData.put("unitPrice", item.getUnitPrice());
+            itemData.put("totalPrice", item.getTotalPrice());
+            itemData.put("imageUrl", item.getImageUrl());
+            items.add(itemData);
+        }
+        orderData.put("items", items);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("order", orderData);
         out.write(gson.toJson(response));
     }
 

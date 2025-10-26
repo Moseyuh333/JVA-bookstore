@@ -222,6 +222,18 @@
             padding: 20px 24px;
         }
 
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 36px;
+            color: #d1d5db;
+            margin-bottom: 12px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -326,7 +338,7 @@
                             <p>Đang tải dữ liệu...</p>
                         </div>
 
-                        <div class="table-container">
+                        <div id="tableContainer" class="table-container">
                             <table>
                                 <thead>
                                     <tr>
@@ -341,6 +353,10 @@
                                 </thead>
                                 <tbody id="product"></tbody>
                             </table>
+                            <div id="emptyState" class="empty-state" style="display: none;">
+                                <i class="fas fa-box-open"></i>
+                                <p>KhA'ng tA�m th���y s���n ph��cm phA� h���p.</p>
+                            </div>
                             <%-- ⚙️ Phân trang --%>
                             <div id="pagination" class="flex justify-center items-center gap-2 mt-4"></div>
                         </div>
@@ -404,6 +420,13 @@
 </div>
 
 <%-- CHÚ Ý: Sử dụng JS mới là SellerProduct.js, không phải AdProduct.js --%>
+<script>
+    window.appConfig = window.appConfig || {};
+    window.appConfig.contextPath = '${pageContext.request.contextPath}';
+    window.appConfig.shopId = '<c:out value="${shopId}" />';
+</script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/seller/SellerProduct.js"></script>
 <script>
     feather.replace(); // Khởi tạo icons nếu cần

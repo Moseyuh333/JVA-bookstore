@@ -1,5 +1,10 @@
 package web.seller;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import dao.ShopDAO;
+import models.Shop;
 import utils.DBUtil;
 
 import javax.servlet.ServletException;
@@ -7,16 +12,29 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-@WebServlet(name = "SellerProductsServlet", urlPatterns = { "/api/seller/products" })
+@WebServlet(name = "SellerProductsServlet", urlPatterns = {"/api/seller/products"})
 public class SellerProductsServlet extends HttpServlet {
+    private static final Logger LOGGER = Logger.getLogger(SellerProductsServlet.class.getName());
+    private static final int DEFAULT_LIMIT = 20;
+    private static final int MAX_LIMIT = 100;
 
-    // ========= COMMON UTF-8 =========
+    private final Gson gson = new Gson();
+
     private void setEncoding(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
@@ -27,28 +45,33 @@ public class SellerProductsServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         setEncoding(req, resp);
-        PrintWriter out = resp.getWriter();
-
-        String action = req.getParameter("action");
-
-        try {
-            if ("list".equals(action)) {
-                listProducts(req, out);
-            } else if ("get".equals(action)) {
-                getProduct(req, out);
-            } else if ("stats".equals(action)) {
-                getProductStats(req, out);  
-            } else {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write("{\"error\":\"Invalid action\"}");
+        try (PrintWriter out = resp.getWriter()) {
+            SellerSessionContext context = requireSellerContext(req, resp, out);
+            if (context == null) {
+                return;
             }
 
-        } catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
-            e.printStackTrace();
-        } finally {
-            out.flush();
+            String action = normalizeAction(req.getParameter("action"), "list");
+            try {
+                switch (action) {
+                    case "list":
+                        listProducts(req, out, context);
+                        break;
+                    case "get":
+                        getProduct(req, resp, out, context);
+                        break;
+                    case "stats":
+                        writeStats(out, context);
+                        break;
+                    default:
+                        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        out.write(gson.toJson(error("Yêu cầu không hợp lệ")));
+                }
+            } catch (SQLException ex) {
+                LOGGER.log(Level.SEVERE, "Database error in SellerProductsServlet#doGet", ex);
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                out.write(gson.toJson(error("Lỗi cơ sở dữ liệu")));
+            }
         }
     }
 
@@ -56,434 +79,447 @@ public class SellerProductsServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         setEncoding(req, resp);
-        PrintWriter out = resp.getWriter();
-
-        String action = req.getParameter("action");
-
-        try {
-            if ("create".equals(action)) {
-                createProduct(req, out);
-            } else if ("update".equals(action)) {
-                updateProduct(req, out);
-            } else if ("delete".equals(action)) {
-                deleteProduct(req, out);
-            } else {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.write("{\"error\":\"Invalid action\"}");
+        try (PrintWriter out = resp.getWriter()) {
+            SellerSessionContext context = requireSellerContext(req, resp, out);
+            if (context == null) {
+                return;
             }
-        } catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
-            e.printStackTrace();
-        } finally {
-            out.flush();
+
+            String action = normalizeAction(req.getParameter("action"), "");
+            try {
+                switch (action) {
+                    case "create":
+                    case "add":
+                        createProduct(req, resp, out, context);
+                        break;
+                    case "update":
+                        updateProduct(req, resp, out, context);
+                        break;
+                    case "delete":
+                        deleteProduct(req, resp, out, context);
+                        break;
+                    default:
+                        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        out.write(gson.toJson(error("Yêu cầu không hợp lệ")));
+                }
+            } catch (SQLException ex) {
+                LOGGER.log(Level.SEVERE, "Database error in SellerProductsServlet#doPost", ex);
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                out.write(gson.toJson(error("Lỗi cơ sở dữ liệu")));
+            }
         }
     }
 
-    private void listProducts(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String userRole = (String) req.getSession().getAttribute("role");
-        Integer ownerId = (Integer) req.getSession().getAttribute("user_id");
+    private void listProducts(HttpServletRequest req, PrintWriter out, SellerSessionContext context)
+            throws SQLException {
+        int page = parseInt(req.getParameter("page"), 1);
+        int limit = parseInt(req.getParameter("limit"), DEFAULT_LIMIT);
+        limit = Math.max(1, Math.min(limit, MAX_LIMIT));
+        int offset = Math.max(0, (page - 1) * limit);
 
-        String search = req.getParameter("search");
-        String searchType = req.getParameter("searchType");
-        String category = req.getParameter("category");
-        String shopId = req.getParameter("shop_id");
-        int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
-        int limit = req.getParameter("limit") != null ? Integer.parseInt(req.getParameter("limit")) : 20;
-        int offset = (page - 1) * limit;
-
-        StringBuilder sql = new StringBuilder(
-            "SELECT b.id, b.title, b.author, b.isbn, b.price, b.stock, b.category, " +
-            "b.description, b.image_url, b.created_at, b.updated_at, " +
-            "COALESCE(s.name, 'Unknown Shop') AS shop_name, s.commission_rate " +
-            "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
-        );
-
-        StringBuilder countSql = new StringBuilder(
-            "SELECT COUNT(*) FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1"
-        );
-
-        // Điều kiện lọc
-        if (shopId != null && !shopId.trim().isEmpty()) {
-            sql.append(" AND b.shop_id = ?");
-            countSql.append(" AND b.shop_id = ?");
-        }
-        if (category != null && !category.trim().isEmpty()) {
-            sql.append(" AND b.category ILIKE ?");
-            countSql.append(" AND b.category ILIKE ?");
-        }
-        if (search != null && !search.trim().isEmpty()) {
-            if ("title".equals(searchType)) {
-                sql.append(" AND b.title ILIKE ?");
-                countSql.append(" AND b.title ILIKE ?");
-            } else if ("author".equals(searchType)) {
-                sql.append(" AND b.author ILIKE ?");
-                countSql.append(" AND b.author ILIKE ?");
-            } else if ("isbn".equals(searchType)) {
-                sql.append(" AND b.isbn ILIKE ?");
-                countSql.append(" AND b.isbn ILIKE ?");
-            } else if ("shop_name".equals(searchType)) {
-                sql.append(" AND s.name ILIKE ?");
-                countSql.append(" AND s.name ILIKE ?");
-            } else {
-                // Default "all"
-                sql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ? OR s.name ILIKE ?)");
-                countSql.append(" AND (b.title ILIKE ? OR b.author ILIKE ? OR b.isbn ILIKE ? OR s.name ILIKE ?)");
-            }
-        }
-        if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
-            sql.append(" AND s.owner_id = ?");
-            countSql.append(" AND s.owner_id = ?");
-        }
-
-        sql.append(" ORDER BY b.created_at DESC LIMIT ? OFFSET ?");
+        String search = safeString(req.getParameter("search"));
+        String searchType = safeString(req.getParameter("searchType"));
 
         try (Connection conn = DBUtil.getConnection()) {
-            int total = 0;
-            try (PreparedStatement psCount = conn.prepareStatement(countSql.toString())) {
-                int param = 1;
-                if (shopId != null && !shopId.trim().isEmpty())
-                    psCount.setInt(param++, Integer.parseInt(shopId));
-                if (category != null && !category.trim().isEmpty())
-                    psCount.setString(param++, "%" + category + "%");
-                if (search != null && !search.trim().isEmpty()) {
-                    String pattern = "%" + search.trim() + "%";
-                    if ("title".equals(searchType) || "author".equals(searchType) || "isbn".equals(searchType) || "shop_name".equals(searchType)) {
-                        psCount.setString(param++, pattern);
-                    } else {
-                        psCount.setString(param++, pattern);
-                        psCount.setString(param++, pattern);
-                        psCount.setString(param++, pattern);
-                        psCount.setString(param++, pattern);
-                    }
-                }
-                if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
-                    psCount.setInt(param++, ownerId);
+            List<Object> whereParams = new ArrayList<>();
+            StringBuilder whereClause = new StringBuilder(" WHERE b.shop_id = ?");
+            whereParams.add(context.shopId);
 
-                try (ResultSet rs = psCount.executeQuery()) {
-                    if (rs.next()) total = rs.getInt(1);
+            if (!search.isEmpty()) {
+                String pattern = "%" + search.toLowerCase(Locale.ROOT) + "%";
+                switch (searchType) {
+                    case "author":
+                        whereClause.append(" AND LOWER(COALESCE(b.author, '')) LIKE ?");
+                        break;
+                    case "isbn":
+                        whereClause.append(" AND LOWER(COALESCE(b.isbn, '')) LIKE ?");
+                        break;
+                    default:
+                        whereClause.append(" AND LOWER(COALESCE(b.title, '')) LIKE ?");
                 }
+                whereParams.add(pattern);
             }
 
-            // Query data
-            StringBuilder json = new StringBuilder("{\"products\":[");
-            try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-                int param = 1;
-                if (shopId != null && !shopId.trim().isEmpty())
-                    ps.setInt(param++, Integer.parseInt(shopId));
-                if (category != null && !category.trim().isEmpty())
-                    ps.setString(param++, "%" + category + "%");
-                if (search != null && !search.trim().isEmpty()) {
-                    String pattern = "%" + search.trim() + "%";
-                    if ("title".equals(searchType) || "author".equals(searchType) || "isbn".equals(searchType) || "shop_name".equals(searchType)) {
-                        ps.setString(param++, pattern);
-                    } else {
-                        ps.setString(param++, pattern);
-                        ps.setString(param++, pattern);
-                        ps.setString(param++, pattern);
-                        ps.setString(param++, pattern);
-                    }
-                }
-                if ("seller".equalsIgnoreCase(userRole) && ownerId != null)
-                    ps.setInt(param++, ownerId);
-                ps.setInt(param++, limit);
-                ps.setInt(param++, offset);
+            int total = countProducts(conn, whereClause.toString(), whereParams);
+            JsonArray items = fetchProducts(conn, whereClause.toString(), whereParams, limit, offset);
+            JsonObject stats = loadInventoryStats(conn, context.shopId);
 
-                boolean first = true;
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        if (!first) json.append(",");
-                        first = false;
-                        json.append("{")
-                            .append("\"id\":").append(rs.getInt("id")).append(",")
-                            .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")
-                            .append("\"author\":\"").append(escapeJson(rs.getString("author"))).append("\",")
-                            .append("\"isbn\":\"").append(escapeJson(rs.getString("isbn"))).append("\",")
-                            .append("\"price\":").append(rs.getBigDecimal("price") != null ? rs.getBigDecimal("price") : 0).append(",")
-                            .append("\"stock\":").append(rs.getInt("stock")).append(",")
-                            .append("\"category\":\"").append(escapeJson(rs.getString("category"))).append("\",")
-                            .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
-                            .append("\"created_at\":\"").append(rs.getTimestamp("created_at")).append("\",")
-                            .append("\"updated_at\":\"").append(rs.getTimestamp("updated_at")).append("\"")
-                            .append("}");
-                    }
-                }
-            }
+            JsonObject response = success();
+            response.addProperty("total", total);
+            response.addProperty("page", page);
+            response.addProperty("limit", limit);
+            response.add("products", items);
+            response.add("stats", stats);
 
-            // === Thống kê tồn kho toàn DB ===
-            int totalBooks = 0;
-            int inStock = 0;
-            int outStock = 0;
-
-            try (PreparedStatement psStat = conn.prepareStatement(
-                "SELECT " +
-                "COUNT(*) AS total, " +
-                "COUNT(*) FILTER (WHERE COALESCE(stock, 0) > 0) AS in_stock, " +
-                "COUNT(*) FILTER (WHERE COALESCE(stock, 0) = 0) AS out_stock " +
-                "FROM books"
-            );
-                ResultSet rsStat = psStat.executeQuery()) {
-                if (rsStat.next()) {
-                    totalBooks = rsStat.getInt("total");
-                    inStock = rsStat.getInt("in_stock");
-                    outStock = rsStat.getInt("out_stock");
-                }
-            }
-
-            json.append("],")
-            .append("\"total\":").append(total)
-            .append(",\"page\":").append(page)
-            .append(",\"limit\":").append(limit)
-            .append(",\"stats\":{")
-            .append("\"total_books\":").append(totalBooks).append(",")
-            .append("\"in_stock\":").append(inStock).append(",")
-            .append("\"out_stock\":").append(outStock)
-            .append("}")
-            .append("}");
-            
-            out.write(json.toString());
+            out.write(gson.toJson(response));
         }
     }
 
-
-    private void getProduct(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String idStr = req.getParameter("id");
-
-        if (idStr == null) {
-            out.write("{\"error\":\"ID is required\"}");
-            return;
-        }
-
-        int id = Integer.parseInt(idStr);
+    private JsonArray fetchProducts(Connection conn, String whereClause, List<Object> params, int limit, int offset)
+            throws SQLException {
         String sql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, " +
-                "b.stock, b.image_url, b.created_at, b.updated_at, " +
-                "COALESCE(s.name, 'Unknown Shop') as shop_name " +
-                "FROM books b " +
-                "LEFT JOIN shops s ON b.shop_id = s.id " +
-                "WHERE b.id = ?";
+                "b.stock_quantity, b.image_url, b.created_at, b.updated_at " +
+                "FROM books b" + whereClause +
+                " ORDER BY b.updated_at DESC NULLS LAST, b.id DESC LIMIT ? OFFSET ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            int index = 1;
+            for (Object param : params) {
+                stmt.setObject(index++, param);
+            }
+            stmt.setInt(index++, limit);
+            stmt.setInt(index, offset);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                JsonArray array = new JsonArray();
+                while (rs.next()) {
+                    JsonObject item = new JsonObject();
+                    item.addProperty("id", rs.getInt("id"));
+                    item.addProperty("title", rs.getString("title"));
+                    item.addProperty("author", rs.getString("author"));
+                    item.addProperty("isbn", rs.getString("isbn"));
+                    item.addProperty("price", rs.getBigDecimal("price"));
+                    item.addProperty("description", rs.getString("description"));
+                    item.addProperty("category", rs.getString("category"));
+                    item.addProperty("stock_quantity", rs.getInt("stock_quantity"));
+                    item.addProperty("image_url", rs.getString("image_url"));
+                    Timestamp createdAt = rs.getTimestamp("created_at");
+                    Timestamp updatedAt = rs.getTimestamp("updated_at");
+                    if (createdAt != null) {
+                        item.addProperty("created_at", createdAt.toInstant().toString());
+                    }
+                    if (updatedAt != null) {
+                        item.addProperty("updated_at", updatedAt.toInstant().toString());
+                    }
+                    array.add(item);
+                }
+                return array;
+            }
+        }
+    }
+
+    private int countProducts(Connection conn, String whereClause, List<Object> params) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM books b" + whereClause;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            int index = 1;
+            for (Object param : params) {
+                stmt.setObject(index++, param);
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    private void getProduct(HttpServletRequest req, HttpServletResponse resp, PrintWriter out,
+                            SellerSessionContext context) throws SQLException {
+        int id = parseInt(req.getParameter("id"), -1);
+        if (id <= 0) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write(gson.toJson(error("Thiếu mã sản phẩm")));
+            return;
+        }
+
+        String sql = "SELECT b.id, b.title, b.author, b.isbn, b.price, b.description, b.category, " +
+                "b.stock_quantity, b.image_url, b.created_at, b.updated_at " +
+                "FROM books b WHERE b.id = ? AND b.shop_id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setInt(2, context.shopId);
 
-            pstmt.setInt(1, id);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    JsonObject item = new JsonObject();
+                    item.addProperty("id", rs.getInt("id"));
+                    item.addProperty("title", rs.getString("title"));
+                    item.addProperty("author", rs.getString("author"));
+                    item.addProperty("isbn", rs.getString("isbn"));
+                    item.addProperty("price", rs.getBigDecimal("price"));
+                    item.addProperty("description", rs.getString("description"));
+                    item.addProperty("category", rs.getString("category"));
+                    item.addProperty("stock_quantity", rs.getInt("stock_quantity"));
+                    item.addProperty("image_url", rs.getString("image_url"));
+                    Timestamp createdAt = rs.getTimestamp("created_at");
+                    Timestamp updatedAt = rs.getTimestamp("updated_at");
+                    if (createdAt != null) {
+                        item.addProperty("created_at", createdAt.toInstant().toString());
+                    }
+                    if (updatedAt != null) {
+                        item.addProperty("updated_at", updatedAt.toInstant().toString());
+                    }
 
-                    String json = "{"
-                            + "\"id\":" + rs.getInt("id") + ","
-                            + "\"title\":\"" + escapeJson(rs.getString("title")) + "\","
-                            + "\"author\":\"" + escapeJson(rs.getString("author")) + "\","
-                            + "\"isbn\":\"" + escapeJson(rs.getString("isbn")) + "\","
-                            + "\"price\":" + rs.getBigDecimal("price") + ","
-                            + "\"description\":\"" + escapeJson(rs.getString("description")) + "\","
-                            + "\"category\":\"" + escapeJson(rs.getString("category")) + "\","
-                            + "\"stock\":" + rs.getInt("stock") + ","
-                            + "\"image_url\":\"" + escapeJson(rs.getString("image_url")) + "\","
-                            + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
-                            + "\"created_at\":\""
-                            + (rs.getTimestamp("created_at") != null ? sdf.format(rs.getTimestamp("created_at")) : "")
-                            + "\","
-                            + "\"updated_at\":\""
-                            + (rs.getTimestamp("updated_at") != null ? sdf.format(rs.getTimestamp("updated_at")) : "")
-                            + "\""
-                            + "}";
-                    out.write(json);
+                    JsonObject response = success();
+                    response.add("product", item);
+                    out.write(gson.toJson(response));
                 } else {
-                    out.write("{\"error\":\"Product not found\"}");
+                    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    out.write(gson.toJson(error("Không tìm thấy sản phẩm")));
                 }
             }
         }
     }
 
-    // ========= Thống kê sản phẩm =========
-    private void getProductStats(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String userRole = (String) req.getSession().getAttribute("role");
-        Integer ownerId = (Integer) req.getSession().getAttribute("user_id");
-
-        String sql = "SELECT " +
-                "COUNT(*) AS total, " +
-                "COUNT(*) FILTER (WHERE COALESCE(b.stock, 0) > 0) AS in_stock, " +
-                "COUNT(*) FILTER (WHERE COALESCE(b.stock, 0) <= 0) AS out_stock " +
-                "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1";
-
-        if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
-            sql += " AND s.owner_id = " + ownerId;
+    private void writeStats(PrintWriter out, SellerSessionContext context) throws SQLException {
+        try (Connection conn = DBUtil.getConnection()) {
+            JsonObject stats = loadInventoryStats(conn, context.shopId);
+            JsonObject response = success();
+            response.add("stats", stats);
+            out.write(gson.toJson(response));
         }
+    }
 
-        try (Connection conn = DBUtil.getConnection();
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql)) {
+    private JsonObject loadInventoryStats(Connection conn, int shopId) throws SQLException {
+        String sql = "SELECT COUNT(*) AS total_books, " +
+                "COUNT(*) FILTER (WHERE COALESCE(stock_quantity, 0) > 0) AS in_stock, " +
+                "COUNT(*) FILTER (WHERE COALESCE(stock_quantity, 0) <= 0) AS out_stock " +
+                "FROM books WHERE shop_id = ?";
 
-            if (rs.next()) {
-                int total = rs.getInt("total");
-                int inStock = rs.getInt("in_stock");
-                int outStock = rs.getInt("out_stock");
-
-                out.write("{\"total\":" + total +
-                        ",\"in_stock\":" + inStock +
-                        ",\"out_stock\":" + outStock + "}");
-            } else {
-                out.write("{\"total\":0,\"in_stock\":0,\"out_stock\":0}");
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, shopId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                JsonObject stats = new JsonObject();
+                if (rs.next()) {
+                    stats.addProperty("total_books", rs.getInt("total_books"));
+                    stats.addProperty("in_stock", rs.getInt("in_stock"));
+                    stats.addProperty("out_stock", rs.getInt("out_stock"));
+                } else {
+                    stats.addProperty("total_books", 0);
+                    stats.addProperty("in_stock", 0);
+                    stats.addProperty("out_stock", 0);
+                }
+                return stats;
             }
         }
     }
 
+    private void createProduct(HttpServletRequest req, HttpServletResponse resp, PrintWriter out,
+                               SellerSessionContext context) throws SQLException {
+        String title = safeString(req.getParameter("title"));
+        String priceRaw = safeString(req.getParameter("price"));
+        String stockRaw = safeString(req.getParameter("stock"));
 
-    private void createProduct(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String title = req.getParameter("title");
-        String author = req.getParameter("author");
-        String isbn = req.getParameter("isbn");
-        String priceStr = req.getParameter("price");
-        String description = req.getParameter("description");
-        String category = req.getParameter("category");
-        String stockStr = req.getParameter("stock");
-        String imageUrl = req.getParameter("image_url");
-        String shopIdStr = req.getParameter("shop_id");
-
-        if (title == null || title.trim().isEmpty() || priceStr == null || shopIdStr == null) {
-            out.write("{\"error\":\"Title, price and shop_id are required\"}");
+        if (title.isEmpty() || priceRaw.isEmpty()) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write(gson.toJson(error("Tên sản phẩm và giá là bắt buộc")));
             return;
         }
 
-        BigDecimal price = new BigDecimal(priceStr);
-        int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
-        int shopId = Integer.parseInt(shopIdStr);
+        BigDecimal price;
+        try {
+            price = new BigDecimal(priceRaw);
+        } catch (NumberFormatException ex) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write(gson.toJson(error("Giá sản phẩm không hợp lệ")));
+            return;
+        }
 
-        String sql = "INSERT INTO books (title, author, isbn, price, description, category, stock, image_url, shop_id) "
-                +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        int stock = parseInt(stockRaw, 0);
+        String author = safeString(req.getParameter("author"));
+        String isbn = safeString(req.getParameter("isbn"));
+        String description = safeString(req.getParameter("description"));
+        String category = safeString(req.getParameter("category"));
+        String imageUrl = safeString(req.getParameter("image_url"));
+
+        Shop shop = ShopDAO.getShopById(context.shopId);
+        String shopName = shop != null ? shop.getName() : null;
+
+        String sql = "INSERT INTO books (title, author, isbn, price, description, category, stock_quantity, " +
+                "image_url, shop_id, shop_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
+                "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, title.trim());
-            pstmt.setString(2, author != null ? author.trim() : null);
-            pstmt.setString(3, isbn != null ? isbn.trim() : null);
-            pstmt.setBigDecimal(4, price);
-            pstmt.setString(5, description != null ? description.trim() : null);
-            pstmt.setString(6, category != null ? category.trim() : null);
-            pstmt.setInt(7, stockQuantity);
-            pstmt.setString(8, imageUrl != null ? imageUrl.trim() : null);
-            pstmt.setInt(9, shopId);
-
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Product created successfully\"}");
-            } else {
-                out.write("{\"error\":\"Failed to create product\"}");
-            }
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, title);
+            setNullableString(stmt, 2, author);
+            setNullableString(stmt, 3, isbn);
+            stmt.setBigDecimal(4, price);
+            setNullableString(stmt, 5, description);
+            setNullableString(stmt, 6, category);
+            stmt.setInt(7, Math.max(0, stock));
+            setNullableString(stmt, 8, imageUrl);
+            stmt.setInt(9, context.shopId);
+            setNullableString(stmt, 10, shopName);
+            stmt.executeUpdate();
         }
+
+        out.write(gson.toJson(success("Tạo sản phẩm thành công")));
     }
 
-    private void updateProduct(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String idStr = req.getParameter("id");
-        String title = req.getParameter("title");
-        String author = req.getParameter("author");
-        String isbn = req.getParameter("isbn");
-        String priceStr = req.getParameter("price");
-        String description = req.getParameter("description");
-        String category = req.getParameter("category");
-        String stockStr = req.getParameter("stock");
-        String imageUrl = req.getParameter("image_url");
+    private void updateProduct(HttpServletRequest req, HttpServletResponse resp, PrintWriter out,
+                               SellerSessionContext context) throws SQLException {
+        int id = parseInt(req.getParameter("id"), -1);
+        String title = safeString(req.getParameter("title"));
+        String priceRaw = safeString(req.getParameter("price"));
 
-        if (idStr == null || title == null || title.trim().isEmpty() || priceStr == null) {
-            out.write("{\"error\":\"ID, title and price are required\"}");
+        if (id <= 0 || title.isEmpty() || priceRaw.isEmpty()) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write(gson.toJson(error("Thiếu dữ liệu bắt buộc")));
             return;
         }
 
-        int id = Integer.parseInt(idStr);
-        BigDecimal price = new BigDecimal(priceStr);
-        int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
+        BigDecimal price;
+        try {
+            price = new BigDecimal(priceRaw);
+        } catch (NumberFormatException ex) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write(gson.toJson(error("Giá sản phẩm không hợp lệ")));
+            return;
+        }
+
+        int stock = parseInt(req.getParameter("stock"), 0);
+        String author = safeString(req.getParameter("author"));
+        String isbn = safeString(req.getParameter("isbn"));
+        String description = safeString(req.getParameter("description"));
+        String category = safeString(req.getParameter("category"));
+        String imageUrl = safeString(req.getParameter("image_url"));
 
         String sql = "UPDATE books SET title = ?, author = ?, isbn = ?, price = ?, description = ?, " +
-                "category = ?, stock = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP " +
-                "WHERE id = ?";
+                "category = ?, stock_quantity = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP " +
+                "WHERE id = ? AND shop_id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, title);
+            setNullableString(stmt, 2, author);
+            setNullableString(stmt, 3, isbn);
+            stmt.setBigDecimal(4, price);
+            setNullableString(stmt, 5, description);
+            setNullableString(stmt, 6, category);
+            stmt.setInt(7, Math.max(0, stock));
+            setNullableString(stmt, 8, imageUrl);
+            stmt.setInt(9, id);
+            stmt.setInt(10, context.shopId);
 
-            pstmt.setString(1, title.trim());
-            pstmt.setString(2, author != null ? author.trim() : null);
-            pstmt.setString(3, isbn != null ? isbn.trim() : null);
-            pstmt.setBigDecimal(4, price);
-            pstmt.setString(5, description != null ? description.trim() : null);
-            pstmt.setString(6, category != null ? category.trim() : null);
-            pstmt.setInt(7, stockQuantity);
-            pstmt.setString(8, imageUrl != null ? imageUrl.trim() : null);
-            pstmt.setInt(9, id);
-
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Product updated successfully\"}");
-            } else {
-                out.write("{\"error\":\"Product not found\"}");
+            int rows = stmt.executeUpdate();
+            if (rows == 0) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                out.write(gson.toJson(error("Không tìm thấy sản phẩm cần cập nhật")));
+                return;
             }
         }
+
+        out.write(gson.toJson(success("Cập nhật sản phẩm thành công")));
     }
 
-    private void deleteProduct(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String idStr = req.getParameter("id");
-
-        if (idStr == null) {
-            out.write("{\"error\":\"ID is required\"}");
+    private void deleteProduct(HttpServletRequest req, HttpServletResponse resp, PrintWriter out,
+                               SellerSessionContext context) throws SQLException {
+        int id = parseInt(req.getParameter("id"), -1);
+        if (id <= 0) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write(gson.toJson(error("Thiếu mã sản phẩm")));
             return;
         }
 
-        int id = Integer.parseInt(idStr);
-        String sql = "DELETE FROM books WHERE id = ?";
-
+        String sql = "DELETE FROM books WHERE id = ? AND shop_id = ?";
         try (Connection conn = DBUtil.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, id);
-
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Product deleted successfully\"}");
-            } else {
-                out.write("{\"error\":\"Product not found\"}");
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setInt(2, context.shopId);
+            int rows = stmt.executeUpdate();
+            if (rows == 0) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                out.write(gson.toJson(error("Không tìm thấy sản phẩm cần xóa")));
+                return;
             }
+        }
+
+        out.write(gson.toJson(success("Xóa sản phẩm thành công")));
+    }
+
+    private SellerSessionContext requireSellerContext(HttpServletRequest req, HttpServletResponse resp, PrintWriter out)
+            throws IOException {
+        HttpSession session = req.getSession(false);
+        if (session == null) {
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.write(gson.toJson(error("Bạn chưa đăng nhập")));
+            return null;
+        }
+
+        Integer userId = (Integer) session.getAttribute("user_id");
+        String role = (String) session.getAttribute("role");
+
+        if (userId == null || role == null || !"seller".equalsIgnoreCase(role)) {
+            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            out.write(gson.toJson(error("Bạn không có quyền truy cập")));
+            return null;
+        }
+
+        try {
+            int shopId = ShopDAO.getShopIdByUserId(userId);
+            if (shopId <= 0) {
+                resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                out.write(gson.toJson(error("Bạn cần đăng ký shop trước khi quản lý sản phẩm")));
+                return null;
+            }
+            return new SellerSessionContext(userId, shopId);
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Unable to resolve shop for seller " + userId, ex);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.write(gson.toJson(error("Không thể xác định shop của bạn")));
+            return null;
         }
     }
 
-    // ========= Escape JSON safely =========
-    private String escapeJson(String str) {
-        if (str == null)
-            return "";
-        StringBuilder sb = new StringBuilder();
-        for (char c : str.toCharArray()) {
-            switch (c) {
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                default:
-                    if (c < 0x20)
-                        sb.append(String.format("\\u%04x", (int) c));
-                    else
-                        sb.append(c);
-            }
-        }
-        return sb.toString();
+    private JsonObject success() {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("success", true);
+        return obj;
     }
 
+    private JsonObject success(String message) {
+        JsonObject obj = success();
+        if (message != null && !message.isBlank()) {
+            obj.addProperty("message", message);
+        }
+        return obj;
+    }
+
+    private JsonObject error(String message) {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("success", false);
+        obj.addProperty("message", message);
+        return obj;
+    }
+
+    private int parseInt(String value, int defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ex) {
+            return defaultValue;
+        }
+    }
+
+    private String normalizeAction(String action, String defaultValue) {
+        if (action == null || action.isBlank()) {
+            return defaultValue;
+        }
+        return action.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String safeString(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private void setNullableString(PreparedStatement stmt, int index, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            stmt.setNull(index, java.sql.Types.VARCHAR);
+        } else {
+            stmt.setString(index, value.trim());
+        }
+    }
+
+    private static final class SellerSessionContext {
+        private final int userId;
+        private final int shopId;
+
+        private SellerSessionContext(int userId, int shopId) {
+            this.userId = userId;
+            this.shopId = shopId;
+        }
+    }
 }
