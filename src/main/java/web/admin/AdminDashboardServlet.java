@@ -209,30 +209,20 @@ public class AdminDashboardServlet extends HttpServlet {
         JsonObject topSellers = new JsonObject();
 
         String query =
-            "WITH order_sales AS ( " +
-            "   SELECT " +
-            "       COALESCE(o.shop_id, (o.cart_snapshot::json->'items'->0->>'bookId')::int) AS book_id, " +
-            "       o.total_amount " +
+            "WITH extracted_orders AS (" +
+            "   SELECT o.id AS order_id, b.shop_id, o.total_amount " +
             "   FROM orders o " +
-            "   WHERE LOWER(o.status) = 'delivered' " +  // chỉ tính đơn hàng giao thành công
-            "), revenue_per_shop AS ( " +
-            "   SELECT b.shop_id, COALESCE(SUM(o.total_amount), 0) AS revenue " +
-            "   FROM order_sales o " +
-            "   JOIN books b ON o.book_id = b.id " +
-            "   GROUP BY b.shop_id " +
+            "   JOIN LATERAL json_array_elements(o.cart_snapshot->'items') AS item ON TRUE " +
+            "   JOIN books b ON (item->>'bookId')::int = b.id " +
+            "   WHERE LOWER(o.status) = 'delivered'" +
             ") " +
-            "SELECT " +
-            "   s.id AS shop_id, " +
-            "   s.name AS store_name, " +
-            "   s.status, " +
-            "   COALESCE(r.revenue, 0) AS revenue, " +
-            "   (SELECT COUNT(*) FROM orders o2 " +
-            "       WHERE (o2.shop_id = s.id " +
-            "       OR (o2.cart_snapshot::json->'items'->0->>'bookId')::int IN (SELECT id FROM books WHERE shop_id = s.id)) " +
-            "       AND LOWER(o2.status) = 'delivered') AS total_orders, " +
-            "   ROUND(s.commission_rate, 2) AS commission_rate " +
+            "SELECT s.id AS shop_id, s.name AS store_name, s.status, " +
+            "       COUNT(eo.order_id) AS total_orders, " +
+            "       COALESCE(SUM(eo.total_amount), 0) AS revenue, " +
+            "       ROUND(s.commission_rate, 2) AS commission_rate " +
             "FROM shops s " +
-            "LEFT JOIN revenue_per_shop r ON s.id = r.shop_id " +
+            "LEFT JOIN extracted_orders eo ON eo.shop_id = s.id " +
+            "GROUP BY s.id, s.name, s.status, s.commission_rate " +
             "ORDER BY revenue DESC, total_orders DESC " +
             "LIMIT 5;";
 
