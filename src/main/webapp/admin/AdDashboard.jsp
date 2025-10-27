@@ -415,6 +415,7 @@
                         <div class="stat-content">
                             <div class="stat-info">
                                 <h6>Người dùng</h6>
+                                <div class="stat-number">0</div>
                             </div>
                             <div class="stat-icon">
                                 <i class="fas fa-users"></i>
@@ -426,6 +427,7 @@
                         <div class="stat-content">
                             <div class="stat-info">
                                 <h6>Sản phẩm</h6>
+                                <div class="stat-number">0</div>
                             </div>
                             <div class="stat-icon">
                                 <i class="fas fa-book"></i>
@@ -437,6 +439,7 @@
                         <div class="stat-content">
                             <div class="stat-info">
                                 <h6>Đơn hàng</h6>
+                                <div class="stat-number">0</div>
                             </div>
                             <div class="stat-icon">
                                 <i class="fas fa-shopping-cart"></i>
@@ -448,6 +451,7 @@
                         <div class="stat-content">
                             <div class="stat-info">
                                 <h6>Doanh thu (VNĐ)</h6>
+                                <div class="stat-number">0₫</div>
                             </div>
                             <div class="stat-icon">
                                 <i class="fas fa-dollar-sign"></i>
