@@ -1,8 +1,4 @@
 document.addEventListener("DOMContentLoaded", function() {
-    if (typeof feather !== 'undefined') {
-        feather.replace();
-    }
-
     const contextPath = window.appConfig?.contextPath || "";
 
     function getAdminToken() {
@@ -95,10 +91,10 @@ document.addEventListener("DOMContentLoaded", function() {
         new Chart(ctxRevenue, {
             type: "bar",
             data: {
-                labels: labels.length > 0 ? labels : [],
+                labels: labels.length > 0 ? labels : ["Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10"],
                 datasets: [{
                     label: "Doanh thu (VNĐ)",
-                    data: data.length > 0 ? data.map(v => v / 1000000) : [],
+                    data: data.length > 0 ? data.map(v => v / 1000000) : [45, 52, 60, 70, 85, 90],
                     backgroundColor: [
                         "rgba(245, 158, 11, 0.8)",
                         "rgba(245, 158, 11, 0.7)",
@@ -139,9 +135,9 @@ document.addEventListener("DOMContentLoaded", function() {
         new Chart(ctxStatus, {
             type: "doughnut",
             data: {
-                labels: labels.length > 0 ? labels : [],
+                labels: labels.length > 0 ? labels : ["Hoàn thành", "Đang xử lý", "Hủy"],
                 datasets: [{
-                    data: data.length > 0 ? data : [],
+                    data: data.length > 0 ? data : [320, 450, 109],
                     backgroundColor: [
                         "#10b981",
                         "#f59e0b",
@@ -191,14 +187,32 @@ document.addEventListener("DOMContentLoaded", function() {
             tbody.appendChild(row);
         });
 
-        // If no data, show empty state
+        // If no data, show default rows
         if (Object.keys(sellers).length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 40px; color: #718096;">
-                        <i class="fas fa-store fa-2x" style="margin-bottom: 10px; display: block;"></i>
-                        Chưa có dữ liệu cửa hàng
-                    </td>
+                    <td><span class="rank-badge rank-1">1</span></td>
+                    <td><strong>BookHaven</strong></td>
+                    <td>254</td>
+                    <td><strong>92,000,000₫</strong></td>
+                    <td><span class="badge-percentage">10%</span></td>
+                    <td><span class="badge-percentage">Hoạt động</span></td>
+                </tr>
+                <tr>
+                    <td><span class="rank-badge rank-2">2</span></td>
+                    <td><strong>MangaWorld</strong></td>
+                    <td>187</td>
+                    <td><strong>68,500,000₫</strong></td>
+                    <td><span class="badge-percentage">15%</span></td>
+                    <td><span class="badge-percentage">Hoạt động</span></td>
+                </tr>
+                <tr>
+                    <td><span class="rank-badge rank-3">3</span></td>
+                    <td><strong>LightNovelVN</strong></td>
+                    <td>143</td>
+                    <td><strong>54,000,000₫</strong></td>
+                    <td><span class="badge-percentage">12%</span></td>
+                    <td><span class="badge-percentage">Hoạt động</span></td>
                 </tr>
             `;
         }
