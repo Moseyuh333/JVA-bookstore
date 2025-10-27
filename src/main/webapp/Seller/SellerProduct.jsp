@@ -289,8 +289,8 @@
         <div id="content">
             <div class="container-fluid">
                 <div class="mb-3">
-                    <a href="${pageContext.request.contextPath}/seller/dashboard" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Quay lại
+                    <a href="${pageContext.request.contextPath}/seller/dashboard" style="color: #c96d28; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                        <i class="fas fa-arrow-left"></i> Quay lại Bảng điều khiển
                     </a>
                 </div>
                 <div class="page-title">
