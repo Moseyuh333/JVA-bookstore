@@ -361,7 +361,8 @@ public class ShipperApiServlet extends HttpServlet {
             return false;
         }
         String normalized = orderStatus.trim().toLowerCase(Locale.ROOT);
-        return normalized.equals("shipping")
+        return normalized.equals("confirmed")
+                || normalized.equals("shipping")
                 || normalized.equals("delivered")
                 || normalized.equals("failed")
                 || normalized.equals("returned");
