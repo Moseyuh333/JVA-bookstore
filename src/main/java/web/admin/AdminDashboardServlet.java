@@ -116,57 +116,40 @@ public class AdminDashboardServlet extends HttpServlet {
     private JsonObject getRevenueData() throws SQLException {
         JsonObject revenue = new JsonObject();
 
-        try (Connection conn = DBUtil.getConnection()) {
-            String query = "SELECT " +
-                "TO_CHAR(created_at, 'YYYY-MM') AS month, " +
-                "COALESCE(SUM(total_amount), 0) AS revenue " +
-                "FROM orders " +
-                "WHERE LOWER(CAST(status AS TEXT)) IN ('completed', 'delivered') " +
-                "AND created_at >= NOW() - INTERVAL '6 months' " +
-                "GROUP BY TO_CHAR(created_at, 'YYYY-MM') " +
-                "ORDER BY month";
+        String query =
+            "WITH extracted_orders AS ( " +
+            "   SELECT " +
+            "       o.id AS order_id, " +
+            "       DATE_TRUNC('month', o.created_at) AS month, " +
+            "       b.shop_id, " +
+            "       o.total_amount " +
+            "   FROM orders o " +
+            "   JOIN LATERAL json_array_elements(o.cart_snapshot->'items') AS item ON TRUE " +
+            "   JOIN books b ON (item->>'bookId')::int = b.id " +
+            "   WHERE LOWER(o.status) = 'delivered' " +
+            "   AND o.created_at >= NOW() - INTERVAL '6 months' " +
+            ") " +
+            "SELECT " +
+            "   TO_CHAR(month, 'YYYY-MM') AS month, " +
+            "   COALESCE(SUM(total_amount), 0) AS revenue " +
+            "FROM extracted_orders " +
+            "GROUP BY month " +
+            "ORDER BY month;";
 
-            try (PreparedStatement stmt = conn.prepareStatement(query);
-                 ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = DBUtil.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query);
+            ResultSet rs = stmt.executeQuery()) {
 
-                List<String> months = new ArrayList<>();
-                List<Double> values = new ArrayList<>();
+            List<String> months = new ArrayList<>();
+            List<Double> values = new ArrayList<>();
 
-                while (rs.next()) {
-                    months.add(rs.getString("month"));
-                    values.add(rs.getDouble("revenue"));
-                }
-
-                revenue.add("labels", toJsonArray(months));
-                revenue.add("data", toJsonArray(values));
+            while (rs.next()) {
+                months.add(rs.getString("month"));
+                values.add(rs.getDouble("revenue"));
             }
-        } catch (SQLException e) {
-            // If PostgreSQL syntax fails, try a simpler approach
-            System.out.println("PostgreSQL query failed, trying alternative: " + e.getMessage());
-            try (Connection conn = DBUtil.getConnection()) {
-                String query = "SELECT " +
-                    "TO_CHAR(created_at, 'YYYY-MM') AS month, " +
-                    "COALESCE(SUM(total_amount), 0) AS revenue " +
-                    "FROM orders " +
-                    "WHERE LOWER(CAST(status AS TEXT)) IN ('completed', 'delivered') " +
-                    "GROUP BY TO_CHAR(created_at, 'YYYY-MM') " +
-                    "ORDER BY month";
 
-                try (PreparedStatement stmt = conn.prepareStatement(query);
-                     ResultSet rs = stmt.executeQuery()) {
-
-                    List<String> months = new ArrayList<>();
-                    List<Double> values = new ArrayList<>();
-
-                    while (rs.next()) {
-                        months.add(rs.getString("month"));
-                        values.add(rs.getDouble("revenue"));
-                    }
-
-                    revenue.add("labels", toJsonArray(months));
-                    revenue.add("data", toJsonArray(values));
-                }
-            }
+            revenue.add("labels", toJsonArray(months));
+            revenue.add("data", toJsonArray(values));
         }
 
         return revenue;
