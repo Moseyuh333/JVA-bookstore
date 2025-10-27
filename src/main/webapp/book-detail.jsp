@@ -76,12 +76,15 @@
           <p class="text-sm mb-4 text-gray-700">
             <span class="text-gray-600">Tình trạng:</span>
             <c:choose>
-              <c:when
-                test="${fn:containsIgnoreCase(bookStock, 'avail') || fn:containsIgnoreCase(bookStock, 'in stock')}">
-                <span class="text-green-600 font-medium">Còn hàng</span>
-              </c:when>
-              <c:when test="${fn:containsIgnoreCase(bookStock, 'out')}">
-                <span class="text-red-500 font-medium">Hết hàng</span>
+              <c:when test="${not empty bookStockLabel}">
+                <span class="${empty bookStockCss ? 'text-green-600 font-medium' : bookStockCss}">
+                  ${bookStockLabel}
+                </span>
+                <c:if test="${bookStockQuantity != null && bookStockQuantity > 0}">
+                  <span class="text-xs text-gray-500 ml-2">
+                    (Kho: <fmt:formatNumber value="${bookStockQuantity}" type="number" />)
+                  </span>
+                </c:if>
               </c:when>
               <c:otherwise>
                 <span class="text-gray-600">Không rõ</span>

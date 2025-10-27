@@ -56,7 +56,7 @@ public class BookDetailServlet extends HttpServlet {
             // --- Lấy chi tiết sách ---
             try (PreparedStatement ps = conn.prepareStatement(
                     "SELECT id, title, author, price, original_price, discount, " +
-                            "rating_avg, review_count, stock, publisher, category, cover_image, image_url, " +
+                            "rating_avg, review_count, stock, stock_quantity, status, publisher, category, cover_image, image_url, " +
                             "shop_name, book_url, highlights, specifications, description, reviews " +
                             "FROM books WHERE id = ?")) {
                 ps.setLong(1, bookId);
@@ -77,7 +77,25 @@ public class BookDetailServlet extends HttpServlet {
                     req.setAttribute("bookDiscount", rs.getBigDecimal("discount"));
                     req.setAttribute("bookRating", rs.getDouble("rating_avg"));
                     req.setAttribute("reviewCount", rs.getInt("review_count"));
-                    req.setAttribute("bookStock", rs.getString("stock"));
+
+                    Integer numericStock = getNullableInt(rs, "stock");
+                    Integer numericStockQuantity = getNullableInt(rs, "stock_quantity");
+                    if (numericStock == null) {
+                        numericStock = numericStockQuantity;
+                    } else if (numericStockQuantity != null && numericStockQuantity > numericStock) {
+                        // Prefer the richer stock_quantity column when it carries higher fidelity
+                        numericStock = numericStockQuantity;
+                    }
+                    String rawStockText = safeGet(rs, "stock");
+                    String productStatus = safeGet(rs, "status");
+                    InventoryStatus inventoryStatus = resolveInventoryStatus(numericStock, rawStockText, productStatus);
+
+                    req.setAttribute("bookStockRaw", rawStockText);
+                    req.setAttribute("bookStockQuantity", numericStock);
+                    req.setAttribute("bookStockStatus", inventoryStatus.key);
+                    req.setAttribute("bookStockLabel", inventoryStatus.label);
+                    req.setAttribute("bookStockCss", inventoryStatus.cssClass);
+                    req.setAttribute("bookStock", inventoryStatus.label);
                     req.setAttribute("bookPublisher", rs.getString("publisher"));
                     req.setAttribute("bookCategory", rs.getString("category"));
                     String coverImage = safeGet(rs, "cover_image");
@@ -178,6 +196,127 @@ public class BookDetailServlet extends HttpServlet {
             return contextPath.isEmpty() || "/".equals(contextPath) ? trimmed : contextPath + trimmed;
         }
         return (contextPath.endsWith("/")) ? contextPath + trimmed : contextPath + "/" + trimmed;
+    }
+
+    private Integer getNullableInt(ResultSet rs, String column) {
+        if (rs == null || column == null) {
+            return null;
+        }
+        try {
+            int value = rs.getInt(column);
+            return rs.wasNull() ? null : value;
+        } catch (SQLException ignored) {
+            return null;
+        }
+    }
+
+    private Integer parseStockQuantity(String stockText) {
+        if (stockText == null) {
+            return null;
+        }
+        String trimmed = stockText.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(trimmed);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private boolean containsAny(String value, String... keywords) {
+        if (value == null || value.isEmpty() || keywords == null) {
+            return false;
+        }
+        String normalizedValue = value.toLowerCase(Locale.ROOT);
+        for (String keyword : keywords) {
+            if (keyword != null && !keyword.isEmpty()) {
+                if (normalizedValue.contains(keyword.toLowerCase(Locale.ROOT))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private InventoryStatus resolveInventoryStatus(Integer numericStock, String stockText, String productStatus) {
+        Integer effectiveStock = numericStock != null ? numericStock : parseStockQuantity(stockText);
+        String normalizedStock = stockText != null ? stockText.trim().toLowerCase(Locale.ROOT) : "";
+        String normalizedStatus = productStatus != null ? productStatus.trim().toLowerCase(Locale.ROOT) : "";
+
+        if (containsAny(normalizedStock, "coming", "soon", "preorder", "upcoming", "sắp ra mắt")) {
+            return InventoryStatus.comingSoon();
+        }
+        if (containsAny(normalizedStock, "restock", "restocking", "incoming", "backorder", "đang về")) {
+            return InventoryStatus.restocking();
+        }
+        if (containsAny(normalizedStock, "out of stock", "sold out", "hết", "het")) {
+            return InventoryStatus.outOfStock();
+        }
+        if (containsAny(normalizedStock, "avail", "in stock", "còn", "available")) {
+            return InventoryStatus.inStock();
+        }
+
+        switch (normalizedStatus) {
+            case "coming_soon":
+            case "upcoming":
+            case "preorder":
+            case "draft":
+            case "pending":
+                return InventoryStatus.comingSoon();
+            case "incoming":
+            case "restocking":
+            case "backorder":
+                return InventoryStatus.restocking();
+            case "inactive":
+                return (effectiveStock != null && effectiveStock > 0)
+                        ? InventoryStatus.restocking()
+                        : InventoryStatus.outOfStock();
+            default:
+                break;
+        }
+
+        if (effectiveStock != null) {
+            if (effectiveStock > 0) {
+                return InventoryStatus.inStock();
+            }
+            return InventoryStatus.outOfStock();
+        }
+
+        return InventoryStatus.unknown();
+    }
+
+    private static final class InventoryStatus {
+        final String key;
+        final String label;
+        final String cssClass;
+
+        private InventoryStatus(String key, String label, String cssClass) {
+            this.key = key;
+            this.label = label;
+            this.cssClass = cssClass;
+        }
+
+        static InventoryStatus inStock() {
+            return new InventoryStatus("in_stock", "Còn hàng", "text-green-600 font-medium");
+        }
+
+        static InventoryStatus outOfStock() {
+            return new InventoryStatus("out_of_stock", "Hết hàng", "text-red-500 font-medium");
+        }
+
+        static InventoryStatus restocking() {
+            return new InventoryStatus("restocking", "Đang về hàng", "text-amber-600 font-medium");
+        }
+
+        static InventoryStatus comingSoon() {
+            return new InventoryStatus("coming_soon", "Sắp ra mắt", "text-indigo-600 font-medium");
+        }
+
+        static InventoryStatus unknown() {
+            return new InventoryStatus("unknown", "Không rõ", "text-gray-600 font-medium");
+        }
     }
 
     private void loadDynamicReviews(HttpServletRequest req, long bookId, String fallbackRawReviews, double fallbackAvg,

@@ -857,7 +857,8 @@ public class DBUtil {
             return;
         }
         try {
-            addCheckConstraint(conn, "orders", "chk_orders_status_text", "status IN ('new', 'confirmed', 'shipping', 'delivered', 'cancelled', 'returned')");
+            dropConstraintIfExists(conn, "orders", "chk_orders_status_text");
+            addCheckConstraint(conn, "orders", "chk_orders_status_text", "status IN ('new', 'confirmed', 'shipping', 'delivered', 'failed', 'cancelled', 'returned')");
             addCheckConstraint(conn, "orders", "chk_orders_payment_status_text", "payment_status IN ('unpaid', 'processing', 'paid', 'failed', 'refunded')");
             addCheckConstraint(conn, "orders", "chk_orders_payment_method_text", "payment_method IN ('cod', 'vnpay', 'momo')");
             addCheckConstraint(conn, "order_payments", "chk_order_payments_method_text", "method IN ('cod', 'vnpay', 'momo')");
@@ -901,6 +902,13 @@ public class DBUtil {
             return;
         }
         String sql = "ALTER TABLE " + table + " ADD CONSTRAINT " + constraintName + " CHECK (" + expression + ")";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        }
+    }
+
+    private static void dropConstraintIfExists(Connection conn, String table, String constraintName) throws SQLException {
+        String sql = "ALTER TABLE " + table + " DROP CONSTRAINT IF EXISTS " + constraintName;
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
         }
