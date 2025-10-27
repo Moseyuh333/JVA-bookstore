@@ -421,6 +421,13 @@ public class AdminProductsServlet extends HttpServlet {
 
         BigDecimal price = new BigDecimal(priceStr);
         int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
+
+        // Validate stock quantity - cannot be negative
+        if (stockQuantity < 0) {
+            out.write("{\"error\":\"Số lượng tồn kho không được âm\"}");
+            return;
+        }
+
         int shopId = Integer.parseInt(shopIdStr);
 
         String insertSql = "INSERT INTO books (title, author, isbn, price, description, category, stock, image_url, shop_id, status) "
