@@ -186,6 +186,7 @@ public class SellerOrdersServlet extends HttpServlet {
         int shippingOrders = OrderDAO.countOrdersByStatus(shopId, "shipping");
         int deliveredOrders = OrderDAO.countOrdersByStatus(shopId, "delivered");
         int cancelledOrders = OrderDAO.countOrdersByStatus(shopId, "cancelled");
+        int failedOrders = OrderDAO.countOrdersByStatus(shopId, "failed");
         int returnedOrders = OrderDAO.countOrdersByStatus(shopId, "returned");
 
         Map<String, Object> stats = new HashMap<>();
@@ -195,6 +196,7 @@ public class SellerOrdersServlet extends HttpServlet {
         stats.put("shipping", shippingOrders);
         stats.put("delivered", deliveredOrders);
         stats.put("cancelled", cancelledOrders);
+        stats.put("failed", failedOrders);
         stats.put("returned", returnedOrders);
 
         Map<String, Object> response = new HashMap<>();

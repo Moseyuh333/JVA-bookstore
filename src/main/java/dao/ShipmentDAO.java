@@ -182,15 +182,31 @@ public class ShipmentDAO {
         final String updateShipmentSql =
             "UPDATE shipments SET status = ?::shipment_status, last_update_at = NOW() WHERE id = ?";
 
+        final String fetchOrderSql = "SELECT order_id FROM shipments WHERE id = ?";
+
         Connection con = null;
         try {
             con = DBUtil.getConnection();
             con.setAutoCommit(false);
 
+            Long orderId = null;
+            try (PreparedStatement psFetch = con.prepareStatement(fetchOrderSql)) {
+                psFetch.setLong(1, shipmentId);
+                try (ResultSet rs = psFetch.executeQuery()) {
+                    if (rs.next()) {
+                        orderId = rs.getLong(1);
+                    }
+                }
+            }
+
             try (PreparedStatement psIns = con.prepareStatement(insertEventSql)) {
                 psIns.setLong(1, shipmentId);
                 psIns.setString(2, status); // cast sang enum ở SQL
-                psIns.setString(3, note);
+                if (note == null || note.trim().isEmpty()) {
+                    psIns.setNull(3, Types.VARCHAR);
+                } else {
+                    psIns.setString(3, note.trim());
+                }
                 if (evidenceUrl == null || evidenceUrl.isEmpty()) {
                     psIns.setNull(4, Types.VARCHAR);
                 } else {
@@ -208,6 +224,20 @@ public class ShipmentDAO {
                 psUpd.setString(1, status); // cast sang enum ở SQL
                 psUpd.setLong(2, shipmentId);
                 psUpd.executeUpdate();
+            }
+
+            if (orderId != null) {
+                String mappedStatus = mapOrderStatusFromShipment(status);
+                if (mappedStatus != null) {
+                    String trimmedNote = note == null ? "" : note.trim();
+                    String historyNote = trimmedNote.isEmpty()
+                        ? defaultOrderHistoryNote(mappedStatus)
+                        : trimmedNote;
+                    String historyActor = createdBy == null || createdBy.trim().isEmpty()
+                        ? "shipper"
+                        : "shipper:" + createdBy.trim();
+                    updateOrderStatusFromShipment(con, orderId, mappedStatus, historyNote, historyActor);
+                }
             }
 
             con.commit();
@@ -291,6 +321,83 @@ public class ShipmentDAO {
         map.put("failed", failed);
         map.put("inProgress", inProgress);
         return map;
+    }
+
+    private void updateOrderStatusFromShipment(Connection con, long orderId, String newStatus,
+                                               String note, String actor) throws SQLException {
+        final String updateSql =
+            "UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ? AND status <> ?";
+        final String insertHistorySql =
+            "INSERT INTO order_status_history (order_id, status, note, created_by, created_at) VALUES (?, ?, ?, ?, NOW())";
+
+        int affected;
+        try (PreparedStatement ps = con.prepareStatement(updateSql)) {
+            ps.setString(1, newStatus);
+            ps.setLong(2, orderId);
+            ps.setString(3, newStatus);
+            affected = ps.executeUpdate();
+        }
+
+        if (affected > 0) {
+            try (PreparedStatement ps = con.prepareStatement(insertHistorySql)) {
+                ps.setLong(1, orderId);
+                ps.setString(2, newStatus);
+                if (note == null || note.trim().isEmpty()) {
+                    ps.setNull(3, Types.VARCHAR);
+                } else {
+                    ps.setString(3, note.trim());
+                }
+                if (actor == null || actor.trim().isEmpty()) {
+                    ps.setString(4, "shipper");
+                } else {
+                    ps.setString(4, actor.trim());
+                }
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    private String mapOrderStatusFromShipment(String shipmentStatus) {
+        if (shipmentStatus == null) {
+            return null;
+        }
+        switch (shipmentStatus.toUpperCase(Locale.ROOT)) {
+            case "FAILED_DELIVERY":
+                return "failed";
+            case "DELIVERED":
+                return "delivered";
+            case "RETURNING":
+            case "RETURNED":
+                return "returned";
+            case "CANCELLED":
+                return "cancelled";
+            case "ASSIGNED":
+            case "PICKED_UP":
+            case "OUT_FOR_DELIVERY":
+                return "shipping";
+            default:
+                return null;
+        }
+    }
+
+    private String defaultOrderHistoryNote(String orderStatus) {
+        if (orderStatus == null) {
+            return "Cập nhật trạng thái đơn hàng";
+        }
+        switch (orderStatus) {
+            case "failed":
+                return "Shipper báo giao thất bại";
+            case "delivered":
+                return "Shipper xác nhận đã giao thành công";
+            case "returned":
+                return "Đơn hàng đang/đã trả về";
+            case "cancelled":
+                return "Đơn hàng bị hủy trong quá trình giao";
+            case "shipping":
+                return "Đơn hàng đang được giao";
+            default:
+                return "Cập nhật trạng thái đơn hàng";
+        }
     }
 
     // ================= MAPPERS =================

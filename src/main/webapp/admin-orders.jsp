@@ -234,6 +234,7 @@
                                                 <option value="shipping">Đang giao</option>
                                                 <option value="delivered">Đã giao</option>
                                                 <option value="cancelled">Đã hủy</option>
+                                            <option value="failed">Giao that bai</option>
                                                 <option value="returned">Hoàn trả</option>
                                             </select>
                                         </div>
@@ -300,6 +301,7 @@
                                             <option value="shipping">Đang giao</option>
                                             <option value="delivered">Đã giao</option>
                                             <option value="cancelled">Đã hủy</option>
+                                            <option value="failed">Giao that bai</option>
                                             <option value="returned">Hoàn trả</option>
                                         </select>
                                     </div>
@@ -420,6 +422,7 @@
         shipping: { label: 'Đang giao', badge: 'warning' },
         delivered: { label: 'Đã giao', badge: 'success' },
         cancelled: { label: 'Đã hủy', badge: 'danger' },
+        failed: { label: 'Giao that bai', badge: 'danger' },
         returned: { label: 'Hoàn trả', badge: 'dark' }
     };
 

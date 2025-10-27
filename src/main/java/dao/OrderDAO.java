@@ -40,7 +40,8 @@ public final class OrderDAO {
         "shipping",
         "delivered",
         "cancelled",
-        "returned"
+        "returned",
+        "failed"
     ));
     private static final Set<String> USER_CANCELLABLE_STATUSES = new HashSet<>(Arrays.asList(
         "new",

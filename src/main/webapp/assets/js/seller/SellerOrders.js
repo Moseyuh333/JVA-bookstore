@@ -98,6 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
             shipping: { label: "Đang giao", cls: "badge-warning" },
             delivered: { label: "Đã giao", cls: "badge-success" },
             cancelled: { label: "Đã hủy", cls: "badge-danger" },
+            failed: { label: "Giao thất bại", cls: "badge-danger" },
             returned: { label: "Đã trả", cls: "badge-secondary" },
         };
         const info = map[normalized] || { label: status || "-", cls: "badge-light" };

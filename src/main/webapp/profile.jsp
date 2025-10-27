@@ -478,6 +478,7 @@
             { key: 'shipping', label: 'Đang giao', badge: 'warning' },
             { key: 'delivered', label: 'Đã giao', badge: 'success' },
             { key: 'cancelled', label: 'Đã hủy', badge: 'danger' },
+            { key: 'failed', label: 'Giao that bai', badge: 'danger' },
             { key: 'returned', label: 'Hoàn trả / Hoàn tiền', badge: 'dark' }
         ];
         const orderHistoryState = {
