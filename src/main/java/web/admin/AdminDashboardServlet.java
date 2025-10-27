@@ -205,42 +205,55 @@ public class AdminDashboardServlet extends HttpServlet {
         return orderStatus;
     }
 
-    private JsonObject getTopSellers() throws SQLException {
+   private JsonObject getTopSellers() throws SQLException {
         JsonObject topSellers = new JsonObject();
 
-        try (Connection conn = DBUtil.getConnection()) {
         String query =
+            "WITH order_sales AS ( " +
+            "   SELECT " +
+            "       COALESCE(o.shop_id, (o.cart_snapshot::json->'items'->0->>'bookId')::int) AS book_id, " +
+            "       o.total_amount " +
+            "   FROM orders o " +
+            "   WHERE LOWER(o.status) = 'delivered' " +  // chỉ tính đơn hàng giao thành công
+            "), revenue_per_shop AS ( " +
+            "   SELECT b.shop_id, COALESCE(SUM(o.total_amount), 0) AS revenue " +
+            "   FROM order_sales o " +
+            "   JOIN books b ON o.book_id = b.id " +
+            "   GROUP BY b.shop_id " +
+            ") " +
             "SELECT " +
-            "s.id AS shop_id, " +
-            "s.name AS store_name, " +
-            "s.status, " +
-            "COUNT(o.id) AS total_orders, " +
-            "COALESCE(SUM(o.total_amount), 0) AS revenue, " +
-            "ROUND(s.commission_rate, 2) AS commission_rate " +
+            "   s.id AS shop_id, " +
+            "   s.name AS store_name, " +
+            "   s.status, " +
+            "   COALESCE(r.revenue, 0) AS revenue, " +
+            "   (SELECT COUNT(*) FROM orders o2 " +
+            "       WHERE (o2.shop_id = s.id " +
+            "       OR (o2.cart_snapshot::json->'items'->0->>'bookId')::int IN (SELECT id FROM books WHERE shop_id = s.id)) " +
+            "       AND LOWER(o2.status) = 'delivered') AS total_orders, " +
+            "   ROUND(s.commission_rate, 2) AS commission_rate " +
             "FROM shops s " +
-            "LEFT JOIN orders o ON o.shop_id = s.id " +
-            "AND LOWER(o.status) IN ('completed', 'delivered', 'confirmed', 'shipping') " +
-            "GROUP BY s.id, s.name, s.status, s.commission_rate " +
+            "LEFT JOIN revenue_per_shop r ON s.id = r.shop_id " +
             "ORDER BY revenue DESC, total_orders DESC " +
-            "LIMIT 5";
+            "LIMIT 5;";
 
-            try (PreparedStatement stmt = conn.prepareStatement(query);
-                 ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = DBUtil.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query);
+            ResultSet rs = stmt.executeQuery()) {
 
-                JsonObject sellers = new JsonObject();
-                int index = 0;
-                while (rs.next()) {
-                    JsonObject seller = new JsonObject();
-                    seller.addProperty("store_name", rs.getString("store_name"));
-                    seller.addProperty("total_orders", rs.getInt("total_orders"));
-                    seller.addProperty("revenue", rs.getDouble("revenue"));
-                    seller.addProperty("commission_rate", rs.getDouble("commission_rate"));
-                    sellers.add(String.valueOf(index), seller);
-                    index++;
-                }
+            JsonObject sellers = new JsonObject();
+            int index = 0;
 
-                topSellers.add("sellers", sellers);
+            while (rs.next()) {
+                JsonObject seller = new JsonObject();
+                seller.addProperty("store_name", rs.getString("store_name"));
+                seller.addProperty("total_orders", rs.getInt("total_orders"));
+                seller.addProperty("revenue", rs.getDouble("revenue"));
+                seller.addProperty("commission_rate", rs.getDouble("commission_rate"));
+                sellers.add(String.valueOf(index), seller);
+                index++;
             }
+
+            topSellers.add("sellers", sellers);
         }
 
         return topSellers;
