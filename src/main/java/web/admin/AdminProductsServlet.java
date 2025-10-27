@@ -509,6 +509,12 @@ public class AdminProductsServlet extends HttpServlet {
         BigDecimal price = new BigDecimal(priceStr);
         int stockQuantity = stockStr != null ? Integer.parseInt(stockStr) : 0;
 
+        // Validate stock quantity - cannot be negative
+        if (stockQuantity < 0) {
+            out.write("{\"error\":\"Số lượng tồn kho không được âm\"}");
+            return;
+        }
+
     String shopIdStr = req.getParameter("shop_id");
     boolean updateShop = shopIdStr != null && !shopIdStr.trim().isEmpty();
 
