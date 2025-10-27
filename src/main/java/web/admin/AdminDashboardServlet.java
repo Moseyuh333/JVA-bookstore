@@ -62,39 +62,48 @@ public class AdminDashboardServlet extends HttpServlet {
         JsonObject stats = new JsonObject();
 
         try (Connection conn = DBUtil.getConnection()) {
-            // Total users
-            String userQuery = "SELECT COUNT(*) as total FROM users";
+
+            // Tổng người dùng
+            String userQuery = "SELECT COUNT(*) AS total FROM users";
             try (PreparedStatement stmt = conn.prepareStatement(userQuery);
-                 ResultSet rs = stmt.executeQuery()) {
+                ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     stats.addProperty("totalUsers", rs.getInt("total"));
                 }
             }
 
-            // Total products
-            String productQuery = "SELECT COUNT(*) as total FROM books";
+            // Tổng sản phẩm
+            String productQuery = "SELECT COUNT(*) AS total FROM books";
             try (PreparedStatement stmt = conn.prepareStatement(productQuery);
-                 ResultSet rs = stmt.executeQuery()) {
+                ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     stats.addProperty("totalProducts", rs.getInt("total"));
                 }
             }
 
-            // Total orders
-            String orderQuery = "SELECT COUNT(*) as total FROM orders";
+            // Tổng đơn hàng
+            String orderQuery = "SELECT COUNT(*) AS total FROM orders";
             try (PreparedStatement stmt = conn.prepareStatement(orderQuery);
-                 ResultSet rs = stmt.executeQuery()) {
+                ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     stats.addProperty("totalOrders", rs.getInt("total"));
                 }
             }
 
-            // Total revenue
-            String revenueQuery = "SELECT COALESCE(SUM(total_amount), 0) AS revenue " +
-                "FROM orders " +
-                "WHERE LOWER(CAST(status AS TEXT)) IN ('completed', 'delivered')";
+            // Tổng doanh thu thật — dựa theo books.shop_id và đơn hàng delivered
+            String revenueQuery =
+                "WITH extracted_orders AS ( " +
+                "   SELECT o.id AS order_id, b.shop_id, o.total_amount " +
+                "   FROM orders o " +
+                "   JOIN LATERAL json_array_elements(o.cart_snapshot->'items') AS item ON TRUE " +
+                "   JOIN books b ON (item->>'bookId')::int = b.id " +
+                "   WHERE LOWER(o.status) = 'delivered' " +
+                ") " +
+                "SELECT COALESCE(SUM(o.total_amount), 0) AS revenue " +
+                "FROM extracted_orders o;";
+
             try (PreparedStatement stmt = conn.prepareStatement(revenueQuery);
-                 ResultSet rs = stmt.executeQuery()) {
+                ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     stats.addProperty("totalRevenue", rs.getDouble("revenue"));
                 }
