@@ -288,6 +288,11 @@
     <div id="content-wrapper">
         <div id="content">
             <div class="container-fluid">
+                <div class="mb-3">
+                    <a href="${pageContext.request.contextPath}/seller/dashboard" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
                 <div class="page-title">
                     <h1>Quản lý sản phẩm</h1>
                     <p>Quản lý sản phẩm của Shop: <strong>${username} (ID: ${shopId})</strong></p>
