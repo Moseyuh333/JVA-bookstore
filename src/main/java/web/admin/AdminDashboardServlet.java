@@ -212,7 +212,7 @@ public class AdminDashboardServlet extends HttpServlet {
             "WITH extracted_orders AS (" +
             "   SELECT o.id AS order_id, b.shop_id, o.total_amount " +
             "   FROM orders o " +
-            "   JOIN LATERAL json_array_elements(o.cart_snapshot->'items') AS item ON TRUE " +
+            "   JOIN LATERAL jsonb_array_elements(o.cart_snapshot->'items') AS item ON TRUE " +
             "   JOIN books b ON (item->>'bookId')::int = b.id " +
             "   WHERE LOWER(o.status) = 'delivered'" +
             ") " +
