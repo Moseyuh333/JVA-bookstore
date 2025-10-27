@@ -22,6 +22,11 @@
 </head>
 <body>
     <div class="container mt-5">
+        <div class="mb-3">
+            <a href="${pageContext.request.contextPath}/seller/dashboard" style="color: #c96d28; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
         <h1><i class="fas fa-chart-line mr-2"></i>Phân tích Bán hàng</h1>
         <p class="text-muted">Phân tích hiệu suất của Shop ID: <strong>${shopId}</strong></p>
 

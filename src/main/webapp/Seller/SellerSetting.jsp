@@ -20,6 +20,11 @@
 </head>
 <body>
     <div class="container mt-5">
+        <div class="mb-3">
+            <a href="${pageContext.request.contextPath}/seller/dashboard" style="color: #c96d28; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
         <h1><i class="fas fa-cog mr-2"></i>Cài đặt Shop</h1>
         <p class="text-muted">Quản lý thông tin và cấu hình thanh toán/vận chuyển của Shop ID: <strong>${shopId}</strong></p>
 
