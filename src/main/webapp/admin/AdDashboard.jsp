@@ -415,7 +415,6 @@
                         <div class="stat-content">
                             <div class="stat-info">
                                 <h6>Người dùng</h6>
-                                <div class="stat-number">1,254</div>
                             </div>
                             <div class="stat-icon">
                                 <i class="fas fa-users"></i>
@@ -427,7 +426,6 @@
                         <div class="stat-content">
                             <div class="stat-info">
                                 <h6>Sản phẩm</h6>
-                                <div class="stat-number">3,640</div>
                             </div>
                             <div class="stat-icon">
                                 <i class="fas fa-book"></i>
@@ -439,7 +437,6 @@
                         <div class="stat-content">
                             <div class="stat-info">
                                 <h6>Đơn hàng</h6>
-                                <div class="stat-number">879</div>
                             </div>
                             <div class="stat-icon">
                                 <i class="fas fa-shopping-cart"></i>
@@ -451,7 +448,6 @@
                         <div class="stat-content">
                             <div class="stat-info">
                                 <h6>Doanh thu (VNĐ)</h6>
-                                <div class="stat-number">356M</div>
                             </div>
                             <div class="stat-icon">
                                 <i class="fas fa-dollar-sign"></i>
@@ -510,46 +506,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td><span class="rank-badge rank-1">1</span></td>
-                                    <td><strong>BookHaven</strong></td>
-                                    <td>254</td>
-                                    <td><strong>92,000,000₫</strong></td>
-                                    <td><span class="badge-percentage">10%</span></td>
-                                    <td><span class="badge-percentage">Hoạt động</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="rank-badge rank-2">2</span></td>
-                                    <td><strong>MangaWorld</strong></td>
-                                    <td>187</td>
-                                    <td><strong>68,500,000₫</strong></td>
-                                    <td><span class="badge-percentage">15%</span></td>
-                                    <td><span class="badge-percentage">Hoạt động</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="rank-badge rank-3">3</span></td>
-                                    <td><strong>LightNovelVN</strong></td>
-                                    <td>143</td>
-                                    <td><strong>54,000,000₫</strong></td>
-                                    <td><span class="badge-percentage">12%</span></td>
-                                    <td><span class="badge-percentage">Hoạt động</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="rank-badge" style="background: linear-gradient(135deg, #d1d5db, #6b7280);">4</span></td>
-                                    <td><strong>NovelCorner</strong></td>
-                                    <td>98</td>
-                                    <td><strong>32,100,000₫</strong></td>
-                                    <td><span class="badge-percentage">8%</span></td>
-                                    <td><span class="badge-percentage">Hoạt động</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="rank-badge" style="background: linear-gradient(135deg, #d1d5db, #6b7280);">5</span></td>
-                                    <td><strong>StorybookHub</strong></td>
-                                    <td>76</td>
-                                    <td><strong>24,200,000₫</strong></td>
-                                    <td><span class="badge-percentage">10%</span></td>
-                                    <td><span class="badge-percentage">Hoạt động</span></td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
