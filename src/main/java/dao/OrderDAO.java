@@ -22,6 +22,7 @@ import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +49,18 @@ public final class OrderDAO {
         "confirmed",
         "shipping"
     ));
+    private static final Map<String, Set<String>> STATUS_TRANSITIONS;
+    static {
+        Map<String, Set<String>> transitions = new HashMap<>();
+        transitions.put("new", Set.of("confirmed", "cancelled"));
+        transitions.put("confirmed", Set.of("shipping", "cancelled"));
+        transitions.put("shipping", Set.of("delivered", "failed", "returned", "cancelled"));
+        transitions.put("failed", Set.of("shipping", "cancelled"));
+        transitions.put("returned", Set.of("shipping", "cancelled"));
+        transitions.put("delivered", Collections.emptySet());
+        transitions.put("cancelled", Collections.emptySet());
+        STATUS_TRANSITIONS = Collections.unmodifiableMap(transitions);
+    }
 
     private OrderDAO() {
     }
@@ -93,8 +106,7 @@ public final class OrderDAO {
                 if (mode == CheckoutMode.CART) {
                     clearCartAfterCheckout(conn, cartData, selections);
                 }
-                
-                new ShipmentDAO().createForNewOrderRandomShipper(conn, orderId);
+
                 Order order = fetchOrderByIdInternal(conn, orderId, userId);
                 conn.commit();
                 return order;
@@ -348,8 +360,31 @@ public static int countTotalOrders(int shopId) throws SQLException {
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                String currentStatus;
+                try (PreparedStatement stmt = conn.prepareStatement("SELECT status FROM orders WHERE id = ? FOR UPDATE")) {
+                    stmt.setLong(1, orderId);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) {
+                            currentStatus = normalizeStatusValue(rs.getString(1));
+                        } else {
+                            throw new SQLException("Order not found: " + orderId);
+                        }
+                    }
+                }
+
+                if (normalizedStatus.equals(currentStatus)) {
+                    conn.commit();
+                    return;
+                }
+
+                if (!isTransitionAllowed(currentStatus, normalizedStatus)) {
+                    throw new SQLException(String.format(Locale.US,
+                            "Không thể chuyển đơn từ '%s' sang '%s'", currentStatus, normalizedStatus));
+                }
+
                 int updated;
-                try (PreparedStatement stmt = conn.prepareStatement("UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
+                try (PreparedStatement stmt = conn.prepareStatement(
+                        "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
                     stmt.setString(1, normalizedStatus);
                     stmt.setLong(2, orderId);
                     updated = stmt.executeUpdate();
@@ -357,7 +392,13 @@ public static int countTotalOrders(int shopId) throws SQLException {
                 if (updated == 0) {
                     throw new SQLException("Order not found: " + orderId);
                 }
+
                 recordStatus(conn, orderId, normalizedStatus, effectiveNote, createdBy);
+
+                if ("confirmed".equals(normalizedStatus) || "shipping".equals(normalizedStatus)) {
+                    new ShipmentDAO().ensureShipmentAssigned(conn, orderId);
+                }
+
                 conn.commit();
             } catch (SQLException ex) {
                 conn.rollback();
@@ -366,6 +407,20 @@ public static int countTotalOrders(int shopId) throws SQLException {
                 conn.setAutoCommit(true);
             }
         }
+    }
+
+    public static String getOrderStatus(long orderId) throws SQLException {
+        String sql = "SELECT status FROM orders WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, orderId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return normalizeStatusValue(rs.getString(1));
+                }
+            }
+        }
+        return null;
     }
 
     public static Order updateOrderDetails(long orderId, OrderUpdateCommand command) throws SQLException {
@@ -535,6 +590,20 @@ public static int countTotalOrders(int shopId) throws SQLException {
             this.couponCodeSet = true;
             return this;
         }
+    }
+
+    private static boolean isTransitionAllowed(String currentStatus, String targetStatus) {
+        if (targetStatus == null) {
+            return false;
+        }
+        if (currentStatus == null || currentStatus.equals(targetStatus)) {
+            return true;
+        }
+        Set<String> allowed = STATUS_TRANSITIONS.get(currentStatus);
+        if (allowed == null || allowed.isEmpty()) {
+            return false;
+        }
+        return allowed.contains(targetStatus);
     }
 
     private static String normalizeStatusValue(String status) {

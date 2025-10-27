@@ -431,7 +431,32 @@ public class ShipmentDAO {
     }
 
     // ================= SEED RANDOM SHIPPER =================
+    public void ensureShipmentAssigned(Connection con, long orderId) throws SQLException {
+        if (shipmentExists(con, orderId)) {
+            return;
+        }
+        createForNewOrderRandomShipper(con, orderId);
+    }
+
+    public void createForNewOrderRandomShipper(long orderId) throws SQLException {
+        try (Connection con = DBUtil.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                ensureShipmentAssigned(con, orderId);
+                con.commit();
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+
     public void createForNewOrderRandomShipper(Connection con, long orderId) throws SQLException {
+        if (shipmentExists(con, orderId)) {
+            return;
+        }
         final String pickSql = "SELECT u.username FROM users u WHERE role='shipper'::user_role ORDER BY random() LIMIT 1";
         String shipperUser = null;
         try (PreparedStatement ps = con.prepareStatement(pickSql);
@@ -447,17 +472,12 @@ public class ShipmentDAO {
         }
     }
 
-    public void createForNewOrderRandomShipper(long orderId) throws SQLException {
-        try (Connection con = DBUtil.getConnection()) {
-            con.setAutoCommit(false);
-            try {
-                createForNewOrderRandomShipper(con, orderId);
-                con.commit();
-            } catch (SQLException ex) {
-                con.rollback();
-                throw ex;
-            } finally {
-                con.setAutoCommit(true);
+    private boolean shipmentExists(Connection con, long orderId) throws SQLException {
+        final String sql = "SELECT 1 FROM shipments WHERE order_id = ? LIMIT 1";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setLong(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
             }
         }
     }

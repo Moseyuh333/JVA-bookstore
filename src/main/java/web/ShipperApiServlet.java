@@ -3,6 +3,7 @@ package web;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dao.OrderDAO;
 import dao.ShipmentDAO;
 import models.Shipment;
 import models.ShipmentEvent;
@@ -23,6 +24,7 @@ import java.sql.*;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @WebServlet(name = "ShipperApiServlet", urlPatterns = {"/api/shipper/*"})
@@ -164,6 +166,13 @@ public class ShipperApiServlet extends HttpServlet {
                         return;
                     }
 
+                    Long orderId = s.getOrderId();
+                    String orderStatus = orderId == null ? null : OrderDAO.getOrderStatus(orderId);
+                    if (!allowsShipmentEvent(orderStatus)) {
+                        writeJson(resp, 409, err("INVALID_STATE", "Đơn hàng chưa sẵn sàng để cập nhật giao nhận"));
+                        return;
+                    }
+
                     JsonObject body = readJson(req);
                     String rawStatus  = opt(getString(body, "status"));
                     String status     = normalizeStatusForDb(rawStatus);  // <<— CHUẨN HOÁ Ở ĐÂY
@@ -190,6 +199,13 @@ public class ShipperApiServlet extends HttpServlet {
                     Shipment s = shipmentDAO.findByIdOwned(id, user);
                     if (s == null) {
                         writeJson(resp, 404, err("NOT_FOUND", "Shipment not found or not yours"));
+                        return;
+                    }
+
+                    Long orderId = s.getOrderId();
+                    String orderStatus = orderId == null ? null : OrderDAO.getOrderStatus(orderId);
+                    if (!allowsDeliveryConfirmation(orderStatus)) {
+                        writeJson(resp, 409, err("INVALID_STATE", "Đơn hàng chưa được bật trạng thái giao hàng"));
                         return;
                     }
 
@@ -339,6 +355,25 @@ public class ShipperApiServlet extends HttpServlet {
         catch (Exception e){ return def; }
     }
     private int nz(Integer x){ return x==null?0:x; }
+
+    private boolean allowsShipmentEvent(String orderStatus) {
+        if (orderStatus == null) {
+            return false;
+        }
+        String normalized = orderStatus.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals("shipping")
+                || normalized.equals("delivered")
+                || normalized.equals("failed")
+                || normalized.equals("returned");
+    }
+
+    private boolean allowsDeliveryConfirmation(String orderStatus) {
+        if (orderStatus == null) {
+            return false;
+        }
+        String normalized = orderStatus.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals("shipping");
+    }
 
     private String normalizeStatusForDb(String raw) {
         if (raw == null) return null;
