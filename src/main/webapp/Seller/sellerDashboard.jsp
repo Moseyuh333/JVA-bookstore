@@ -56,7 +56,7 @@
                             <a href="<%= request.getContextPath() %>/index.jsp" class="btn btn-primary">
                                 <i class="fas fa-home"></i> Về Trang Chủ
                             </a>
-                            <a href="javascript:void(0);" id="logoutBtn" class="btn btn-secondary ms-2">
+                            <a href="javascript:void(0);" class="btn btn-secondary ms-2" onclick="logout()">
                                 <i class="fas fa-sign-out-alt"></i> Đăng Xuất
                             </a>
                         </div>
@@ -66,13 +66,25 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="${pageContext.request.contextPath}/assets/js/logout.js"></script>
     <script>
-        // Logout functionality for pending page
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', logout);
+    function logout() {
+        try {
+        localStorage.removeItem('seller_token');
+        localStorage.removeItem('seller_username');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_username');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_username');
+        sessionStorage.clear();
+
+        fetch('<%= request.getContextPath() %>/logout', {
+            method: 'POST',
+            credentials: 'include'
+        }).catch(()=>{});
+        } finally {
+        window.location.replace('<%= request.getContextPath() %>/login.jsp');
         }
+    }
     </script>
 </body>
 </html>
@@ -125,7 +137,7 @@
                             <a href="<%= request.getContextPath() %>/index.jsp" class="btn btn-primary">
                                 <i class="fas fa-home"></i> Về Trang Chủ
                             </a>
-                            <a href="javascript:void(0);" id="logoutBtn" class="btn btn-secondary ms-2">
+                            <a href="javascript:void(0);" class="btn btn-secondary ms-2" onclick="logout()">
                                 <i class="fas fa-sign-out-alt"></i> Đăng Xuất
                             </a>
                         </div>
@@ -135,13 +147,25 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="${pageContext.request.contextPath}/assets/js/logout.js"></script>
     <script>
-        // Logout functionality for banned page
-        const logoutBtnBanned = document.getElementById('logoutBtn');
-        if (logoutBtnBanned) {
-            logoutBtnBanned.addEventListener('click', logout);
+    function logout() {
+        try {
+        localStorage.removeItem('seller_token');
+        localStorage.removeItem('seller_username');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_username');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_username');
+        sessionStorage.clear();
+
+        fetch('<%= request.getContextPath() %>/logout', {
+            method: 'POST',
+            credentials: 'include'
+        }).catch(()=>{});
+        } finally {
+        window.location.replace('<%= request.getContextPath() %>/login.jsp');
         }
+    }
     </script>
 </body>
 </html>
@@ -532,8 +556,6 @@
             </div>
         </div>
     </div>
-    
-    <script src="${pageContext.request.contextPath}/assets/js/logout.js"></script>
     <script>
         // Initialize Feather Icons
         feather.replace();
@@ -557,6 +579,25 @@
         });
 
     </script>
+    <script>
+    function logout() {
+        try {
+        localStorage.removeItem('seller_token');
+        localStorage.removeItem('seller_username');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_username');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_username');
+        sessionStorage.clear();
 
+        fetch('<%= request.getContextPath() %>/logout', {
+            method: 'POST',
+            credentials: 'include'
+        }).catch(()=>{});
+        } finally {
+        window.location.replace('<%= request.getContextPath() %>/login.jsp');
+        }
+    }
+    </script>
 </body>
 </html>
