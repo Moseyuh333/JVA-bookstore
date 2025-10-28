@@ -56,7 +56,7 @@
                             <a href="<%= request.getContextPath() %>/index.jsp" class="btn btn-primary">
                                 <i class="fas fa-home"></i> Về Trang Chủ
                             </a>
-                            <a href="<%= request.getContextPath() %>/logout" class="btn btn-secondary ms-2">
+                            <a href="javascript:void(0);" id="logoutBtn" class="btn btn-secondary ms-2">
                                 <i class="fas fa-sign-out-alt"></i> Đăng Xuất
                             </a>
                         </div>
@@ -66,6 +66,14 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="${pageContext.request.contextPath}/assets/js/logout.js"></script>
+    <script>
+        // Logout functionality for pending page
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+        }
+    </script>
 </body>
 </html>
 <%
@@ -117,7 +125,7 @@
                             <a href="<%= request.getContextPath() %>/index.jsp" class="btn btn-primary">
                                 <i class="fas fa-home"></i> Về Trang Chủ
                             </a>
-                            <a href="<%= request.getContextPath() %>/logout" class="btn btn-secondary ms-2">
+                            <a href="javascript:void(0);" id="logoutBtn" class="btn btn-secondary ms-2">
                                 <i class="fas fa-sign-out-alt"></i> Đăng Xuất
                             </a>
                         </div>
@@ -127,6 +135,14 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="${pageContext.request.contextPath}/assets/js/logout.js"></script>
+    <script>
+        // Logout functionality for banned page
+        const logoutBtnBanned = document.getElementById('logoutBtn');
+        if (logoutBtnBanned) {
+            logoutBtnBanned.addEventListener('click', logout);
+        }
+    </script>
 </body>
 </html>
 <%
@@ -517,45 +533,28 @@
         </div>
     </div>
     
+    <script src="${pageContext.request.contextPath}/assets/js/logout.js"></script>
     <script>
         // Initialize Feather Icons
         feather.replace();
-        
-        function logout() {
-            // Xóa tất cả tokens
-            localStorage.removeItem('seller_token');
-            localStorage.removeItem('seller_username');
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('auth_username');
-            localStorage.removeItem('admin_token');
-            localStorage.removeItem('admin_username');
-            
-            console.log('Logging out, redirecting to login page');
-            
-            // Redirect về login
-            window.location.href = '${pageContext.request.contextPath}/login.jsp';
-        }
-        
+
         // Kiểm tra token khi load trang
         window.addEventListener('load', function() {
             const sellerToken = localStorage.getItem('seller_token');
             const authToken = localStorage.getItem('auth_token');
             const token = sellerToken || authToken;
-            
+
             console.log('Seller token:', sellerToken ? 'exists' : 'not found');
             console.log('Auth token:', authToken ? 'exists' : 'not found');
-            
+
             if (!token) {
                 console.log('No token found, redirecting to login');
                 window.location.href = '${pageContext.request.contextPath}/login.jsp';
                 return;
             }
-            
+
             console.log('Token found, page loaded successfully');
         });
-
-
-        
 
     </script>
 
