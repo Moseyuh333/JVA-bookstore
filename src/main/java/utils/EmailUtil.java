@@ -138,7 +138,10 @@ public class EmailUtil {
     }
 
     public static void sendResetEmail(String toEmail, String token, String username) {
-        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "http://localhost:8080";
+        String baseUrl = System.getenv("BASE_URL");
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            baseUrl = "https://jva-bookstore-17d2d34519f8.herokuapp.com"; // fallback Heroku URL
+        }
         String resetUrl = baseUrl + "/reset-password.jsp?token=" + token;
 
         String subject = "Đặt lại mật khẩu - Bookish Bliss Haven";
