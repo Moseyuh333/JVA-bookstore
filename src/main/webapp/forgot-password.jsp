@@ -1,89 +1,106 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:set var="pageTitle" value="Quên mật khẩu - Bookish Bliss Haven" />
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password - NKbookstore</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        body { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .auth-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            padding: 2rem;
-            animation: fadeIn 0.5s ease-in;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .form-control:focus {
-          border-color: #3949ab;
-          box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.25);
-        }
-        .btn-primary {
-          background: #3949ab;
-          border: none;
-          transition: background 0.3s ease;
-        }
-        .btn-primary:hover {
-          background: #1a237e;
-        }
-    </style>
-</head>
-<body>
-<div class="auth-card" style="max-width: 520px; width: 90%;">
-	<div class="text-center my-4">
-		<img src="assets/img/nkbookstore-logo.png" alt="NKbookstore Logo" style="width:64px;height:64px;border-radius:50%;">
-		<h2 class="mb-1 mt-3" style="color:#1a237e;font-weight:700;letter-spacing:1px;">NKbookstore</h2>
-		<div class="text-muted small">by bibo090809@gmail.com</div>
-	</div>
-	<h2 class="mb-3">Forgot Password</h2>
-	<p class="text-muted">Enter your email address. If it exists, we'll send you a password reset link.</p>
-	<form id="forgotForm">
-		<div class="mb-3">
-			<label class="form-label">Email</label>
-			<input class="form-control" type="email" name="email" required />
-		</div>
-		<button class="btn btn-primary" type="submit">Send reset link</button>
-		<a class="ms-3" href="login.jsp">Back to login</a>
-	</form>
-	<div id="forgotResult" class="mt-3"></div>
-</div>
+<html lang="vi">
+<%@ include file="/WEB-INF/includes/header.jsp" %>
+
+<main class="min-h-screen bg-gradient-to-br from-amber-900/20 via-amber-800/30 to-amber-950/40 flex items-center justify-center py-16 px-4">
+  <section class="w-full max-w-lg">
+    <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-amber-100/80 p-10 space-y-8">
+      <div class="text-center space-y-2">
+        <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 text-amber-700 shadow-inner">
+          <i data-feather="key" class="w-7 h-7"></i>
+        </span>
+        <h1 class="title-font text-3xl font-bold text-amber-800">Quên mật khẩu</h1>
+        <p class="text-gray-500 text-sm">Nhập địa chỉ email của bạn. Nếu tồn tại, chúng tôi sẽ gửi liên kết đặt lại mật khẩu.</p>
+      </div>
+
+      <form id="forgotForm" class="space-y-5">
+        <div class="space-y-2">
+          <label for="email" class="text-sm font-semibold text-gray-700">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="email"
+                 class="w-full rounded-2xl border border-amber-200/70 bg-white px-4 py-3 text-gray-800 shadow-inner focus:border-amber-500 focus:ring-2 focus:ring-amber-400/60" />
+        </div>
+        <button id="forgotSubmit" type="submit"
+                class="w-full flex items-center justify-center gap-2 rounded-2xl bg-amber-700 text-white font-semibold py-3 shadow-lg shadow-amber-900/20 hover:bg-amber-800 transition disabled:opacity-60 disabled:cursor-not-allowed">
+          <i data-feather="send" class="w-5 h-5"></i>
+          <span>Gửi liên kết đặt lại</span>
+        </button>
+      </form>
+
+      <div id="forgotFeedback" class="space-y-2"></div>
+
+      <div class="text-center text-sm text-gray-600">
+        <a href="<%= request.getContextPath() %>/login.jsp" class="font-semibold text-amber-700 hover:text-amber-800">Quay lại đăng nhập</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%@ include file="/WEB-INF/includes/footer.jsp" %>
 
 <script>
-	document.getElementById('forgotForm').addEventListener('submit', async (e) => {
-		e.preventDefault();
-		const data = new URLSearchParams(new FormData(e.target));
-		const btn = e.target.querySelector('button[type="submit"]');
-		btn.disabled = true;
-		btn.textContent = 'Sending...';
-		try {
-			const res = await fetch('api/auth/reset-password', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: data});
-			const text = await res.text();
-			if (res.ok) {
-				document.getElementById('forgotResult').innerHTML = '<div class="alert alert-success"><strong>📧 Email đã được gửi!</strong><br>Nếu địa chỉ email tồn tại trong hệ thống, chúng tôi đã gửi liên kết đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn.</div>';
-			} else {
-				let msg = text;
-				try { const j = JSON.parse(text); msg = j.error || text; } catch(_){}
-				document.getElementById('forgotResult').innerHTML = '<div class="alert alert-danger"><strong>❌ Lỗi:</strong> ' + msg + '</div>';
-			}
-		} catch (err) {
-			document.getElementById('forgotResult').innerHTML = '<div class="alert alert-danger"><strong>❌ Kết nối thất bại:</strong> ' + err.message + '</div>';
-		} finally {
-			btn.disabled = false;
-			btn.textContent = 'Send reset link';
-		}
-  });
+  const contextPath = '<%= request.getContextPath() %>';
+
+  (function () {
+    const form = document.getElementById('forgotForm');
+    const feedback = document.getElementById('forgotFeedback');
+    const submitBtn = document.getElementById('forgotSubmit');
+
+    // 🔹 Hàm hiển thị thông báo
+    function showMessage(type, message) {
+      if (!feedback) return;
+      feedback.innerHTML = '';
+      const wrapper = document.createElement('div');
+      const base = 'px-4 py-3 rounded-2xl border text-sm font-medium transition';
+      let tone = 'bg-red-100 border-red-200 text-red-700';
+      if (type === 'success') tone = 'bg-emerald-100 border-emerald-200 text-emerald-800';
+      else if (type === 'info') tone = 'bg-amber-50 border-amber-200 text-amber-700';
+      wrapper.className = base + ' ' + tone;
+      wrapper.innerHTML = message;
+      feedback.appendChild(wrapper);
+    }
+
+    // 🔹 Xử lý form quên mật khẩu
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const payload = new URLSearchParams(formData);
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-60', 'cursor-wait');
+
+      try {
+        const response = await fetch(contextPath + '/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload
+        });
+
+        const text = await response.text();
+        let data = {};
+        if (text) {
+          try { data = JSON.parse(text); }
+          catch (e) { console.warn('Không thể phân tích JSON quên mật khẩu', e); }
+        }
+
+        if (response.ok) {
+          showMessage('success', '📧 Email đã được gửi!<br>Nếu địa chỉ email tồn tại trong hệ thống, chúng tôi đã gửi liên kết đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn.');
+        } else {
+          const errorMsg = data?.error || text || 'Gửi email thất bại.';
+          showMessage('danger', '❌ ' + errorMsg);
+        }
+
+      } catch (error) {
+        console.error('Forgot password error', error);
+        showMessage('danger', '❌ Lỗi kết nối. Vui lòng thử lại.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-60', 'cursor-wait');
+      }
+    });
+  })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
