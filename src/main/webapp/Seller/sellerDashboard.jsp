@@ -20,15 +20,15 @@
         e.printStackTrace();
     }
 
-    // If seller is not active, show pending message
-    if (!"active".equalsIgnoreCase(sellerStatus)) {
+    // If seller status is pending, show pending message
+    if ("pending".equalsIgnoreCase(sellerStatus)) {
 %>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seller Dashboard - Pending Approval</title>
+    <title>Seller Dashboard - Chờ Duyệt</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -38,26 +38,87 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-warning text-dark">
-                        <h4 class="mb-0"><i class="fas fa-clock"></i> Account Pending Approval</h4>
+                        <h4 class="mb-0"><i class="fas fa-clock"></i> Tài Khoản Đang Chờ Duyệt</h4>
                     </div>
                     <div class="card-body text-center">
                         <div class="mb-4">
                             <i class="fas fa-user-clock fa-4x text-warning"></i>
                         </div>
-                        <h5 class="card-title">Your seller account is under review</h5>
+                        <h5 class="card-title">Tài khoản người bán của bạn đang được xem xét</h5>
                         <p class="card-text">
-                            Thank you for registering as a seller. Your account is currently pending approval from our administrators.
-                            You will be able to access the seller dashboard once your account is approved.
+                            Cảm ơn bạn đã đăng ký làm người bán. Tài khoản của bạn hiện đang chờ phê duyệt từ quản trị viên.
+                            Bạn sẽ có thể truy cập bảng điều khiển người bán sau khi tài khoản được phê duyệt.
                         </p>
                         <div class="alert alert-info">
-                            <strong>Current Status:</strong> <%= sellerStatus != null ? sellerStatus.toUpperCase() : "PENDING" %>
+                            <strong>Trạng Thái Hiện Tại:</strong> <%= sellerStatus != null ? sellerStatus.toUpperCase() : "PENDING" %>
                         </div>
                         <div class="mt-4">
                             <a href="<%= request.getContextPath() %>/index.jsp" class="btn btn-primary">
-                                <i class="fas fa-home"></i> Back to Home
+                                <i class="fas fa-home"></i> Về Trang Chủ
                             </a>
                             <a href="<%= request.getContextPath() %>/logout" class="btn btn-secondary ms-2">
-                                <i class="fas fa-sign-out-alt"></i> Logout
+                                <i class="fas fa-sign-out-alt"></i> Đăng Xuất
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+<%
+        return;
+    }
+
+    // If seller status is inactive or banned, show suspended message
+    if ("inactive".equalsIgnoreCase(sellerStatus) || "banned".equalsIgnoreCase(sellerStatus)) {
+%>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard - Tài Khoản Bị Khóa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h4 class="mb-0"><i class="fas fa-ban"></i> Tài Khoản Bị Khóa</h4>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-user-slash fa-4x text-danger"></i>
+                        </div>
+                        <h5 class="card-title">Tài khoản người bán của bạn đã bị khóa</h5>
+                        <p class="card-text">
+                            Tài khoản của bạn hiện tại không thể truy cập vào bảng điều khiển người bán.
+                            Vui lòng liên hệ với quản trị viên để biết thêm thông tin chi tiết.
+                        </p>
+                        <div class="alert alert-danger">
+                            <strong>Trạng Thái Hiện Tại:</strong>
+                            <%
+                                if ("banned".equalsIgnoreCase(sellerStatus)) {
+                                    out.print("ĐÃ KHÓA VĨNH VIỄN");
+                                } else if ("inactive".equalsIgnoreCase(sellerStatus)) {
+                                    out.print("TẠM KHÓA");
+                                } else {
+                                    out.print(sellerStatus != null ? sellerStatus.toUpperCase() : "UNKNOWN");
+                                }
+                            %>
+                        </div>
+                        <div class="mt-4">
+                            <a href="<%= request.getContextPath() %>/index.jsp" class="btn btn-primary">
+                                <i class="fas fa-home"></i> Về Trang Chủ
+                            </a>
+                            <a href="<%= request.getContextPath() %>/logout" class="btn btn-secondary ms-2">
+                                <i class="fas fa-sign-out-alt"></i> Đăng Xuất
                             </a>
                         </div>
                     </div>
