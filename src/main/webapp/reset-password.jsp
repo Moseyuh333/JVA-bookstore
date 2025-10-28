@@ -1,145 +1,156 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:set var="pageTitle" value="Đặt lại mật khẩu - Bookish Bliss Haven" />
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reset Password - Bookish Bliss Haven</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <style>
-    body { 
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .auth-card {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        padding: 2rem;
-        animation: fadeIn 0.5s ease-in;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .form-control:focus {
-      border-color: #3949ab;
-      box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.25);
-    }
-    .btn-primary {
-      background: #3949ab;
-      border: none;
-      transition: background 0.3s ease;
-    }
-    .btn-primary:hover {
-      background: #1a237e;
-    }
-    .alert {
-      animation: slideIn 0.3s ease;
-    }
-    @keyframes slideIn {
-      from { transform: translateX(-100%); }
-      to { transform: translateX(0); }
-    }
-  </style>
-</head>
-<body>
-  <div class="auth-card" style="max-width: 480px; width: 90%;">
-    <div class="text-center my-4">
-      <img src="assets/img/bookish-logo.png" alt="Bookish Bliss Haven Logo" style="width:64px;height:64px;border-radius:50%;">
-      <h2 class="mb-1 mt-3" style="color:#1a237e;font-weight:700;letter-spacing:1px;">Bookish Bliss Haven</h2>
-      <div class="text-muted small">by nhuvonguyen2005@gmail.com</div>
-    </div>
-    <h4 class="mb-3" style="color:#3949ab;">Reset Password</h4>
+<html lang="vi">
+<%@ include file="/WEB-INF/includes/header.jsp" %>
 
-    <% 
-      String status = request.getParameter("success");
-      String error = request.getParameter("error");
-      String token = request.getParameter("token");
-      
-      if ("invalid".equals(error)) {
-    %>
-        <div class="alert alert-danger">❌ Invalid or expired reset token. Please request a new one.</div>
-        <div class="mt-3 text-center">
-          <a href="forgot-password.jsp" class="btn btn-primary">Request New Link</a>
-        </div>
-    <% 
-      } else if ("true".equals(status)) { 
-    %>
-        <div class="alert alert-success">✅ Password reset successful! You can now login with your new password.</div>
-        <div class="mt-3 text-center">
-          <a href="login.jsp" class="btn btn-primary">Go to Login</a>
-        </div>
-    <% 
-      } else { 
-    %>
-
-    <form id="resetForm">
-      <input type="hidden" name="token" value="<%= token != null ? token : "" %>" />
-      <div class="mb-3">
-        <label class="form-label">New Password</label>
-        <input class="form-control" name="password" type="password" required minlength="6" />
+<main class="min-h-screen bg-gradient-to-br from-amber-900/20 via-amber-800/30 to-amber-950/40 flex items-center justify-center py-16 px-4">
+  <section class="w-full max-w-lg">
+    <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-amber-100/80 p-10 space-y-8">
+      <div class="text-center space-y-2">
+        <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 text-amber-700 shadow-inner">
+          <i data-feather="lock" class="w-7 h-7"></i>
+        </span>
+        <h1 class="title-font text-3xl font-bold text-amber-800">Đặt lại mật khẩu</h1>
+        <p class="text-gray-500 text-sm">Nhập mật khẩu mới cho tài khoản của bạn</p>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Confirm New Password</label>
-        <input class="form-control" name="confirmPassword" type="password" required minlength="6" />
+
+      <%
+        String status = request.getParameter("success");
+        String error = request.getParameter("error");
+        String token = request.getParameter("token");
+
+        if ("invalid".equals(error)) {
+      %>
+          <div class="space-y-2">
+            <div class="px-4 py-3 rounded-2xl border bg-red-100 border-red-200 text-red-700 text-sm font-medium">
+              ❌ Token không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu liên kết mới.
+            </div>
+            <div class="text-center">
+              <a href="<%= request.getContextPath() %>/forgot-password.jsp" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-700 text-white font-semibold py-3 px-6 shadow-lg shadow-amber-900/20 hover:bg-amber-800 transition">
+                <i data-feather="refresh-ccw" class="w-5 h-5"></i>
+                <span>Yêu cầu liên kết mới</span>
+              </a>
+            </div>
+          </div>
+      <%
+        } else if ("true".equals(status)) {
+      %>
+          <div class="space-y-2">
+            <div class="px-4 py-3 rounded-2xl border bg-emerald-100 border-emerald-200 text-emerald-800 text-sm font-medium">
+              ✅ Đặt lại mật khẩu thành công! Bạn có thể đăng nhập với mật khẩu mới.
+            </div>
+            <div class="text-center">
+              <a href="<%= request.getContextPath() %>/login.jsp" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-700 text-white font-semibold py-3 px-6 shadow-lg shadow-amber-900/20 hover:bg-amber-800 transition">
+                <i data-feather="log-in" class="w-5 h-5"></i>
+                <span>Đến trang đăng nhập</span>
+              </a>
+            </div>
+          </div>
+      <%
+        } else {
+      %>
+
+      <form id="resetForm" class="space-y-5">
+        <input type="hidden" name="token" value="<%= token != null ? token : "" %>" />
+        <div class="space-y-2">
+          <label for="password" class="text-sm font-semibold text-gray-700">Mật khẩu mới</label>
+          <input id="password" name="password" type="password" required minlength="6"
+                 class="w-full rounded-2xl border border-amber-200/70 bg-white px-4 py-3 text-gray-800 shadow-inner focus:border-amber-500 focus:ring-2 focus:ring-amber-400/60" />
+        </div>
+        <div class="space-y-2">
+          <label for="confirmPassword" class="text-sm font-semibold text-gray-700">Xác nhận mật khẩu mới</label>
+          <input id="confirmPassword" name="confirmPassword" type="password" required minlength="6"
+                 class="w-full rounded-2xl border border-amber-200/70 bg-white px-4 py-3 text-gray-800 shadow-inner focus:border-amber-500 focus:ring-2 focus:ring-amber-400/60" />
+        </div>
+        <button id="resetSubmit" type="submit"
+                class="w-full flex items-center justify-center gap-2 rounded-2xl bg-amber-700 text-white font-semibold py-3 shadow-lg shadow-amber-900/20 hover:bg-amber-800 transition disabled:opacity-60 disabled:cursor-not-allowed">
+          <i data-feather="refresh-ccw" class="w-5 h-5"></i>
+          <span>Đặt lại mật khẩu</span>
+        </button>
+      </form>
+
+      <div id="resetFeedback" class="space-y-2"></div>
+
+      <div class="text-center text-sm text-gray-600">
+        <a href="<%= request.getContextPath() %>/login.jsp" class="font-semibold text-amber-700 hover:text-amber-800">Quay lại đăng nhập</a>
       </div>
-      <button class="btn btn-primary w-100" type="submit">Reset Password</button>
-    </form>
-    <div id="resetResult" class="mt-3"></div>
-    <div class="mt-3 text-center">
-      <a href="login.jsp" style="color:#3949ab;">Back to Login</a>
+
+      <% } %>
     </div>
+  </section>
+</main>
 
-    <% } %>
-  </div>
+<%@ include file="/WEB-INF/includes/footer.jsp" %>
+<script>
+  const contextPath = '<%= request.getContextPath() %>';
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
+  (function () {
     const form = document.getElementById('resetForm');
-    if (form) {
-      form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const password = this.password.value;
-        const confirm = this.confirmPassword.value;
+    if (!form) return;
 
-        const resultDiv = document.getElementById('resetResult');
-        if (password !== confirm) {
-          resultDiv.innerHTML = '<div class="alert alert-danger">Passwords do not match!</div>';
-          return;
-        }
-        if (password.length < 6) {
-          resultDiv.innerHTML = '<div class="alert alert-danger">Password must be at least 6 characters!</div>';
-          return;
-        }
+    const feedback = document.getElementById('resetFeedback');
+    const submitBtn = document.getElementById('resetSubmit');
 
-        const data = new URLSearchParams(new FormData(this));
-        const btn = this.querySelector('button');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Resetting...';
-
-        try {
-          const res = await fetch('api/auth/reset', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: data
-          });
-          if (res.ok) {
-            window.location.href = 'reset-password.jsp?success=true';
-          } else {
-            const text = await res.text();
-            resultDiv.innerHTML = '<div class="alert alert-danger">' + text + '</div>';
-          }
-        } catch (err) {
-          resultDiv.innerHTML = '<div class="alert alert-danger">Error: ' + err.message + '</div>';
-        }
-        btn.disabled = false;
-        btn.innerHTML = 'Reset Password';
-      });
+    // 🔹 Hàm hiển thị thông báo
+    function showMessage(type, message) {
+      if (!feedback) return;
+      feedback.innerHTML = '';
+      const wrapper = document.createElement('div');
+      const base = 'px-4 py-3 rounded-2xl border text-sm font-medium transition';
+      let tone = 'bg-red-100 border-red-200 text-red-700';
+      if (type === 'success') tone = 'bg-emerald-100 border-emerald-200 text-emerald-800';
+      else if (type === 'info') tone = 'bg-amber-50 border-amber-200 text-amber-700';
+      wrapper.className = base + ' ' + tone;
+      wrapper.innerHTML = message;
+      feedback.appendChild(wrapper);
     }
-  </script>
+
+    // 🔹 Xử lý form đặt lại mật khẩu
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const password = this.password.value;
+      const confirm = this.confirmPassword.value;
+
+      if (password !== confirm) {
+        showMessage('danger', '❌ Mật khẩu xác nhận không khớp!');
+        return;
+      }
+      if (password.length < 6) {
+        showMessage('danger', '❌ Mật khẩu phải có ít nhất 6 ký tự!');
+        return;
+      }
+
+      const formData = new FormData(form);
+      const payload = new URLSearchParams(formData);
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-60', 'cursor-wait');
+
+      try {
+        const response = await fetch(contextPath + '/api/auth/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload
+        });
+
+        if (response.ok) {
+          window.location.href = contextPath + '/reset-password.jsp?success=true';
+        } else {
+          const text = await response.text();
+          showMessage('danger', '❌ ' + text);
+        }
+
+      } catch (error) {
+        console.error('Reset error', error);
+        showMessage('danger', '❌ Lỗi kết nối. Vui lòng thử lại.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-60', 'cursor-wait');
+      }
+    });
+  })();
+</script>
 </body>
 </html>
