@@ -38,6 +38,12 @@ public class CartServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         try {
+            // Kiểm tra status user trước khi cho phép truy cập giỏ hàng
+            if (!isUserAllowedToShop(request)) {
+                sendForbidden(response, "Tài khoản của bạn đã bị hạn chế quyền mua hàng");
+                return;
+            }
+
             Cart cart = loadCart(request);
             Map<String, Object> payload = new HashMap<>();
             payload.put("success", true);
@@ -53,6 +59,17 @@ public class CartServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("application/json; charset=UTF-8");
         response.setCharacterEncoding("UTF-8");
+
+        try {
+            // Kiểm tra status user trước khi cho phép thêm vào giỏ hàng
+            if (!isUserAllowedToShop(request)) {
+                sendForbidden(response, "Tài khoản của bạn đã bị hạn chế quyền mua hàng");
+                return;
+            }
+        } catch (SQLException ex) {
+            handleServerError(response, ex);
+            return;
+        }
 
         List<String> segments = getPathSegments(request.getPathInfo());
         if (segments.isEmpty()) {
@@ -388,5 +405,49 @@ public class CartServlet extends HttpServlet {
         ex.printStackTrace();
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         response.getWriter().write(gson.toJson(buildError("Server error: " + ex.getMessage())));
+    }
+
+    private boolean isUserAllowedToShop(HttpServletRequest request) throws SQLException {
+        Long userId = AuthUtil.resolveUserId(request);
+        if (userId == null) {
+            return false; // Không đăng nhập
+        }
+
+        String email = AuthUtil.getUserEmail(request);
+        if (email == null) {
+            return false;
+        }
+
+        // Lấy username từ email
+        String username = getUsernameFromEmail(email);
+        if (username == null) {
+            return false;
+        }
+
+        String status = DBUtil.getUserStatus(username);
+        if (status == null) {
+            return true; // Mặc định cho phép nếu không có status
+        }
+
+        String normalizedStatus = status.trim().toLowerCase();
+        return !"banned".equals(normalizedStatus) && !"inactive".equals(normalizedStatus);
+    }
+
+    private String getUsernameFromEmail(String email) throws SQLException {
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT username FROM users WHERE email = ?")) {
+            stmt.setString(1, email);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("username");
+                }
+            }
+        }
+        return null;
+    }
+
+    private void sendForbidden(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.getWriter().write(gson.toJson(buildError(message)));
     }
 }

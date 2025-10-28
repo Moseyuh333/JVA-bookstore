@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import dao.OrderDAO;
 import models.Order;
 import utils.AuthUtil;
+import utils.DBUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -13,6 +14,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -39,6 +43,13 @@ public class CheckoutServlet extends HttpServlet {
                 sendUnauthorized(response);
                 return;
             }
+
+            // Kiểm tra status user trước khi cho phép thanh toán
+            if (!isUserAllowedToShop(request)) {
+                sendForbidden(response, "Tài khoản của bạn đã bị hạn chế quyền mua hàng");
+                return;
+            }
+
             Map<String, Object> payload = readJson(request);
             Long addressId = parseId(payload.get("addressId"));
             String paymentMethod = stringValue(payload.get("paymentMethod"));
@@ -206,6 +217,11 @@ public class CheckoutServlet extends HttpServlet {
         response.getWriter().write(gson.toJson(buildError(message)));
     }
 
+    private void sendForbidden(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.getWriter().write(gson.toJson(buildError(message)));
+    }
+
     private Map<String, Object> buildError(String message) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("success", false);
@@ -217,5 +233,44 @@ public class CheckoutServlet extends HttpServlet {
         ex.printStackTrace();
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         response.getWriter().write(gson.toJson(buildError("Có lỗi xảy ra: " + ex.getMessage())));
+    }
+
+    private boolean isUserAllowedToShop(HttpServletRequest request) throws SQLException {
+        Long userId = AuthUtil.resolveUserId(request);
+        if (userId == null) {
+            return false; // Không đăng nhập
+        }
+
+        String email = AuthUtil.getUserEmail(request);
+        if (email == null) {
+            return false;
+        }
+
+        // Lấy username từ email
+        String username = getUsernameFromEmail(email);
+        if (username == null) {
+            return false;
+        }
+
+        String status = DBUtil.getUserStatus(username);
+        if (status == null) {
+            return true; // Mặc định cho phép nếu không có status
+        }
+
+        String normalizedStatus = status.trim().toLowerCase();
+        return !"banned".equals(normalizedStatus) && !"inactive".equals(normalizedStatus);
+    }
+
+    private String getUsernameFromEmail(String email) throws SQLException {
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT username FROM users WHERE email = ?")) {
+            stmt.setString(1, email);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("username");
+                }
+            }
+        }
+        return null;
     }
 }
