@@ -35,14 +35,17 @@ public class EmailUtil {
                 props.setProperty("mail.smtp.auth", "true");
                 props.setProperty("mail.smtp.starttls.enable", "true");
                 props.setProperty("mail.smtp.starttls.required", "true");
+
+                // 2 dòng bắt buộc cho SendGrid
+                props.setProperty("mail.smtp.ssl.trust", "smtp.sendgrid.net");
+                props.setProperty("mail.smtp.ssl.protocols", "TLSv1.2");
+
                 smtpUser = System.getenv("SMTP_USER");
                 smtpPass = System.getenv("SMTP_PASS");
                 smtpFrom = System.getenv("SMTP_FROM");
             } else {
                 try (InputStream input = EmailUtil.class.getClassLoader().getResourceAsStream("email.properties")) {
-                    if (input == null) {
-                        throw new IOException("email.properties not found in classpath");
-                    }
+                    if (input == null) throw new IOException("email.properties not found in classpath");
                     Properties tempProps = new Properties();
                     tempProps.load(input);
                     disableRequested = disableRequested || Boolean.parseBoolean(tempProps.getProperty("email.disabled", "false"));
@@ -50,9 +53,11 @@ public class EmailUtil {
 
                     props.setProperty("mail.smtp.host", tempProps.getProperty("smtp.host"));
                     props.setProperty("mail.smtp.port", tempProps.getProperty("smtp.port", "587"));
-                    props.setProperty("mail.smtp.auth", tempProps.getProperty("mail.smtp.auth", "true"));
-                    props.setProperty("mail.smtp.starttls.enable", tempProps.getProperty("mail.smtp.starttls.enable", "true"));
+                    props.setProperty("mail.smtp.auth", "true");
+                    props.setProperty("mail.smtp.starttls.enable", "true");
                     props.setProperty("mail.smtp.starttls.required", "true");
+                    props.setProperty("mail.smtp.ssl.trust", "smtp.sendgrid.net");
+                    props.setProperty("mail.smtp.ssl.protocols", "TLSv1.2");
 
                     smtpUser = tempProps.getProperty("smtp.user");
                     smtpPass = tempProps.getProperty("smtp.pass");
@@ -75,14 +80,13 @@ public class EmailUtil {
                 session.setDebug(debugMode);
                 emailEnabled = true;
 
-                System.out.println("=== Email Configuration (SMTP only) ===");
+                System.out.println("=== Email Configuration (SendGrid SMTP) ===");
                 System.out.println("SMTP Host: " + props.getProperty("mail.smtp.host"));
                 System.out.println("SMTP Port: " + props.getProperty("mail.smtp.port"));
-                System.out.println("SMTP Username: " + maskValue(smtpUser));
-                System.out.println("SMTP Password: " + maskSecret(smtpPass));
+                System.out.println("SMTP Username: " + smtpUser);
                 System.out.println("SMTP From: " + smtpFrom);
                 System.out.println("Debug Mode: " + debugMode);
-                System.out.println("======================================");
+                System.out.println("==========================================");
             }
         } catch (IOException e) {
             System.err.println("EmailUtil - Failed to load email configuration: " + e.getMessage());
@@ -94,54 +98,37 @@ public class EmailUtil {
         }
     }
 
+    // ========================= EMAIL TYPES =========================
+
     public static void sendVerificationEmail(String toEmail, String token, String username) {
-        String subject = "Xác nhận tài khoản NKBookstore - Verification Required";
+        String subject = "Xác nhận tài khoản - Bookish Bliss Haven";
         String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "http://localhost:8080";
         String verificationUrl = baseUrl + "/api/auth/verify?token=" + token;
-        
-        String body = "Chào " + username + ",\n\n" +
-                      "Cảm ơn bạn đã đăng ký tài khoản tại NKBookstore!\n\n" +
-                      "Để hoàn tất quá trình đăng ký, vui lòng click vào liên kết bên dưới để xác nhận email:\n" +
-                      verificationUrl + "\n\n" +
-                      "Liên kết này có hiệu lực trong 24 giờ.\n" +
-                      "Nếu bạn không thực hiện đăng ký này, vui lòng bỏ qua email này.\n\n" +
-                      "Trân trọng,\n" +
-                      "Đội ngũ NKBookstore\n" +
-                      "📚 Kho sách trực tuyến hàng đầu Việt Nam";
 
+        String body = "Chào " + username + ",\n\n" +
+                "Cảm ơn bạn đã đăng ký tài khoản tại Bookish Bliss Haven!\n\n" +
+                "Vui lòng nhấn vào liên kết bên dưới để xác nhận email:\n" +
+                verificationUrl + "\n\n" +
+                "Liên kết này có hiệu lực trong 24 giờ.\n" +
+                "Trân trọng,\nĐội ngũ Bookish Bliss Haven 📚";
         sendEmail(toEmail, subject, body);
     }
-    
+
     public static void sendOTPEmail(String toEmail, String otp) {
-        String subject = "🔐 Mã xác nhận đăng ký NKBookstore";
-        
+        String subject = "🔐 Mã xác nhận đăng ký - Bookish Bliss Haven";
         String body = "Chào bạn,\n\n" +
-                "Cảm ơn bạn đã đăng ký tài khoản tại NKBookstore!\n\n" +
                 "Mã OTP của bạn là: " + otp + "\n\n" +
-                "⏰ Mã này có hiệu lực trong 10 phút.\n" +
-                "🔒 Vui lòng KHÔNG chia sẻ mã này với bất kỳ ai.\n\n" +
-                "Nếu bạn không thực hiện đăng ký này, vui lòng bỏ qua email này.\n\n" +
-                "Trân trọng,\n" +
-                "Đội ngũ NKBookstore\n" +
-                "📚 Kho sách trực tuyến hàng đầu Việt Nam";
-
+                "⏰ Mã có hiệu lực trong 10 phút.\n🔒 Vui lòng KHÔNG chia sẻ mã này với ai.\n\n" +
+                "Trân trọng,\nĐội ngũ Bookish Bliss Haven 📚";
         sendEmail(toEmail, subject, body);
     }
-    
-    public static void sendWelcomeEmail(String toEmail, String username) {
-        String subject = "🎉 Chào mừng đến với NKBookstore!";
-        
-        String body = "Chào " + username + ",\n\n" +
-                      "🎉 Chào mừng bạn đến với NKBookstore!\n\n" +
-                      "Tài khoản của bạn đã được tạo thành công và đã được kích hoạt.\n" +
-                      "Bạn có thể đăng nhập ngay bằng username và password đã đăng ký.\n\n" +
-                      "📚 Khám phá hàng ngàn đầu sách hay tại NKBookstore\n" +
-                      "🎁 Nhận ưu đãi đặc biệt cho thành viên mới\n\n" +
-                      "Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.\n\n" +
-                      "Trân trọng,\n" +
-                      "Đội ngũ NKBookstore\n" +
-                      "📚 Kho sách trực tuyến hàng đầu Việt Nam";
 
+    public static void sendWelcomeEmail(String toEmail, String username) {
+        String subject = "🎉 Chào mừng đến với Bookish Bliss Haven!";
+        String body = "Chào " + username + ",\n\n" +
+                "🎉 Tài khoản của bạn đã được tạo thành công!\n" +
+                "Hãy đăng nhập và bắt đầu khám phá kho sách khổng lồ của Bookish Bliss Haven.\n\n" +
+                "Trân trọng,\nĐội ngũ Bookish Bliss Haven 📚";
         sendEmail(toEmail, subject, body);
     }
 
@@ -149,31 +136,17 @@ public class EmailUtil {
         String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "http://localhost:8080";
         String resetUrl = baseUrl + "/reset-password.jsp?token=" + token;
 
-        String subject = "Đặt lại mật khẩu NKBookstore - Password Reset Request";
+        String subject = "Đặt lại mật khẩu - Bookish Bliss Haven";
         String body = "Chào " + username + ",\n\n" +
-                "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại NKBookstore.\n\n" +
-                "Để tạo mật khẩu mới, vui lòng click vào liên kết bên dưới:\n" +
+                "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại Bookish Bliss Haven.\n\n" +
+                "Nhấn vào liên kết bên dưới để tạo mật khẩu mới:\n" +
                 resetUrl + "\n\n" +
-                "⚠️  Liên kết này có hiệu lực trong 1 giờ.\n" +
-                "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n" +
-                "Để bảo mật tài khoản, không chia sẻ liên kết này với bất kỳ ai.\n\n" +
-                "Trân trọng,\n" +
-                "Đội ngũ NKBookstore\n" +
-                "📚 Kho sách trực tuyến hàng đầu Việt Nam";
-
+                "⚠️ Liên kết này có hiệu lực trong 1 giờ.\n\n" +
+                "Trân trọng,\nĐội ngũ Bookish Bliss Haven 📚";
         sendEmail(toEmail, subject, body);
     }
 
-    public static void testEmailConnection(String testEmail) {
-        String subject = "NKBookstore - Test Email Configuration";
-        String body = "Chào bạn,\n\n" +
-                      "Đây là email test để kiểm tra cấu hình MailerToGo.\n" +
-                      "Nếu bạn nhận được email này, cấu hình email đã hoạt động thành công!\n\n" +
-                      "Trân trọng,\n" +
-                      "Đội ngũ NKBookstore";
-        
-        sendEmail(testEmail, subject, body);
-    }
+    // ========================= CORE EMAIL METHOD =========================
 
     private static void sendEmail(String to, String subject, String body) {
         if (!emailEnabled) {
@@ -182,52 +155,29 @@ public class EmailUtil {
             return;
         }
         try {
-            System.out.println("=== Starting Email Send ===");
-            System.out.println("SMTP Host: " + props.getProperty("mail.smtp.host"));
-            System.out.println("SMTP Port: " + props.getProperty("mail.smtp.port"));
-            System.out.println("SMTP Auth: " + props.getProperty("mail.smtp.auth"));
-            System.out.println("SMTP TLS: " + props.getProperty("mail.smtp.starttls.enable"));
-            
+            System.out.println("=== Sending Email ===");
+            System.out.println("From: " + smtpFrom + " | To: " + to + " | Subject: " + subject);
+
             Message message = new MimeMessage(session);
-            System.out.println("From: " + smtpFrom);
-            System.out.println("To: " + to);
-            System.out.println("Subject: " + subject);
-            
             message.setFrom(new InternetAddress(smtpFrom));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
             message.setSubject(subject);
             message.setText(body);
 
-            System.out.println("Sending email via Transport...");
-            Transport.send(message);
-            System.out.println("✅ Email sent successfully to " + to + " via MailerToGo SMTP");
+            // ✅ dùng Transport.send() có session
+            Transport transport = session.getTransport("smtp");
+            transport.connect(props.getProperty("mail.smtp.host"), smtpUser, smtpPass);
+            transport.sendMessage(message, message.getAllRecipients());
+            transport.close();
+
+            System.out.println("✅ Email sent successfully to " + to + " via SendGrid SMTP");
         } catch (MessagingException e) {
             System.err.println("❌ Failed to send email to " + to);
-            System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Email sending failed: " + e.getMessage(), e);
         }
-    }
-
-    public static boolean isEmailEnabled() {
-        return emailEnabled;
     }
 
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
-    }
-
-    private static String maskValue(String value) {
-        if (isBlank(value)) {
-            return "NULL";
-        }
-        return value.length() <= 4 ? value : value.substring(0, 2) + "***" + value.substring(value.length() - 2);
-    }
-
-    private static String maskSecret(String value) {
-        if (isBlank(value)) {
-            return "NULL";
-        }
-        return "***" + value.substring(Math.max(0, value.length() - 4));
     }
 }
