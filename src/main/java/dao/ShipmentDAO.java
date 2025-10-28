@@ -457,13 +457,13 @@ public class ShipmentDAO {
         if (shipmentExists(con, orderId)) {
             return;
         }
-        final String pickSql = "SELECT u.username FROM users u WHERE role='shipper'::user_role ORDER BY random() LIMIT 1";
+        final String pickSql = "SELECT u.username FROM users u WHERE role='shipper'::user_role AND (status IS NULL OR status NOT IN ('banned', 'inactive')) ORDER BY random() LIMIT 1";
         String shipperUser = null;
         try (PreparedStatement ps = con.prepareStatement(pickSql);
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) shipperUser = rs.getString(1);
         }
-        if (shipperUser == null || shipperUser.isEmpty()) throw new SQLException("No shipper user found.");
+        if (shipperUser == null || shipperUser.isEmpty()) throw new SQLException("No active shipper user found.");
         try (PreparedStatement ps = con.prepareStatement(
                 "INSERT INTO shipments (order_id, shipper_user_id, assigned_at, last_update_at) VALUES (?, ?, NOW(), NOW())")) {
             ps.setLong(1, orderId);

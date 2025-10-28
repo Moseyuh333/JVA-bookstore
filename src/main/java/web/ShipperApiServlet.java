@@ -45,6 +45,17 @@ public class ShipperApiServlet extends HttpServlet {
         String user = currentUsername(req);
         if (user == null) { writeJson(resp, 401, err("UNAUTHORIZED", "Missing/invalid login")); return; }
 
+        // Kiểm tra status user trước khi cho phép truy cập shipper API
+        try {
+            if (!isUserAllowedToShip(req)) {
+                writeJson(resp, 403, err("FORBIDDEN", "Tài khoản của bạn đã bị hạn chế quyền giao hàng"));
+                return;
+            }
+        } catch (SQLException ex) {
+            writeJson(resp, 500, err("SERVER_ERROR", ex.getMessage()));
+            return;
+        }
+
         String path = normalizedPath(req);
 
         try {
@@ -455,4 +466,98 @@ public class ShipperApiServlet extends HttpServlet {
         }
     }
     // =======================================================================================
+
+    private boolean isUserAllowedToShip(HttpServletRequest request) throws SQLException {
+        String user = currentUsername(request);
+        if (user == null) {
+            return false; // Không đăng nhập
+        }
+
+        String email = getUserEmail(request);
+        if (email == null) {
+            return false;
+        }
+
+        // Lấy username từ email
+        String username = getUsernameFromEmail(email);
+        if (username == null) {
+            return false;
+        }
+
+        String status = DBUtil.getUserStatus(username);
+        if (status == null) {
+            return true; // Mặc định cho phép nếu không có status
+        }
+
+        String normalizedStatus = status.trim().toLowerCase();
+        return !"banned".equals(normalizedStatus) && !"inactive".equals(normalizedStatus);
+    }
+
+    private String getUserEmail(HttpServletRequest request) {
+        // Lấy email từ session hoặc attribute
+        Object emailAttr = request.getAttribute("email");
+        if (emailAttr != null && !String.valueOf(emailAttr).trim().isEmpty()) {
+            return String.valueOf(emailAttr).trim();
+        }
+
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            Object emailSess = session.getAttribute("email");
+            if (emailSess != null && !String.valueOf(emailSess).trim().isEmpty()) {
+                return String.valueOf(emailSess).trim();
+            }
+        }
+
+        // Nếu không có trong session, lấy từ token JWT
+        String token = null;
+        Cookie[] cs = request.getCookies();
+        if (cs != null) {
+            for (Cookie c : cs) {
+                if ("token".equalsIgnoreCase(c.getName())) { token = c.getValue(); break; }
+            }
+        }
+        if (token == null || token.isEmpty()) {
+            String auth = request.getHeader("Authorization");
+            if (auth != null && auth.startsWith("Bearer ")) token = auth.substring(7).trim();
+        }
+        if (token != null && !token.isEmpty()) {
+            try {
+                // Lấy username từ token, sau đó query email từ DB
+                String username = JwtUtil.validateToken(token);
+                if (username != null) {
+                    return getEmailFromUsername(username);
+                }
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private String getUsernameFromEmail(String email) throws SQLException {
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT username FROM users WHERE email = ?")) {
+            stmt.setString(1, email);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("username");
+                }
+            }
+        }
+        return null;
+    }
+
+    private String getEmailFromUsername(String username) throws SQLException {
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT email FROM users WHERE username = ?")) {
+            stmt.setString(1, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("email");
+                }
+            }
+        }
+        return null;
+    }
 }
