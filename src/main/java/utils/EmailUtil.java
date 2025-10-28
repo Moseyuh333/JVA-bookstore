@@ -45,10 +45,12 @@ public class EmailUtil {
                 smtpFrom = System.getenv("SMTP_FROM");
             } else {
                 try (InputStream input = EmailUtil.class.getClassLoader().getResourceAsStream("email.properties")) {
-                    if (input == null) throw new IOException("email.properties not found in classpath");
+                    if (input == null)
+                        throw new IOException("email.properties not found in classpath");
                     Properties tempProps = new Properties();
                     tempProps.load(input);
-                    disableRequested = disableRequested || Boolean.parseBoolean(tempProps.getProperty("email.disabled", "false"));
+                    disableRequested = disableRequested
+                            || Boolean.parseBoolean(tempProps.getProperty("email.disabled", "false"));
                     debugMode = debugMode || Boolean.parseBoolean(tempProps.getProperty("mail.debug", "false"));
 
                     props.setProperty("mail.smtp.host", tempProps.getProperty("smtp.host"));
@@ -180,4 +182,42 @@ public class EmailUtil {
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
+
+    // =====================================================
+    // Hàm test kết nối và gửi mail thử qua SendGrid SMTP
+    // =====================================================
+    public static void testEmailConnection(String testEmail) {
+        String subject = "📧 Test Email - Bookish Bliss Haven";
+        String body = "Xin chào,\n\n"
+                + "Đây là email test được gửi từ hệ thống Bookish Bliss Haven.\n"
+                + "Nếu bạn nhận được email này, cấu hình SendGrid SMTP đã hoạt động thành công 🎉\n\n"
+                + "Trân trọng,\nĐội ngũ Bookish Bliss Haven 📚";
+
+        if (!emailEnabled) {
+            System.out.println("[Test Email] Email sending is currently disabled.");
+            System.out.println("Would send to: " + testEmail);
+            System.out.println("Body:\n" + body);
+            return;
+        }
+
+        try {
+            System.out.println("=== Testing SendGrid SMTP connection ===");
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(smtpFrom));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(testEmail));
+            message.setSubject(subject);
+            message.setText(body);
+
+            Transport transport = session.getTransport("smtp");
+            transport.connect(props.getProperty("mail.smtp.host"), smtpUser, smtpPass);
+            transport.sendMessage(message, message.getAllRecipients());
+            transport.close();
+
+            System.out.println("✅ Test email sent successfully to " + testEmail);
+        } catch (Exception e) {
+            System.err.println("❌ Test email failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }
