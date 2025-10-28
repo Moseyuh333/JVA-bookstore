@@ -473,18 +473,7 @@ public class ShipperApiServlet extends HttpServlet {
             return false; // Không đăng nhập
         }
 
-        String email = getUserEmail(request);
-        if (email == null) {
-            return false;
-        }
-
-        // Lấy username từ email
-        String username = getUsernameFromEmail(email);
-        if (username == null) {
-            return false;
-        }
-
-        String status = DBUtil.getUserStatus(username);
+        String status = DBUtil.getUserStatus(user);
         if (status == null) {
             return true; // Mặc định cho phép nếu không có status
         }
