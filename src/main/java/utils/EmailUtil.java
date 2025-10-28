@@ -104,7 +104,10 @@ public class EmailUtil {
 
     public static void sendVerificationEmail(String toEmail, String token, String username) {
         String subject = "Xác nhận tài khoản - Bookish Bliss Haven";
-        String baseUrl = System.getenv("BASE_URL") != null ? System.getenv("BASE_URL") : "http://localhost:8080";
+        String baseUrl = System.getenv("BASE_URL");
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            baseUrl = "https://jva-bookstore-17d2d34519f8.herokuapp.com"; // fallback Heroku URL
+        }
         String verificationUrl = baseUrl + "/api/auth/verify?token=" + token;
 
         String body = "Chào " + username + ",\n\n" +
