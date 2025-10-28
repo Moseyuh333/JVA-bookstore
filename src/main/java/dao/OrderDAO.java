@@ -1523,7 +1523,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
 
     private static BigDecimal calculateDiscount(CouponResult coupon, BigDecimal subtotal) throws SQLException {
         BigDecimal discount;
-        if ("percentage".equalsIgnoreCase(coupon.type)) {
+        if ("percent".equalsIgnoreCase(coupon.type) || "percentage".equalsIgnoreCase(coupon.type)) {
             discount = subtotal.multiply(coupon.value).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             if (coupon.maxDiscount != null && discount.compareTo(coupon.maxDiscount) > 0) {
                 discount = coupon.maxDiscount;
