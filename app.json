@@ -5,6 +5,14 @@
     "JWT_SECRET": {
       "description": "JWT signing secret",
       "required": false
+    },
+    "ATTACHMENT_SCANNER_API_KEY": {
+      "description": "AttachmentScanner API key provided by the Heroku add-on",
+      "required": false
+    },
+    "ATTACHMENT_SCANNER_BASE_URL": {
+      "description": "AttachmentScanner base URL (defaults to the provisioned cluster)",
+      "required": false
     }
   },
   "buildpacks": [

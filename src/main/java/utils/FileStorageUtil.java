@@ -73,26 +73,51 @@ public final class FileStorageUtil {
 
     public static StoredFile storeReviewMedia(Part part) throws IOException {
         if (part == null || part.getSize() <= 0) {
-            throw new IOException("Tệp tải lên không hợp lệ");
+            throw new IOException("Invalid upload payload");
         }
         String contentType = normalizeContentType(part.getContentType());
         MediaCategory category = detectCategory(contentType);
         if (category == MediaCategory.UNKNOWN) {
-            throw new IOException("Định dạng tệp không được hỗ trợ");
+            throw new IOException("Unsupported media type");
         }
         long size = part.getSize();
         if ((category == MediaCategory.IMAGE && size > MAX_IMAGE_SIZE)
                 || (category == MediaCategory.VIDEO && size > MAX_VIDEO_SIZE)) {
             throw new IOException(category == MediaCategory.IMAGE
-                    ? "Ảnh vượt quá dung lượng tối đa 5MB"
-                    : "Video vượt quá dung lượng tối đa 20MB");
+                    ? "Image exceeds 5MB limit"
+                    : "Video exceeds 20MB limit");
         }
         String extension = resolveExtension(part, contentType, category);
         String filename = generateFileName(extension);
         Path targetDir = reviewMediaDirectory();
         Path target = targetDir.resolve(filename);
-        try (InputStream in = part.getInputStream()) {
-            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        Path tempFile = Files.createTempFile("jva-review-upload-", ".tmp");
+        boolean moved = false;
+        try {
+            try (InputStream in = part.getInputStream()) {
+                Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+            AttachmentScannerClient.ScanVerdict verdict = AttachmentScannerClient.scanFile(
+                    tempFile, part.getSubmittedFileName(), contentType);
+            if (verdict.isRejected()) {
+                String detail = verdict.getDetails();
+                throw new IOException(detail == null || detail.isEmpty()
+                        ? "Upload rejected due to malware detection"
+                        : "Upload rejected: " + detail);
+            }
+            if (verdict.isSkipped()) {
+                System.err.println("Attachment scanner disabled, skipping scan for " + filename);
+            }
+            Files.move(tempFile, target, StandardCopyOption.REPLACE_EXISTING);
+            moved = true;
+        } finally {
+            if (!moved) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException cleanupEx) {
+                    System.err.println("Unable to remove temporary upload " + tempFile + ": " + cleanupEx.getMessage());
+                }
+            }
         }
         return new StoredFile(REVIEW_MEDIA_PREFIX + filename,
                 category == MediaCategory.IMAGE ? "image" : "video",
@@ -100,6 +125,7 @@ public final class FileStorageUtil {
                 size,
                 target);
     }
+
 
     public static boolean deleteReviewMedia(String mediaUrl, String contextPath) {
         String fileName = extractReviewMediaFileName(mediaUrl, contextPath);
