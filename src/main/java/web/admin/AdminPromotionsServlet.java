@@ -160,55 +160,106 @@ public class AdminPromotionsServlet extends HttpServlet {
 
     private void getPromotion(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
-
+        String source = req.getParameter("source"); 
         if (idStr == null) {
             out.write("{\"error\":\"ID is required\"}");
             return;
         }
 
         int id = Integer.parseInt(idStr);
-    String sql =
-        "SELECT p.id, p.name, p.code, p.description, " +
-        "p.discount_type AS type, " +
-        "p.discount_scope AS kind, " +
-        "p.discount_value, " +
-        "p.start_date AS start_at, " +
-        "p.end_date AS end_at, " +
-        "p.status AS active, " +
-        "p.shop_id, " +
-        "s.name AS shop_name " +
-        "FROM promotions p " +
-        "LEFT JOIN shops s ON p.shop_id = s.id " +
-        "WHERE p.id = ?";
 
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String sqlSystem =
+            "SELECT p.id, p.name, p.code, p.description, " +
+            "p.discount_type AS type, " +
+            "p.discount_scope AS kind, " +
+            "p.discount_value, " +
+            "p.start_date AS start_at, " +
+            "p.end_date AS end_at, " +
+            "p.status AS active, " +
+            "p.shop_id, s.name AS shop_name, 'system' AS source " +
+            "FROM promotions p " +
+            "LEFT JOIN shops s ON p.shop_id = s.id " +
+            "WHERE p.id = ?";
 
-            pstmt.setInt(1, id);
+        String sqlShop =
+            "SELECT sc.id, sc.code AS name, sc.code, sc.description, " +
+            "sc.discount_type AS type, " +
+            "'product' AS kind, " +
+            "sc.discount_value, " +
+            "sc.start_date AS start_at, " +
+            "sc.end_date AS end_at, " +
+            "(CASE WHEN sc.status = 'active' THEN TRUE ELSE FALSE END) AS active, " +
+            "sc.shop_id, s.name AS shop_name, 'shop' AS source " +
+            "FROM shop_coupons sc " +
+            "LEFT JOIN shops s ON sc.shop_id = s.id " +
+            "WHERE sc.id = ?";
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    String json = "{"
-                        + "\"id\":" + rs.getInt("id") + ","
-                        + "\"name\":\"" + escapeJson(rs.getString("name")) + "\","
-                        + "\"code\":\"" + escapeJson(rs.getString("code")) + "\","
-                        + "\"description\":\"" + escapeJson(rs.getString("description")) + "\","
-                        + "\"type\":\"" + escapeJson(rs.getString("type")) + "\","
-                        + "\"kind\":\"" + escapeJson(rs.getString("kind")) + "\","
-                        + "\"discount_value\":" + rs.getBigDecimal("discount_value") + ","
-                        + "\"start_at\":\"" + (rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "") + "\","
-                        + "\"end_at\":\"" + (rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "") + "\","
-                        + "\"active\":" + rs.getBoolean("active") + ","
-                        + "\"shop_id\":" + rs.getInt("shop_id") + ""
-                        + ",\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\""
-                        + "}";
-                    out.write(json);
-                } else {
-                    out.write("{\"error\":\"Promotion not found\"}");
+        try (Connection conn = DBUtil.getConnection()) {
+            if ("shop".equals(source)) {
+                try (PreparedStatement ps = conn.prepareStatement(sqlShop)) {
+                    ps.setInt(1, id);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            writePromoJson(rs, out);
+                            return;
+                        }
+                    }
+                }
+            } else if ("system".equals(source)) {
+                try (PreparedStatement ps = conn.prepareStatement(sqlSystem)) {
+                    ps.setInt(1, id);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            writePromoJson(rs, out);
+                            return;
+                        }
+                    }
+                }
+            } else {
+                try (PreparedStatement ps = conn.prepareStatement(sqlSystem)) {
+                    ps.setInt(1, id);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            writePromoJson(rs, out);
+                            return;
+                        }
+                    }
+                }
+                try (PreparedStatement ps2 = conn.prepareStatement(sqlShop)) {
+                    ps2.setInt(1, id);
+                    try (ResultSet rs2 = ps2.executeQuery()) {
+                        if (rs2.next()) {
+                            writePromoJson(rs2, out);
+                            return;
+                        }
+                    }
                 }
             }
+
+            out.write("{\"error\":\"Promotion not found\"}");
         }
     }
+
+
+    private void writePromoJson(ResultSet rs, PrintWriter out) throws SQLException {
+        String json = "{"
+            + "\"id\":" + rs.getInt("id") + ","
+            + "\"name\":\"" + escapeJson(rs.getString("name")) + "\","
+            + "\"code\":\"" + escapeJson(rs.getString("code")) + "\","
+            + "\"description\":\"" + escapeJson(rs.getString("description")) + "\","
+            + "\"type\":\"" + escapeJson(rs.getString("type")) + "\","
+            + "\"kind\":\"" + escapeJson(rs.getString("kind")) + "\","
+            + "\"discount_value\":" + rs.getBigDecimal("discount_value") + ","
+            + "\"start_at\":\"" + (rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "") + "\","
+            + "\"end_at\":\"" + (rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "") + "\","
+            + "\"active\":" + rs.getBoolean("active") + ","
+            + "\"shop_id\":" + rs.getInt("shop_id") + ","
+            + "\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\","
+            + "\"source\":\"" + escapeJson(rs.getString("source")) + "\""
+            + "}";
+        out.write(json);
+    }
+
 
     private void createPromotion(HttpServletRequest req, PrintWriter out) throws SQLException {
         String name = req.getParameter("name");
