@@ -587,8 +587,8 @@
     </div>
     <form id="promoForm" class="modal-body" autocomplete="off">
         <input type="hidden" id="promoId" name="id" />
+        <input type="hidden" id="promoSource" name="source" />
         <div class="form-grid">
-            <input type="hidden" id="promoId" name="id" />
             <div class="modal-row">
                 <div class="modal-label">Tên chương trình <span style="color:#ef4444">*</span></div>
                 <div style="flex:1"><input id="promoName" name="name" class="modal-input" type="text" placeholder="Tên chương trình" required /></div>

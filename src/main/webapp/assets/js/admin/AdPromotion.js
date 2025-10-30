@@ -314,6 +314,8 @@ promoForm?.addEventListener('submit', async (e)=>{
     const id = promoIdInput.value;
     const fd = new FormData(promoForm);
     const params = new URLSearchParams(); for(const [k,v] of fd.entries()) params.append(k,v);
+    const source = document.getElementById('promoSource')?.value || 'system';
+    params.append('source', source);
     const token = localStorage.getItem('admin_token');
     try{
         const action = id ? 'update' : 'create'; if(id) params.append('id', id);
@@ -371,6 +373,7 @@ async function openEditPromo(id, source){
         }
         if(data.error){ alert('Server trả về lỗi (GET):\n' + data.error); return; }
         promoIdInput.value = data.id || '';
+        document.getElementById('promoSource').value = data.source || source || 'system';
         document.getElementById('promoName').value = data.name || '';
         document.getElementById('promoCode').value = data.code || '';
         document.getElementById('promoDescription').value = data.description || '';
