@@ -582,6 +582,7 @@
     </div>
     <form id="promoForm" class="modal-body" autocomplete="off">
         <input type="hidden" id="promoId" name="id" />
+        <input type="hidden" id="promoSource" name="source" />
         <div class="form-grid">
             <input type="hidden" id="promoId" name="id" />
             <div class="modal-row">
@@ -625,6 +626,10 @@
             <div class="modal-row">
                 <div class="modal-label">Mô tả</div>
                 <div style="flex:1"><input id="promoDescription" name="description" class="modal-input" type="text" placeholder="Mô tả ngắn" /></div>
+            </div>
+            <div class="form-group">
+                <label for="promoShopName">Thuộc Shop</label>
+                <input type="text" id="promoShopName" class="form-control" placeholder="Khuyến mãi hệ thống" readonly>
             </div>
             <div class="modal-row">
                 <div class="modal-label">Trạng thái</div>

@@ -167,13 +167,19 @@ public class AdminPromotionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-    String sql = "SELECT id, name, code, description, " +
-             "       discount_type AS type, " +
-             "       discount_scope AS kind, " +
-                     "       discount_value, " +
-                     "       start_date AS start_at, end_date AS end_at, " +
-                     "       status AS active, shop_id " +
-                     "FROM promotions WHERE id = ?";
+    String sql =
+        "SELECT p.id, p.name, p.code, p.description, " +
+        "p.discount_type AS type, " +
+        "p.discount_scope AS kind, " +
+        "p.discount_value, " +
+        "p.start_date AS start_at, " +
+        "p.end_date AS end_at, " +
+        "p.status AS active, " +
+        "p.shop_id, " +
+        "s.name AS shop_name " +
+        "FROM promotions p " +
+        "LEFT JOIN shops s ON p.shop_id = s.id " +
+        "WHERE p.id = ?";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -194,6 +200,7 @@ public class AdminPromotionsServlet extends HttpServlet {
                         + "\"end_at\":\"" + (rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "") + "\","
                         + "\"active\":" + rs.getBoolean("active") + ","
                         + "\"shop_id\":" + rs.getInt("shop_id") + ""
+                        + ",\"shop_name\":\"" + escapeJson(rs.getString("shop_name")) + "\""
                         + "}";
                     out.write(json);
                 } else {
@@ -262,62 +269,67 @@ public class AdminPromotionsServlet extends HttpServlet {
 
     private void updatePromotion(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
-        String name = req.getParameter("name");
+        String source = req.getParameter("source");
+        if (source == null) source = "system";
+
+        // Common fields
         String code = req.getParameter("code");
         String description = req.getParameter("description");
         String type = req.getParameter("type");
-        String kind = req.getParameter("kind");
         String discountValueStr = req.getParameter("discount_value");
         String startAt = req.getParameter("start_at");
         String endAt = req.getParameter("end_at");
         String activeStr = req.getParameter("active");
-        String shopIdStr = req.getParameter("shop_id");
 
-        if (idStr == null || name == null || name.trim().isEmpty() || code == null || code.trim().isEmpty() || type == null || discountValueStr == null) {
-            out.write("{\"error\":\"ID, name, code, type and discount value are required\"}");
+        if (idStr == null || code == null || discountValueStr == null) {
+            out.write("{\"error\":\"Thiếu dữ liệu bắt buộc\"}");
             return;
         }
 
         int id = Integer.parseInt(idStr);
         BigDecimal discountValue = new BigDecimal(discountValueStr);
-        boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
-        Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
+        boolean active = activeStr != null && (activeStr.equalsIgnoreCase("true") || activeStr.equalsIgnoreCase("active"));
 
-    String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_type = ?, discount_scope = ?, discount_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection()) {
+            String sql;
+            if ("shop".equals(source)) {
+                sql = "UPDATE shop_coupons SET code = ?, description = ?, discount_type = ?, discount_value = ?, start_date = ?, end_date = ?, status = ? WHERE id = ?";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, code.trim());
+                    ps.setString(2, description);
+                    ps.setString(3, type);
+                    ps.setBigDecimal(4, discountValue);
+                    ps.setTimestamp(5, parseToTimestamp(startAt));
+                    ps.setTimestamp(6, parseToTimestamp(endAt));
+                    ps.setString(7, active ? "active" : "inactive");
+                    ps.setInt(8, id);
 
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, name.trim());
-            pstmt.setString(2, code.trim().toUpperCase());
-            pstmt.setString(3, description != null ? description.trim() : null);
-            pstmt.setString(4, type);
-            pstmt.setString(5, kind);
-            pstmt.setBigDecimal(6, discountValue);
-            Timestamp startTimestamp = parseToTimestamp(startAt);
-            Timestamp endTimestamp = parseToTimestamp(endAt);
-            pstmt.setTimestamp(7, startTimestamp);
-            pstmt.setTimestamp(8, endTimestamp);
-
-            pstmt.setBoolean(9, active);
-            if (shopId != null) {
-                pstmt.setInt(10, shopId);
+                    int rows = ps.executeUpdate();
+                    out.write(rows > 0 ? "{\"message\":\"Shop coupon updated\"}" : "{\"error\":\"Not found\"}");
+                }
             } else {
-                pstmt.setNull(10, java.sql.Types.INTEGER);
-            }
-            pstmt.setInt(11, id);
+                sql = "UPDATE promotions SET code = ?, description = ?, discount_type = ?, discount_value = ?, start_date = ?, end_date = ?, status = ? WHERE id = ?";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, code.trim());
+                    ps.setString(2, description);
+                    ps.setString(3, type);
+                    ps.setBigDecimal(4, discountValue);
+                    ps.setTimestamp(5, parseToTimestamp(startAt));
+                    ps.setTimestamp(6, parseToTimestamp(endAt));
+                    ps.setBoolean(7, active);
+                    ps.setInt(8, id);
 
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Promotion updated successfully\"}");
-            } else {
-                out.write("{\"error\":\"Promotion not found\"}");
+                    int rows = ps.executeUpdate();
+                    out.write(rows > 0 ? "{\"message\":\"System promotion updated\"}" : "{\"error\":\"Not found\"}");
+                }
             }
         }
     }
 
     private void deletePromotion(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
+        String source = req.getParameter("source");
+        if (source == null) source = "system";
 
         if (idStr == null) {
             out.write("{\"error\":\"ID is required\"}");
@@ -325,21 +337,17 @@ public class AdminPromotionsServlet extends HttpServlet {
         }
 
         int id = Integer.parseInt(idStr);
-        String sql = "DELETE FROM promotions WHERE id = ?";
+        String table = "shop".equals(source) ? "shop_coupons" : "promotions";
+        String sql = "DELETE FROM " + table + " WHERE id = ?";
 
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
-
             int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Promotion deleted successfully\"}");
-            } else {
-                out.write("{\"error\":\"Promotion not found\"}");
-            }
+            out.write(rows > 0 ? "{\"message\":\"Deleted successfully\"}" : "{\"error\":\"Not found\"}");
         }
     }
+
 
     private Timestamp parseToTimestamp(String dateStr) {
         if (dateStr == null || dateStr.trim().isEmpty()) return null;

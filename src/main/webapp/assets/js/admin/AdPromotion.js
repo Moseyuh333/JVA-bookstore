@@ -254,6 +254,14 @@ async function openEditPromo(id){
         if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);
         if(data.end_at) document.getElementById('promoEnd').value = (new Date(data.end_at)).toISOString().slice(0,16);
         document.getElementById('promoActive').value = data.active ? 'true' : 'false';
+        // Hiển thị tên shop nếu có
+        if (document.getElementById('promoShopName')) {
+            document.getElementById('promoShopName').value = data.shop_name || 'Khuyến mãi hệ thống';
+        }
+        // Lưu thêm source để biết là "system" hay "shop"
+        if (document.getElementById('promoSource')) {
+            document.getElementById('promoSource').value = data.source || 'system';
+        }
         promoTitleEl.textContent='Chỉnh sửa khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
     }catch(err){ console.error(err); alert('Lỗi khi lấy khuyến mãi'); }
 }
