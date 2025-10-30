@@ -262,6 +262,19 @@
             background-color: #fff9e6 !important;
         }
 
+        .table-warning > td {
+            background-color: #fff3cd !important;
+        }
+
+        .table-warning .actions {
+            background-color: #fff3cd !important;
+        }
+
+        .table-warning .btn-icon {
+            margin: 0 2px;
+            vertical-align: middle;
+        }
+
         .table-wrapper {
             padding: 24px;
         }
