@@ -429,46 +429,81 @@ public class AdminPromotionsServlet extends HttpServlet {
         String endAt = req.getParameter("end_at");
         String activeStr = req.getParameter("active");
         String shopIdStr = req.getParameter("shop_id");
+        String source = req.getParameter("source");
 
-        if (idStr == null || name == null || name.trim().isEmpty() || code == null || code.trim().isEmpty() || type == null || discountValueStr == null) {
-            out.write("{\"error\":\"ID, name, code, type and discount value are required\"}");
+        if (idStr == null || discountValueStr == null) {
+            out.write("{\"error\":\"ID and discount value are required\"}");
             return;
         }
 
         int id = Integer.parseInt(idStr);
         BigDecimal discountValue = new BigDecimal(discountValueStr);
-        boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
-        Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
 
-    String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_type = ?, discount_scope = ?, discount_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection()) {
+            if ("shop".equals(source)) {
+                // Update shop_coupons
+                if (code == null || code.trim().isEmpty() || type == null) {
+                    out.write("{\"error\":\"Code and type are required for shop coupons\"}");
+                    return;
+                }
 
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
+                String sql = "UPDATE shop_coupons SET code = ?, description = ?, discount_type = ?, discount_value = ?, start_date = ?, end_date = ?, status = ? WHERE id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, code.trim().toUpperCase());
+                    pstmt.setString(2, description != null ? description.trim() : null);
+                    pstmt.setString(3, type);
+                    pstmt.setBigDecimal(4, discountValue);
+                    Timestamp startTimestamp = parseToTimestamp(startAt);
+                    Timestamp endTimestamp = parseToTimestamp(endAt);
+                    pstmt.setTimestamp(5, startTimestamp);
+                    pstmt.setTimestamp(6, endTimestamp);
+                    pstmt.setString(7, active ? "active" : "inactive");
+                    pstmt.setInt(8, id);
 
-            pstmt.setString(1, name.trim());
-            pstmt.setString(2, code.trim().toUpperCase());
-            pstmt.setString(3, description != null ? description.trim() : null);
-            pstmt.setString(4, type);
-            pstmt.setString(5, kind);
-            pstmt.setBigDecimal(6, discountValue);
-            Timestamp startTimestamp = parseToTimestamp(startAt);
-            Timestamp endTimestamp = parseToTimestamp(endAt);
-            pstmt.setTimestamp(7, startTimestamp);
-            pstmt.setTimestamp(8, endTimestamp);
-
-            pstmt.setBoolean(9, active);
-            if (shopId != null) {
-                pstmt.setInt(10, shopId);
+                    int rows = pstmt.executeUpdate();
+                    if (rows > 0) {
+                        out.write("{\"message\":\"Shop coupon updated successfully\"}");
+                    } else {
+                        out.write("{\"error\":\"Shop coupon not found\"}");
+                    }
+                }
             } else {
-                pstmt.setNull(10, java.sql.Types.INTEGER);
-            }
-            pstmt.setInt(11, id);
+                // Update promotions
+                if (name == null || name.trim().isEmpty() || code == null || code.trim().isEmpty() || type == null) {
+                    out.write("{\"error\":\"Name, code, and type are required for system promotions\"}");
+                    return;
+                }
 
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                out.write("{\"message\":\"Promotion updated successfully\"}");
-            } else {
-                out.write("{\"error\":\"Promotion not found\"}");
+                boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
+                Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
+                String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_type = ?, discount_scope = ?, discount_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, name.trim());
+                    pstmt.setString(2, code.trim().toUpperCase());
+                    pstmt.setString(3, description != null ? description.trim() : null);
+                    pstmt.setString(4, type);
+                    pstmt.setString(5, kind);
+                    pstmt.setBigDecimal(6, discountValue);
+                    Timestamp startTimestamp = parseToTimestamp(startAt);
+                    Timestamp endTimestamp = parseToTimestamp(endAt);
+                    pstmt.setTimestamp(7, startTimestamp);
+                    pstmt.setTimestamp(8, endTimestamp);
+                    pstmt.setBoolean(9, active);
+                    if (shopId != null) {
+                        pstmt.setInt(10, shopId);
+                    } else {
+                        pstmt.setNull(10, java.sql.Types.INTEGER);
+                    }
+                    pstmt.setInt(11, id);
+
+                    int rows = pstmt.executeUpdate();
+                    if (rows > 0) {
+                        out.write("{\"message\":\"Promotion updated successfully\"}");
+                    } else {
+                        out.write("{\"error\":\"Promotion not found\"}");
+                    }
+                }
             }
         }
     }
