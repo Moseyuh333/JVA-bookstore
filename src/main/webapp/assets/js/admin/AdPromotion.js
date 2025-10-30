@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Xử lý giá trị giảm
             let discount = "-";
-            if (type === "percent")
+            if (type === "percent" || type === "percentage")
                 discount = `${p.discount_value}%`;
             else if (type === "amount")
                 discount = `${vnd(p.discount_value)}đ`;
@@ -123,6 +123,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 : '<span class="badge badge-secondary">Inactive</span>';
 
             const tr = document.createElement("tr");
+            if (p.source === 'shop') {
+                tr.classList.add('table-warning'); // nền vàng nhẹ
+            }
             tr.innerHTML = `
             <tr>
                 <td>${escapeHtml(p.id.toString())}</td>
@@ -130,13 +133,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${escapeHtml(description)}</td>
                 <td>${escapeHtml(typeLabel)}</td>
                 <td>${discount}</td>
+                <td>${escapeHtml(p.shop_name || '-')}</td>
                 <td>${valid}</td>
                 <td>${active}</td>
                 <td class="actions">
-                    <button class="btn-icon btn-edit" title="Sửa" data-id="${p.id}">
+                    <button class="btn-icon btn-edit" title="Sửa" data-id="${p.id}" data-source="${p.source}">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon btn-delete" title="Xóa" data-id="${p.id}">
+                    <button class="btn-icon btn-delete" title="Xóa" data-id="${p.id}" data-source="${p.source}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>

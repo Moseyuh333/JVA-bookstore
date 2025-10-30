@@ -258,6 +258,10 @@
             background: #d1d5db;
         }
 
+        .table-warning {
+            background-color: #fff9e6 !important;
+        }
+
         .table-wrapper {
             padding: 24px;
         }
