@@ -281,32 +281,7 @@ function openAddPromo(){
     promoForm.reset(); promoIdInput.value=''; promoTitleEl.textContent='Thêm khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
 }
 
-async function openEditPromo(id){
-    try{
-        const token = localStorage.getItem('admin_token');
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=get&id=${id}`,{headers:{'Authorization':`Bearer ${token}`}});
-        const data = await res.json();
-        if(data.error){ alert(data.error); return; }
-        promoIdInput.value = data.id || '';
-        document.getElementById('promoName').value = data.name || '';
-        document.getElementById('promoCode').value = data.code || '';
-        document.getElementById('promoDescription').value = data.description || '';
-        document.getElementById('promoType').value = data.type || 'percent' || 'percentage';
-        document.getElementById('promoKind').value = data.kind || 'product';
-        document.getElementById('promoValue').value = data.discount_value || '';
-        // parse timestamps if present
-        if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);
-        if(data.end_at) document.getElementById('promoEnd').value = (new Date(data.end_at)).toISOString().slice(0,16);
-        document.getElementById('promoActive').value = data.active ? 'Hoạt động' : 'Không hoạt động';
-        if (document.getElementById('promoShopName')) {
-            document.getElementById('promoShopName').value = data.shop_name || (data.source === 'shop' ? '(Không có tên shop)' : 'Khuyến mãi hệ thống');
-        }
-        if (document.getElementById('promoSource')) {
-            document.getElementById('promoSource').value = data.source || source || 'system';
-        }
-        promoTitleEl.textContent='Chỉnh sửa khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
-    }catch(err){ console.error(err); alert('Lỗi khi lấy khuyến mãi'); }
-}
+
 
 document.getElementById('promoModalClose')?.addEventListener('click', ()=>{ hide(promoOverlay); hide(promoBox); });
 document.getElementById('promoCancel')?.addEventListener('click', ()=>{ hide(promoOverlay); hide(promoBox); });
@@ -357,7 +332,7 @@ document.getElementById('openCreatePromotionBtn')?.addEventListener('click', ope
 
 // Delegate table actions
 document.querySelector('#promotionTable')?.addEventListener('click', (e)=>{
-    const edit = e.target.closest('.btn-edit'); if(edit && edit.dataset.id){ openEditPromo(edit.dataset.id); return; }
+    const edit = e.target.closest('.btn-edit'); if(edit && edit.dataset.id){ openEditPromo(edit.dataset.id, edit.dataset.source); return; }
     const del = e.target.closest('.btn-delete'); if(del && del.dataset.id){ openDeletePromo(del.dataset.id); return; }
 });
 
@@ -373,11 +348,11 @@ document.getElementById('promoDeleteConfirm')?.addEventListener('click', async (
 });
 
 // Improve openEditPromo logging
-async function openEditPromo(id){
+async function openEditPromo(id, source){
     try{
         const token = localStorage.getItem('admin_token');
-        console.log('[Promotions] fetch get id=', id);
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=get&id=${id}`,{headers:{'Authorization':`Bearer ${token}`, 'Accept':'application/json'}});
+        console.log('[Promotions] fetch get id=', id, 'source=', source);
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=get&id=${id}&source=${source}`,{headers:{'Authorization':`Bearer ${token}`, 'Accept':'application/json'}});
         console.log('[Promotions] get status', res.status);
         const text = await res.text();
         let data = {};
