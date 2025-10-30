@@ -251,7 +251,8 @@ async function openEditPromo(id, source = 'system') {
         document.getElementById('promoName').value = data.name || '';
         document.getElementById('promoCode').value = data.code || '';
         document.getElementById('promoDescription').value = data.description || '';
-        document.getElementById('promoType').value = data.type || 'percent';
+        let typeVal = (data.type === 'percentage') ? 'percent' : (data.type || 'percent');
+        document.getElementById('promoType').value = typeVal;
         document.getElementById('promoKind').value = data.kind || 'product';
         document.getElementById('promoValue').value = data.discount_value || '';
 
@@ -342,10 +343,44 @@ document.querySelector('#promotionTable')?.addEventListener('click', (e)=>{
 // Delete flow
 const promoDeleteOverlay = document.getElementById('promoDeleteOverlay');
 const promoDeleteBox = document.getElementById('promoDeleteBox');
-let deletingPromo = null;
-function openDeletePromo(id){ deletingPromo = id; show(promoDeleteOverlay); show(promoDeleteBox); }
+let deletingPromo = { id: null, source: 'system' };
+
+function openDeletePromo(id, source = 'system') {
+    deletingPromo = { id, source };
+    show(promoDeleteOverlay);
+    show(promoDeleteBox);
+}
 document.getElementById('promoDeleteCancel')?.addEventListener('click', ()=>{ hide(promoDeleteOverlay); hide(promoDeleteBox); deletingPromo=null; });
 document.getElementById('promoDeleteClose')?.addEventListener('click', ()=>{ hide(promoDeleteOverlay); hide(promoDeleteBox); deletingPromo=null; });
-document.getElementById('promoDeleteConfirm')?.addEventListener('click', async ()=>{
-    if(!deletingPromo) return; const token=localStorage.getItem('admin_token'); try{ const res=await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=delete&id=${deletingPromo}`,{method:'POST', headers:{'Authorization':`Bearer ${token}`}}); const data=await res.json(); if(data.error){ document.getElementById('promoDeleteFeedback').textContent=data.error; document.getElementById('promoDeleteFeedback').style.display='block'; return; } hide(promoDeleteOverlay); hide(promoDeleteBox); deletingPromo=null; loadPromotions(); alert(data.message||'Đã xóa'); }catch(err){ console.error(err); alert('Lỗi khi xóa'); }
+document.getElementById('promoDeleteConfirm')?.addEventListener('click', async () => {
+    if (!deletingPromo || !deletingPromo.id) return;
+
+    const token = localStorage.getItem('admin_token');
+
+    try {
+        const res = await fetch(
+            `${window.appConfig?.contextPath || ''}/api/admin/promotions?action=delete&id=${deletingPromo.id}&source=${deletingPromo.source}`,
+            {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            }
+        );
+
+        const data = await res.json();
+        if (data.error) {
+            document.getElementById('promoDeleteFeedback').textContent = data.error;
+            document.getElementById('promoDeleteFeedback').style.display = 'block';
+            return;
+        }
+
+        hide(promoDeleteOverlay);
+        hide(promoDeleteBox);
+        deletingPromo = { id: null, source: 'system' };
+        loadPromotions();
+        alert(data.message || 'Đã xóa');
+    } catch (err) {
+        console.error(err);
+        alert('Lỗi khi xóa');
+    }
 });
+
