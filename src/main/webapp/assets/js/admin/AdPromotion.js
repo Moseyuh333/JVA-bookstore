@@ -366,7 +366,9 @@ async function openEditPromo(id, source){
         document.getElementById('promoName').value = data.name || '';
         document.getElementById('promoCode').value = data.code || '';
         document.getElementById('promoDescription').value = data.description || '';
-        document.getElementById('promoType').value = data.type || 'percent' || 'percentage';
+        let typeValue = data.type ? data.type.toLowerCase() : 'percent';
+        if (typeValue === 'percentage') typeValue = 'percent';
+        document.getElementById('promoType').value = typeValue;
         document.getElementById('promoKind').value = data.kind || 'product';
         document.getElementById('promoValue').value = data.discount_value || '';
         if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);
