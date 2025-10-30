@@ -258,6 +258,10 @@
             background: #d1d5db;
         }
 
+        .table-warning {
+            background-color: #fff9e6 !important;
+        }
+
         .table-wrapper {
             padding: 24px;
         }
@@ -544,6 +548,7 @@
                                         <th>Mô tả</th>
                                         <th>Loại giảm giá</th>
                                         <th>Mức giảm</th>
+                                        <th>Cửa hàng</th>
                                         <th>Thời gian</th>
                                         <th>Trạng thái</th>
                                         <th>Thao tác</th>

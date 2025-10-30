@@ -113,12 +113,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 : '<span class="badge badge-secondary">Inactive</span>';
 
             const tr = document.createElement("tr");
+            if (p.source === 'shop') {
+                tr.classList.add('table-warning'); // nền vàng nhẹ
+            }
             tr.innerHTML = `
                 <td>${escapeHtml(p.id.toString())}</td>
                 <td>${escapeHtml(code)}</td>
                 <td>${escapeHtml(description)}</td>
                 <td>${escapeHtml(typeLabel)}</td>
                 <td>${discount}</td>
+                <td>${escapeHtml(p.shop_name || '-')}</td>
                 <td>${valid}</td>
                 <td>${active}</td>
                 <td>
