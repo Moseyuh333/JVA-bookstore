@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Xử lý giá trị giảm
             let discount = "-";
-            if (type === "percent")
+            if (type === "percent" || type === "percentage")
                 discount = `${p.discount_value}%`;
             else if (type === "amount")
                 discount = `${vnd(p.discount_value)}đ`;
