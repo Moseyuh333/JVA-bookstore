@@ -92,6 +92,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         hideEmpty();
+        // lọc trùng id khác source (vì promotions.id có thể trùng với shop_coupons.id)
+        const unique = {};
+        list = list.filter(p => {
+          const key = `${p.id}_${p.source}`;
+          if (unique[key]) return false;
+          unique[key] = true;
+          return true;
+        });
         list.forEach(p => {
             const vnd = n => Number(n).toLocaleString('vi-VN');
             const type = p.type || "-";             // percent / amount
