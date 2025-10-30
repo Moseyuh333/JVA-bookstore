@@ -74,110 +74,89 @@ public class AdminPromotionsServlet extends HttpServlet {
     }
 
     private void listPromotions(HttpServletRequest req, PrintWriter out) throws SQLException {
-        String search = req.getParameter("search");
-        String searchType = req.getParameter("searchType");
-
-        StringBuilder sql = new StringBuilder(
-            "SELECT id, name, code, description, " +
-            "discount_scope AS kind, " +               // product / shipping
-            "discount_type AS type, " +                 // percent / amount
-            "discount_value, max_discount_value, min_order_value, " +
-            "start_date AS start_at, end_date AS end_at, status AS active " +
-            "FROM promotions WHERE 1=1"
-        );
-
-        // Add search conditions
-        if (search != null && !search.trim().isEmpty()) {
-            if ("all".equals(searchType) || searchType == null) {
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
-            } else if ("code".equals(searchType)) {
-                sql.append(" AND code ILIKE ?");
-            } else if ("description".equals(searchType)) {
-                sql.append(" AND description ILIKE ?");
-            } else if ("kind".equals(searchType)) {
-                sql.append(" AND (discount_scope ILIKE ? OR discount_scope = CASE WHEN LOWER(?) = 'giảm phí vận chuyển' THEN 'shipping' WHEN LOWER(?) = 'giảm giá sản phẩm' THEN 'product' END)");
-            } else if ("type".equals(searchType)) {
-                sql.append(" AND discount_type ILIKE ?");
-            } else if ("status".equals(searchType)) {
-                sql.append(" AND status = ?");
-            } else {
-                // Default to all if invalid searchType
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
-            }
-        }
-
-
-        sql.append(" ORDER BY id ASC");
-
         StringBuilder json = new StringBuilder();
         json.append("{\"promotions\":[");
 
         int totalPromotions = 0;
         int activePromotions = 0;
 
+        String sql =
+        "SELECT " +
+        "    p.id, " +
+        "    p.name, " +
+        "    p.code, " +
+        "    p.description, " +
+        "    p.discount_scope AS kind, " +
+        "    p.discount_type AS type, " +
+        "    p.discount_value, " +
+        "    p.max_discount_value, " +
+        "    p.min_order_value, " +
+        "    p.start_date AS start_at, " +
+        "    p.end_date AS end_at, " +
+        "    p.status AS active, " +
+        "    NULL AS shop_name, " +
+        "    'system' AS source " +
+        "FROM promotions p " +
+        "UNION ALL " +
+        "SELECT " +
+        "    sc.id, " +
+        "    sc.code AS name, " +
+        "    sc.code, " +
+        "    sc.description, " +
+        "    'product' AS kind, " +
+        "    sc.discount_type AS type, " +
+        "    sc.discount_value, " +
+        "    NULL AS max_discount_value, " +
+        "    sc.minimum_order AS min_order_value, " +
+        "    sc.start_date AS start_at, " +
+        "    sc.end_date AS end_at, " +
+        "    (CASE WHEN sc.status = 'active' THEN true ELSE false END) AS active, " +
+        "    s.name AS shop_name, " +
+        "    'shop' AS source " +
+        "FROM shop_coupons sc " +
+        "LEFT JOIN shops s ON sc.shop_id = s.id " +
+        "ORDER BY start_at DESC;";
+
+
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery()) {
 
-            // Set search parameters
-            int paramIndex = 1;
-            if (search != null && !search.trim().isEmpty()) {
-                if ("all".equals(searchType) || searchType == null) {
-                    String pattern = "%" + search.trim() + "%";
-                    for (int i = 0; i < 4; i++) {
-                        pstmt.setString(paramIndex++, pattern);
-                    }
-                } else if ("kind".equals(searchType)) {
-                    // For kind, search both ILIKE and exact match for Vietnamese labels
-                    String pattern = "%" + search.trim() + "%";
-                    pstmt.setString(paramIndex++, pattern);
-                    pstmt.setString(paramIndex++, search.trim());
-                    pstmt.setString(paramIndex++, search.trim());
-                } else if ("status".equals(searchType)) {
-                    // For status, convert search to boolean
-                    boolean statusValue = "true".equalsIgnoreCase(search.trim()) || "active".equalsIgnoreCase(search.trim()) || "1".equals(search.trim());
-                    pstmt.setBoolean(paramIndex++, statusValue);
-                } else {
-                    // For specific search types, only one parameter
-                    String pattern = "%" + search.trim() + "%";
-                    pstmt.setString(paramIndex++, pattern);
+            boolean first = true;
+            while (rs.next()) {
+                if (!first) json.append(",");
+                first = false;
+
+                totalPromotions++;
+                if (rs.getBoolean("active")) {
+                    activePromotions++;
                 }
-            }
 
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-
-                boolean first = true;
-                while (rs.next()) {
-                    if (!first) json.append(",");
-                    first = false;
-
-                    totalPromotions++;
-                    if (rs.getBoolean("active")) {
-                        activePromotions++;
-                    }
-
-                    json.append("{")
-                        .append("\"id\":").append(rs.getInt("id")).append(",")
-                        .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
-                        .append("\"code\":\"").append(escapeJson(rs.getString("code"))).append("\",")
-                        .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
-                        .append("\"kind\":\"").append(escapeJson(rs.getString("kind"))).append("\",")
-                        .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
-                        .append("\"discount_value\":").append(rs.getBigDecimal("discount_value") != null ? rs.getBigDecimal("discount_value") : 0).append(",")
-                        .append("\"max_discount_value\":").append(rs.getBigDecimal("max_discount_value") != null ? rs.getBigDecimal("max_discount_value") : 0).append(",")
-                        .append("\"min_order_value\":").append(rs.getBigDecimal("min_order_value") != null ? rs.getBigDecimal("min_order_value") : 0).append(",")
-                        .append("\"start_at\":\"").append(rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "").append("\",")
-                        .append("\"end_at\":\"").append(rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "").append("\",")
-                        .append("\"active\":").append(rs.getBoolean("active"))
-                        .append("}");
-                    
-                }
+                json.append("{")
+                    .append("\"id\":").append(rs.getInt("id")).append(",")
+                    .append("\"name\":\"").append(escapeJson(rs.getString("name"))).append("\",")
+                    .append("\"code\":\"").append(escapeJson(rs.getString("code"))).append("\",")
+                    .append("\"description\":\"").append(escapeJson(rs.getString("description"))).append("\",")
+                    .append("\"kind\":\"").append(escapeJson(rs.getString("kind"))).append("\",")
+                    .append("\"type\":\"").append(escapeJson(rs.getString("type"))).append("\",")
+                    .append("\"discount_value\":").append(rs.getBigDecimal("discount_value") != null ? rs.getBigDecimal("discount_value") : 0).append(",")
+                    .append("\"max_discount_value\":").append(rs.getBigDecimal("max_discount_value") != null ? rs.getBigDecimal("max_discount_value") : 0).append(",")
+                    .append("\"min_order_value\":").append(rs.getBigDecimal("min_order_value") != null ? rs.getBigDecimal("min_order_value") : 0).append(",")
+                    .append("\"start_at\":\"").append(rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "").append("\",")
+                    .append("\"end_at\":\"").append(rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "").append("\",")
+                    .append("\"active\":").append(rs.getBoolean("active")).append(",")
+                    .append("\"shop_name\":\"").append(escapeJson(rs.getString("shop_name"))).append("\",")
+                    .append("\"source\":\"").append(escapeJson(rs.getString("source"))).append("\"")
+                    .append("}");
             }
         }
 
-        json.append("],\"total\":").append(totalPromotions).append(",\"active\":").append(activePromotions).append("}");
+        json.append("],\"total\":").append(totalPromotions)
+            .append(",\"active\":").append(activePromotions)
+            .append("}");
         out.write(json.toString());
     }
+
 
     private void getPromotion(HttpServletRequest req, PrintWriter out) throws SQLException {
         String idStr = req.getParameter("id");
