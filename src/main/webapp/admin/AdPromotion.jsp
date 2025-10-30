@@ -263,11 +263,11 @@
         }
 
         .table-warning > td {
-            background-color: #fff3cd !important;
+            background-color: #fff9e6 !important;
         }
 
         .table-warning .actions {
-            background-color: #fff3cd !important;
+            background-color: #fff9e6 !important;
         }
 
         .table-warning .btn-icon {
