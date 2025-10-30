@@ -135,7 +135,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 tr.classList.add('table-warning'); // nền vàng nhẹ
             }
             tr.innerHTML = `
-            <tr>
                 <td>${escapeHtml(p.id.toString())}</td>
                 <td>${escapeHtml(code)}</td>
                 <td>${escapeHtml(description)}</td>
@@ -152,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
-            </tr>`;
+`;
             tableBody.appendChild(tr);
         });
 
