@@ -291,7 +291,7 @@ async function openEditPromo(id){
         document.getElementById('promoName').value = data.name || '';
         document.getElementById('promoCode').value = data.code || '';
         document.getElementById('promoDescription').value = data.description || '';
-        document.getElementById('promoType').value = data.type || 'percent';
+        document.getElementById('promoType').value = data.type || 'percent' || 'percentage';
         document.getElementById('promoKind').value = data.kind || 'product';
         document.getElementById('promoValue').value = data.discount_value || '';
         // parse timestamps if present
@@ -385,7 +385,7 @@ async function openEditPromo(id){
         document.getElementById('promoName').value = data.name || '';
         document.getElementById('promoCode').value = data.code || '';
         document.getElementById('promoDescription').value = data.description || '';
-        document.getElementById('promoType').value = data.type || 'percent';
+        document.getElementById('promoType').value = data.type || 'percent' || 'percentage';
         document.getElementById('promoKind').value = data.kind || 'product';
         document.getElementById('promoValue').value = data.discount_value || '';
         if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);
