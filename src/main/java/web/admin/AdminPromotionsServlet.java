@@ -17,6 +17,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @WebServlet(name = "AdminPromotionsServlet", urlPatterns = {"/api/admin/promotions"})
 public class AdminPromotionsServlet extends HttpServlet {
@@ -77,66 +79,127 @@ public class AdminPromotionsServlet extends HttpServlet {
         String search = req.getParameter("search");
         String searchType = req.getParameter("searchType");
 
-        StringBuilder sql = new StringBuilder(
-        "SELECT " +
-        "    p.id, " +
-        "    p.name, " +
-        "    p.code, " +
-        "    p.description, " +
-        "    p.discount_scope AS kind, " +
-        "    p.discount_type AS type, " +
-        "    p.discount_value, " +
-        "    p.max_discount_value, " +
-        "    p.min_order_value, " +
-        "    p.start_date AS start_at, " +
-        "    p.end_date AS end_at, " +
-        "    p.status AS active, " +
-        "    NULL AS shop_name, " +
-        "    'system' AS source " +
-        "FROM promotions p " +
-        "UNION ALL " +
-        "SELECT " +
-        "    sc.id, " +
-        "    sc.code AS name, " +
-        "    sc.code, " +
-        "    sc.description, " +
-        "    'product' AS kind, " +
-        "    sc.discount_type AS type, " +
-        "    sc.discount_value, " +
-        "    NULL AS max_discount_value, " +
-        "    sc.minimum_order AS min_order_value, " +
-        "    sc.start_date AS start_at, " +
-        "    sc.end_date AS end_at, " +
-        "    (CASE WHEN sc.status = 'active' THEN true ELSE false END) AS active, " +
-        "    s.name AS shop_name, " +
-        "    'shop' AS source " +
-        "FROM shop_coupons sc " +
-        "LEFT JOIN shops s ON sc.shop_id = s.id " +
-        "ORDER BY start_at DESC;"
-        );
+        StringBuilder sql = new StringBuilder();
+        List<Object> params = new ArrayList<>();
 
-        // Add search conditions
+        // Build WHERE clause for promotions table
+        StringBuilder promoWhere = new StringBuilder();
         if (search != null && !search.trim().isEmpty()) {
             if ("all".equals(searchType) || searchType == null) {
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+                promoWhere.append(" WHERE (p.code ILIKE ? OR p.description ILIKE ? OR p.discount_scope ILIKE ? OR p.discount_type ILIKE ?)");
+                String pattern = "%" + search.trim() + "%";
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
             } else if ("code".equals(searchType)) {
-                sql.append(" AND code ILIKE ?");
+                promoWhere.append(" WHERE p.code ILIKE ?");
+                params.add("%" + search.trim() + "%");
             } else if ("description".equals(searchType)) {
-                sql.append(" AND description ILIKE ?");
+                promoWhere.append(" WHERE p.description ILIKE ?");
+                params.add("%" + search.trim() + "%");
             } else if ("kind".equals(searchType)) {
-                sql.append(" AND (discount_scope ILIKE ? OR discount_scope = CASE WHEN LOWER(?) = 'giảm phí vận chuyển' THEN 'shipping' WHEN LOWER(?) = 'giảm giá sản phẩm' THEN 'product' END)");
+                promoWhere.append(" WHERE (p.discount_scope ILIKE ? OR p.discount_scope = CASE WHEN LOWER(?) = 'giảm phí vận chuyển' THEN 'shipping' WHEN LOWER(?) = 'giảm giá sản phẩm' THEN 'product' END)");
+                String pattern = "%" + search.trim() + "%";
+                params.add(pattern);
+                params.add(search.trim());
+                params.add(search.trim());
             } else if ("type".equals(searchType)) {
-                sql.append(" AND discount_type ILIKE ?");
+                promoWhere.append(" WHERE p.discount_type ILIKE ?");
+                params.add("%" + search.trim() + "%");
             } else if ("status".equals(searchType)) {
-                sql.append(" AND status = ?");
+                promoWhere.append(" WHERE p.status = ?");
+                boolean statusValue = "true".equalsIgnoreCase(search.trim()) || "active".equalsIgnoreCase(search.trim()) || "1".equals(search.trim());
+                params.add(statusValue);
             } else {
                 // Default to all if invalid searchType
-                sql.append(" AND (code ILIKE ? OR description ILIKE ? OR discount_scope ILIKE ? OR discount_type ILIKE ?)");
+                promoWhere.append(" WHERE (p.code ILIKE ? OR p.description ILIKE ? OR p.discount_scope ILIKE ? OR p.discount_type ILIKE ?)");
+                String pattern = "%" + search.trim() + "%";
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
             }
         }
 
+        // Build WHERE clause for shop_coupons table
+        StringBuilder shopWhere = new StringBuilder();
+        if (search != null && !search.trim().isEmpty()) {
+            if ("all".equals(searchType) || searchType == null) {
+                shopWhere.append(" WHERE (sc.code ILIKE ? OR sc.description ILIKE ? OR 'product' ILIKE ? OR sc.discount_type ILIKE ?)");
+                String pattern = "%" + search.trim() + "%";
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
+            } else if ("code".equals(searchType)) {
+                shopWhere.append(" WHERE sc.code ILIKE ?");
+                params.add("%" + search.trim() + "%");
+            } else if ("description".equals(searchType)) {
+                shopWhere.append(" WHERE sc.description ILIKE ?");
+                params.add("%" + search.trim() + "%");
+            } else if ("kind".equals(searchType)) {
+                shopWhere.append(" WHERE ('product' ILIKE ? OR 'product' = CASE WHEN LOWER(?) = 'giảm phí vận chuyển' THEN 'shipping' WHEN LOWER(?) = 'giảm giá sản phẩm' THEN 'product' END)");
+                String pattern = "%" + search.trim() + "%";
+                params.add(pattern);
+                params.add(search.trim());
+                params.add(search.trim());
+            } else if ("type".equals(searchType)) {
+                shopWhere.append(" WHERE sc.discount_type ILIKE ?");
+                params.add("%" + search.trim() + "%");
+            } else if ("status".equals(searchType)) {
+                shopWhere.append(" WHERE sc.status = ?");
+                String statusStr = "true".equalsIgnoreCase(search.trim()) || "active".equalsIgnoreCase(search.trim()) || "1".equals(search.trim()) ? "active" : "inactive";
+                params.add(statusStr);
+            } else {
+                // Default to all if invalid searchType
+                shopWhere.append(" WHERE (sc.code ILIKE ? OR sc.description ILIKE ? OR 'product' ILIKE ? OR sc.discount_type ILIKE ?)");
+                String pattern = "%" + search.trim() + "%";
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
+                params.add(pattern);
+            }
+        }
 
-        sql.append(" ORDER BY id ASC");
+        sql.append("SELECT * FROM (")
+          .append("SELECT ")
+          .append("    p.id, ")
+          .append("    p.name, ")
+          .append("    p.code, ")
+          .append("    p.description, ")
+          .append("    p.discount_scope AS kind, ")
+          .append("    p.discount_type AS type, ")
+          .append("    p.discount_value, ")
+          .append("    p.max_discount_value, ")
+          .append("    p.min_order_value, ")
+          .append("    p.start_date AS start_at, ")
+          .append("    p.end_date AS end_at, ")
+          .append("    p.status AS active, ")
+          .append("    NULL AS shop_name, ")
+          .append("    'system' AS source ")
+          .append("FROM promotions p")
+          .append(promoWhere.toString())
+          .append(" UNION ALL ")
+          .append("SELECT ")
+          .append("    sc.id, ")
+          .append("    sc.code AS name, ")
+          .append("    sc.code, ")
+          .append("    sc.description, ")
+          .append("    'product' AS kind, ")
+          .append("    sc.discount_type AS type, ")
+          .append("    sc.discount_value, ")
+          .append("    NULL AS max_discount_value, ")
+          .append("    sc.minimum_order AS min_order_value, ")
+          .append("    sc.start_date AS start_at, ")
+          .append("    sc.end_date AS end_at, ")
+          .append("    (CASE WHEN sc.status = 'active' THEN true ELSE false END) AS active, ")
+          .append("    s.name AS shop_name, ")
+          .append("    'shop' AS source ")
+          .append("FROM shop_coupons sc ")
+          .append("LEFT JOIN shops s ON sc.shop_id = s.id")
+          .append(shopWhere.toString())
+          .append(") AS combined_promotions ORDER BY start_at DESC");
 
         StringBuilder json = new StringBuilder();
         json.append("{\"promotions\":[");
@@ -147,31 +210,15 @@ public class AdminPromotionsServlet extends HttpServlet {
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            // Set search parameters
-            int paramIndex = 1;
-            if (search != null && !search.trim().isEmpty()) {
-                if ("all".equals(searchType) || searchType == null) {
-                    String pattern = "%" + search.trim() + "%";
-                    for (int i = 0; i < 4; i++) {
-                        pstmt.setString(paramIndex++, pattern);
-                    }
-                } else if ("kind".equals(searchType)) {
-                    // For kind, search both ILIKE and exact match for Vietnamese labels
-                    String pattern = "%" + search.trim() + "%";
-                    pstmt.setString(paramIndex++, pattern);
-                    pstmt.setString(paramIndex++, search.trim());
-                    pstmt.setString(paramIndex++, search.trim());
-                } else if ("status".equals(searchType)) {
-                    // For status, convert search to boolean
-                    boolean statusValue = "true".equalsIgnoreCase(search.trim()) || "active".equalsIgnoreCase(search.trim()) || "1".equals(search.trim());
-                    pstmt.setBoolean(paramIndex++, statusValue);
-                } else {
-                    // For specific search types, only one parameter
-                    String pattern = "%" + search.trim() + "%";
-                    pstmt.setString(paramIndex++, pattern);
+            // Set search parameters from the params list
+            for (int i = 0; i < params.size(); i++) {
+                Object param = params.get(i);
+                if (param instanceof String) {
+                    pstmt.setString(i + 1, (String) param);
+                } else if (param instanceof Boolean) {
+                    pstmt.setBoolean(i + 1, (Boolean) param);
                 }
             }
-
 
             try (ResultSet rs = pstmt.executeQuery()) {
 
