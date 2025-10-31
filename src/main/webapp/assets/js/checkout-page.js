@@ -1102,7 +1102,7 @@
                 shippingState.loading = false;
                 shippingState.fee = 0;
                 shippingState.shipper = null;
-                shippingState.error = response && response.message ? response.message : 'KhA'ng th��� t���nh phA- v��-n chuy���n.';
+                shippingState.error = response && response.message ? response.message : 'Khong the tinh phi van chuyen.';
                 updateShippingDisplay();
                 updateTotalsFromSelection();
                 return;
@@ -1134,21 +1134,21 @@
             return;
         }
         if (shippingState.loading) {
-            shippingMethodEl.textContent = "Dang tinh phi van chuyen...";
-            shippingMethodEl.className = "text-xs text-gray-400";
-            shippingMethodEl.removeAttribute("title");
+            shippingMethodEl.textContent = 'Dang tinh phi van chuyen...';
+            shippingMethodEl.className = 'text-xs text-gray-400';
+            shippingMethodEl.removeAttribute('title');
             return;
         }
         if (shippingState.error) {
             shippingMethodEl.textContent = shippingState.error;
-            shippingMethodEl.className = "text-xs text-red-500";
-            shippingMethodEl.removeAttribute("title");
+            shippingMethodEl.className = 'text-xs text-red-500';
+            shippingMethodEl.removeAttribute('title');
             return;
         }
         if (!shippingState.shipper) {
-            shippingMethodEl.textContent = "Chua co thong tin van chuyen.";
-            shippingMethodEl.className = "text-xs text-gray-400";
-            shippingMethodEl.removeAttribute("title");
+            shippingMethodEl.textContent = 'Chua co thong tin van chuyen.';
+            shippingMethodEl.className = 'text-xs text-gray-400';
+            shippingMethodEl.removeAttribute('title');
             return;
         }
         var shipper = shippingState.shipper;
@@ -1159,20 +1159,20 @@
         if (shipper.estimatedTime) {
             details.push(shipper.estimatedTime);
         }
-        shippingMethodEl.textContent = details.length > 0 ? details.join(" - ") : "Nha van chuyen";
-        shippingMethodEl.className = "text-xs text-gray-500";
+        shippingMethodEl.textContent = details.length > 0 ? details.join(' - ') : 'Nha van chuyen';
+        shippingMethodEl.className = 'text-xs text-gray-500';
         var tooltip = [];
         if (shipper.serviceArea) {
             tooltip.push(shipper.serviceArea);
         }
         if (shipper.matchLevel) {
-            tooltip.push("Match: " + shipper.matchLevel);
+            tooltip.push('Match: ' + shipper.matchLevel);
         }
-        var tooltipText = tooltip.join(" | ");
+        var tooltipText = tooltip.join(' | ');
         if (tooltipText) {
-            shippingMethodEl.setAttribute("title", tooltipText);
+            shippingMethodEl.setAttribute('title', tooltipText);
         } else {
-            shippingMethodEl.removeAttribute("title");
+            shippingMethodEl.removeAttribute('title');
         }
     }
 
@@ -1226,6 +1226,8 @@
     }
 
 })(window, document);
+
+
 
 
 
