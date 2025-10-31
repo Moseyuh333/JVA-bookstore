@@ -8,9 +8,16 @@
         return;
     }
 
-    var SHIPPING_FEE = 26000;
     var MODE_BUY_NOW = 'buy-now';
     var MODE_CART = 'cart';
+    var shippingState = {
+        fee: 0,
+        shipper: null,
+        loading: false,
+        lastAddressId: null,
+        error: null,
+        requestToken: 0
+    };
 
     var addressListEl;
     var orderItemsEl;
@@ -18,6 +25,7 @@
     var subtotalEl;
     var discountEl;
     var shippingEl;
+    var shippingMethodEl;
     var totalEl;
     var feedbackEl;
     var placeOrderBtn;
@@ -38,7 +46,8 @@
         selected: new Set(),
         activeShopId: null,
         activeShopName: '',
-        lastFetchedShopId: null
+        lastFetchedShopId: null,
+        subtotal: 0
     };
 
     var couponState = {
@@ -57,6 +66,7 @@
         subtotalEl = document.getElementById('checkoutSubtotal');
         discountEl = document.getElementById('checkoutDiscount');
         shippingEl = document.getElementById('checkoutShipping');
+        shippingMethodEl = document.getElementById('checkoutShippingMethod');
         totalEl = document.getElementById('checkoutTotal');
         feedbackEl = document.getElementById('checkoutFeedback');
         placeOrderBtn = document.getElementById('placeOrderBtn');
@@ -77,6 +87,7 @@
         bindPaymentMethodEvents();
         bindPlaceOrder();
         bindCouponEvents();
+        bindAddressEvents();
 
         if (mode === MODE_CART && cartClient && typeof cartClient.onChange === 'function') {
             cartClient.onChange(function (cart) {
@@ -485,6 +496,7 @@
             updateOrderTotals(0, 0, 0);
             itemsCountEl && (itemsCountEl.textContent = '0 sản phẩm');
             disablePlaceOrder();
+            resetShippingState();
             return;
         }
 
@@ -612,6 +624,20 @@
         });
     }
 
+    function bindAddressEvents() {
+        if (!addressListEl) {
+            return;
+        }
+        addressListEl.addEventListener('change', function () {
+            var selectedAddressId = getSelectedAddressId();
+            if (selectedAddressId) {
+                fetchShippingQuote(selectedAddressId);
+            } else {
+                resetShippingState();
+            }
+        });
+    }
+
     function bindPaymentMethodEvents() {
         var inputs = document.querySelectorAll('input[name="paymentMethod"]');
         if (!inputs || inputs.length === 0) {
@@ -721,8 +747,9 @@
                 subtotal += item.unitPrice * item.quantity;
             }
         });
-        var shipping = subtotal > 0 ? SHIPPING_FEE : 0;
+        cartState.subtotal = subtotal;
         var discount = calculateCouponDiscount(subtotal);
+        var shipping = subtotal > 0 ? Math.max(0, toNumber(shippingState.fee)) : 0;
         updateOrderTotals(subtotal, shipping, discount);
         if (mode === MODE_CART) {
             if (subtotal > 0 && cartState.selected.size > 0) {
@@ -751,6 +778,7 @@
         if (totalEl) {
             totalEl.textContent = appShell.formatCurrency(total);
         }
+        updateShippingDisplay();
     }
 
     function resolveActiveShopContext() {
@@ -905,6 +933,12 @@
         }
 
         enablePlaceOrder();
+        var selectedAddressId = getSelectedAddressId();
+        if (selectedAddressId) {
+            fetchShippingQuote(selectedAddressId);
+        } else {
+            resetShippingState();
+        }
     }
 
     function bindPlaceOrder() {
@@ -1032,6 +1066,114 @@
             address.postalCode
         ].filter(Boolean);
         return appShell.escapeHtml(parts.join(', '));
+    }
+
+    function resetShippingState() {
+        shippingState.fee = 0;
+        shippingState.shipper = null;
+        shippingState.loading = false;
+        shippingState.error = null;
+        shippingState.lastAddressId = null;
+        shippingState.requestToken += 1;
+        updateShippingDisplay();
+        updateTotalsFromSelection();
+    }
+
+    async function fetchShippingQuote(addressId) {
+        if (!addressId) {
+            resetShippingState();
+            return;
+        }
+        shippingState.loading = true;
+        shippingState.error = null;
+        shippingState.lastAddressId = addressId;
+        shippingState.fee = 0;
+        shippingState.shipper = null;
+        var requestToken = (shippingState.requestToken || 0) + 1;
+        shippingState.requestToken = requestToken;
+        updateShippingDisplay();
+        updateTotalsFromSelection();
+        try {
+            var response = await apiClient.get('/shipping/quote?addressId=' + encodeURIComponent(addressId));
+            if (shippingState.requestToken !== requestToken) {
+                return;
+            }
+            if (!response || response.success !== true) {
+                shippingState.loading = false;
+                shippingState.fee = 0;
+                shippingState.shipper = null;
+                shippingState.error = response && response.message ? response.message : 'KhA'ng th��� t���nh phA- v��-n chuy���n.';
+                updateShippingDisplay();
+                updateTotalsFromSelection();
+                return;
+            }
+            shippingState.loading = false;
+            shippingState.error = null;
+            shippingState.fee = toNumber(response.shippingFee);
+            if (!Number.isFinite(shippingState.fee) || shippingState.fee < 0) {
+                shippingState.fee = 0;
+            }
+            shippingState.shipper = response.shipper || null;
+            updateShippingDisplay();
+            updateTotalsFromSelection();
+        } catch (error) {
+            if (shippingState.requestToken !== requestToken) {
+                return;
+            }
+            shippingState.loading = false;
+            shippingState.fee = 0;
+            shippingState.shipper = null;
+            shippingState.error = extractErrorMessage(error) || 'KhA'ng th��� t���nh phA- v��-n chuy���n.';
+            updateShippingDisplay();
+            updateTotalsFromSelection();
+        }
+    }
+
+    function updateShippingDisplay() {
+        if (!shippingMethodEl) {
+            return;
+        }
+        if (shippingState.loading) {
+            shippingMethodEl.textContent = '�?ang t���nh phA- v��-n chuy���n...';
+            shippingMethodEl.className = 'text-xs text-gray-400';
+            shippingMethodEl.removeAttribute('title');
+            return;
+        }
+        if (shippingState.error) {
+            shippingMethodEl.textContent = shippingState.error;
+            shippingMethodEl.className = 'text-xs text-red-500';
+            shippingMethodEl.removeAttribute('title');
+            return;
+        }
+        if (!shippingState.shipper) {
+            shippingMethodEl.textContent = 'Ch��a cA3 thA'ng tin nhA� v��-n chuy���n.';
+            shippingMethodEl.className = 'text-xs text-gray-400';
+            shippingMethodEl.removeAttribute('title');
+            return;
+        }
+        var shipper = shippingState.shipper;
+        var details = [];
+        if (shipper.name) {
+            details.push(shipper.name);
+        }
+        if (shipper.estimatedTime) {
+            details.push(shipper.estimatedTime);
+        }
+        shippingMethodEl.textContent = details.length > 0 ? details.join(' • ') : 'NhA� v��-n chuy���n';
+        shippingMethodEl.className = 'text-xs text-gray-500';
+        var tooltip = [];
+        if (shipper.serviceArea) {
+            tooltip.push(shipper.serviceArea);
+        }
+        if (shipper.matchLevel) {
+            tooltip.push('Match: ' + shipper.matchLevel);
+        }
+        var tooltipText = tooltip.join(' | ');
+        if (tooltipText) {
+            shippingMethodEl.setAttribute('title', tooltipText);
+        } else {
+            shippingMethodEl.removeAttribute('title');
+        }
     }
 
     function showFeedback(type, message) {

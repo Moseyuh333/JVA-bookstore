@@ -2,9 +2,15 @@ package web;
 
 import com.google.gson.Gson;
 import dao.OrderDAO;
+import dao.ShipperDAO;
+import dao.UserAddressDAO;
 import models.Order;
+import models.Shipper;
+import models.ShippingQuote;
+import models.UserAddress;
 import utils.AuthUtil;
 import utils.DBUtil;
+import utils.ShippingCalculator;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -29,7 +35,6 @@ import java.util.Map;
 public class CheckoutServlet extends HttpServlet {
 
     private final Gson gson = new Gson();
-    private static final BigDecimal SHIPPING_FEE = BigDecimal.valueOf(26000);
     private static final String MODE_BUY_NOW = "buy-now";
 
     @Override
@@ -81,11 +86,20 @@ public class CheckoutServlet extends HttpServlet {
             }
             HttpSession session = request.getSession(true);
             String sessionId = session.getId();
-            BigDecimal shipping = SHIPPING_FEE;
+            UserAddress address = UserAddressDAO.findById(userId, addressId);
+            if (address == null) {
+                sendBadRequest(response, "�?��<a ch��% giao hA�ng khA'ng h���p l���.");
+                return;
+            }
+
+            List<Shipper> shippers = ShipperDAO.findActiveShippers();
+            ShippingQuote shippingQuote = ShippingCalculator.calculateQuote(address, shippers);
+            BigDecimal shipping = shippingQuote != null ? shippingQuote.getFee() : BigDecimal.ZERO;
             if (shipping == null || shipping.compareTo(BigDecimal.ZERO) < 0 || selections.isEmpty()) {
                 shipping = BigDecimal.ZERO;
             }
-            Order order = OrderDAO.checkout(userId, addressId, paymentMethod, paymentDetails, couponCode, notes, sessionId, selections, mode, shipping);
+
+            Order order = OrderDAO.checkout(userId, addressId, paymentMethod, paymentDetails, couponCode, notes, sessionId, selections, mode, shipping, shippingQuote);
             if (MODE_BUY_NOW.equals(mode)) {
                 session.removeAttribute(BuyNowServlet.SESSION_KEY);
             }

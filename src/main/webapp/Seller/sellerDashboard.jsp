@@ -412,6 +412,14 @@
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
         
+        .seller-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .back-btn,
         .logout-btn {
             background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
             color: white;
@@ -423,6 +431,15 @@
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+        }
+        
+        .back-btn {
+            background: linear-gradient(135deg, #38b2ac 0%, #4299e1 100%);
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+        
+        .back-btn:hover {
+            box-shadow: 0 8px 25px rgba(66, 153, 225, 0.4);
         }
         
         .logout-btn:hover {
@@ -445,6 +462,11 @@
                 width: 100%;
             }
             
+            .seller-actions {
+                width: 100%;
+                justify-content: center;
+            }
+            
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -465,12 +487,17 @@
                     ${role}
                 </span>
             </div>
-            <button onclick="logout()" class="logout-btn">
-                <i data-feather="log-out" style="width: 16px; height: 16px; vertical-align: middle;"></i>
-                Đăng xuất
-            </button>
+            <div class="seller-actions">
+                <a href="${pageContext.request.contextPath}/profile.jsp" class="back-btn">
+                    <i data-feather="corner-up-left" style="width: 16px; height: 16px; vertical-align: middle;"></i>
+                    Quay ve trang ca nhan
+                </a>
+                <button onclick="logout()" class="logout-btn">
+                    <i data-feather="log-out" style="width: 16px; height: 16px; vertical-align: middle;"></i>
+                    Dang xuat
+                </button>
+            </div>
         </div>
-        
         <nav class="seller-nav">
             <ul>
                 <li>
@@ -601,3 +628,4 @@
     </script>
 </body>
 </html>
+

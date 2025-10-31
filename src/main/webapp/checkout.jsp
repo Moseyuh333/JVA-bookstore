@@ -129,6 +129,7 @@
                             <span>Phí vận chuyển</span>
                             <span id="checkoutShipping">0 đ</span>
                         </div>
+                        <div id="checkoutShippingMethod" class="text-xs text-gray-400">�?ang t���nh phA- v��-n chuy���n...</div>
                         <div class="flex justify-between text-base font-semibold text-gray-800">
                             <span>Tổng thanh toán</span>
                             <span id="checkoutTotal">0 đ</span>

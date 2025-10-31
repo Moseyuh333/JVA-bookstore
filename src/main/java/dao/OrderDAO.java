@@ -9,6 +9,7 @@ import models.Order;
 import models.OrderItem;
 import models.OrderStatusHistory;
 import models.ShopCoupon;
+import models.ShippingQuote;
 import utils.DBUtil;
 
 import java.math.BigDecimal;
@@ -66,13 +67,13 @@ public final class OrderDAO {
     }
 
     public static Order checkout(long userId, long addressId, String paymentMethod, PaymentDetails paymentDetails, String couponCode, String notes,
-                                 String sessionId, List<ItemSelection> selections, String modeRaw, BigDecimal shippingFee) throws SQLException {
+                                 String sessionId, List<ItemSelection> selections, String modeRaw, BigDecimal shippingFee, ShippingQuote shippingQuote) throws SQLException {
         if (selections == null || selections.isEmpty()) {
             throw new SQLException("Không có sản phẩm để thanh toán");
         }
         String normalizedMethod = normalizePaymentMethod(paymentMethod);
         CheckoutMode mode = CheckoutMode.from(modeRaw);
-        BigDecimal effectiveShipping = shippingFee != null && shippingFee.compareTo(BigDecimal.ZERO) > 0 ? shippingFee : BigDecimal.ZERO;
+        BigDecimal effectiveShipping = resolveShippingFee(shippingFee, shippingQuote);
         try (Connection conn = DBUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -83,6 +84,11 @@ public final class OrderDAO {
                     throw new SQLException("Không có sản phẩm hợp lệ để thanh toán");
                 }
                 AddressSnapshot address = loadAddress(conn, userId, addressId);
+                if (shippingQuote != null) {
+                    address.attachShipping(shippingQuote);
+                } else if (effectiveShipping.compareTo(BigDecimal.ZERO) > 0) {
+                    address.attachShippingFee(effectiveShipping);
+                }
                 Integer shopId = resolvePrimaryShopId(cartData);
                 CouponResult couponResult = CouponResult.empty();
                 if (couponCode != null && !couponCode.trim().isEmpty()) {
@@ -117,6 +123,20 @@ public final class OrderDAO {
                 conn.setAutoCommit(true);
             }
         }
+    }
+
+    private static BigDecimal resolveShippingFee(BigDecimal shippingFee, ShippingQuote shippingQuote) {
+        BigDecimal fee = null;
+        if (shippingQuote != null) {
+            fee = shippingQuote.getFee();
+        }
+        if (fee == null) {
+            fee = shippingFee;
+        }
+        if (fee == null || fee.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO;
+        }
+        return fee;
     }
 
     public static List<Order> findOrders(long userId, String statusFilter) throws SQLException {
@@ -1128,7 +1148,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
             } else {
                 stmt.setLong(6, address.addressId);
             }
-            stmt.setString(7, address.jsonSnapshot);
+            stmt.setString(7, address.toJson());
             stmt.setString(8, cartData.snapshotJson);
             if (paymentDetails != null && paymentDetails.hasMetadata()) {
                 stmt.setString(9, paymentDetails.toJson());
@@ -1376,7 +1396,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
                 json.addProperty("note", rs.getString("note"));
                 AddressSnapshot snapshot = new AddressSnapshot();
                 snapshot.addressId = rs.getLong("id");
-                snapshot.jsonSnapshot = GSON.toJson(json);
+                snapshot.json = json;
                 return snapshot;
             }
         }
@@ -1677,7 +1697,55 @@ public static int countTotalOrders(int shopId) throws SQLException {
 
     private static class AddressSnapshot {
         private Long addressId;
-        private String jsonSnapshot;
+        private JsonObject json;
+
+        private String toJson() {
+            return json == null ? null : GSON.toJson(json);
+        }
+
+        private void attachShipping(ShippingQuote quote) {
+            if (quote == null) {
+                return;
+            }
+            ensureJson();
+            JsonObject method = new JsonObject();
+            if (quote.getShipperId() != null) {
+                method.addProperty("id", quote.getShipperId());
+                json.addProperty("shipperId", quote.getShipperId());
+            }
+            if (quote.getShipperName() != null && !quote.getShipperName().isBlank()) {
+                method.addProperty("name", quote.getShipperName());
+                json.addProperty("shipperName", quote.getShipperName());
+            }
+            if (quote.getFee() != null) {
+                method.addProperty("fee", quote.getFee());
+                json.addProperty("shippingFee", quote.getFee());
+            }
+            if (quote.getEstimatedTime() != null && !quote.getEstimatedTime().isBlank()) {
+                method.addProperty("estimatedTime", quote.getEstimatedTime());
+            }
+            if (quote.getServiceArea() != null && !quote.getServiceArea().isBlank()) {
+                method.addProperty("serviceArea", quote.getServiceArea());
+            }
+            if (quote.getMatchLevel() != null) {
+                method.addProperty("matchLevel", quote.getMatchLevel().name());
+            }
+            json.add("shippingMethod", method);
+        }
+
+        private void attachShippingFee(BigDecimal fee) {
+            if (fee == null || fee.compareTo(BigDecimal.ZERO) <= 0) {
+                return;
+            }
+            ensureJson();
+            json.addProperty("shippingFee", fee);
+        }
+
+        private void ensureJson() {
+            if (json == null) {
+                json = new JsonObject();
+            }
+        }
     }
 
     public static final class PaymentDetails {
