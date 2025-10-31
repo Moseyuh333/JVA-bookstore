@@ -92,6 +92,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         hideEmpty();
+        // lọc trùng id khác source (vì promotions.id có thể trùng với shop_coupons.id)
+        const unique = {};
+        list = list.filter(p => {
+          const key = `${p.id}_${p.source}`;
+          if (unique[key]) return false;
+          unique[key] = true;
+          return true;
+        });
         list.forEach(p => {
             const vnd = n => Number(n).toLocaleString('vi-VN');
             const type = p.type || "-";             // percent / amount
@@ -105,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Xử lý giá trị giảm
             let discount = "-";
-            if (type === "percent")
+            if (type === "percent" || type === "percentage")
                 discount = `${p.discount_value}%`;
             else if (type === "amount")
                 discount = `${vnd(p.discount_value)}đ`;
@@ -123,24 +131,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 : '<span class="badge badge-secondary">Inactive</span>';
 
             const tr = document.createElement("tr");
+            if (p.source === 'shop') {
+                tr.classList.add('table-warning'); // nền vàng nhẹ
+            }
             tr.innerHTML = `
-            <tr>
                 <td>${escapeHtml(p.id.toString())}</td>
                 <td>${escapeHtml(code)}</td>
                 <td>${escapeHtml(description)}</td>
                 <td>${escapeHtml(typeLabel)}</td>
                 <td>${discount}</td>
+                <td>${escapeHtml(p.shop_name || '-')}</td>
                 <td>${valid}</td>
                 <td>${active}</td>
                 <td class="actions">
-                    <button class="btn-icon btn-edit" title="Sửa" data-id="${p.id}">
+                    <button class="btn-icon btn-edit" title="Sửa" data-id="${p.id}" data-source="${p.source}">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon btn-delete" title="Xóa" data-id="${p.id}">
+                    <button class="btn-icon btn-delete" title="Xóa" data-id="${p.id}" data-source="${p.source}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
-            </tr>`;
+`;
             tableBody.appendChild(tr);
         });
 
@@ -277,26 +288,7 @@ function openAddPromo(){
     promoForm.reset(); promoIdInput.value=''; promoTitleEl.textContent='Thêm khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
 }
 
-async function openEditPromo(id){
-    try{
-        const token = localStorage.getItem('admin_token');
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=get&id=${id}`,{headers:{'Authorization':`Bearer ${token}`}});
-        const data = await res.json();
-        if(data.error){ alert(data.error); return; }
-        promoIdInput.value = data.id || '';
-        document.getElementById('promoName').value = data.name || '';
-        document.getElementById('promoCode').value = data.code || '';
-        document.getElementById('promoDescription').value = data.description || '';
-        document.getElementById('promoType').value = data.type || 'percent';
-        document.getElementById('promoKind').value = data.kind || 'product';
-        document.getElementById('promoValue').value = data.discount_value || '';
-        // parse timestamps if present
-        if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);
-        if(data.end_at) document.getElementById('promoEnd').value = (new Date(data.end_at)).toISOString().slice(0,16);
-        document.getElementById('promoActive').value = data.active ? 'Hoạt động' : 'Không hoạt động';
-        promoTitleEl.textContent='Chỉnh sửa khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
-    }catch(err){ console.error(err); alert('Lỗi khi lấy khuyến mãi'); }
-}
+
 
 document.getElementById('promoModalClose')?.addEventListener('click', ()=>{ hide(promoOverlay); hide(promoBox); });
 document.getElementById('promoCancel')?.addEventListener('click', ()=>{ hide(promoOverlay); hide(promoBox); });
@@ -321,6 +313,8 @@ promoForm?.addEventListener('submit', async (e)=>{
     const id = promoIdInput.value;
     const fd = new FormData(promoForm);
     const params = new URLSearchParams(); for(const [k,v] of fd.entries()) params.append(k,v);
+    const source = document.getElementById('promoSource')?.value || 'system';
+    params.append('source', source);
     const token = localStorage.getItem('admin_token');
     try{
         const action = id ? 'update' : 'create'; if(id) params.append('id', id);
@@ -347,7 +341,7 @@ document.getElementById('openCreatePromotionBtn')?.addEventListener('click', ope
 
 // Delegate table actions
 document.querySelector('#promotionTable')?.addEventListener('click', (e)=>{
-    const edit = e.target.closest('.btn-edit'); if(edit && edit.dataset.id){ openEditPromo(edit.dataset.id); return; }
+    const edit = e.target.closest('.btn-edit'); if(edit && edit.dataset.id){ openEditPromo(edit.dataset.id, edit.dataset.source); return; }
     const del = e.target.closest('.btn-delete'); if(del && del.dataset.id){ openDeletePromo(del.dataset.id); return; }
 });
 
@@ -363,11 +357,11 @@ document.getElementById('promoDeleteConfirm')?.addEventListener('click', async (
 });
 
 // Improve openEditPromo logging
-async function openEditPromo(id){
+async function openEditPromo(id, source){
     try{
         const token = localStorage.getItem('admin_token');
-        console.log('[Promotions] fetch get id=', id);
-        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=get&id=${id}`,{headers:{'Authorization':`Bearer ${token}`, 'Accept':'application/json'}});
+        console.log('[Promotions] fetch get id=', id, 'source=', source);
+        const res = await fetch(`${window.appConfig?.contextPath || ''}/api/admin/promotions?action=get&id=${id}&source=${source}`,{headers:{'Authorization':`Bearer ${token}`, 'Accept':'application/json'}});
         console.log('[Promotions] get status', res.status);
         const text = await res.text();
         let data = {};
@@ -378,10 +372,13 @@ async function openEditPromo(id){
         }
         if(data.error){ alert('Server trả về lỗi (GET):\n' + data.error); return; }
         promoIdInput.value = data.id || '';
+        document.getElementById('promoSource').value = data.source || source || 'system';
         document.getElementById('promoName').value = data.name || '';
         document.getElementById('promoCode').value = data.code || '';
         document.getElementById('promoDescription').value = data.description || '';
-        document.getElementById('promoType').value = data.type || 'percent';
+        let typeValue = data.type ? data.type.toLowerCase() : 'percent';
+        if (typeValue === 'percentage') typeValue = 'percent';
+        document.getElementById('promoType').value = typeValue;
         document.getElementById('promoKind').value = data.kind || 'product';
         document.getElementById('promoValue').value = data.discount_value || '';
         if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);

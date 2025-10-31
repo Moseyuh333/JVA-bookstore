@@ -258,6 +258,23 @@
             background: #d1d5db;
         }
 
+        .table-warning {
+            background-color: #fff3cd !important;
+        }
+
+        .table-warning > td {
+            background-color: #fff3cd !important;
+        }
+
+        .table-warning .actions {
+            background-color: #fff3cd !important;
+        }
+
+        .table-warning .btn-icon {
+            margin: 0 2px;
+            vertical-align: middle;
+        }
+
         .table-wrapper {
             padding: 24px;
         }
@@ -549,6 +566,7 @@
                                         <th>Mô tả</th>
                                         <th>Loại giảm giá</th>
                                         <th>Mức giảm</th>
+                                        <th>Cửa hàng</th>
                                         <th>Thời gian</th>
                                         <th>Trạng thái</th>
                                         <th>Thao tác</th>
@@ -582,8 +600,8 @@
     </div>
     <form id="promoForm" class="modal-body" autocomplete="off">
         <input type="hidden" id="promoId" name="id" />
+        <input type="hidden" id="promoSource" name="source" />
         <div class="form-grid">
-            <input type="hidden" id="promoId" name="id" />
             <div class="modal-row">
                 <div class="modal-label">Tên chương trình <span style="color:#ef4444">*</span></div>
                 <div style="flex:1"><input id="promoName" name="name" class="modal-input" type="text" placeholder="Tên chương trình" required /></div>
