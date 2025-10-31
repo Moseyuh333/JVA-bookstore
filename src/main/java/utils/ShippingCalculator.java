@@ -27,6 +27,12 @@ public final class ShippingCalculator {
     private static final Set<String> GLOBAL_KEYWORDS = createGlobalKeywords();
     private static final List<String> ADMIN_PREFIXES = Arrays.asList(
             "quan", "huyen", "thi xa", "thi tran", "xa", "phuong", "tp", "thanh pho", "tinh", "do thi");
+    private static final Set<String> SUPPORTED_COUNTRIES = new HashSet<>(Arrays.asList(
+            "viet nam",
+            "vietnam",
+            "việt nam",
+            "vn"
+    ));
 
     private ShippingCalculator() {
     }
@@ -37,6 +43,9 @@ public final class ShippingCalculator {
         }
 
         AddressContext context = new AddressContext(address);
+        if (!context.isSupportedCountry()) {
+            return null;
+        }
 
         ShippingQuote best = null;
         for (Shipper shipper : shippers) {
@@ -386,12 +395,38 @@ public final class ShippingCalculator {
         private final Set<String> cityTokens;
         private final Set<String> provinceTokens;
         private final String regionCode;
+        private final boolean supportedCountry;
 
         private AddressContext(UserAddress address) {
             this.districtTokens = new LinkedHashSet<>(buildTokens(address.getDistrict()));
             this.cityTokens = new LinkedHashSet<>(buildTokens(address.getCity()));
             this.provinceTokens = new LinkedHashSet<>(buildTokens(address.getProvince()));
             this.regionCode = resolveRegion(address);
+            this.supportedCountry = evaluateSupportedCountry(address);
+        }
+
+        private boolean evaluateSupportedCountry(UserAddress address) {
+            if (address == null) {
+                return true;
+            }
+            String country = address.getCountry();
+            if (country == null || country.isBlank()) {
+                // Legacy dữ liệu không lưu country -> mặc định giao trong nước
+                return true;
+            }
+            String normalized = normalize(country);
+            if (normalized.isEmpty()) {
+                return true;
+            }
+            if (SUPPORTED_COUNTRIES.contains(normalized)) {
+                return true;
+            }
+            String compact = normalized.replace(" ", "");
+            return SUPPORTED_COUNTRIES.contains(compact);
+        }
+
+        private boolean isSupportedCountry() {
+            return supportedCountry;
         }
 
         private String resolveRegion(UserAddress address) {

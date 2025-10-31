@@ -23,7 +23,9 @@ public final class ShipperDAO {
     public static List<Shipper> findActiveShippers() throws SQLException {
         ensureSchema();
         String sql = "SELECT id, name, phone, email, base_fee, service_area, estimated_time, status, created_at, updated_at "
-                + "FROM shippers WHERE status = 'active'::shipper_status ORDER BY name";
+                + "FROM shippers "
+                + "WHERE COALESCE(LOWER(status::text), '') = 'active' "
+                + "ORDER BY name";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
@@ -105,4 +107,3 @@ public final class ShipperDAO {
         }
     }
 }
-

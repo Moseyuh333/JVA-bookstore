@@ -52,6 +52,11 @@ public class ShippingQuoteServlet extends HttpServlet {
 
             List<Shipper> shippers = ShipperDAO.findActiveShippers();
             ShippingQuote quote = ShippingCalculator.calculateQuote(address, shippers);
+            if (quote == null) {
+                writeError(resp, HttpServletResponse.SC_BAD_REQUEST,
+                        "Khong tim thay don vi van chuyen phu hop. Chung toi chi giao hang trong Viet Nam.");
+                return;
+            }
 
             Map<String, Object> payload = new HashMap<>();
             payload.put("success", true);
@@ -62,17 +67,13 @@ public class ShippingQuoteServlet extends HttpServlet {
             payload.put("shippingFee", shippingFee);
             payload.put("addressId", addressId);
 
-            if (quote != null) {
-                Map<String, Object> shipperInfo = new HashMap<>();
-                shipperInfo.put("id", quote.getShipperId());
-                shipperInfo.put("name", quote.getShipperName());
-                shipperInfo.put("estimatedTime", quote.getEstimatedTime());
-                shipperInfo.put("serviceArea", quote.getServiceArea());
-                shipperInfo.put("matchLevel", quote.getMatchLevel() != null ? quote.getMatchLevel().name() : null);
-                payload.put("shipper", shipperInfo);
-            } else {
-                payload.put("shipper", null);
-            }
+            Map<String, Object> shipperInfo = new HashMap<>();
+            shipperInfo.put("id", quote.getShipperId());
+            shipperInfo.put("name", quote.getShipperName());
+            shipperInfo.put("estimatedTime", quote.getEstimatedTime());
+            shipperInfo.put("serviceArea", quote.getServiceArea());
+            shipperInfo.put("matchLevel", quote.getMatchLevel() != null ? quote.getMatchLevel().name() : null);
+            payload.put("shipper", shipperInfo);
 
             resp.getWriter().write(gson.toJson(payload));
         } catch (SQLException ex) {
@@ -101,3 +102,4 @@ public class ShippingQuoteServlet extends HttpServlet {
         resp.getWriter().write(gson.toJson(payload));
     }
 }
+
