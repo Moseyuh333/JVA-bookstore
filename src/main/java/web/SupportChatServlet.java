@@ -12,6 +12,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet(name = "SupportChatServlet", urlPatterns = {"/support-chat"})
+@WebServlet(name = "SupportChatServlet", urlPatterns = {"/api/support-chat"})
 public class SupportChatServlet extends HttpServlet {
 
     private transient Gson gson;
@@ -139,13 +140,12 @@ public class SupportChatServlet extends HttpServlet {
     }
 
     private String getUsername(HttpServletRequest req) {
-        // Extract username from token or session
-        // For simplicity, assume it's in a header or parameter
-        String username = req.getHeader("X-Username");
-        if (username == null) {
-            username = req.getParameter("username");
+        // Extract username from session
+        HttpSession session = req.getSession(false);
+        if (session != null) {
+            return (String) session.getAttribute("username");
         }
-        return username;
+        return null;
     }
 
     private JsonObject readJsonBody(HttpServletRequest req) throws IOException {

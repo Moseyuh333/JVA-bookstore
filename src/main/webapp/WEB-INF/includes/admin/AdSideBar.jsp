@@ -342,7 +342,7 @@
             </div>
 
             <div class="nav-item">
-                <a class="nav-link" href="<%=request.getContextPath()%>/admin-support">
+                <a class="nav-link" href="<%=request.getContextPath()%>/admin/AdSupport.jsp">
                     <i class="fas fa-comments"></i>
                     <span>Hỗ trợ khách hàng</span>
                 </a>
