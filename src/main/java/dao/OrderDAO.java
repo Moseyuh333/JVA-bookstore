@@ -1128,18 +1128,23 @@ public static int countTotalOrders(int shopId) throws SQLException {
 
     private static long insertOrder(Connection conn, long userId, String paymentMethod, PaymentDetails paymentDetails, String notes, AddressSnapshot address, CartData cartData,
                                     BigDecimal shippingFee, BigDecimal total, CouponResult coupon, String orderCode, Integer shopId) throws SQLException {
-        String sql = "INSERT INTO orders (user_id, shop_id, code, status, payment_status, payment_method, payment_provider, shipping_address_id, shipping_snapshot, cart_snapshot, payment_metadata, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, coupon_snapshot, notes) "
-                + "VALUES (?, ?, ?, 'new', 'unpaid', ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, 'VND', ?, ?::jsonb, ?) RETURNING id";
+        // Build immutable snapshots
+        String receiverSnapshot = buildReceiverSnapshot(conn, userId, address.addressId);
+        String shopSnapshot = shopId != null ? buildShopSnapshot(conn, shopId) : null;
+        String itemsSnapshot = buildItemsSnapshot(conn, cartData);
+
+        String sql = "INSERT INTO orders (user_id, shop_id, code, status, payment_status, payment_method, payment_provider, shipping_address_id, shipping_snapshot, cart_snapshot, payment_metadata, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, coupon_snapshot, receiver_snapshot, shop_snapshot, items_snapshot, notes) "
+                + "VALUES (?, ?, ?, 'new', 'unpaid', ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, 'VND', ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?) RETURNING id";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, userId);
-            
+
             // Thêm shop_id
             if (shopId != null) {
                 stmt.setInt(2, shopId);
             } else {
                 stmt.setNull(2, java.sql.Types.INTEGER);
             }
-            
+
             stmt.setString(3, orderCode);
             stmt.setString(4, paymentMethod);
             stmt.setString(5, providerFor(paymentMethod));
@@ -1161,7 +1166,10 @@ public static int countTotalOrders(int shopId) throws SQLException {
             stmt.setBigDecimal(13, total);
             stmt.setString(14, coupon.code);
             stmt.setString(15, coupon.snapshotJson);
-            stmt.setString(16, notes);
+            stmt.setString(16, receiverSnapshot);
+            stmt.setString(17, shopSnapshot);
+            stmt.setString(18, itemsSnapshot);
+            stmt.setString(19, notes);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong(1);
@@ -1575,6 +1583,58 @@ public static int countTotalOrders(int shopId) throws SQLException {
         snapshot.add("items", itemsJson);
         snapshot.addProperty("subtotal", cartData.subtotal);
         return GSON.toJson(snapshot);
+    }
+
+    private static String buildReceiverSnapshot(Connection conn, long userId, Long addressId) throws SQLException {
+        if (addressId == null) {
+            return null;
+        }
+        String sql = "SELECT id, recipient_name, phone, line1, line2, ward, district, city, province, postal_code, country, note FROM user_addresses WHERE user_id = ? AND id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setLong(2, addressId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                JsonObject json = new JsonObject();
+                json.addProperty("recipientName", rs.getString("recipient_name"));
+                json.addProperty("phone", rs.getString("phone"));
+                json.addProperty("line1", rs.getString("line1"));
+                json.addProperty("line2", rs.getString("line2"));
+                json.addProperty("ward", rs.getString("ward"));
+                json.addProperty("district", rs.getString("district"));
+                json.addProperty("city", rs.getString("city"));
+                json.addProperty("province", rs.getString("province"));
+                json.addProperty("postalCode", rs.getString("postal_code"));
+                json.addProperty("country", rs.getString("country"));
+                json.addProperty("note", rs.getString("note"));
+                return GSON.toJson(json);
+            }
+        }
+    }
+
+    private static String buildShopSnapshot(Connection conn, int shopId) throws SQLException {
+        String sql = "SELECT id, name, description, owner_id, created_at FROM shops WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, shopId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                JsonObject json = new JsonObject();
+                json.addProperty("id", rs.getInt("id"));
+                json.addProperty("name", rs.getString("name"));
+                json.addProperty("description", rs.getString("description"));
+                json.addProperty("ownerId", rs.getLong("owner_id"));
+                json.addProperty("createdAt", rs.getTimestamp("created_at").toString());
+                return GSON.toJson(json);
+            }
+        }
+    }
+
+    private static String buildItemsSnapshot(Connection conn, CartData cartData) throws SQLException {
+        return buildCartSnapshot(cartData);
     }
 
     private static String normalizePaymentMethod(String paymentMethod) {
