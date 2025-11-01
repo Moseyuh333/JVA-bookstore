@@ -23,7 +23,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Chi tiáº¿t váº­n Ä‘Æ¡n #<%=sid%></title>
+  <title>Chi tiết vận đơn #<%=sid%></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/feather-icons"></script>
@@ -33,13 +33,13 @@
 <div class="container mx-auto px-4 py-8">
 
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-semibold">Váº­n Ä‘Æ¡n #<span id="ship-id"><%=sid%></span></h1>
+    <h1 class="text-2xl font-semibold">Vận đơn #<span id="ship-id"><%=sid%></span></h1>
     <div class="flex items-center gap-2">
       <a href="<%=backHref%>" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
-        Â« Quay láº¡i danh sÃ¡ch
+        « Quay lại danh sách
       </a>
       <a href="<%=ctx%>/dashboard-shipper.jsp" class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm">
-        Trang chá»§
+        Trang chủ
       </a>
     </div>
   </div>
@@ -48,32 +48,32 @@
     <div class="lg:col-span-2 space-y-6">
       <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
         <div class="px-4 py-3 border-b border-amber-100">
-          <h2 class="text-lg font-medium">ThÃ´ng tin</h2>
+          <h2 class="text-lg font-medium">Thông tin</h2>
         </div>
         <div class="p-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <div class="text-gray-500 text-sm">ÄÆ¡n hÃ ng</div>
-              <div id="order-code" class="font-medium">â€”</div>
+              <div class="text-gray-500 text-sm">Đơn hàng</div>
+              <div id="order-code" class="font-medium">—</div>
             </div>
             <div>
-              <div class="text-gray-500 text-sm">KhÃ¡ch hÃ ng</div>
-              <div id="receiver-name" class="font-medium">â€”</div>
+              <div class="text-gray-500 text-sm">Khách hàng</div>
+              <div id="receiver-name" class="font-medium">—</div>
             </div>
             <div>
-              <div class="text-gray-500 text-sm">SÄT</div>
-              <div id="receiver-phone" class="font-medium">â€”</div>
+              <div class="text-gray-500 text-sm">SĐT</div>
+              <div id="receiver-phone" class="font-medium">—</div>
             </div>
             <div>
-              <div class="text-gray-500 text-sm">Äá»‹a chá»‰</div>
-              <div id="receiver-address" class="font-medium">â€”</div>
+              <div class="text-gray-500 text-sm">Địa chỉ</div>
+              <div id="receiver-address" class="font-medium">—</div>
             </div>
             <div>
-              <div class="text-gray-500 text-sm">Tráº¡ng thÃ¡i</div>
-              <span id="status-badge" class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">â€”</span>
+              <div class="text-gray-500 text-sm">Trạng thái</div>
+              <span id="status-badge" class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">—</span>
             </div>
             <div>
-              <div class="text-gray-500 text-sm">Thu há»™ (COD)</div>
+              <div class="text-gray-500 text-sm">Thu hộ (COD)</div>
               <div id="cod-amount" class="font-medium">0</div>
             </div>
           </div>
@@ -82,7 +82,7 @@
 
       <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
         <div class="px-4 py-3 border-b border-amber-100">
-          <h2 class="text-lg font-medium">DÃ²ng thá»i gian</h2>
+          <h2 class="text-lg font-medium">Dòng thời gian</h2>
         </div>
         <div class="p-4">
           <ul id="events" class="space-y-3"></ul>
@@ -95,7 +95,7 @@
     <div class="space-y-6">
       <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
         <div class="px-4 py-3 border-b border-amber-100">
-          <h2 class="text-lg font-medium">Cáº­p nháº­t tráº¡ng thÃ¡i</h2>
+          <h2 class="text-lg font-medium">Cập nhật trạng thái</h2>
         </div>
         <div class="p-4 space-y-4">
           <!-- 8 tráº¡ng thÃ¡i chuáº©n -->
@@ -105,18 +105,18 @@
             <option value="PICKED_UP">Đã lấy hàng</option>
 
             <option value="OUT_FOR_DELIVERY">Đang giao</option>
-            
+
             <option value="FAILED_DELIVERY">Giao thất bại</option>
             <option value="RETURNING">Đang hoàn</option>
             <option value="RETURNED">Đã hoàn</option>
             <option value="CANCELLED">Huỷ đơn</option>
           </select>
 
-          <input id="evt-note" type="text" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full" placeholder="Ghi chÃº (tuá»³ chá»n)">
+          <input id="evt-note" type="text" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full" placeholder="Ghi chú (tùy chọn)">
 
           <div class="flex items-center justify-end gap-2">
             <button id="btnAddEvent" class="inline-flex items-center px-3 py-2 rounded-md border border-amber-700 bg-amber-700 text-white hover:bg-amber-600 text-sm">
-              Ghi sá»± kiá»‡n
+              Ghi sự kiện
             </button>
           </div>
         </div>
@@ -124,7 +124,7 @@
 
       <div class="rounded-xl border border-amber-200 bg-white shadow-sm">
         <div class="px-4 py-3 border-b border-amber-100">
-          <h2 class="text-lg font-medium">XÃ¡c nháº­n Ä‘Ã£ giao</h2>
+          <h2 class="text-lg font-medium">Xác nhận đã giao</h2>
         </div>
                 <div class="p-4 space-y-4">
           <div class="space-y-2">
@@ -331,7 +331,7 @@
       document.getElementById('receiver-name').textContent = s.receiverName || s.customerName || '-';
       document.getElementById('receiver-phone').textContent = s.receiverPhone || '-';
       document.getElementById('receiver-address').textContent = s.receiverAddress || '-';
-      document.getElementById('cod-amount').textContent = ((s.codAmount||0).toLocaleString('vi-VN')) + ' â‚«';
+      document.getElementById('cod-amount').textContent = ((s.codAmount||0).toLocaleString('vi-VN')) + ' VND';
       setBadge(s.status);
       setCurrentEvidence(s.evidenceUrl);
       if (!['DELIVERED','FAILED_DELIVERY','CANCELLED','RETURNED'].includes(s.status))
