@@ -1,6 +1,7 @@
 package dao;
 
 import models.SupportConversation;
+import models.SupportConversationSummary;
 import models.SupportMessage;
 import utils.DBUtil;
 
@@ -73,6 +74,69 @@ public class SupportChatDAO {
                 }
             }
         }
+    }
+
+    public SupportConversation getConversation(long conversationId) throws SQLException {
+        try (Connection con = DBUtil.getConnection()) {
+            return findById(con, conversationId);
+        }
+    }
+
+    public SupportConversationSummary getConversationSummary(long conversationId) throws SQLException {
+        String sql =
+            "SELECT sc.id, sc.user_id, sc.status, sc.created_at, sc.updated_at, " +
+            "       COALESCE(u.username, '') AS username, " +
+            "       (SELECT content FROM support_messages WHERE conversation_id = sc.id ORDER BY created_at DESC LIMIT 1) AS last_message, " +
+            "       (SELECT created_at FROM support_messages WHERE conversation_id = sc.id ORDER BY created_at DESC LIMIT 1) AS last_message_at " +
+            "FROM support_conversations sc " +
+            "LEFT JOIN users u ON u.id = sc.user_id " +
+            "WHERE sc.id = ? LIMIT 1";
+
+        try (Connection con = DBUtil.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setLong(1, conversationId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapConversationSummary(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    public List<SupportConversationSummary> listConversations(int limit, int offset) throws SQLException {
+        if (limit <= 0) {
+            limit = 20;
+        }
+        if (limit > 200) {
+            limit = 200;
+        }
+        if (offset < 0) {
+            offset = 0;
+        }
+
+        String sql =
+            "SELECT sc.id, sc.user_id, sc.status, sc.created_at, sc.updated_at, " +
+            "       COALESCE(u.username, '') AS username, " +
+            "       (SELECT content FROM support_messages WHERE conversation_id = sc.id ORDER BY created_at DESC LIMIT 1) AS last_message, " +
+            "       (SELECT created_at FROM support_messages WHERE conversation_id = sc.id ORDER BY created_at DESC LIMIT 1) AS last_message_at " +
+            "FROM support_conversations sc " +
+            "LEFT JOIN users u ON u.id = sc.user_id " +
+            "ORDER BY sc.updated_at DESC, sc.id DESC " +
+            "LIMIT ? OFFSET ?";
+
+        List<SupportConversationSummary> results = new ArrayList<>();
+        try (Connection con = DBUtil.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ps.setInt(2, offset);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    results.add(mapConversationSummary(rs));
+                }
+            }
+        }
+        return results;
     }
 
     public List<SupportMessage> listMessages(long conversationId, Timestamp since, int limit) throws SQLException {
@@ -260,6 +324,19 @@ public class SupportChatDAO {
         conversation.setCreatedAt(rs.getTimestamp("created_at"));
         conversation.setUpdatedAt(rs.getTimestamp("updated_at"));
         return conversation;
+    }
+
+    private SupportConversationSummary mapConversationSummary(ResultSet rs) throws SQLException {
+        SupportConversationSummary summary = new SupportConversationSummary();
+        summary.setId(rs.getLong("id"));
+        summary.setUserId(rs.getInt("user_id"));
+        summary.setUsername(rs.getString("username"));
+        summary.setStatus(rs.getString("status"));
+        summary.setCreatedAt(rs.getTimestamp("created_at"));
+        summary.setUpdatedAt(rs.getTimestamp("updated_at"));
+        summary.setLastMessage(rs.getString("last_message"));
+        summary.setLastMessageAt(rs.getTimestamp("last_message_at"));
+        return summary;
     }
 
     private SupportMessage mapMessage(ResultSet rs) throws SQLException {

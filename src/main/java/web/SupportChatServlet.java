@@ -19,10 +19,16 @@ import javax.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -33,6 +39,8 @@ public class SupportChatServlet extends HttpServlet {
 
     private transient Gson gson;
     private transient SupportChatDAO supportChatDAO;
+
+    private static final List<AutoReplyRule> AUTO_REPLY_RULES = createAutoReplyRules();
 
     @Override
     public void init() throws ServletException {
@@ -45,7 +53,8 @@ public class SupportChatServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String username = currentUsername(req);
         if (username == null) {
-            writeJson(resp, HttpServletResponse.SC_UNAUTHORIZED, error("UNAUTHORIZED", "Bạn cần đăng nhập để sử dụng hỗ trợ chat."));
+            writeJson(resp, HttpServletResponse.SC_UNAUTHORIZED,
+                error("UNAUTHORIZED", "Bạn cần đăng nhập để sử dụng hỗ trợ chat."));
             return;
         }
 
@@ -69,14 +78,16 @@ public class SupportChatServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String username = currentUsername(req);
         if (username == null) {
-            writeJson(resp, HttpServletResponse.SC_UNAUTHORIZED, error("UNAUTHORIZED", "Bạn cần đăng nhập để gửi tin nhắn."));
+            writeJson(resp, HttpServletResponse.SC_UNAUTHORIZED,
+                error("UNAUTHORIZED", "Bạn cần đăng nhập để gửi tin nhắn."));
             return;
         }
 
         JsonObject body = readJson(req);
         String content = body != null && body.has("content") ? body.get("content").getAsString() : null;
         if (content == null || content.trim().isEmpty()) {
-            writeJson(resp, HttpServletResponse.SC_BAD_REQUEST, error("INVALID_CONTENT", "Nội dung tin nhắn không được để trống."));
+            writeJson(resp, HttpServletResponse.SC_BAD_REQUEST,
+                error("INVALID_CONTENT", "Nội dung tin nhắn không được để trống."));
             return;
         }
 
@@ -84,9 +95,18 @@ public class SupportChatServlet extends HttpServlet {
             SupportConversation conversation = supportChatDAO.getOrCreateConversation(username);
             SupportMessage message = supportChatDAO.addUserMessage(conversation.getId(), content);
 
+            SupportMessage autoMessage = null;
+            String autoReply = detectAutoReply(content);
+            if (autoReply != null) {
+                autoMessage = supportChatDAO.addSupportMessage(conversation.getId(), autoReply);
+            }
+
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("ok", true);
             payload.put("message", toMessageMap(message));
+            if (autoMessage != null) {
+                payload.put("autoReply", toMessageMap(autoMessage));
+            }
             writeJson(resp, HttpServletResponse.SC_OK, payload);
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -166,7 +186,7 @@ public class SupportChatServlet extends HttpServlet {
     private void writeJson(HttpServletResponse resp, int status, Map<String, ?> payload) throws IOException {
         resp.setStatus(status);
         resp.setContentType("application/json; charset=UTF-8");
-        resp.setHeader("Cache-Control", "no-store");
+        resp.setCharacterEncoding("UTF-8");
         try (PrintWriter writer = resp.getWriter()) {
             writer.write(gson.toJson(payload));
         }
@@ -180,6 +200,58 @@ public class SupportChatServlet extends HttpServlet {
         return map;
     }
 
+    private String detectAutoReply(String content) {
+        if (content == null) {
+            return null;
+        }
+        String normalized = normalizeText(content);
+        for (AutoReplyRule rule : AUTO_REPLY_RULES) {
+            if (rule.matches(normalized)) {
+                return rule.getResponse();
+            }
+        }
+        return null;
+    }
+
+    private static String normalizeText(String input) {
+        if (input == null) {
+            return "";
+        }
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD)
+            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+            .toLowerCase(Locale.ROOT);
+        return normalized.replaceAll("[^a-z0-9\\s]", " ").replaceAll("\\s+", " ").trim();
+    }
+
+    private static List<AutoReplyRule> createAutoReplyRules() {
+        return Collections.unmodifiableList(Arrays.asList(
+            new AutoReplyRule(
+                new String[]{"xin chao", "chao ban", "hello", "hi"},
+                "Xin chào! Đội hỗ trợ Bookish Bliss Haven đang lắng nghe. Bạn vui lòng cho biết thêm thông tin để chúng tôi hỗ trợ nhanh hơn nhé."
+            ),
+            new AutoReplyRule(
+                new String[]{"giao hang", "thoi gian giao", "ship bao lau", "vanchuyen mat bao nhieu"},
+                "Thời gian giao hàng nội thành thường từ 1-2 ngày, các tỉnh thành khác 2-5 ngày làm việc. Đơn từ 500.000₫ được miễn phí giao tiêu chuẩn. Bạn có thể kiểm tra tiến độ trong mục Đơn hàng của tôi."
+            ),
+            new AutoReplyRule(
+                new String[]{"phi ship", "mien phi van chuyen", "phi van chuyen"},
+                "Bookish Bliss Haven miễn phí giao hàng tiêu chuẩn cho đơn từ 500.000₫. Với đơn nhỏ hơn, phí sẽ hiển thị rõ trước bước thanh toán tùy theo địa chỉ giao."
+            ),
+            new AutoReplyRule(
+                new String[]{"doi tra", "doi sach", "hoan tien", "tra hang"},
+                "Bạn có thể đổi hoặc trả sách trong vòng 7 ngày nếu sản phẩm bị lỗi in ấn hoặc giao sai. Vui lòng giữ hóa đơn/biên nhận và cung cấp ảnh sản phẩm để hỗ trợ xử lý nhanh nhé."
+            ),
+            new AutoReplyRule(
+                new String[]{"thu tuc thanh toan", "thanh toan", "payment", "tra gop"},
+                "Hiện chúng tôi hỗ trợ thanh toán khi nhận hàng (COD) và các phương thức trực tuyến như VNPay, Momo. Bạn chọn tùy chọn phù hợp ở bước thanh toán."
+            ),
+            new AutoReplyRule(
+                new String[]{"gio hoat dong", "lien he", "ho tro khi nao", "bao gio tra loi"},
+                "Đội hỗ trợ làm việc từ 8h00-20h00 (T2-T6) và 9h00-17h00 (T7-CN). Ngoài khung giờ này bạn vẫn có thể để lại tin nhắn, chúng tôi sẽ phản hồi sớm nhất có thể."
+            )
+        ));
+    }
+
     private String currentUsername(HttpServletRequest req) {
         Object attr = req.getAttribute("username");
         if (attr != null) {
@@ -191,9 +263,12 @@ public class SupportChatServlet extends HttpServlet {
 
         HttpSession session = req.getSession(false);
         if (session != null) {
-            Object sessionUser = session.getAttribute("username");
-            if (sessionUser != null && !sessionUser.toString().trim().isEmpty()) {
-                return normalizeUser(sessionUser.toString().trim());
+            Object user = session.getAttribute("username");
+            if (user != null) {
+                String value = user.toString().trim();
+                if (!value.isEmpty()) {
+                    return normalizeUser(value);
+                }
             }
         }
 
@@ -222,7 +297,7 @@ public class SupportChatServlet extends HttpServlet {
                 return null;
             }
             return normalizeUser(subject.trim());
-        } catch (Exception e) {
+        } catch (Exception ex) {
             return null;
         }
     }
@@ -231,30 +306,31 @@ public class SupportChatServlet extends HttpServlet {
         if (subject == null || subject.isBlank()) {
             return null;
         }
-        String sqlUsername = "SELECT username FROM users WHERE username = ? LIMIT 1";
-        String sqlId = "SELECT username FROM users WHERE CAST(id AS TEXT) = ? LIMIT 1";
-        String sqlEmail = "SELECT username FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1";
 
-        try (java.sql.Connection con = DBUtil.getConnection()) {
-            try (java.sql.PreparedStatement ps = con.prepareStatement(sqlUsername)) {
+        String sqlByUsername = "SELECT username FROM users WHERE username = ? LIMIT 1";
+        String sqlById = "SELECT username FROM users WHERE CAST(id AS TEXT) = ? LIMIT 1";
+        String sqlByEmail = "SELECT username FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1";
+
+        try (Connection con = DBUtil.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement(sqlByUsername)) {
                 ps.setString(1, subject);
-                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         return rs.getString(1);
                     }
                 }
             }
-            try (java.sql.PreparedStatement ps = con.prepareStatement(sqlId)) {
+            try (PreparedStatement ps = con.prepareStatement(sqlById)) {
                 ps.setString(1, subject);
-                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         return rs.getString(1);
                     }
                 }
             }
-            try (java.sql.PreparedStatement ps = con.prepareStatement(sqlEmail)) {
+            try (PreparedStatement ps = con.prepareStatement(sqlByEmail)) {
                 ps.setString(1, subject);
-                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         return rs.getString(1);
                     }
@@ -263,5 +339,31 @@ public class SupportChatServlet extends HttpServlet {
         } catch (SQLException ignored) {
         }
         return subject;
+    }
+
+    private static class AutoReplyRule {
+        private final String[] keywords;
+        private final String response;
+
+        private AutoReplyRule(String[] keywords, String response) {
+            this.keywords = keywords;
+            this.response = response;
+        }
+
+        private boolean matches(String normalizedContent) {
+            if (normalizedContent == null || normalizedContent.isEmpty()) {
+                return false;
+            }
+            for (String keyword : keywords) {
+                if (normalizedContent.contains(keyword)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private String getResponse() {
+            return response;
+        }
     }
 }

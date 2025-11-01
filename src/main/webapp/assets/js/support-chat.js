@@ -15,8 +15,8 @@
         pollingTimer: null,
         isLoading: false,
         isSending: false,
-        initialized: false,
-        lockForm: false
+        locked: false,
+        initialized: false
     };
 
     var selectors = {
@@ -39,7 +39,7 @@
         selectors.input = document.getElementById('supportChatInput');
         selectors.status = document.getElementById('supportChatStatus');
         selectors.messages = document.getElementById('supportChatMessages');
-        selectors.submitBtn = selectors.form ? selectors.form.querySelector('button[type="submit"]') : null;
+        selectors.submitBtn = selectors.form ? selectors.form.querySelector('button[type=\"submit\"]') : null;
         selectors.triggers = Array.prototype.slice.call(document.querySelectorAll('[data-support-chat-open]'));
     }
 
@@ -79,14 +79,13 @@
     }
 
     function setStatus(text) {
-        if (!selectors.status) {
-            return;
+        if (selectors.status) {
+            selectors.status.textContent = text || '';
         }
-        selectors.status.textContent = text || '';
     }
 
     function setFormDisabled(disabled) {
-        var effective = disabled || state.lockForm;
+        var effective = disabled || state.locked;
         if (selectors.input) {
             selectors.input.disabled = effective;
         }
@@ -100,22 +99,19 @@
             return;
         }
         state.isLoading = true;
-        setStatus('Đang tải hội thoại...');
+        setStatus('Dang tai hoi thoai...');
         apiClient.get('/support-chat')
             .then(function (payload) {
                 state.initialized = true;
                 state.conversation = payload.conversation || null;
-                state.lockForm = false;
+                state.locked = false;
                 setFormDisabled(false);
                 mergeMessages(payload.messages || []);
                 scrollToBottom();
-                setStatus('Bạn đang trò chuyện với hỗ trợ Bookish Bliss Haven.');
+                setStatus('Ban dang tro chuyen voi ho tro Bookish Bliss Haven.');
                 schedulePolling();
             })
-            .catch(function (error) {
-                console.error('supportChat load error', error);
-                handleLoadError(error);
-            })
+            .catch(handleLoadError)
             .finally(function () {
                 state.isLoading = false;
             });
@@ -135,9 +131,9 @@
             state.messageIndex.set(message.id, true);
             state.messages.push(message);
             renderMessage(message);
-            var timestamp = parseTimestamp(message.createdAt);
-            if (timestamp > state.lastTimestamp) {
-                state.lastTimestamp = timestamp;
+            var ts = parseTimestamp(message.createdAt);
+            if (ts > state.lastTimestamp) {
+                state.lastTimestamp = ts;
             }
         });
     }
@@ -147,7 +143,6 @@
             return;
         }
         var isSupport = message.senderType && message.senderType.toLowerCase() === 'support';
-
         var wrapper = document.createElement('div');
         wrapper.className = 'flex ' + (isSupport ? 'justify-start' : 'justify-end');
 
@@ -180,11 +175,8 @@
         if (!value) {
             return 0;
         }
-        try {
-            return Date.parse(value);
-        } catch (ex) {
-            return 0;
-        }
+        var parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? 0 : parsed;
     }
 
     function formatTime(value) {
@@ -198,7 +190,7 @@
                 day: '2-digit',
                 month: '2-digit'
             });
-        } catch (ex) {
+        } catch (error) {
             return value;
         }
     }
@@ -225,17 +217,17 @@
         }
         apiClient.get('/support-chat' + query)
             .then(function (payload) {
-                mergeMessages(payload.messages || []);
                 if (payload.conversation) {
                     state.conversation = payload.conversation;
                 }
+                mergeMessages(payload.messages || []);
                 if (payload.messages && payload.messages.length > 0) {
                     scrollToBottom();
                 }
             })
             .catch(function (error) {
                 if (error && error.status === 401) {
-                    handleLoadError(error);
+                    handleUnauthorized();
                 } else {
                     console.warn('supportChat poll error', error);
                 }
@@ -243,31 +235,39 @@
     }
 
     function sendMessage(content) {
-        if (state.isSending || state.lockForm) {
+        if (state.isSending || state.locked) {
             return;
         }
         var trimmed = content ? content.trim() : '';
         if (!trimmed) {
-            setStatus('Vui lòng nhập nội dung tin nhắn.');
+            setStatus('Vui long nhap noi dung tin nhan.');
             return;
         }
         state.isSending = true;
         setFormDisabled(true);
-        setStatus('Đang gửi tin nhắn...');
+        setStatus('Dang gui tin nhan...');
         apiClient.post('/support-chat', { content: trimmed })
             .then(function (payload) {
-                setStatus('Tin nhắn đã được gửi.');
+                setStatus('Tin nhan da duoc gui.');
                 if (selectors.input) {
                     selectors.input.value = '';
                 }
                 if (payload.message) {
                     mergeMessages([payload.message]);
-                    scrollToBottom();
                 }
+                if (payload.autoReply) {
+                    mergeMessages([payload.autoReply]);
+                    setStatus('He thong da phan hoi tu dong cho cau hoi cua ban.');
+                }
+                scrollToBottom();
             })
             .catch(function (error) {
-                console.error('supportChat send error', error);
-                handleSendError(error);
+                if (error && error.status === 401) {
+                    handleUnauthorized();
+                } else {
+                    console.error('supportChat send error', error);
+                    setStatus('Khong the gui tin nhan. Vui long thu lai.');
+                }
             })
             .finally(function () {
                 state.isSending = false;
@@ -277,36 +277,29 @@
 
     function handleLoadError(error) {
         if (error && error.status === 401) {
-            resetAuthTokens();
-            state.lockForm = true;
-            setFormDisabled(true);
-            setStatus('Phiên đăng nhập đã hết hạn. Đang chuyển tới trang đăng nhập...');
-            stopPolling();
-            redirectToLogin();
+            handleUnauthorized();
             return;
         }
-        setStatus('Không thể tải kênh hỗ trợ. Vui lòng thử lại sau.');
+        console.error('supportChat load error', error);
+        setStatus('Khong the tai kenh ho tro. Vui long thu lai sau.');
     }
 
-    function handleSendError(error) {
-        if (error && error.status === 401) {
-            resetAuthTokens();
-            state.lockForm = true;
-            setFormDisabled(true);
-            setStatus('Phiên đăng nhập đã hết hạn. Đang chuyển tới trang đăng nhập...');
-            redirectToLogin();
-            return;
-        }
-        setStatus('Không thể gửi tin nhắn. Vui lòng thử lại.');
+    function handleUnauthorized() {
+        clearAuthTokens();
+        state.locked = true;
+        setFormDisabled(true);
+        setStatus('Phien dang nhap da het han. Dang chuyen toi trang dang nhap...');
+        stopPolling();
+        redirectToLogin();
     }
 
-    function resetAuthTokens() {
+    function clearAuthTokens() {
         try {
             window.localStorage.removeItem('auth_token');
             window.localStorage.removeItem('auth_username');
             window.localStorage.removeItem('auth_role');
-        } catch (ex) {
-            console.warn('supportChat tokens cleanup failed', ex);
+        } catch (error) {
+            console.warn('supportChat clear token error', error);
         }
     }
 
