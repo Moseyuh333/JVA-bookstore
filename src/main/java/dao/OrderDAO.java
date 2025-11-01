@@ -141,7 +141,7 @@ public final class OrderDAO {
 
     public static List<Order> findOrders(long userId, String statusFilter) throws SQLException {
         StringBuilder sql = new StringBuilder();
-    sql.append("SELECT id, code, user_id, shop_id, order_date, status, payment_status, payment_method, payment_provider, payment_metadata, shipping_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
+    sql.append("SELECT id, code, user_id, shop_id, order_date, status, payment_status, payment_method, payment_provider, payment_metadata, shipping_snapshot, items_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
                 + "FROM orders WHERE user_id = ?");
         if (statusFilter != null && !statusFilter.trim().isEmpty()) {
             sql.append(" AND status = ?");
@@ -157,7 +157,7 @@ public final class OrderDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     Order order = mapOrder(rs);
-                    order.setItems(findOrderItems(conn, order.getId(), order.getUserId()));
+                    order.setItems(parseItemsFromSnapshot(rs));
                     orders.add(order);
                 }
             }
@@ -231,7 +231,7 @@ public final class OrderDAO {
     }
 
     private static Order fetchOrderByIdInternal(Connection conn, long orderId, Long userId) throws SQLException {
-        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.shop_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.payment_metadata, o.shipping_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
+        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.shop_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.payment_metadata, o.shipping_snapshot, o.items_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
                 + "u.email AS customer_email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name "
                 + "FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?");
         if (userId != null) {
@@ -249,7 +249,7 @@ public final class OrderDAO {
                 Order order = mapOrder(rs);
                 order.setCustomerEmail(rs.getString("customer_email"));
                 order.setCustomerName(rs.getString("customer_name"));
-                order.setItems(findOrderItems(conn, orderId, order.getUserId()));
+                order.setItems(parseItemsFromSnapshot(rs));
                 return order;
             }
         }
@@ -960,6 +960,44 @@ public static int countTotalOrders(int shopId) throws SQLException {
                 }
                 return items;
             }
+        }
+    }
+
+    private static List<OrderItem> parseItemsFromSnapshot(ResultSet rs) throws SQLException {
+        String snapshot = rs.getString("items_snapshot");
+        if (snapshot == null || snapshot.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        try {
+            JsonObject obj = GSON.fromJson(snapshot, JsonObject.class);
+            if (obj == null || !obj.has("items")) {
+                return new ArrayList<>();
+            }
+            JsonArray itemsArray = obj.getAsJsonArray("items");
+            List<OrderItem> items = new ArrayList<>();
+            for (JsonElement elem : itemsArray) {
+                JsonObject itemObj = elem.getAsJsonObject();
+                OrderItem item = new OrderItem();
+                item.setBookId(itemObj.get("bookId").getAsLong());
+                item.setQuantity(itemObj.get("quantity").getAsInt());
+                item.setUnitPrice(itemObj.get("unitPrice").getAsBigDecimal());
+                item.setTotalPrice(itemObj.get("subtotal").getAsBigDecimal());
+                item.setTitle(itemObj.get("title").getAsString());
+                item.setAuthor(itemObj.get("author").getAsString());
+                item.setImageUrl(itemObj.get("imageUrl").getAsString());
+                if (itemObj.has("shopId") && !itemObj.get("shopId").isJsonNull()) {
+                    item.setShopId(itemObj.get("shopId").getAsInt());
+                }
+                item.setShopName(itemObj.get("shopName").getAsString());
+                // Note: reviewId and hasReview are not set here, as they require user-specific query
+                item.setReviewId(null);
+                item.setHasReview(false);
+                items.add(item);
+            }
+            return items;
+        } catch (Exception e) {
+            // fallback to empty list on parse error
+            return new ArrayList<>();
         }
     }
 
