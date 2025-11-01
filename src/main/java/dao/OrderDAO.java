@@ -981,15 +981,6 @@ public static int countTotalOrders(int shopId) throws SQLException {
                 }
                 stmt.setString(7, item.shopName);
                 
-                
-                // Lưu shop info snapshot
-                if (item.shopId != null) {
-                    stmt.setInt(6, item.shopId);
-                } else {
-                    stmt.setNull(6, java.sql.Types.INTEGER);
-                }
-                stmt.setString(7, item.shopName);
-                
                 stmt.addBatch();
             }
             stmt.executeBatch();
@@ -1574,9 +1565,12 @@ public static int countTotalOrders(int shopId) throws SQLException {
             node.addProperty("bookId", item.bookId);
             node.addProperty("quantity", item.quantity);
             node.addProperty("unitPrice", item.unitPrice);
+            node.addProperty("subtotal", item.unitPrice.multiply(BigDecimal.valueOf(item.quantity)));
             node.addProperty("title", item.title);
             node.addProperty("author", item.author);
             node.addProperty("imageUrl", item.imageUrl);
+            node.addProperty("shopId", item.shopId);
+            node.addProperty("shopName", item.shopName);
             itemsJson.add(node);
         }
         JsonObject snapshot = new JsonObject();
