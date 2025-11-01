@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.net.URLEncoder" %>
 <%@ page import="java.text.Normalizer" %>
 <%@ page import="java.util.ArrayList" %>
@@ -33,7 +33,7 @@
     }
 %>
 <%
-    String ctx = request.getContextPath();
+    String footerCtx = request.getContextPath();
     List<String> rawCategories;
     try {
         rawCategories = new ArrayList<>(BookDAO.getAllCategories());
@@ -64,7 +64,7 @@
     String catNonFiction = nonFictionRaw != null ? URLEncoder.encode(nonFictionRaw, "UTF-8") : null;
     String catSkills = skillRaw != null ? URLEncoder.encode(skillRaw, "UTF-8") : null;
 
-    String catalogBase = ctx + "/catalog.jsp";
+    String catalogBase = footerCtx + "/catalog.jsp";
     String novelHref = catNovel != null ? catalogBase + "?category=" + catNovel : catalogBase;
     String nonFictionHref = catNonFiction != null ? catalogBase + "?category=" + catNonFiction : catalogBase;
     String skillsHref = catSkills != null ? catalogBase + "?category=" + catSkills : catalogBase;
@@ -97,35 +97,35 @@
                 </div>
             </div>
             <div>
-                <h4 class="text-white font-bold mb-4">Mua s&#x1EB5;m</h4>
+                <h4 class="text-white font-bold mb-4">Mua sam</h4>
                 <ul class="space-y-2">
-                    <li><a href="<%=ctx%>/catalog.jsp?sort=new" class="hover:text-white">S&#225;ch m&#7899;i</a></li>
-                    <li><a href="<%=ctx%>/catalog.jsp?sort=best" class="hover:text-white">S&#225;ch b&#225;n ch&#7841;y</a></li>
-                    <li><a href="<%=novelHref%>" class="hover:text-white">Ti&#7875;u thuy&#7871;t</a></li>
-                    <li><a href="<%=nonFictionHref%>" class="hover:text-white">Phi ti&#7875;u thuy&#7871;t</a></li>
-                    <li><a href="<%=skillsHref%>" class="hover:text-white">S&#225;ch k&#7929; n&#259;ng</a></li>
+                    <li><a href="<%=footerCtx%>/catalog.jsp?sort=new" class="hover:text-white">Sach moi</a></li>
+                    <li><a href="<%=footerCtx%>/catalog.jsp?sort=best" class="hover:text-white">Sach ban chay</a></li>
+                    <li><a href="<%=novelHref%>" class="hover:text-white">Tieu thuyet</a></li>
+                    <li><a href="<%=nonFictionHref%>" class="hover:text-white">Phi tieu thuyet</a></li>
+                    <li><a href="<%=skillsHref%>" class="hover:text-white">Sach ky nang</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="text-white font-bold mb-4">H&#7897; tr&#7907;</h4>
+                <h4 class="text-white font-bold mb-4">Ho tro</h4>
                 <ul class="space-y-2">
-                    <li><a href="<%=ctx%>/support.jsp#faq" class="hover:text-white">C&#226;u h&#7887;i th&#432;&#7901;ng g&#7863;p</a></li>
-                    <li><a href="<%=ctx%>/support.jsp#shipping" class="hover:text-white">V&#7853;n chuy&#7875;n</a></li>
-                    <li><a href="<%=ctx%>/support.jsp#returns" class="hover:text-white">&#272;&#7893;i tr&#7843;</a></li>
+                    <li><a href="<%=footerCtx%>/support.jsp#faq" class="hover:text-white">Cau hoi thuong gap</a></li>
+                    <li><a href="<%=footerCtx%>/support.jsp#shipping" class="hover:text-white">Van chuyen</a></li>
+                    <li><a href="<%=footerCtx%>/support.jsp#returns" class="hover:text-white">Doi tra</a></li>
                     <li>
                         <button type="button" data-support-chat-open class="hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded">
-                            Li&#234;n h&#7879; tr&#7921;c tuy&#7871;n
+                            Lien he truc tuyen
                         </button>
                     </li>
-                    <li><a href="<%=ctx%>/support.jsp#privacy" class="hover:text-white">Ch&#237;nh s&#225;ch b&#7843;o m&#7853;t</a></li>
+                    <li><a href="<%=footerCtx%>/support.jsp#privacy" class="hover:text-white">Chinh sach bao mat</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="text-white font-bold mb-4">Li&#234;n h&#7879;</h4>
+                <h4 class="text-white font-bold mb-4">Lien he</h4>
                 <address class="not-italic space-y-2">
                     <div class="flex items-start">
                         <i data-feather="map-pin" class="w-5 h-5 mr-2 mt-0.5"></i>
-                        <span>123 &#272;&#432;&#7901;ng V&#259;n H&#7885;c, Qu&#7853;n S&#225;ch, TP.HCM</span>
+                        <span>123 Duong Van Hoc, Quan Sach, TP.HCM</span>
                     </div>
                     <div class="flex items-center">
                         <i data-feather="mail" class="w-5 h-5 mr-2"></i>
@@ -164,17 +164,17 @@
     </div>
     <div class="px-6 py-4 border-t border-gray-200 space-y-3">
         <div class="flex items-center justify-between text-sm text-gray-600">
-            <span>T&#7893;ng s&#7843;n ph&#7849;m</span>
+            <span>Tổng sản phẩm</span>
             <span data-cart-count>0</span>
         </div>
         <div class="flex items-center justify-between text-lg font-semibold text-amber-700">
-            <span>T&#7841;m t&#237;nh</span>
-            <span data-cart-subtotal>0&nbsp;&#273;</span>
+            <span>Tạm tính</span>
+            <span data-cart-subtotal>0&nbsp;₫</span>
         </div>
         <div data-cart-feedback class="hidden text-sm"></div>
         <div class="flex items-center justify-between gap-3">
-            <button type="button" data-cart-clear class="flex-1 px-4 py-3 rounded-full border border-gray-300 text-sm font-medium text-gray-600 hover:bg-gray-100 transition">X&#243;a gi&#7887;</button>
-            <button type="button" data-cart-checkout class="flex-1 px-4 py-3 rounded-full bg-amber-600 text-white font-semibold hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Thanh to&#225;n</button>
+            <button type="button" data-cart-clear class="flex-1 px-4 py-3 rounded-full border border-gray-300 text-sm font-medium text-gray-600 hover:bg-gray-100 transition">Xóa giỏ</button>
+            <button type="button" data-cart-checkout class="flex-1 px-4 py-3 rounded-full bg-amber-600 text-white font-semibold hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Thanh toán</button>
         </div>
     </div>
 </aside>
@@ -182,30 +182,30 @@
 <button type="button" id="supportChatFab" data-support-chat-open
         class="fixed bottom-6 right-6 z-[85] inline-flex items-center gap-2 rounded-full bg-amber-600 text-white px-4 py-3 shadow-xl hover:bg-amber-700 transition">
     <i data-feather="message-circle" class="w-5 h-5"></i>
-    <span>H&#7897; tr&#7907;</span>
+    <span>Hỗ trợ</span>
 </button>
 
 <div id="supportChatPanel" class="hidden fixed bottom-24 right-6 z-[90] w-full max-w-sm bg-white border border-amber-100 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
     <div class="px-5 py-4 bg-amber-600 text-white flex items-start justify-between gap-4">
         <div>
-            <h3 class="text-lg font-semibold">H&#7897; tr&#7907; kh&#225;ch h&#224;ng</h3>
-            <p class="text-sm text-amber-100/80">Ch&#250;ng t&#244;i ph&#7843;n h&#7891;i trong gi&#7901; h&#224;nh ch&#237;nh.</p>
+            <h3 class="text-lg font-semibold">Hỗ trợ khách hàng</h3>
+            <p class="text-sm text-amber-100/80">Chúng tôi phản hồi trong giờ hành chính.</p>
         </div>
         <button type="button" data-support-chat-close class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-amber-200/40 text-white/90 hover:text-white hover:bg-amber-500 transition">
             <i data-feather="x" class="w-4 h-4"></i>
-            <span class="sr-only">&#272;&#243;ng c&#7917;a s&#7893; h&#7897; tr&#7907;</span>
+            <span class="sr-only">Đóng cửa sổ hỗ trợ</span>
         </button>
     </div>
     <div id="supportChatMessages" class="flex-1 overflow-y-auto bg-amber-50/40 px-4 py-3 space-y-3 text-sm"></div>
     <div class="border-t border-amber-100 bg-white px-4 py-3">
         <form id="supportChatForm" class="space-y-2">
-            <label class="sr-only" for="supportChatInput">N&#7897;i dung h&#7897; tr&#7907;</label>
-            <textarea id="supportChatInput" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none" rows="3" placeholder="Nh&#7853;p c&#226;u h&#7887;i c&#7911;a b&#7841;n..."></textarea>
+            <label class="sr-only" for="supportChatInput">Nội dung hỗ trợ</label>
+            <textarea id="supportChatInput" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none" rows="3" placeholder="Nhập câu hỏi của bạn..."></textarea>
             <div class="flex items-center justify-between gap-3">
                 <span id="supportChatStatus" class="text-xs text-gray-500"></span>
                 <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition disabled:opacity-60 disabled:cursor-not-allowed">
                     <i data-feather="send" class="w-4 h-4"></i>
-                    <span>G&#7917;i</span>
+                    <span>Gửi</span>
                 </button>
             </div>
         </form>
@@ -214,11 +214,12 @@
 
 <script>
     window.appConfig = window.appConfig || {};
-    window.appConfig.contextPath = '<%=ctx%>';
+    window.appConfig.contextPath = '<%=footerCtx%>';
 </script>
-<script src="<%=ctx%>/assets/js/app-shell.js"></script>
-<script src="<%=ctx%>/assets/js/global-search.js"></script>
-<script src="<%=ctx%>/assets/js/api-client.js"></script>
-<script src="<%=ctx%>/assets/js/cart-client.js"></script>
-<script src="<%=ctx%>/assets/js/cart-ui.js"></script>
-<script src="<%=ctx%>/assets/js/support-chat.js"></script>
+<script src="<%=footerCtx%>/assets/js/app-shell.js"></script>
+<script src="<%=footerCtx%>/assets/js/global-search.js"></script>
+<script src="<%=footerCtx%>/assets/js/api-client.js"></script>
+<script src="<%=footerCtx%>/assets/js/cart-client.js"></script>
+<script src="<%=footerCtx%>/assets/js/cart-ui.js"></script>
+<script src="<%=footerCtx%>/assets/js/support-chat.js"></script>
+

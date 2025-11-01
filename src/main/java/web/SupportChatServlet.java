@@ -1,4 +1,4 @@
-package web;
+﻿package web;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -24,6 +24,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+        String fullPath = req.getRequestURI();
+        if (fullPath != null && fullPath.contains("/api/admin/support-chat")) {
+            handleAdminRoutes(req, resp);
+            return;
+        }
 import java.text.Normalizer;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -54,7 +59,7 @@ public class SupportChatServlet extends HttpServlet {
         String username = currentUsername(req);
         if (username == null) {
             writeJson(resp, HttpServletResponse.SC_UNAUTHORIZED,
-                error("UNAUTHORIZED", "Bạn cần đăng nhập để sử dụng hỗ trợ chat."));
+                error("UNAUTHORIZED", "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ sá»­ dá»¥ng há»— trá»£ chat."));
             return;
         }
 
@@ -79,7 +84,7 @@ public class SupportChatServlet extends HttpServlet {
         String username = currentUsername(req);
         if (username == null) {
             writeJson(resp, HttpServletResponse.SC_UNAUTHORIZED,
-                error("UNAUTHORIZED", "Bạn cần đăng nhập để gửi tin nhắn."));
+                error("UNAUTHORIZED", "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ gá»­i tin nháº¯n."));
             return;
         }
 
@@ -87,7 +92,7 @@ public class SupportChatServlet extends HttpServlet {
         String content = body != null && body.has("content") ? body.get("content").getAsString() : null;
         if (content == null || content.trim().isEmpty()) {
             writeJson(resp, HttpServletResponse.SC_BAD_REQUEST,
-                error("INVALID_CONTENT", "Nội dung tin nhắn không được để trống."));
+                error("INVALID_CONTENT", "Ná»™i dung tin nháº¯n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng."));
             return;
         }
 
@@ -227,27 +232,27 @@ public class SupportChatServlet extends HttpServlet {
         return Collections.unmodifiableList(Arrays.asList(
             new AutoReplyRule(
                 new String[]{"xin chao", "chao ban", "hello", "hi"},
-                "Xin chào! Đội hỗ trợ Bookish Bliss Haven đang lắng nghe. Bạn vui lòng cho biết thêm thông tin để chúng tôi hỗ trợ nhanh hơn nhé."
+                "Xin chÃ o! Äá»™i há»— trá»£ Bookish Bliss Haven Ä‘ang láº¯ng nghe. Báº¡n vui lÃ²ng cho biáº¿t thÃªm thÃ´ng tin Ä‘á»ƒ chÃºng tÃ´i há»— trá»£ nhanh hÆ¡n nhÃ©."
             ),
             new AutoReplyRule(
                 new String[]{"giao hang", "thoi gian giao", "ship bao lau", "vanchuyen mat bao nhieu"},
-                "Thời gian giao hàng nội thành thường từ 1-2 ngày, các tỉnh thành khác 2-5 ngày làm việc. Đơn từ 500.000₫ được miễn phí giao tiêu chuẩn. Bạn có thể kiểm tra tiến độ trong mục Đơn hàng của tôi."
+                "Thá»i gian giao hÃ ng ná»™i thÃ nh thÆ°á»ng tá»« 1-2 ngÃ y, cÃ¡c tá»‰nh thÃ nh khÃ¡c 2-5 ngÃ y lÃ m viá»‡c. ÄÆ¡n tá»« 500.000â‚« Ä‘Æ°á»£c miá»…n phÃ­ giao tiÃªu chuáº©n. Báº¡n cÃ³ thá»ƒ kiá»ƒm tra tiáº¿n Ä‘á»™ trong má»¥c ÄÆ¡n hÃ ng cá»§a tÃ´i."
             ),
             new AutoReplyRule(
                 new String[]{"phi ship", "mien phi van chuyen", "phi van chuyen"},
-                "Bookish Bliss Haven miễn phí giao hàng tiêu chuẩn cho đơn từ 500.000₫. Với đơn nhỏ hơn, phí sẽ hiển thị rõ trước bước thanh toán tùy theo địa chỉ giao."
+                "Bookish Bliss Haven miá»…n phÃ­ giao hÃ ng tiÃªu chuáº©n cho Ä‘Æ¡n tá»« 500.000â‚«. Vá»›i Ä‘Æ¡n nhá» hÆ¡n, phÃ­ sáº½ hiá»ƒn thá»‹ rÃµ trÆ°á»›c bÆ°á»›c thanh toÃ¡n tÃ¹y theo Ä‘á»‹a chá»‰ giao."
             ),
             new AutoReplyRule(
                 new String[]{"doi tra", "doi sach", "hoan tien", "tra hang"},
-                "Bạn có thể đổi hoặc trả sách trong vòng 7 ngày nếu sản phẩm bị lỗi in ấn hoặc giao sai. Vui lòng giữ hóa đơn/biên nhận và cung cấp ảnh sản phẩm để hỗ trợ xử lý nhanh nhé."
+                "Báº¡n cÃ³ thá»ƒ Ä‘á»•i hoáº·c tráº£ sÃ¡ch trong vÃ²ng 7 ngÃ y náº¿u sáº£n pháº©m bá»‹ lá»—i in áº¥n hoáº·c giao sai. Vui lÃ²ng giá»¯ hÃ³a Ä‘Æ¡n/biÃªn nháº­n vÃ  cung cáº¥p áº£nh sáº£n pháº©m Ä‘á»ƒ há»— trá»£ xá»­ lÃ½ nhanh nhÃ©."
             ),
             new AutoReplyRule(
                 new String[]{"thu tuc thanh toan", "thanh toan", "payment", "tra gop"},
-                "Hiện chúng tôi hỗ trợ thanh toán khi nhận hàng (COD) và các phương thức trực tuyến như VNPay, Momo. Bạn chọn tùy chọn phù hợp ở bước thanh toán."
+                "Hiá»‡n chÃºng tÃ´i há»— trá»£ thanh toÃ¡n khi nháº­n hÃ ng (COD) vÃ  cÃ¡c phÆ°Æ¡ng thá»©c trá»±c tuyáº¿n nhÆ° VNPay, Momo. Báº¡n chá»n tÃ¹y chá»n phÃ¹ há»£p á»Ÿ bÆ°á»›c thanh toÃ¡n."
             ),
             new AutoReplyRule(
                 new String[]{"gio hoat dong", "lien he", "ho tro khi nao", "bao gio tra loi"},
-                "Đội hỗ trợ làm việc từ 8h00-20h00 (T2-T6) và 9h00-17h00 (T7-CN). Ngoài khung giờ này bạn vẫn có thể để lại tin nhắn, chúng tôi sẽ phản hồi sớm nhất có thể."
+                "Äá»™i há»— trá»£ lÃ m viá»‡c tá»« 8h00-20h00 (T2-T6) vÃ  9h00-17h00 (T7-CN). NgoÃ i khung giá» nÃ y báº¡n váº«n cÃ³ thá»ƒ Ä‘á»ƒ láº¡i tin nháº¯n, chÃºng tÃ´i sáº½ pháº£n há»“i sá»›m nháº¥t cÃ³ thá»ƒ."
             )
         ));
     }
