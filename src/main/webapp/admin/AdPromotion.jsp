@@ -632,6 +632,14 @@
                 <div class="modal-label">Giá trị giảm <span style="color:#ef4444">*</span></div>
                 <div style="flex:1"><input id="promoValue" name="discount_value" class="modal-input" type="number" step="0.01" placeholder="Ví dụ: 20" required /></div>
             </div>
+            <div class="modal-row" id="maxDiscountRow">
+                <div class="modal-label">Giảm tối đa</div>
+                <div style="flex:1"><input id="promoMaxDiscount" name="max_discount_value" class="modal-input" type="number" step="0.01" placeholder="Ví dụ: 50000" /></div>
+            </div>
+            <div class="modal-row">
+                <div class="modal-label">Đơn tối thiểu</div>
+                <div style="flex:1"><input id="promoMinOrder" name="min_order_value" class="modal-input" type="number" step="0.01" placeholder="Ví dụ: 100000" /></div>
+            </div>
             <div class="modal-row">
                 <div class="modal-label">Bắt đầu</div>
                 <div style="flex:1"><input id="promoStart" name="start_at" class="modal-input" type="datetime-local" /></div>

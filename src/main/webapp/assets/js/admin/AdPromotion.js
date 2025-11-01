@@ -285,7 +285,11 @@ function show(el){ if(el) el.style.display='block'; }
 function hide(el){ if(el) el.style.display='none'; }
 
 function openAddPromo(){
-    promoForm.reset(); promoIdInput.value=''; promoTitleEl.textContent='Thêm khuyến mãi'; hide(document.getElementById('promoFeedback')); show(promoOverlay); show(promoBox);
+    promoForm.reset(); promoIdInput.value=''; promoTitleEl.textContent='Thêm khuyến mãi'; hide(document.getElementById('promoFeedback'));
+    // Set source to system for new promotions and show max discount field
+    document.getElementById('promoSource').value = 'system';
+    document.getElementById('maxDiscountRow').style.display = 'block';
+    show(promoOverlay); show(promoBox);
 }
 
 
@@ -381,6 +385,11 @@ async function openEditPromo(id, source){
         document.getElementById('promoType').value = typeValue;
         document.getElementById('promoKind').value = data.kind || 'product';
         document.getElementById('promoValue').value = data.discount_value || '';
+        // Show max discount field for both system and shop promotions
+        const maxDiscountRow = document.getElementById('maxDiscountRow');
+        maxDiscountRow.style.display = 'block';
+        document.getElementById('promoMaxDiscount').value = data.max_discount_value || '';
+        document.getElementById('promoMinOrder').value = data.min_order_value || '';
         if(data.start_at) document.getElementById('promoStart').value = (new Date(data.start_at)).toISOString().slice(0,16);
         if(data.end_at) document.getElementById('promoEnd').value = (new Date(data.end_at)).toISOString().slice(0,16);
         document.getElementById('promoActive').value = data.active ? 'true' : 'false';

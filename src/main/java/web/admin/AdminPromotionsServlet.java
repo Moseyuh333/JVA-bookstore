@@ -349,6 +349,8 @@ public class AdminPromotionsServlet extends HttpServlet {
             + "\"type\":\"" + escapeJson(rs.getString("type")) + "\","
             + "\"kind\":\"" + escapeJson(rs.getString("kind")) + "\","
             + "\"discount_value\":" + rs.getBigDecimal("discount_value") + ","
+            + "\"max_discount_value\":" + (rs.getBigDecimal("max_discount_value") != null ? rs.getBigDecimal("max_discount_value") : 0) + ","
+            + "\"min_order_value\":" + (rs.getBigDecimal("min_order_value") != null ? rs.getBigDecimal("min_order_value") : 0) + ","
             + "\"start_at\":\"" + (rs.getTimestamp("start_at") != null ? rs.getTimestamp("start_at").toString() : "") + "\","
             + "\"end_at\":\"" + (rs.getTimestamp("end_at") != null ? rs.getTimestamp("end_at").toString() : "") + "\","
             + "\"active\":" + rs.getBoolean("active") + ","
@@ -367,6 +369,8 @@ public class AdminPromotionsServlet extends HttpServlet {
         String type = req.getParameter("type");
         String kind = req.getParameter("kind");
         String discountValueStr = req.getParameter("discount_value");
+        String maxDiscountValueStr = req.getParameter("max_discount_value");
+        String minOrderValueStr = req.getParameter("min_order_value");
         String startAt = req.getParameter("start_at");
         String endAt = req.getParameter("end_at");
         String activeStr = req.getParameter("active");
@@ -378,11 +382,13 @@ public class AdminPromotionsServlet extends HttpServlet {
         }
 
         BigDecimal discountValue = new BigDecimal(discountValueStr);
+        BigDecimal maxDiscountValue = maxDiscountValueStr != null && !maxDiscountValueStr.trim().isEmpty() ? new BigDecimal(maxDiscountValueStr) : null;
+        BigDecimal minOrderValue = minOrderValueStr != null && !minOrderValueStr.trim().isEmpty() ? new BigDecimal(minOrderValueStr) : null;
         boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
         Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
 
-    String sql = "INSERT INTO promotions (name, code, description, discount_type, discount_scope, discount_value, start_date, end_date, status, shop_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, start_date AS created_at";
+    String sql = "INSERT INTO promotions (name, code, description, discount_type, discount_scope, discount_value, max_discount_value, min_order_value, start_date, end_date, status, shop_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, start_date AS created_at";
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -393,16 +399,26 @@ public class AdminPromotionsServlet extends HttpServlet {
             pstmt.setString(4, type);
             pstmt.setString(5, kind);
             pstmt.setBigDecimal(6, discountValue);
+            if (maxDiscountValue != null) {
+                pstmt.setBigDecimal(7, maxDiscountValue);
+            } else {
+                pstmt.setNull(7, java.sql.Types.DECIMAL);
+            }
+            if (minOrderValue != null) {
+                pstmt.setBigDecimal(8, minOrderValue);
+            } else {
+                pstmt.setNull(8, java.sql.Types.DECIMAL);
+            }
             Timestamp startTimestamp = parseToTimestamp(startAt);
             Timestamp endTimestamp = parseToTimestamp(endAt);
-            pstmt.setTimestamp(7, startTimestamp);
-            pstmt.setTimestamp(8, endTimestamp);
+            pstmt.setTimestamp(9, startTimestamp);
+            pstmt.setTimestamp(10, endTimestamp);
 
-            pstmt.setBoolean(9, active);
+            pstmt.setBoolean(11, active);
             if (shopId != null) {
-                pstmt.setInt(10, shopId);
+                pstmt.setInt(12, shopId);
             } else {
-                pstmt.setNull(10, java.sql.Types.INTEGER);
+                pstmt.setNull(12, java.sql.Types.INTEGER);
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -425,6 +441,8 @@ public class AdminPromotionsServlet extends HttpServlet {
         String type = req.getParameter("type");
         String kind = req.getParameter("kind");
         String discountValueStr = req.getParameter("discount_value");
+        String maxDiscountValueStr = req.getParameter("max_discount_value");
+        String minOrderValueStr = req.getParameter("min_order_value");
         String startAt = req.getParameter("start_at");
         String endAt = req.getParameter("end_at");
         String activeStr = req.getParameter("active");
@@ -438,6 +456,8 @@ public class AdminPromotionsServlet extends HttpServlet {
 
         int id = Integer.parseInt(idStr);
         BigDecimal discountValue = new BigDecimal(discountValueStr);
+        BigDecimal maxDiscountValue = maxDiscountValueStr != null && !maxDiscountValueStr.trim().isEmpty() ? new BigDecimal(maxDiscountValueStr) : null;
+        BigDecimal minOrderValue = minOrderValueStr != null && !minOrderValueStr.trim().isEmpty() ? new BigDecimal(minOrderValueStr) : null;
 
         try (Connection conn = DBUtil.getConnection()) {
             if ("shop".equals(source)) {
@@ -448,18 +468,28 @@ public class AdminPromotionsServlet extends HttpServlet {
                 }
 
                 boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
-                String sql = "UPDATE shop_coupons SET code = ?, description = ?, discount_type = ?, discount_value = ?, start_date = ?, end_date = ?, status = ? WHERE id = ?";
+                String sql = "UPDATE shop_coupons SET code = ?, description = ?, discount_type = ?, discount_value = ?, max_discount_value = ?, minimum_order = ?, start_date = ?, end_date = ?, status = ? WHERE id = ?";
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                     pstmt.setString(1, code.trim().toUpperCase());
                     pstmt.setString(2, description != null ? description.trim() : null);
                     pstmt.setString(3, type);
                     pstmt.setBigDecimal(4, discountValue);
+                    if (maxDiscountValue != null) {
+                        pstmt.setBigDecimal(5, maxDiscountValue);
+                    } else {
+                        pstmt.setNull(5, java.sql.Types.DECIMAL);
+                    }
+                    if (minOrderValue != null) {
+                        pstmt.setBigDecimal(6, minOrderValue);
+                    } else {
+                        pstmt.setNull(6, java.sql.Types.DECIMAL);
+                    }
                     Timestamp startTimestamp = parseToTimestamp(startAt);
                     Timestamp endTimestamp = parseToTimestamp(endAt);
-                    pstmt.setTimestamp(5, startTimestamp);
-                    pstmt.setTimestamp(6, endTimestamp);
-                    pstmt.setString(7, active ? "active" : "inactive");
-                    pstmt.setInt(8, id);
+                    pstmt.setTimestamp(7, startTimestamp);
+                    pstmt.setTimestamp(8, endTimestamp);
+                    pstmt.setString(9, active ? "active" : "inactive");
+                    pstmt.setInt(10, id);
 
                     int rows = pstmt.executeUpdate();
                     if (rows > 0) {
@@ -477,7 +507,7 @@ public class AdminPromotionsServlet extends HttpServlet {
 
                 boolean active = activeStr != null ? Boolean.parseBoolean(activeStr) : true;
                 Integer shopId = shopIdStr != null && !shopIdStr.trim().isEmpty() ? Integer.parseInt(shopIdStr) : null;
-                String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_type = ?, discount_scope = ?, discount_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
+                String sql = "UPDATE promotions SET name = ?, code = ?, description = ?, discount_type = ?, discount_scope = ?, discount_value = ?, max_discount_value = ?, min_order_value = ?, start_date = ?, end_date = ?, status = ?, shop_id = ? WHERE id = ?";
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                     pstmt.setString(1, name.trim());
                     pstmt.setString(2, code.trim().toUpperCase());
@@ -485,17 +515,27 @@ public class AdminPromotionsServlet extends HttpServlet {
                     pstmt.setString(4, type);
                     pstmt.setString(5, kind);
                     pstmt.setBigDecimal(6, discountValue);
+                    if (maxDiscountValue != null) {
+                        pstmt.setBigDecimal(7, maxDiscountValue);
+                    } else {
+                        pstmt.setNull(7, java.sql.Types.DECIMAL);
+                    }
+                    if (minOrderValue != null) {
+                        pstmt.setBigDecimal(8, minOrderValue);
+                    } else {
+                        pstmt.setNull(8, java.sql.Types.DECIMAL);
+                    }
                     Timestamp startTimestamp = parseToTimestamp(startAt);
                     Timestamp endTimestamp = parseToTimestamp(endAt);
-                    pstmt.setTimestamp(7, startTimestamp);
-                    pstmt.setTimestamp(8, endTimestamp);
-                    pstmt.setBoolean(9, active);
+                    pstmt.setTimestamp(9, startTimestamp);
+                    pstmt.setTimestamp(10, endTimestamp);
+                    pstmt.setBoolean(11, active);
                     if (shopId != null) {
-                        pstmt.setInt(10, shopId);
+                        pstmt.setInt(12, shopId);
                     } else {
-                        pstmt.setNull(10, java.sql.Types.INTEGER);
+                        pstmt.setNull(12, java.sql.Types.INTEGER);
                     }
-                    pstmt.setInt(11, id);
+                    pstmt.setInt(13, id);
 
                     int rows = pstmt.executeUpdate();
                     if (rows > 0) {
