@@ -92,6 +92,18 @@ public class AuthServlet extends HttpServlet {
             }
 
             if (BCrypt.checkpw(password, hash)) {
+                // Check user status
+                String status = DBUtil.getUserStatus(username);
+                if ("inactive".equalsIgnoreCase(status)) {
+                    resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    out.write("{\"error\":\"Tài khoản của bạn đang bị tạm khóa\"}");
+                    return;
+                } else if ("banned".equalsIgnoreCase(status)) {
+                    resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    out.write("{\"error\":\"Tài khoản của bạn đã bị cấm\"}");
+                    return;
+                }
+
                 String subject = DBUtil.getEmailByUsername(username);
                 if (subject == null || subject.trim().isEmpty()) {
                     subject = username;
