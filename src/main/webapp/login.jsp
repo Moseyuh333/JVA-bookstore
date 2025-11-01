@@ -134,6 +134,11 @@
           localStorage.clear();
           const errorMsg = data?.error || text || 'Đăng nhập thất bại.';
           showMessage('danger', '❌ ' + errorMsg);
+
+          // 🔹 Thêm alert nếu error message chứa "tạm khóa" hoặc "bị cấm"
+          if (errorMsg.includes('tạm khóa') || errorMsg.includes('bị cấm')) {
+            alert('Tài khoản của bạn đã bị tạm khóa hoặc bị cấm. Vui lòng liên hệ hỗ trợ để biết thêm chi tiết.');
+          }
         }
 
       } catch (error) {
