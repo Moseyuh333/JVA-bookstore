@@ -34,12 +34,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.postgresql.util.PGobject;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Map;
-
+import com.google.gson.reflect.TypeToken;
 
 public final class OrderDAO {
 
@@ -239,7 +235,7 @@ public final class OrderDAO {
     }
 
     private static Order fetchOrderByIdInternal(Connection conn, long orderId, Long userId) throws SQLException {
-        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.shop_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.payment_metadata, o.shipping_snapshot, o.items_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
+        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.shop_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.payment_metadata, o.shipping_snapshot, o.receiver_snapshot, o.shop_snapshot, o.items_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
                 + "u.email AS customer_email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name "
                 + "FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?");
         if (userId != null) {
@@ -2079,11 +2075,14 @@ public static int countTotalOrders(int shopId) throws SQLException {
      * Lấy dữ liệu doanh thu 7 ngày gần nhất
      */
     public static List<Map<String, Object>> getDailySalesLast7Days(int shopId) throws SQLException {
-        String sql = "SELECT DATE(order_date) as sale_date, SUM(total_amount) as revenue " +
-                     "FROM orders WHERE shop_id = ? AND status = 'delivered' " +
-                     "AND order_date >= CURRENT_DATE - INTERVAL '7 days' " +
-                     "GROUP BY DATE(order_date) ORDER BY sale_date";
-        
+        String sql = "SELECT d.date::text as date, COALESCE(s.revenue, 0) as revenue " +
+                     "FROM (SELECT CURRENT_DATE - INTERVAL '6 days' + INTERVAL '1 day' * generate_series(0, 6) as date) d " +
+                     "LEFT JOIN (SELECT DATE(order_date) as sale_date, SUM(total_amount) as revenue " +
+                     "           FROM orders WHERE shop_id = ? AND status = 'delivered' " +
+                     "           AND order_date >= CURRENT_DATE - INTERVAL '6 days' " +
+                     "           GROUP BY DATE(order_date)) s ON d.date = s.sale_date " +
+                     "ORDER BY d.date";
+
         List<Map<String, Object>> result = new ArrayList<>();
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -2091,7 +2090,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> dailyData = new HashMap<>();
-                    dailyData.put("date", rs.getDate("sale_date").toString());
+                    dailyData.put("date", rs.getString("date"));
                     dailyData.put("revenue", rs.getBigDecimal("revenue"));
                     result.add(dailyData);
                 }
