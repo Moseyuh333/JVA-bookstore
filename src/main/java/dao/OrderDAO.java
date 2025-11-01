@@ -297,7 +297,13 @@ public final class OrderDAO {
                 Order order = mapOrder(rs);
                 order.setCustomerEmail(rs.getString("customer_email"));
                 order.setCustomerName(rs.getString("customer_name"));
-                order.setItems(parseItemsFromSnapshot(rs));
+                String snapshotRaw = rs.getString("items_snapshot");
+                List<OrderItem> items = parseItemsFromSnapshot(rs);
+                if ((snapshotRaw == null || snapshotRaw.trim().isEmpty()) && items.isEmpty()) {
+                    // chỉ fallback nếu snapshot hoàn toàn không có
+                    items = findOrderItems(conn, orderId, userId);
+                }
+                order.setItems(items);
                 return order;
             }
         }
@@ -1041,37 +1047,74 @@ public static int countTotalOrders(int shopId) throws SQLException {
         if (snapshot == null || snapshot.trim().isEmpty()) {
             return new ArrayList<>();
         }
+
         try {
-            JsonObject obj = GSON.fromJson(snapshot, JsonObject.class);
-            if (obj == null || !obj.has("items")) {
-                return new ArrayList<>();
-            }
-            JsonArray itemsArray = obj.getAsJsonArray("items");
             List<OrderItem> items = new ArrayList<>();
-            for (JsonElement elem : itemsArray) {
-                JsonObject itemObj = elem.getAsJsonObject();
-                OrderItem item = new OrderItem();
-                item.setBookId(itemObj.get("bookId").getAsLong());
-                item.setQuantity(itemObj.get("quantity").getAsInt());
-                item.setUnitPrice(itemObj.get("unitPrice").getAsBigDecimal());
-                item.setTotalPrice(itemObj.get("subtotal").getAsBigDecimal());
-                item.setTitle(itemObj.get("title").getAsString());
-                item.setAuthor(itemObj.get("author").getAsString());
-                item.setImageUrl(itemObj.get("imageUrl").getAsString());
-                if (itemObj.has("shopId") && !itemObj.get("shopId").isJsonNull()) {
-                    item.setShopId(itemObj.get("shopId").getAsInt());
+
+            // 1️⃣ Trường hợp A: snapshot là một JSON Array trực tiếp
+            if (snapshot.trim().startsWith("[")) {
+                JsonArray array = GSON.fromJson(snapshot, JsonArray.class);
+                for (JsonElement elem : array) {
+                    JsonObject itemObj = elem.getAsJsonObject();
+                    items.add(parseItemFromJson(itemObj));
                 }
-                item.setShopName(itemObj.get("shopName").getAsString());
-                // Note: reviewId and hasReview are not set here, as they require user-specific query
-                item.setReviewId(null);
-                item.setHasReview(false);
-                items.add(item);
+                return items;
             }
+
+            // 2️⃣ Trường hợp B: snapshot là object có "items": [...]
+            JsonObject obj = GSON.fromJson(snapshot, JsonObject.class);
+            if (obj != null && obj.has("items")) {
+                JsonArray itemsArray = obj.getAsJsonArray("items");
+                for (JsonElement elem : itemsArray) {
+                    JsonObject itemObj = elem.getAsJsonObject();
+                    items.add(parseItemFromJson(itemObj));
+                }
+            }
+
             return items;
         } catch (Exception e) {
-            // fallback to empty list on parse error
+            e.printStackTrace();
             return new ArrayList<>();
         }
+    }
+
+    // Helper nhỏ gọn để parse từng item
+    private static OrderItem parseItemFromJson(JsonObject itemObj) {
+        OrderItem item = new OrderItem();
+        if (itemObj.has("book_id")) item.setBookId(itemObj.get("book_id").getAsLong());
+        if (itemObj.has("bookId")) item.setBookId(itemObj.get("bookId").getAsLong());
+        if (itemObj.has("quantity")) item.setQuantity(itemObj.get("quantity").getAsInt());
+        if (itemObj.has("price")) {
+            try {
+                item.setUnitPrice(itemObj.get("price").getAsBigDecimal());
+            } catch (Exception e) {
+                item.setUnitPrice(BigDecimal.valueOf(itemObj.get("price").getAsDouble()));
+            }
+        }
+        if (itemObj.has("unitPrice")) {
+            try {
+                item.setUnitPrice(itemObj.get("unitPrice").getAsBigDecimal());
+            } catch (Exception e) {
+                item.setUnitPrice(BigDecimal.valueOf(itemObj.get("unitPrice").getAsDouble()));
+            }
+        }
+        if (itemObj.has("subtotal")) {
+            try {
+                item.setTotalPrice(itemObj.get("subtotal").getAsBigDecimal());
+            } catch (Exception e) {
+                item.setTotalPrice(BigDecimal.valueOf(itemObj.get("subtotal").getAsDouble()));
+            }
+        }
+        if (itemObj.has("title")) item.setTitle(itemObj.get("title").getAsString());
+        if (itemObj.has("author")) item.setAuthor(itemObj.get("author").getAsString());
+        if (itemObj.has("imageUrl")) item.setImageUrl(itemObj.get("imageUrl").getAsString());
+        if (itemObj.has("shop_id")) item.setShopId(itemObj.get("shop_id").getAsInt());
+        if (itemObj.has("shopId")) item.setShopId(itemObj.get("shopId").getAsInt());
+        if (itemObj.has("shop_name")) item.setShopName(itemObj.get("shop_name").getAsString());
+        if (itemObj.has("shopName")) item.setShopName(itemObj.get("shopName").getAsString());
+        item.setReviewId(null);
+        item.setHasReview(false);
+        return item;
     }
 
     private static void insertOrderItems(Connection conn, long orderId, CartData cartData) throws SQLException {
