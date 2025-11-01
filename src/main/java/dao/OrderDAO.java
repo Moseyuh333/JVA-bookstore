@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
+
 import dao.ShopCouponDAO;
 import models.Order;
 import models.OrderItem;
@@ -32,6 +34,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.postgresql.util.PGobject;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+
 
 public final class OrderDAO {
 
@@ -141,7 +149,7 @@ public final class OrderDAO {
 
     public static List<Order> findOrders(long userId, String statusFilter) throws SQLException {
         StringBuilder sql = new StringBuilder();
-    sql.append("SELECT id, code, user_id, shop_id, order_date, status, payment_status, payment_method, payment_provider, payment_metadata, shipping_snapshot, items_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
+    sql.append("SELECT id, code, user_id, shop_id, order_date, status, payment_status, payment_method, payment_provider, payment_metadata, shipping_snapshot, items_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at, receiver_snapshot, shop_snapshot "
                 + "FROM orders WHERE user_id = ?");
         if (statusFilter != null && !statusFilter.trim().isEmpty()) {
             sql.append(" AND status = ?");
@@ -666,12 +674,11 @@ public static int countTotalOrders(int shopId) throws SQLException {
         order.setCode(rs.getString("code"));
         order.setUserId(rs.getLong("user_id"));
         
-        // Đọc shop_id
         int shopId = rs.getInt("shop_id");
         if (!rs.wasNull()) {
             order.setShopId(shopId);
         }
-        
+
         order.setOrderDate(toLocalDateTime(rs.getTimestamp("order_date")));
         order.setStatus(rs.getString("status"));
         order.setPaymentStatus(rs.getString("payment_status"));
@@ -688,6 +695,32 @@ public static int countTotalOrders(int shopId) throws SQLException {
         order.setNotes(rs.getString("notes"));
         order.setCreatedAt(toLocalDateTime(rs.getTimestamp("created_at")));
         order.setUpdatedAt(toLocalDateTime(rs.getTimestamp("updated_at")));
+
+        // ✅ Thêm phần đọc snapshot JSON
+        Gson gson = new Gson();
+
+        // 1️⃣ Items snapshot (sản phẩm)
+        String itemsSnapshotJson = rs.getString("items_snapshot");
+        if (itemsSnapshotJson != null && !itemsSnapshotJson.isEmpty()) {
+            Type listType = new TypeToken<List<Map<String, Object>>>() {}.getType();
+            List<Map<String, Object>> itemsSnapshot = gson.fromJson(itemsSnapshotJson, listType);
+            order.setItemsSnapshot(itemsSnapshot);
+        }
+
+        // 2️⃣ Receiver snapshot (thông tin người nhận)
+        String receiverSnapshotJson = rs.getString("receiver_snapshot");
+        if (receiverSnapshotJson != null && !receiverSnapshotJson.isEmpty()) {
+            Map<String, Object> receiverSnapshot = gson.fromJson(receiverSnapshotJson, Map.class);
+            order.setReceiverSnapshot(receiverSnapshot);
+        }
+
+        // 3️⃣ Shop snapshot (nếu có)
+        String shopSnapshotJson = rs.getString("shop_snapshot");
+        if (shopSnapshotJson != null && !shopSnapshotJson.isEmpty()) {
+            Map<String, Object> shopSnapshot = gson.fromJson(shopSnapshotJson, Map.class);
+            order.setShopSnapshot(shopSnapshot);
+        }
+
         return order;
     }
 
