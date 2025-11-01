@@ -272,6 +272,8 @@ public class AdminPromotionsServlet extends HttpServlet {
                 "p.discount_type AS type, " +
                 "p.discount_scope AS kind, " +
                 "p.discount_value, " +
+                "p.max_discount_value, " +
+                "p.min_order_value, " +
                 "p.start_date AS start_at, " +
                 "p.end_date AS end_at, " +
                 "p.status AS active, " +
@@ -285,6 +287,8 @@ public class AdminPromotionsServlet extends HttpServlet {
                 "sc.discount_type AS type, " +
                 "'product' AS kind, " +
                 "sc.discount_value, " +
+                "NULL AS max_discount_value, " +
+                "sc.minimum_order AS min_order_value, " +
                 "sc.start_date AS start_at, " +
                 "sc.end_date AS end_at, " +
                 "(CASE WHEN sc.status = 'active' THEN TRUE ELSE FALSE END) AS active, " +
