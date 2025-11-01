@@ -141,7 +141,7 @@ public final class OrderDAO {
 
     public static List<Order> findOrders(long userId, String statusFilter) throws SQLException {
         StringBuilder sql = new StringBuilder();
-    sql.append("SELECT id, code, user_id, shop_id, order_date, status, payment_status, payment_method, payment_provider, payment_metadata, shipping_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
+    sql.append("SELECT id, code, user_id, shop_id, order_date, status, payment_status, payment_method, payment_provider, payment_metadata, shipping_snapshot, items_snapshot, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, notes, created_at, updated_at "
                 + "FROM orders WHERE user_id = ?");
         if (statusFilter != null && !statusFilter.trim().isEmpty()) {
             sql.append(" AND status = ?");
@@ -157,7 +157,7 @@ public final class OrderDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     Order order = mapOrder(rs);
-                    order.setItems(findOrderItems(conn, order.getId(), order.getUserId()));
+                    order.setItems(parseItemsFromSnapshot(rs));
                     orders.add(order);
                 }
             }
@@ -231,7 +231,7 @@ public final class OrderDAO {
     }
 
     private static Order fetchOrderByIdInternal(Connection conn, long orderId, Long userId) throws SQLException {
-        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.shop_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.payment_metadata, o.shipping_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
+        StringBuilder sql = new StringBuilder("SELECT o.id, o.code, o.user_id, o.shop_id, o.order_date, o.status, o.payment_status, o.payment_method, o.payment_provider, o.payment_metadata, o.shipping_snapshot, o.items_snapshot, o.items_subtotal, o.discount_amount, o.shipping_fee, o.total_amount, o.currency, o.coupon_code, o.notes, o.created_at, o.updated_at, "
                 + "u.email AS customer_email, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.username, ''), u.email) AS customer_name "
                 + "FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?");
         if (userId != null) {
@@ -249,7 +249,7 @@ public final class OrderDAO {
                 Order order = mapOrder(rs);
                 order.setCustomerEmail(rs.getString("customer_email"));
                 order.setCustomerName(rs.getString("customer_name"));
-                order.setItems(findOrderItems(conn, orderId, order.getUserId()));
+                order.setItems(parseItemsFromSnapshot(rs));
                 return order;
             }
         }
@@ -963,6 +963,44 @@ public static int countTotalOrders(int shopId) throws SQLException {
         }
     }
 
+    private static List<OrderItem> parseItemsFromSnapshot(ResultSet rs) throws SQLException {
+        String snapshot = rs.getString("items_snapshot");
+        if (snapshot == null || snapshot.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        try {
+            JsonObject obj = GSON.fromJson(snapshot, JsonObject.class);
+            if (obj == null || !obj.has("items")) {
+                return new ArrayList<>();
+            }
+            JsonArray itemsArray = obj.getAsJsonArray("items");
+            List<OrderItem> items = new ArrayList<>();
+            for (JsonElement elem : itemsArray) {
+                JsonObject itemObj = elem.getAsJsonObject();
+                OrderItem item = new OrderItem();
+                item.setBookId(itemObj.get("bookId").getAsLong());
+                item.setQuantity(itemObj.get("quantity").getAsInt());
+                item.setUnitPrice(itemObj.get("unitPrice").getAsBigDecimal());
+                item.setTotalPrice(itemObj.get("subtotal").getAsBigDecimal());
+                item.setTitle(itemObj.get("title").getAsString());
+                item.setAuthor(itemObj.get("author").getAsString());
+                item.setImageUrl(itemObj.get("imageUrl").getAsString());
+                if (itemObj.has("shopId") && !itemObj.get("shopId").isJsonNull()) {
+                    item.setShopId(itemObj.get("shopId").getAsInt());
+                }
+                item.setShopName(itemObj.get("shopName").getAsString());
+                // Note: reviewId and hasReview are not set here, as they require user-specific query
+                item.setReviewId(null);
+                item.setHasReview(false);
+                items.add(item);
+            }
+            return items;
+        } catch (Exception e) {
+            // fallback to empty list on parse error
+            return new ArrayList<>();
+        }
+    }
+
     private static void insertOrderItems(Connection conn, long orderId, CartData cartData) throws SQLException {
         String sql = "INSERT INTO order_items (order_id, book_id, quantity, unit_price, total_price, shop_id, shop_name) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -972,15 +1010,6 @@ public static int countTotalOrders(int shopId) throws SQLException {
                 stmt.setInt(3, item.quantity);
                 stmt.setBigDecimal(4, item.unitPrice);
                 stmt.setBigDecimal(5, item.unitPrice.multiply(BigDecimal.valueOf(item.quantity)));
-                
-                // Lưu shop info snapshot
-                if (item.shopId != null) {
-                    stmt.setInt(6, item.shopId);
-                } else {
-                    stmt.setNull(6, java.sql.Types.INTEGER);
-                }
-                stmt.setString(7, item.shopName);
-                
                 
                 // Lưu shop info snapshot
                 if (item.shopId != null) {
@@ -1128,18 +1157,23 @@ public static int countTotalOrders(int shopId) throws SQLException {
 
     private static long insertOrder(Connection conn, long userId, String paymentMethod, PaymentDetails paymentDetails, String notes, AddressSnapshot address, CartData cartData,
                                     BigDecimal shippingFee, BigDecimal total, CouponResult coupon, String orderCode, Integer shopId) throws SQLException {
-        String sql = "INSERT INTO orders (user_id, shop_id, code, status, payment_status, payment_method, payment_provider, shipping_address_id, shipping_snapshot, cart_snapshot, payment_metadata, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, coupon_snapshot, notes) "
-                + "VALUES (?, ?, ?, 'new', 'unpaid', ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, 'VND', ?, ?::jsonb, ?) RETURNING id";
+        // Build immutable snapshots
+        String receiverSnapshot = buildReceiverSnapshot(conn, userId, address.addressId);
+        String shopSnapshot = shopId != null ? buildShopSnapshot(conn, shopId) : null;
+        String itemsSnapshot = buildItemsSnapshot(conn, cartData);
+
+        String sql = "INSERT INTO orders (user_id, shop_id, code, status, payment_status, payment_method, payment_provider, shipping_address_id, shipping_snapshot, cart_snapshot, payment_metadata, items_subtotal, discount_amount, shipping_fee, total_amount, currency, coupon_code, coupon_snapshot, receiver_snapshot, shop_snapshot, items_snapshot, notes) "
+                + "VALUES (?, ?, ?, 'new', 'unpaid', ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, 'VND', ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?) RETURNING id";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, userId);
-            
+
             // Thêm shop_id
             if (shopId != null) {
                 stmt.setInt(2, shopId);
             } else {
                 stmt.setNull(2, java.sql.Types.INTEGER);
             }
-            
+
             stmt.setString(3, orderCode);
             stmt.setString(4, paymentMethod);
             stmt.setString(5, providerFor(paymentMethod));
@@ -1161,7 +1195,10 @@ public static int countTotalOrders(int shopId) throws SQLException {
             stmt.setBigDecimal(13, total);
             stmt.setString(14, coupon.code);
             stmt.setString(15, coupon.snapshotJson);
-            stmt.setString(16, notes);
+            stmt.setString(16, receiverSnapshot);
+            stmt.setString(17, shopSnapshot);
+            stmt.setString(18, itemsSnapshot);
+            stmt.setString(19, notes);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong(1);
@@ -1566,15 +1603,70 @@ public static int countTotalOrders(int shopId) throws SQLException {
             node.addProperty("bookId", item.bookId);
             node.addProperty("quantity", item.quantity);
             node.addProperty("unitPrice", item.unitPrice);
+            node.addProperty("subtotal", item.unitPrice.multiply(BigDecimal.valueOf(item.quantity)));
             node.addProperty("title", item.title);
             node.addProperty("author", item.author);
             node.addProperty("imageUrl", item.imageUrl);
+            node.addProperty("shopId", item.shopId);
+            node.addProperty("shopName", item.shopName);
             itemsJson.add(node);
         }
         JsonObject snapshot = new JsonObject();
         snapshot.add("items", itemsJson);
         snapshot.addProperty("subtotal", cartData.subtotal);
         return GSON.toJson(snapshot);
+    }
+
+    private static String buildReceiverSnapshot(Connection conn, long userId, Long addressId) throws SQLException {
+        if (addressId == null) {
+            return null;
+        }
+        String sql = "SELECT id, recipient_name, phone, line1, line2, ward, district, city, province, postal_code, country, note FROM user_addresses WHERE user_id = ? AND id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setLong(2, addressId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                JsonObject json = new JsonObject();
+                json.addProperty("recipientName", rs.getString("recipient_name"));
+                json.addProperty("phone", rs.getString("phone"));
+                json.addProperty("line1", rs.getString("line1"));
+                json.addProperty("line2", rs.getString("line2"));
+                json.addProperty("ward", rs.getString("ward"));
+                json.addProperty("district", rs.getString("district"));
+                json.addProperty("city", rs.getString("city"));
+                json.addProperty("province", rs.getString("province"));
+                json.addProperty("postalCode", rs.getString("postal_code"));
+                json.addProperty("country", rs.getString("country"));
+                json.addProperty("note", rs.getString("note"));
+                return GSON.toJson(json);
+            }
+        }
+    }
+
+    private static String buildShopSnapshot(Connection conn, int shopId) throws SQLException {
+        String sql = "SELECT id, name, description, owner_id, created_at FROM shops WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, shopId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                JsonObject json = new JsonObject();
+                json.addProperty("id", rs.getInt("id"));
+                json.addProperty("name", rs.getString("name"));
+                json.addProperty("description", rs.getString("description"));
+                json.addProperty("ownerId", rs.getLong("owner_id"));
+                json.addProperty("createdAt", rs.getTimestamp("created_at").toString());
+                return GSON.toJson(json);
+            }
+        }
+    }
+
+    private static String buildItemsSnapshot(Connection conn, CartData cartData) throws SQLException {
+        return buildCartSnapshot(cartData);
     }
 
     private static String normalizePaymentMethod(String paymentMethod) {

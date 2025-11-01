@@ -100,15 +100,16 @@
         <div class="p-4 space-y-4">
           <!-- 8 tráº¡ng thÃ¡i chuáº©n -->
           <select id="evt-status" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full">
-            <option value="ASSIGNED">ÄÃ£ phÃ¢n cÃ´ng</option>
-            <option value="PICKED_UP">ÄÃ£ láº¥y hÃ ng</option>
 
-            <option value="OUT_FOR_DELIVERY">Äang giao</option>
-            <option value="DELIVERED">ÄÃ£ giao</option>
-            <option value="FAILED_DELIVERY">Giao tháº¥t báº¡i</option>
-            <option value="RETURNING">Äang hoÃ n</option>
-            <option value="RETURNED">ÄÃ£ hoÃ n</option>
-            <option value="CANCELLED">Huá»· Ä‘Æ¡n</option>
+            <option value="ASSIGNED">Đã phân công</option>
+            <option value="PICKED_UP">Đã lấy hàng</option>
+
+            <option value="OUT_FOR_DELIVERY">Đang giao</option>
+            
+            <option value="FAILED_DELIVERY">Giao thất bại</option>
+            <option value="RETURNING">Đang hoàn</option>
+            <option value="RETURNED">Đã hoàn</option>
+            <option value="CANCELLED">Huỷ đơn</option>
           </select>
 
           <input id="evt-note" type="text" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full" placeholder="Ghi chÃº (tuá»³ chá»n)">
@@ -291,7 +292,6 @@
       'ASSIGNED',
       'PICKED_UP',
       'OUT_FOR_DELIVERY',
-      'DELIVERED',
       'FAILED_DELIVERY',
       'RETURNING',
       'RETURNED',
