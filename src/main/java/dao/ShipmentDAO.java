@@ -257,11 +257,19 @@ public class ShipmentDAO {
             con = DBUtil.getConnection();
             con.setAutoCommit(false);
 
+            String normalizedEvidence = evidenceUrl == null ? null : evidenceUrl.trim();
+            String normalizedNote = note == null ? null : note.trim();
+            String normalizedCreator = createdBy == null ? null : createdBy.trim();
+
             PreparedStatement ps1 = con.prepareStatement(
                 "UPDATE shipments SET status='DELIVERED', cod_collected=?, evidence_url=?, " +
                 "delivered_at=NOW(), last_update_at=NOW() WHERE id=?");
             ps1.setBoolean(1, codCollected);
-            ps1.setString(2, evidenceUrl);
+            if (normalizedEvidence == null || normalizedEvidence.isEmpty()) {
+                ps1.setNull(2, Types.VARCHAR);
+            } else {
+                ps1.setString(2, normalizedEvidence);
+            }
             ps1.setLong(3, shipmentId);
             ps1.executeUpdate();
 
@@ -269,9 +277,21 @@ public class ShipmentDAO {
                 "INSERT INTO shipment_events (shipment_id,status,note,evidence_url,created_by) VALUES (?,?,?,?,?)");
             ps2.setLong(1, shipmentId);
             ps2.setString(2, "DELIVERED");
-            ps2.setString(3, note);
-            ps2.setString(4, evidenceUrl);
-            ps2.setString(5, createdBy);
+            if (normalizedNote == null || normalizedNote.isEmpty()) {
+                ps2.setNull(3, Types.VARCHAR);
+            } else {
+                ps2.setString(3, normalizedNote);
+            }
+            if (normalizedEvidence == null || normalizedEvidence.isEmpty()) {
+                ps2.setNull(4, Types.VARCHAR);
+            } else {
+                ps2.setString(4, normalizedEvidence);
+            }
+            if (normalizedCreator == null || normalizedCreator.isEmpty()) {
+                ps2.setNull(5, Types.VARCHAR);
+            } else {
+                ps2.setString(5, normalizedCreator);
+            }
             ps2.executeUpdate();
 
             PreparedStatement ps3 = con.prepareStatement(

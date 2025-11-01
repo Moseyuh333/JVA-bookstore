@@ -8,15 +8,18 @@ import dao.ShipmentDAO;
 import models.Shipment;
 import models.ShipmentEvent;
 import utils.DBUtil;
+import utils.FileStorageUtil;
 import utils.JwtUtil;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -28,6 +31,11 @@ import java.util.Locale;
 import java.util.Map;
 
 @WebServlet(name = "ShipperApiServlet", urlPatterns = {"/api/shipper/*"})
+@MultipartConfig(
+        fileSizeThreshold = 256 * 1024,
+        maxFileSize = 6L * 1024 * 1024,
+        maxRequestSize = 7L * 1024 * 1024
+)
 public class ShipperApiServlet extends HttpServlet {
 
     private transient Gson gson;
@@ -220,13 +228,44 @@ public class ShipperApiServlet extends HttpServlet {
                         return;
                     }
 
-                    JsonObject body = readJson(req);
-                    boolean codCollected = getBoolean(body, "codCollected", false);
-                    String evidenceUrl = opt(getString(body, "evidenceUrl"));
-                    String note = opt(getString(body, "note"));
+                    String contentType = req.getContentType();
+                    boolean isMultipart = contentType != null
+                        && contentType.toLowerCase(Locale.ROOT).startsWith("multipart/");
+
+                    boolean codCollected;
+                    String evidenceUrl;
+                    String note;
+
+                    if (isMultipart) {
+                        Part evidencePart;
+                        try {
+                            evidencePart = req.getPart("evidence");
+                        } catch (ServletException se) {
+                            writeJson(resp, 400, err("INVALID_MEDIA", "Không thể đọc tệp minh chứng"));
+                            return;
+                        }
+                        if (evidencePart == null || evidencePart.getSize() <= 0) {
+                            writeJson(resp, 400, err("BAD_REQUEST", "Ảnh minh chứng là bắt buộc"));
+                            return;
+                        }
+                        try {
+                            FileStorageUtil.StoredFile stored = FileStorageUtil.storeShipmentEvidence(evidencePart);
+                            evidenceUrl = stored.getPublicUrl();
+                        } catch (IOException io) {
+                            writeJson(resp, 400, err("INVALID_MEDIA", io.getMessage()));
+                            return;
+                        }
+                        codCollected = parseBoolean(req.getParameter("codCollected"));
+                        note = opt(req.getParameter("note"));
+                    } else {
+                        JsonObject body = readJson(req);
+                        codCollected = getBoolean(body, "codCollected", false);
+                        evidenceUrl = opt(getString(body, "evidenceUrl"));
+                        note = opt(getString(body, "note"));
+                    }
 
                     if (evidenceUrl.isEmpty()) {
-                        writeJson(resp, 400, err("BAD_REQUEST", "evidenceUrl is required"));
+                        writeJson(resp, 400, err("BAD_REQUEST", "Ảnh minh chứng là bắt buộc"));
                         return;
                     }
                     if (s.getCodAmount() > 0 && !codCollected) {
@@ -364,6 +403,18 @@ public class ShipperApiServlet extends HttpServlet {
     private boolean getBoolean(JsonObject o, String key, boolean def) {
         try { return (o.has(key) && !o.get(key).isJsonNull()) ? o.get(key).getAsBoolean() : def; }
         catch (Exception e){ return def; }
+    }
+
+    private boolean parseBoolean(String value) {
+        if (value == null) {
+            return false;
+        }
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        return "true".equals(normalized)
+            || "1".equals(normalized)
+            || "yes".equals(normalized)
+            || "y".equals(normalized)
+            || "on".equals(normalized);
     }
     private int nz(Integer x){ return x==null?0:x; }
 

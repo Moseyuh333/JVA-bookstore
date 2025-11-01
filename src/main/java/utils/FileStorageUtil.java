@@ -26,6 +26,7 @@ public final class FileStorageUtil {
     private static final Map<String, String> VIDEO_TYPES = new ConcurrentHashMap<>();
     private static final Pattern SAFE_FILENAME = Pattern.compile("^[A-Za-z0-9._-]+$");
     private static final String REVIEW_MEDIA_PREFIX = "/media/reviews/";
+    private static final String SHIPMENT_EVIDENCE_PREFIX = "/media/shipments/";
     private static final Path BASE_DIRECTORY = initBaseDirectory();
 
     static {
@@ -71,6 +72,14 @@ public final class FileStorageUtil {
         return dir;
     }
 
+    private static Path shipmentEvidenceDirectory() throws IOException {
+        Path dir = BASE_DIRECTORY.resolve("shipments");
+        if (!Files.exists(dir)) {
+            Files.createDirectories(dir);
+        }
+        return dir;
+    }
+
     public static StoredFile storeReviewMedia(Part part) throws IOException {
         if (part == null || part.getSize() <= 0) {
             throw new IOException("Tệp tải lên không hợp lệ");
@@ -96,6 +105,33 @@ public final class FileStorageUtil {
         }
         return new StoredFile(REVIEW_MEDIA_PREFIX + filename,
                 category == MediaCategory.IMAGE ? "image" : "video",
+                contentType,
+                size,
+                target);
+    }
+
+    public static StoredFile storeShipmentEvidence(Part part) throws IOException {
+        if (part == null || part.getSize() <= 0) {
+            throw new IOException("Vui lòng chọn ảnh minh chứng.");
+        }
+        String contentType = normalizeContentType(part.getContentType());
+        MediaCategory category = detectCategory(contentType);
+        if (category != MediaCategory.IMAGE) {
+            throw new IOException("Chỉ hỗ trợ các định dạng ảnh JPG, PNG, GIF hoặc WebP.");
+        }
+        long size = part.getSize();
+        if (size > MAX_IMAGE_SIZE) {
+            throw new IOException("Ảnh vượt quá dung lượng tối đa 5MB.");
+        }
+        String extension = resolveExtension(part, contentType, category);
+        String filename = generateFileName(extension);
+        Path targetDir = shipmentEvidenceDirectory();
+        Path target = targetDir.resolve(filename);
+        try (InputStream in = part.getInputStream()) {
+            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return new StoredFile(SHIPMENT_EVIDENCE_PREFIX + filename,
+                "image",
                 contentType,
                 size,
                 target);
@@ -162,6 +198,51 @@ public final class FileStorageUtil {
 
     public static boolean isReviewMediaUrl(String mediaUrl, String contextPath) {
         return extractReviewMediaFileName(mediaUrl, contextPath) != null;
+    }
+
+    public static Path shipmentEvidencePath(String fileName) {
+        Objects.requireNonNull(fileName, "fileName");
+        return BASE_DIRECTORY.resolve("shipments").resolve(fileName);
+    }
+
+    public static String extractShipmentEvidenceFileNameFromPathInfo(String pathInfo) {
+        if (pathInfo == null || pathInfo.trim().isEmpty()) {
+            return null;
+        }
+        String raw = pathInfo.trim();
+        if (raw.startsWith("/")) {
+            raw = raw.substring(1);
+        }
+        if (raw.contains("/")) {
+            return null;
+        }
+        if (!SAFE_FILENAME.matcher(raw).matches()) {
+            return null;
+        }
+        return raw;
+    }
+
+    public static String extractShipmentEvidenceFileName(String mediaUrl, String contextPath) {
+        if (mediaUrl == null || mediaUrl.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = stripContextPath(mediaUrl.trim(), contextPath);
+        if (!normalized.startsWith(SHIPMENT_EVIDENCE_PREFIX)) {
+            return null;
+        }
+        String fileName = normalized.substring(SHIPMENT_EVIDENCE_PREFIX.length());
+        if (!SAFE_FILENAME.matcher(fileName).matches()) {
+            return null;
+        }
+        return fileName;
+    }
+
+    public static String normalizeShipmentEvidenceUrl(String mediaUrl, String contextPath) {
+        String fileName = extractShipmentEvidenceFileName(mediaUrl, contextPath);
+        if (fileName == null) {
+            return null;
+        }
+        return SHIPMENT_EVIDENCE_PREFIX + fileName;
     }
 
     public static String guessContentType(Path file) {
