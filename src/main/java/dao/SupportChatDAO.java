@@ -4,7 +4,12 @@ import models.SupportConversation;
 import models.SupportMessage;
 import utils.DBUtil;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +17,14 @@ public class SupportChatDAO {
 
     private static final String WELCOME_MESSAGE =
         "Xin chào! Đội Bookish Bliss Haven đã nhận được yêu cầu của bạn và sẽ phản hồi sớm nhất có thể.";
+
+    public SupportChatDAO() {
+        try {
+            ensureSchema();
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Unable to initialize support chat schema", ex);
+        }
+    }
 
     public SupportConversation getOrCreateConversation(String username) throws SQLException {
         if (username == null || username.isBlank()) {
@@ -39,13 +52,25 @@ public class SupportChatDAO {
             return conversation;
         } catch (SQLException ex) {
             if (con != null) {
-                try { con.rollback(); } catch (Exception ignore) {}
+                try {
+                    con.rollback();
+                } catch (SQLException ignore) {
+                    // ignore rollback failure
+                }
             }
             throw ex;
         } finally {
             if (con != null) {
-                try { con.setAutoCommit(true); } catch (Exception ignore) {}
-                try { con.close(); } catch (Exception ignore) {}
+                try {
+                    con.setAutoCommit(true);
+                } catch (SQLException ignore) {
+                    // ignore
+                }
+                try {
+                    con.close();
+                } catch (SQLException ignore) {
+                    // ignore
+                }
             }
         }
     }
@@ -53,8 +78,7 @@ public class SupportChatDAO {
     public List<SupportMessage> listMessages(long conversationId, Timestamp since, int limit) throws SQLException {
         List<SupportMessage> messages = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT id, conversation_id, sender_type, content, created_at " +
-            "FROM support_messages WHERE conversation_id = ?");
+            "SELECT id, conversation_id, sender_type, content, created_at FROM support_messages WHERE conversation_id = ?");
         if (since != null) {
             sql.append(" AND created_at > ?");
         }
@@ -93,8 +117,7 @@ public class SupportChatDAO {
     }
 
     private SupportConversation findByUserId(Connection con, int userId) throws SQLException {
-        String sql = "SELECT id, user_id, status, created_at, updated_at " +
-                     "FROM support_conversations WHERE user_id = ? LIMIT 1";
+        String sql = "SELECT id, user_id, status, created_at, updated_at FROM support_conversations WHERE user_id = ? LIMIT 1";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -141,6 +164,7 @@ public class SupportChatDAO {
         if (normalizedContent.isEmpty()) {
             throw new SQLException("Message content cannot be empty");
         }
+
         String sql = "INSERT INTO support_messages (conversation_id, sender_type, content) VALUES (?,?,?)";
         try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, conversationId);
@@ -164,9 +188,9 @@ public class SupportChatDAO {
         try (Connection con = DBUtil.getConnection()) {
             con.setAutoCommit(false);
             try {
-                SupportMessage msg = insertMessage(con, conversationId, senderType, content);
+                SupportMessage message = insertMessage(con, conversationId, senderType, content);
                 con.commit();
-                return msg;
+                return message;
             } catch (SQLException ex) {
                 con.rollback();
                 throw ex;
@@ -197,23 +221,54 @@ public class SupportChatDAO {
         }
     }
 
+    private void ensureSchema() throws SQLException {
+        String createConversations =
+            "CREATE TABLE IF NOT EXISTS support_conversations (" +
+                "id SERIAL PRIMARY KEY, " +
+                "user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, " +
+                "status VARCHAR(20) NOT NULL DEFAULT 'open', " +
+                "created_at TIMESTAMP NOT NULL DEFAULT NOW(), " +
+                "updated_at TIMESTAMP NOT NULL DEFAULT NOW()" +
+            ")";
+        String createConversationIndex =
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_support_conversations_user ON support_conversations(user_id)";
+        String createMessages =
+            "CREATE TABLE IF NOT EXISTS support_messages (" +
+                "id SERIAL PRIMARY KEY, " +
+                "conversation_id INTEGER NOT NULL REFERENCES support_conversations(id) ON DELETE CASCADE, " +
+                "sender_type VARCHAR(20) NOT NULL, " +
+                "content TEXT NOT NULL, " +
+                "created_at TIMESTAMP NOT NULL DEFAULT NOW()" +
+            ")";
+        String createMessageIndex =
+            "CREATE INDEX IF NOT EXISTS idx_support_messages_conversation_created ON support_messages(conversation_id, created_at)";
+
+        try (Connection con = DBUtil.getConnection();
+             Statement stmt = con.createStatement()) {
+            stmt.execute(createConversations);
+            stmt.execute(createConversationIndex);
+            stmt.execute(createMessages);
+            stmt.execute(createMessageIndex);
+        }
+    }
+
     private SupportConversation mapConversation(ResultSet rs) throws SQLException {
-        SupportConversation c = new SupportConversation();
-        c.setId(rs.getLong("id"));
-        c.setUserId(rs.getInt("user_id"));
-        c.setStatus(rs.getString("status"));
-        c.setCreatedAt(rs.getTimestamp("created_at"));
-        c.setUpdatedAt(rs.getTimestamp("updated_at"));
-        return c;
+        SupportConversation conversation = new SupportConversation();
+        conversation.setId(rs.getLong("id"));
+        conversation.setUserId(rs.getInt("user_id"));
+        conversation.setStatus(rs.getString("status"));
+        conversation.setCreatedAt(rs.getTimestamp("created_at"));
+        conversation.setUpdatedAt(rs.getTimestamp("updated_at"));
+        return conversation;
     }
 
     private SupportMessage mapMessage(ResultSet rs) throws SQLException {
-        SupportMessage m = new SupportMessage();
-        m.setId(rs.getLong("id"));
-        m.setConversationId(rs.getLong("conversation_id"));
-        m.setSenderType(rs.getString("sender_type"));
-        m.setContent(rs.getString("content"));
-        m.setCreatedAt(rs.getTimestamp("created_at"));
-        return m;
+        SupportMessage message = new SupportMessage();
+        message.setId(rs.getLong("id"));
+        message.setConversationId(rs.getLong("conversation_id"));
+        message.setSenderType(rs.getString("sender_type"));
+        message.setContent(rs.getString("content"));
+        message.setCreatedAt(rs.getTimestamp("created_at"));
+        return message;
     }
 }

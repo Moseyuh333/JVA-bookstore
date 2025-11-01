@@ -15,7 +15,8 @@
         pollingTimer: null,
         isLoading: false,
         isSending: false,
-        initialized: false
+        initialized: false,
+        lockForm: false
     };
 
     var selectors = {
@@ -45,8 +46,7 @@
     function guardAuth() {
         var token = window.localStorage.getItem('auth_token');
         if (!token || !token.trim()) {
-            var ctx = appShell.contextPath || '';
-            window.location.href = ctx + '/login.jsp';
+            redirectToLogin();
             return false;
         }
         return true;
@@ -57,7 +57,9 @@
             return;
         }
         selectors.panel.classList.remove('hidden');
-        selectors.fab && selectors.fab.classList.add('hidden');
+        if (selectors.fab) {
+            selectors.fab.classList.add('hidden');
+        }
         if (!state.initialized) {
             loadConversation();
         } else {
@@ -70,7 +72,9 @@
             return;
         }
         selectors.panel.classList.add('hidden');
-        selectors.fab && selectors.fab.classList.remove('hidden');
+        if (selectors.fab) {
+            selectors.fab.classList.remove('hidden');
+        }
         stopPolling();
     }
 
@@ -82,11 +86,12 @@
     }
 
     function setFormDisabled(disabled) {
+        var effective = disabled || state.lockForm;
         if (selectors.input) {
-            selectors.input.disabled = disabled;
+            selectors.input.disabled = effective;
         }
         if (selectors.submitBtn) {
-            selectors.submitBtn.disabled = disabled;
+            selectors.submitBtn.disabled = effective;
         }
     }
 
@@ -100,6 +105,8 @@
             .then(function (payload) {
                 state.initialized = true;
                 state.conversation = payload.conversation || null;
+                state.lockForm = false;
+                setFormDisabled(false);
                 mergeMessages(payload.messages || []);
                 scrollToBottom();
                 setStatus('Bạn đang trò chuyện với hỗ trợ Bookish Bliss Haven.');
@@ -107,7 +114,7 @@
             })
             .catch(function (error) {
                 console.error('supportChat load error', error);
-                setStatus('Không thể tải kênh hỗ trợ. Vui lòng thử lại sau.');
+                handleLoadError(error);
             })
             .finally(function () {
                 state.isLoading = false;
@@ -128,9 +135,9 @@
             state.messageIndex.set(message.id, true);
             state.messages.push(message);
             renderMessage(message);
-            var ts = parseTimestamp(message.createdAt);
-            if (ts > state.lastTimestamp) {
-                state.lastTimestamp = ts;
+            var timestamp = parseTimestamp(message.createdAt);
+            if (timestamp > state.lastTimestamp) {
+                state.lastTimestamp = timestamp;
             }
         });
     }
@@ -139,22 +146,22 @@
         if (!selectors.messages) {
             return;
         }
-        var wrapper = document.createElement('div');
         var isSupport = message.senderType && message.senderType.toLowerCase() === 'support';
+
+        var wrapper = document.createElement('div');
         wrapper.className = 'flex ' + (isSupport ? 'justify-start' : 'justify-end');
 
         var bubble = document.createElement('div');
         bubble.className = 'max-w-[85%] px-3 py-2 rounded-2xl shadow-sm text-sm leading-relaxed ' +
-            (isSupport
-                ? 'bg-white text-gray-700 border border-amber-100'
-                : 'bg-amber-600 text-white');
+            (isSupport ? 'bg-white text-gray-700 border border-amber-100' : 'bg-amber-600 text-white');
 
-        var content = document.createElement('div');
-        content.textContent = message.content || '';
-        bubble.appendChild(content);
+        var body = document.createElement('div');
+        body.textContent = message.content || '';
+        bubble.appendChild(body);
 
         var meta = document.createElement('div');
-        meta.className = 'mt-1 text-[11px] uppercase tracking-wide ' + (isSupport ? 'text-gray-400' : 'text-amber-100/80');
+        meta.className = 'mt-1 text-[11px] uppercase tracking-wide ' +
+            (isSupport ? 'text-gray-400' : 'text-amber-100/80');
         meta.textContent = formatTime(message.createdAt);
         bubble.appendChild(meta);
 
@@ -175,7 +182,7 @@
         }
         try {
             return Date.parse(value);
-        } catch (e) {
+        } catch (ex) {
             return 0;
         }
     }
@@ -191,7 +198,7 @@
                 day: '2-digit',
                 month: '2-digit'
             });
-        } catch (e) {
+        } catch (ex) {
             return value;
         }
     }
@@ -227,12 +234,16 @@
                 }
             })
             .catch(function (error) {
-                console.warn('supportChat poll error', error);
+                if (error && error.status === 401) {
+                    handleLoadError(error);
+                } else {
+                    console.warn('supportChat poll error', error);
+                }
             });
     }
 
     function sendMessage(content) {
-        if (state.isSending) {
+        if (state.isSending || state.lockForm) {
             return;
         }
         var trimmed = content ? content.trim() : '';
@@ -246,7 +257,9 @@
         apiClient.post('/support-chat', { content: trimmed })
             .then(function (payload) {
                 setStatus('Tin nhắn đã được gửi.');
-                selectors.input && (selectors.input.value = '');
+                if (selectors.input) {
+                    selectors.input.value = '';
+                }
                 if (payload.message) {
                     mergeMessages([payload.message]);
                     scrollToBottom();
@@ -254,12 +267,54 @@
             })
             .catch(function (error) {
                 console.error('supportChat send error', error);
-                setStatus('Không thể gửi tin nhắn. Vui lòng thử lại.');
+                handleSendError(error);
             })
             .finally(function () {
                 state.isSending = false;
                 setFormDisabled(false);
             });
+    }
+
+    function handleLoadError(error) {
+        if (error && error.status === 401) {
+            resetAuthTokens();
+            state.lockForm = true;
+            setFormDisabled(true);
+            setStatus('Phiên đăng nhập đã hết hạn. Đang chuyển tới trang đăng nhập...');
+            stopPolling();
+            redirectToLogin();
+            return;
+        }
+        setStatus('Không thể tải kênh hỗ trợ. Vui lòng thử lại sau.');
+    }
+
+    function handleSendError(error) {
+        if (error && error.status === 401) {
+            resetAuthTokens();
+            state.lockForm = true;
+            setFormDisabled(true);
+            setStatus('Phiên đăng nhập đã hết hạn. Đang chuyển tới trang đăng nhập...');
+            redirectToLogin();
+            return;
+        }
+        setStatus('Không thể gửi tin nhắn. Vui lòng thử lại.');
+    }
+
+    function resetAuthTokens() {
+        try {
+            window.localStorage.removeItem('auth_token');
+            window.localStorage.removeItem('auth_username');
+            window.localStorage.removeItem('auth_role');
+        } catch (ex) {
+            console.warn('supportChat tokens cleanup failed', ex);
+        }
+    }
+
+    function redirectToLogin() {
+        var ctx = appShell && appShell.contextPath ? appShell.contextPath : '';
+        window.setTimeout(function () {
+            window.location.href = ctx + '/login.jsp';
+        }, 1200);
     }
 
     function bindEvents() {
@@ -274,9 +329,7 @@
         });
 
         if (selectors.closeBtn) {
-            selectors.closeBtn.addEventListener('click', function () {
-                closePanel();
-            });
+            selectors.closeBtn.addEventListener('click', closePanel);
         }
 
         if (selectors.form) {
