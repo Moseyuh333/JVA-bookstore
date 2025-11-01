@@ -29,6 +29,7 @@
         conversations: [],
         selectedId: null,
         messages: [],
+        messageIndex: new Map(),
         lastTimestamp: 0,
         pollTimer: null,
         loadingConversations: false,
@@ -42,6 +43,7 @@
         }
         state.selectedId = id;
         state.messages = [];
+        state.messageIndex.clear();
         state.lastTimestamp = 0;
         renderConversations();
         renderConversationHeader();
@@ -326,12 +328,19 @@
         return summary && summary.username ? summary.username : '';
     }
 
+    function stopPolling() {
+        if (state.pollTimer) {
+            window.clearInterval(state.pollTimer);
+            state.pollTimer = null;
+        }
+    }
+
     function startPolling() {
         stopPolling();
         state.pollTimer = window.setInterval(function () {
             loadConversations();
             loadMessages(false);
-        }, 15000);
+        }, 5000);
     }
 
     function handleJson(response) {
@@ -382,6 +391,17 @@
             });
         } catch (error) {
             return value;
+        }
+    }
+
+    function parseTimestamp(value) {
+        if (!value) {
+            return 0;
+        }
+        try {
+            return new Date(value).getTime();
+        } catch (error) {
+            return 0;
         }
     }
 

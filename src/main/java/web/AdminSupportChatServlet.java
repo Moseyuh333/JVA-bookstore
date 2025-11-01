@@ -329,6 +329,7 @@ public class AdminSupportChatServlet extends HttpServlet {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+
     private String valueOrDefault(String value, String defaultValue) {
         return value != null ? value : defaultValue;
     }

@@ -196,7 +196,7 @@
             <span class="sr-only">Đóng cửa sổ hỗ trợ</span>
         </button>
     </div>
-    <div id="supportChatMessages" class="flex-1 overflow-y-auto bg-amber-50/40 px-4 py-3 space-y-3 text-sm"></div>
+    <div id="supportChatMessages" class="flex-1 overflow-y-auto bg-amber-50/40 px-4 py-3 space-y-3 text-sm max-h-80"></div>
     <div class="border-t border-amber-100 bg-white px-4 py-3">
         <form id="supportChatForm" class="space-y-2">
             <label class="sr-only" for="supportChatInput">Nội dung hỗ trợ</label>

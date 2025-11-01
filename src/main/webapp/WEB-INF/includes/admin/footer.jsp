@@ -11,23 +11,23 @@
             <div
                 class="flex items-center gap-2 bg-gray-800 text-amber-300 px-4 py-2 rounded-full shadow-md whitespace-nowrap">
                 <i data-feather="shield" class="w-4 h-4"></i>
-                <span>&copy; <span id="year"></span> Bookish Bliss Haven Â· Má»i quyá»n Ä‘Æ°á»£c báº£o lÆ°u</span>
+                <span>&copy; <span id="year"></span> Bookish Bliss Haven · Mọi quyền được bảo lưu</span>
             </div>
 
             <!-- Center -->
             <div class="flex flex-wrap justify-center lg:justify-center gap-x-8 gap-y-2 text-center whitespace-nowrap">
                 <a href="<%=request.getContextPath()%>/admin-dashboard" class="hover:text-white">Dashboard</a>
-                <a href="<%=request.getContextPath()%>/admin-product" class="hover:text-white">Sáº£n pháº©m</a>
-                <a href="<%=request.getContextPath()%>/admin-account" class="hover:text-white">TÃ i khoáº£n</a>
-                <a href="<%=request.getContextPath()%>/admin-shippers" class="hover:text-white">Váº­n chuyá»ƒn</a>
-                <a href="<%=request.getContextPath()%>/admin-support" class="hover:text-white">Ho tro</a>
+                <a href="<%=request.getContextPath()%>/admin-product" class="hover:text-white">Sản phẩm</a>
+                <a href="<%=request.getContextPath()%>/admin-account" class="hover:text-white">Tài khoản</a>
+                <a href="<%=request.getContextPath()%>/admin-shippers" class="hover:text-white">Vận chuyển</a>
+                <a href="<%=request.getContextPath()%>/admin-support" class="hover:text-white">Hỗ trợ</a>
             </div>
 
             <!-- Right -->
             <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-gray-400 text-center">
                 <div class="flex items-center gap-2 whitespace-nowrap">
                     <i data-feather="map-pin" class="w-4 h-4 text-white"></i>
-                    <span>123 ÄÆ°á»ng VÄƒn Há»c, Quáº­n SÃ¡ch, TP.HCM</span>
+                    <span>123 Đường Văn Học, Quận Sách, TP.HCM</span>
                 </div>
                 <div class="hidden lg:block w-px h-4 bg-gray-600"></div>
                 <div class="flex items-center gap-2 whitespace-nowrap">
