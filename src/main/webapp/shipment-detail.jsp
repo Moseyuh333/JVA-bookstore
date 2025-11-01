@@ -104,7 +104,7 @@
             <option value="PICKED_UP">Đã lấy hàng</option>
 
             <option value="OUT_FOR_DELIVERY">Đang giao</option>
-            <option value="DELIVERED">Đã giao</option>
+            
             <option value="FAILED_DELIVERY">Giao thất bại</option>
             <option value="RETURNING">Đang hoàn</option>
             <option value="RETURNED">Đã hoàn</option>
