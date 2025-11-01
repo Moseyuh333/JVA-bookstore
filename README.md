@@ -274,7 +274,6 @@ erDiagram
 - `run_add_shop_id_migration.bat`, `apply_migration.sql`, `update_books_shop.sql`: su dung khi bo sung truong `shop_id`.
 
 ## Kiem thu & dam bao chat luong
-- **Unit/integration**: hien tai chua co test tu dong; nen tao test JDBC rieng hoac su dung Postman collection cho API chinh.
 - **Manual checklist**:
   - Dang ky/OTP/Dang nhap cho role customer.
   - Them sach vao gio, merge gio sau khi login.
@@ -282,9 +281,5 @@ erDiagram
   - Seller tao/duyet san pham, thay doi stock, kiem tra admin Approve (status `books.status`).
   - Shipper cap nhat trang thai, kiem tra `order_status_history`.
   - Admin quan ly user, shipper, promotion.
-- **Logging**: Servlets in log debug (System.out/err). De production nen thay bang logging framework.
 
-## Ghi chu
-- Tat ca noi dung README su dung Tieng Viet khong dau (ASCII) de tranh loi encoding.
-- Khong sua doi ma nguon: de mo rong tinh nang can tao migration rieng va cap nhat cac lop duoc liet ke o tren.
-- Nen tao ban sao README nay vao `docs/` neu can phien ban PDF/diagram ngoai tuyen.
+.
