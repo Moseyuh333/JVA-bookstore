@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class Order {
     private long id;
@@ -29,6 +30,9 @@ public class Order {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<OrderItem> items = new ArrayList<>();
+    private List<Map<String, Object>> itemsSnapshot;
+    private Map<String, Object> receiverSnapshot;
+    private Map<String, Object> shopSnapshot;
 
     public long getId() {
         return id;
@@ -212,5 +216,29 @@ public class Order {
 
     public void setItems(List<OrderItem> items) {
         this.items = items;
+    }
+
+    public List<Map<String, Object>> getItemsSnapshot() {
+        return itemsSnapshot;
+    }
+
+    public void setItemsSnapshot(List<Map<String, Object>> itemsSnapshot) {
+        this.itemsSnapshot = itemsSnapshot;
+    }
+
+    public Map<String, Object> getReceiverSnapshot() {
+        return receiverSnapshot;
+    }
+
+    public void setReceiverSnapshot(Map<String, Object> receiverSnapshot) {
+        this.receiverSnapshot = receiverSnapshot;
+    }
+
+    public Map<String, Object> getShopSnapshot() {
+        return shopSnapshot;
+    }
+
+    public void setShopSnapshot(Map<String, Object> shopSnapshot) {
+        this.shopSnapshot = shopSnapshot;
     }
 }
