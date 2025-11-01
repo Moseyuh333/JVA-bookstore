@@ -566,8 +566,6 @@
                                         <th>Mô tả</th>
                                         <th>Loại giảm giá</th>
                                         <th>Mức giảm</th>
-                                        <th>Giảm tối đa</th>       
-                                        <th>Đơn tối thiểu</th>
                                         <th>Cửa hàng</th>
                                         <th>Thời gian</th>
                                         <th>Trạng thái</th>
