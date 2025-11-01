@@ -107,6 +107,50 @@ public final class OrderDAO {
 
                 long orderId = insertOrder(conn, userId, normalizedMethod, paymentDetails, notes, address, cartData, shipping, total, couponResult, orderCode, shopId);
                 insertOrderItems(conn, orderId, cartData);
+                // Update snapshots immediately after inserting order items
+                String snapshotSql =
+                    "UPDATE orders o " +
+                    "SET items_snapshot = (" +
+                    "    SELECT jsonb_agg(" +
+                    "        jsonb_build_object(" +
+                    "            'book_id', b.id, " +
+                    "            'title', b.title, " +
+                    "            'price', b.price, " +
+                    "            'quantity', oi.quantity, " +
+                    "            'subtotal', b.price * oi.quantity, " +
+                    "            'shop_id', s.id, " +
+                    "            'shop_name', s.name" +
+                    "        )" +
+                    "    ) " +
+                    "    FROM order_items oi " +
+                    "    JOIN books b ON b.id = oi.book_id " +
+                    "    JOIN shops s ON s.id = b.shop_id " +
+                    "    WHERE oi.order_id = o.id" +
+                    "), " +
+                    "receiver_snapshot = (" +
+                    "    SELECT jsonb_build_object(" +
+                    "        'name', COALESCE(ua.recipient_name, ua.receiver), " +
+                    "        'phone', ua.phone, " +
+                    "        'address', " +
+                    "            TRIM(" +
+                    "                COALESCE(ua.line1, '') || ' ' || " +
+                    "                COALESCE(ua.line2, '') || ', ' || " +
+                    "                COALESCE(ua.ward, '') || ', ' || " +
+                    "                COALESCE(ua.district, '') || ', ' || " +
+                    "                COALESCE(ua.city, '') || ', ' || " +
+                    "                COALESCE(ua.province, '')" +
+                    "            ), " +
+                    "        'note', ua.note" +
+                    "    ) " +
+                    "    FROM user_addresses ua " +
+                    "    WHERE ua.id = o.shipping_address_id" +
+                    ") " +
+                    "WHERE o.id = ?";
+
+                try (PreparedStatement ps = conn.prepareStatement(snapshotSql)) {
+                    ps.setLong(1, orderId);
+                    ps.executeUpdate();
+                }
                 updateInventory(conn, cartData);
                 recordStatus(conn, orderId, "new", "Đặt hàng thành công", String.valueOf(userId));
                 createPaymentRecord(conn, orderId, normalizedMethod, total);
