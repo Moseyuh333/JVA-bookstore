@@ -331,7 +331,7 @@
       document.getElementById('receiver-name').textContent = s.receiverName || s.customerName || '-';
       document.getElementById('receiver-phone').textContent = s.receiverPhone || '-';
       document.getElementById('receiver-address').textContent = s.receiverAddress || '-';
-      document.getElementById('cod-amount').textContent = ((s.codAmount||0).toLocaleString('vi-VN')) + ' â‚«';
+      document.getElementById('cod-amount').textContent = ((s.codAmount||0).toLocaleString('vi-VN')) + ' VND';
       setBadge(s.status);
       setCurrentEvidence(s.evidenceUrl);
       if (!['DELIVERED','FAILED_DELIVERY','CANCELLED','RETURNED'].includes(s.status))
