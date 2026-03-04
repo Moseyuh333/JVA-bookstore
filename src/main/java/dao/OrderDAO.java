@@ -4,9 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
 
-import dao.ShopCouponDAO;
 import models.Order;
 import models.OrderItem;
 import models.OrderStatusHistory;
@@ -756,6 +754,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
         // 2️⃣ Receiver snapshot (thông tin người nhận)
         String receiverSnapshotJson = rs.getString("receiver_snapshot");
         if (receiverSnapshotJson != null && !receiverSnapshotJson.isEmpty()) {
+            @SuppressWarnings("unchecked")
             Map<String, Object> receiverSnapshot = gson.fromJson(receiverSnapshotJson, Map.class);
             order.setReceiverSnapshot(receiverSnapshot);
         }
@@ -763,6 +762,7 @@ public static int countTotalOrders(int shopId) throws SQLException {
         // 3️⃣ Shop snapshot (nếu có)
         String shopSnapshotJson = rs.getString("shop_snapshot");
         if (shopSnapshotJson != null && !shopSnapshotJson.isEmpty()) {
+            @SuppressWarnings("unchecked")
             Map<String, Object> shopSnapshot = gson.fromJson(shopSnapshotJson, Map.class);
             order.setShopSnapshot(shopSnapshot);
         }
@@ -2037,9 +2037,11 @@ public static int countTotalOrders(int shopId) throws SQLException {
         private BigDecimal discount = BigDecimal.ZERO;
         private String snapshotJson;
         private Integer shopCouponId;
+        @SuppressWarnings("unused")
         private Integer shopId;
         private Integer usedCount;
         private boolean shopCoupon;
+        @SuppressWarnings("unused")
         private String shopName;
 
         private boolean hasCoupon() {
