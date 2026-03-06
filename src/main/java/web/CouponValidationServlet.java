@@ -5,6 +5,7 @@ import dao.CouponDAO;
 import dao.ShopCouponDAO;
 import models.ShopCoupon;
 import utils.AuthUtil;
+import utils.GsonUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -21,7 +22,7 @@ import java.util.Locale;
 @WebServlet(name = "CouponValidationServlet", urlPatterns = {"/api/coupons/validate"})
 public class CouponValidationServlet extends HttpServlet {
 
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

@@ -22,11 +22,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
+import utils.GsonUtil;
 
 @WebServlet("/api/seller/orders")
 public class SellerOrdersServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(SellerOrdersServlet.class.getName());
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
     private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     private void setEncoding(HttpServletRequest req, HttpServletResponse resp) throws IOException {

@@ -7,6 +7,7 @@ import models.Shipper;
 import models.ShippingQuote;
 import models.UserAddress;
 import utils.AuthUtil;
+import utils.GsonUtil;
 import utils.ShippingCalculator;
 
 import javax.servlet.ServletException;
@@ -24,7 +25,7 @@ import java.util.Map;
 @WebServlet(name = "ShippingQuoteServlet", urlPatterns = {"/api/shipping/quote"})
 public class ShippingQuoteServlet extends HttpServlet {
 
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

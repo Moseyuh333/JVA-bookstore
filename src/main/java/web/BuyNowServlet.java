@@ -3,6 +3,7 @@ package web;
 import com.google.gson.Gson;
 import dao.CartDAO;
 import models.CartItem;
+import utils.GsonUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -22,7 +23,7 @@ import java.util.Map;
 public class BuyNowServlet extends HttpServlet {
 
     public static final String SESSION_KEY = "CHECKOUT_BUY_NOW_ITEMS";
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

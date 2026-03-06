@@ -5,6 +5,7 @@ import models.Shop;
 import utils.DBUtil;
 import utils.AuthUtil;
 import com.google.gson.Gson;
+import utils.GsonUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -19,7 +20,7 @@ import java.util.logging.Logger;
 @WebServlet("/api/seller/register-shop")
 public class ShopRegistrationServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(ShopRegistrationServlet.class.getName());
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
 
     private void setEncoding(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         req.setCharacterEncoding("UTF-8");

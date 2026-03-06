@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import dao.ReviewDAO;
 import utils.AuthUtil;
 import utils.FileStorageUtil;
+import utils.GsonUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -24,7 +25,7 @@ import java.util.Map;
 @MultipartConfig
 public class ReviewServlet extends HttpServlet {
 
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

@@ -12,6 +12,7 @@ import models.ShopCoupon;
 import models.UserAddress;
 import utils.AuthUtil;
 import utils.DBUtil;
+import utils.GsonUtil;
 import utils.JwtUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -37,7 +38,7 @@ import java.util.Map;
 
 @WebServlet({"/api/profile", "/api/profile/*"})
 public class ProfileServlet extends HttpServlet {
-    private Gson gson = new Gson();
+    private Gson gson = GsonUtil.getGson();
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {

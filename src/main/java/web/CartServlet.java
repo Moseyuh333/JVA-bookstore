@@ -6,6 +6,7 @@ import dao.CartDAO;
 import models.Cart;
 import utils.AuthUtil;
 import utils.DBUtil;
+import utils.GsonUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -30,7 +31,7 @@ import java.util.regex.Pattern;
 @WebServlet(name = "CartServlet", urlPatterns = {"/api/cart", "/api/cart/*"})
 public class CartServlet extends HttpServlet {
 
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
