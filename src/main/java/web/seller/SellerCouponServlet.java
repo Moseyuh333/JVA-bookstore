@@ -334,6 +334,7 @@ public class SellerCouponServlet extends HttpServlet {
             this.shopId = shopId;
         }
 
+        @SuppressWarnings("unused")
         int userId() {
             return userId;
         }

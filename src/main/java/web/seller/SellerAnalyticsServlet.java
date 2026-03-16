@@ -18,12 +18,13 @@ import com.google.gson.Gson;
 import dao.OrderDAO;
 import dao.BookDAO;
 import dao.ShopDAO;
+import utils.GsonUtil;
 import static javax.servlet.http.HttpServletResponse.*;
 
 @WebServlet("/api/seller/analytics")
 public class SellerAnalyticsServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(SellerAnalyticsServlet.class.getName());
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {

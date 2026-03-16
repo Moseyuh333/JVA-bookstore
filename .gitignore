@@ -7,3 +7,6 @@ target/
 *.war
 *.jar
 .env
+cloudflared.exe
+backup*.sql
+*.csv

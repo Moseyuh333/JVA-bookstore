@@ -2,7 +2,6 @@ package web.seller;
 
 import dao.ShopDAO;
 import models.Shop;
-import utils.DBUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;

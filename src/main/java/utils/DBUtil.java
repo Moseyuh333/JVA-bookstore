@@ -588,6 +588,7 @@ public class DBUtil {
         }
     }
 
+    @SuppressWarnings("unused")
     private static void ensureRecentViewsSchema(Connection conn) {
         if (conn == null) {
             return;
@@ -616,6 +617,7 @@ public class DBUtil {
         }
     }
 
+    @SuppressWarnings("unused")
     private static void ensureBookReviewsSchema(Connection conn) {
         if (conn == null) {
             return;

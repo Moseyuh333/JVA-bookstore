@@ -204,7 +204,6 @@ public class AdminProductsServlet extends HttpServlet {
 
             // Query data
             StringBuilder json = new StringBuilder("{\"products\":");
-            boolean hasProducts = false;
             try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
                 int paramIndex = 1;
                 if (shopId != null && !shopId.trim().isEmpty())
@@ -221,7 +220,6 @@ public class AdminProductsServlet extends HttpServlet {
                     if ("id".equals(searchType)) {
                         ps.setInt(paramIndex++, Integer.parseInt(search.trim()));
                     } else {
-                        String pattern = "%" + search.trim() + "%";
                         if ("title".equals(searchType) || "author".equals(searchType) 
                             || "category".equals(searchType) || "shop_name".equals(searchType) 
                             || "status".equals(searchType)) {
@@ -242,7 +240,6 @@ public class AdminProductsServlet extends HttpServlet {
 
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        hasProducts = true;
                         json.append("[{")
                             .append("\"id\":").append(rs.getInt("id")).append(",")
                             .append("\"title\":\"").append(escapeJson(rs.getString("title"))).append("\",")

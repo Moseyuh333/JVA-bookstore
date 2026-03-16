@@ -521,5 +521,15 @@ public class SellerProductsServlet extends HttpServlet {
             this.userId = userId;
             this.shopId = shopId;
         }
+
+        @SuppressWarnings("unused")
+        public int getUserId() {
+            return userId;
+        }
+
+        @SuppressWarnings("unused")
+        public int getShopId() {
+            return shopId;
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import dao.OrderDAO;
 import models.Order;
 import models.OrderStatusHistory;
+import utils.GsonUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -29,7 +30,7 @@ import java.util.Set;
 @WebServlet(name = "AdminOrdersServlet", urlPatterns = {"/api/admin/orders"})
 public class AdminOrdersServlet extends HttpServlet {
 
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
     private static final Set<String> ALLOWED_PAYMENT_METHODS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("cod", "vnpay", "momo")));
     private static final Set<String> ALLOWED_PAYMENT_STATUSES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("unpaid", "processing", "paid", "failed", "refunded")));
 

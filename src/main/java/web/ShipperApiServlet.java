@@ -533,6 +533,7 @@ public class ShipperApiServlet extends HttpServlet {
         return !"banned".equals(normalizedStatus) && !"inactive".equals(normalizedStatus);
     }
 
+    @SuppressWarnings("unused")
     private String getUserEmail(HttpServletRequest request) {
         // Lấy email từ session hoặc attribute
         Object emailAttr = request.getAttribute("email");
@@ -575,6 +576,7 @@ public class ShipperApiServlet extends HttpServlet {
         return null;
     }
 
+    @SuppressWarnings("unused")
     private String getUsernameFromEmail(String email) throws SQLException {
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement("SELECT username FROM users WHERE email = ?")) {

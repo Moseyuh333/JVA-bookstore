@@ -10,6 +10,7 @@ import models.ShippingQuote;
 import models.UserAddress;
 import utils.AuthUtil;
 import utils.DBUtil;
+import utils.GsonUtil;
 import utils.ShippingCalculator;
 
 import javax.servlet.ServletException;
@@ -34,7 +35,7 @@ import java.util.Map;
 @WebServlet(name = "CheckoutServlet", urlPatterns = {"/api/checkout", "/checkout"})
 public class CheckoutServlet extends HttpServlet {
 
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtil.getGson();
     private static final String MODE_BUY_NOW = "buy-now";
 
     @Override
