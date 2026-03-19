@@ -144,7 +144,6 @@ Hoặc sử dụng script có sẵn:
 | `start-app.bat` | Build + khởi động server |
 | `start-server.bat` | Khởi động server local (port 8081) |
 | `start-tunnel.bat` | Tạo public URL qua Cloudflare tunnel |
-| `start-all.ps1` | Khởi động tất cả (server + tunnel) |
 
 **Khởi động nhanh (khuyến nghị):**
 ```powershell
