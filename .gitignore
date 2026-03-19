@@ -1,12 +1,32 @@
+# Build output
 target/
-*.iml
-*.class
-*.log
-.idea/
-.DS_Store
 *.war
 *.jar
+*.class
+
+# IDE
+.idea/
+*.iml
+.idx/
+.settings/
+.project
+.classpath
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
 .env
-cloudflared.exe
-backup*.sql
+*.log
+
+# Binaries & large data
+*.exe
 *.csv
+
+# SQL backups (keep sql/ folder for migrations)
+backup*.sql
+new.sql

@@ -1,285 +1,330 @@
-# JVA Bookstore
+# 📚 JVA Bookstore
 
-## Gioi thieu nhanh
-- Nen tang thuong mai dien tu da vai tro (khach, customer, seller, admin, shipper) duoc xay dung bang Java Servlet + JSP va PostgreSQL.
-- Tang backend su dung JWT + BCrypt, OTP email, gio hang persistent va cac goi DAO phuc vu nghiep vu don hang, shipment, coupon.
-- Frontend duoc to chuc bang JSP, Sitemesh decorator va JavaScript phan he (assets/js) cho admin, seller, checkout, cart.
-- Tai lieu nay duoc viet lai de mo ta cach build, cach phat trien tung chuc nang, phan tich code-base, database va luong workflow kem cac so do minh hoa.
+Nền tảng thương mại điện tử bán sách trực tuyến đa vai trò, được xây dựng bằng **Java Servlet + JSP** và **PostgreSQL**.
 
-## Cong nghe su dung
-- **Backend**: Java 11, Servlet 4.0, JSP/JSTL, Sitemesh 2.
-- **Build & Runtime**: Maven, Tomcat (thong qua `maven-war-plugin` va `webapp-runner`), Procfile cho Heroku.
-- **Database**: PostgreSQL (JSONB, INDEX), JDBC, cac script migration (`schema.sql`, `otp_schema.sql`, `create_shops_table.sql`, cac file *.sql bo sung).
-- **Bao mat**: JWT (`utils/JwtUtil.java`), BCrypt (`org.mindrot:jbcrypt`), servlet filter (`filters/JwtFilter.java`, `filters/EncodingFilter.java`).
-- **Tien ich**: Gson, Jackson, JavaMail, OpenCSV, ShippingCalculator custom, FileStorage cho media review.
+Hỗ trợ đầy đủ các vai trò: **Khách** · **Khách hàng** · **Người bán** · **Admin** · **Shipper**
 
-## Cau truc thu muc
-```text
-.
-|- pom.xml
-|- src/main/java
-|  |- controller/ (Servlet cho cac trang JSP cong khai va admin)
-|  |- dao/        (Lop truy cap du lieu: BookDAO, OrderDAO, ShipmentDAO, ...)
-|  |- filters/    (EncodingFilter, JwtFilter)
-|  |- models/     (POJO: Book, Order, Shipment, Shop, UserAddress, ...)
-|  |- utils/      (DBUtil, JwtUtil, EmailUtil, OTPUtil, ShippingCalculator, ...)
-|  \- web/        (Servlet REST/API cho admin, seller, profile, cart, checkout)
-|- src/main/resources
-|  |- db.properties, email.properties
-|  |- schema.sql, otp_schema.sql, migration_add_shop_info.sql
-|  \- cac script SQL ho tro migration
-|- src/main/webapp
-|  |- assets/css, js, img
-|  |- admin/*.jsp, Seller/*.jsp, *.jsp cong khai (index, catalog, checkout, profile, ...)
-|  \- WEB-INF/{decorators,includes}/ (layout Sitemesh, header/footer)
-|- docs/ (de trong, co the dung luu so do tuong lai)
-|- *.sql (script patch: apply_migration.sql, 20251027_*.sql, ...)
-|- app.json, Procfile, system.properties (trien khai Heroku)
-|- CreateTestUser.java, GenerateHash.java, TestDB.java (tien ich CLI)
-\- books_full_9xx.csv (du lieu mau, 4.6MB)
+---
+
+## ⚙️ Công nghệ sử dụng
+
+| Thành phần | Công nghệ |
+|---|---|
+| **Backend** | Java 11, Servlet 4.0, JSP/JSTL, Sitemesh 2 |
+| **Database** | PostgreSQL (JSONB, INDEX), JDBC |
+| **Bảo mật** | JWT (jjwt), BCrypt (jbcrypt) |
+| **Build** | Maven, webapp-runner (Tomcat embedded) |
+| **Email** | JavaMail (SMTP) |
+| **Tiện ích** | Gson, Jackson, OpenCSV |
+| **Triển khai** | Heroku / Render (Procfile) |
+
+---
+
+## 📁 Cấu trúc thư mục
+
+```
+JVA-bookstore/
+├── pom.xml                     # Cấu hình Maven
+├── Procfile                    # Cấu hình Heroku
+├── app.json                    # Metadata Heroku
+├── system.properties           # Java version cho Heroku
+├── start-app.bat               # Script khởi động ứng dụng
+├── start-server.bat            # Khởi động server local
+├── start-tunnel.bat            # Khởi động Cloudflare tunnel
+├── start-all.ps1               # Khởi động tất cả (PowerShell)
+│
+├── sql/                        # Các script SQL migration & seed
+│   ├── example.sql             # Dữ liệu mẫu (category, shop, book,...)
+│   ├── create_shops_table.sql  # Tạo bảng shops
+│   └── *.sql                   # Các migration bổ sung
+│
+└── src/main/
+    ├── java/
+    │   ├── controller/         # Servlet điều hướng trang JSP
+    │   │   └── admin/          # Servlet trang admin
+    │   ├── dao/                # Data Access Objects
+    │   │   ├── BookDAO.java
+    │   │   ├── CartDAO.java
+    │   │   ├── OrderDAO.java
+    │   │   ├── ShipmentDAO.java
+    │   │   ├── ShopDAO.java
+    │   │   └── ...
+    │   ├── filters/            # Servlet Filters
+    │   │   ├── EncodingFilter  # Bắt buộc UTF-8
+    │   │   └── JwtFilter       # Xác thực JWT
+    │   ├── models/             # POJO entities
+    │   │   ├── Book, Order, Cart, Shipment, Shop,...
+    │   │   └── UserAddress, ShopCoupon,...
+    │   ├── utils/              # Tiện ích dùng chung
+    │   │   ├── DBUtil.java     # Kết nối DB, khởi tạo schema
+    │   │   ├── JwtUtil.java    # Phát hành/xác thực JWT
+    │   │   ├── EmailUtil.java  # Gửi email SMTP
+    │   │   ├── OTPUtil.java    # Quản lý OTP
+    │   │   └── ShippingCalculator.java
+    │   └── web/                # REST API Servlets
+    │       ├── AuthServlet.java
+    │       ├── CartServlet.java
+    │       ├── CheckoutServlet.java
+    │       ├── ProfileServlet.java
+    │       ├── admin/          # API quản trị
+    │       └── seller/         # API người bán
+    │
+    ├── resources/
+    │   ├── db.properties       # Cấu hình kết nối DB
+    │   ├── email.properties    # Cấu hình SMTP
+    │   ├── schema.sql          # Schema chính
+    │   └── otp_schema.sql      # Schema OTP
+    │
+    └── webapp/
+        ├── index.jsp           # Trang chủ
+        ├── catalog.jsp         # Danh mục sách
+        ├── book-detail.jsp     # Chi tiết sách
+        ├── checkout.jsp        # Thanh toán
+        ├── login.jsp           # Đăng nhập
+        ├── register.jsp        # Đăng ký
+        ├── profile.jsp         # Hồ sơ cá nhân
+        ├── admin/              # Trang quản trị admin
+        ├── Seller/             # Trang quản lý người bán
+        ├── assets/             # CSS, JS, images
+        └── WEB-INF/            # Sitemesh decorators, includes
 ```
 
-## Cai dat moi truong
-- **PostgreSQL**: tao database theo `db.properties` hoac dat bien moi truong `DATABASE_URL`. Tat ca script SQL nam trong `src/main/resources` va thu muc goc.
-- **Bien moi truong quan trong**:
-  - `JWT_SECRET` (neu khong set se fallback chuoi mac dinh trong `utils/JwtUtil.java`).
-  - `DATABASE_URL` (uu tien so voi `db.properties`).
-  - SMTP: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` hoac `email.properties`.
-  - `BOOKSTORE_UPLOAD_DIR` de thay doi thu muc luu media review (FileStorageUtil).
-  - `EMAIL_DISABLED`, `EMAIL_DEBUG` de dieu khien gui mail dev.
-- **Charset**: `filters/EncodingFilter` buoc UTF-8; DBUtil se `SET client_encoding TO 'UTF8'` cho ket noi.
+---
 
-## Build va chay thu
-1. Cai dat Java 11 va Maven, PostgreSQL.
-2. Khoi tao schema:
-   - Chay `src/main/resources/schema.sql` + `otp_schema.sql`.
-   - Chay `create_shops_table.sql`, `migration_add_shop_info.sql` va cac script trong goc (20251027_*). Sap xep theo thu tu ngay phat hanh.
-   - (Tuy chon) `example.sql` de seed category, shop, shipper, coupon, book mau.
-3. Cap nhat `src/main/resources/db.properties` neu su dung JDBC local.
-4. Build WAR:
-   ```bash
-   mvn clean package
+## 🚀 Cài đặt & Chạy
+
+### Yêu cầu
+
+- **Java** 11+ (JDK)
+- **Maven** 3.6+
+- **PostgreSQL** 12+
+
+### Bước 1: Cấu hình Database
+
+1. Tạo database PostgreSQL:
+   ```sql
+   CREATE DATABASE jva_bookstore;
    ```
-   Ket qua: `target/ROOT.war` va `target/dependency/webapp-runner.jar`.
-5. Chay nhanh bang webapp-runner:
-   ```bash
-   java -jar target/dependency/webapp-runner.jar --port 8080 target/ROOT.war
+
+2. Cập nhật file `src/main/resources/db.properties`:
+   ```properties
+   db.url=jdbc:postgresql://localhost:5432/jva_bookstore
+   db.user=postgres
+   db.password=postgres
    ```
-   hoac `mvn tomcat8:run`.
-6. Trien khai Heroku/Render: su dung `Procfile` (`web: java $JAVA_OPTS -jar target/dependency/webapp-runner.jar --port $PORT target/ROOT.war`) va `app.json`.
 
-## Du lieu khoi tao
-- `utils/BookDataLoader` tu dong seed `books_full_5xx.csv` neu bang `books` rong (doc tu classpath hoac file he thong).
-- File CSV thuc te `books_full_9xx.csv` co the dung de nhap them (chinh `BookDataLoader` neu muon).
-- `CreateTestUser.java` tao user mau (hash bang BCrypt); `GenerateHash.java` ho tro sinh password hash.
-- Cac script `20251027_add_payment_metadata.sql`, `20251027_fix_shop_settings.sql`, `add_shop_id_to_orders.sql`, `update_books_shop.sql` bo sung truong order/payment/shop gan day.
+3. Chạy các script SQL theo thứ tự:
+   ```bash
+   # Schema chính
+   psql -d jva_bookstore -f src/main/resources/schema.sql
+   psql -d jva_bookstore -f src/main/resources/otp_schema.sql
 
-## Luoc do chuc nang
-```mermaid
-flowchart LR
-    Guest((Khach)) -->|Xem| Catalog[Catalog & Search]
-    Guest -->|Dang ky OTP| AuthFlow[Dang ky & Xac thuc]
-    Customer((Customer)) -->|Them san pham| Cart[Cart API]
-    Customer -->|Thanh toan| Checkout[Checkout & Payment]
-    Customer -->|Quan ly don, dia chi, review| ProfileAPI[Profile APIs]
-    Seller((Seller)) --> SellerProducts[Quan ly san pham]
-    Seller --> SellerOrders[Quan ly don hang]
-    Seller --> SellerAnalytics[Thong ke & setting shop]
-    Admin((Admin)) --> AdminDashboard[Dashboard, quan tri user/product]
-    Admin --> AdminPromotion[Quan tri promotion & coupon]
-    Shipper((Shipper)) --> ShippingPortal[Cap nhat trang thai van chuyen]
+   # Migration bổ sung (trong thư mục sql/)
+   psql -d jva_bookstore -f sql/create_shops_table.sql
+   psql -d jva_bookstore -f sql/apply_migration.sql
+
+   # (Tùy chọn) Dữ liệu mẫu
+   psql -d jva_bookstore -f sql/example.sql
+   ```
+
+### Bước 2: Build & Chạy
+
+```bash
+# Build WAR
+mvn clean package
+
+# Chạy server (port 8081)
+java -jar target/dependency/webapp-runner.jar --port 8081 target/ROOT.war
 ```
 
-## Kien truc he thong
+Hoặc sử dụng script có sẵn:
+
+| Script | Mô tả |
+|---|---|
+| `start-app.bat` | Build + khởi động server |
+| `start-server.bat` | Khởi động server local (port 8081) |
+| `start-tunnel.bat` | Tạo public URL qua Cloudflare tunnel |
+| `start-all.ps1` | Khởi động tất cả (server + tunnel) |
+
+**Khởi động nhanh (khuyến nghị):**
+```powershell
+# Cách 1: Dùng PowerShell
+powershell -ExecutionPolicy Bypass -File start-all.ps1
+
+# Cách 2: Double-click start-app.bat
+```
+
+### Bước 3: Truy cập
+
+- **Local**: http://localhost:8081
+- **Public**: URL hiển thị trong terminal tunnel (thay đổi mỗi lần khởi động)
+
+---
+
+## 🔑 Tài khoản test
+
+| Vai trò | Username | Password |
+|---|---|---|
+| Khách hàng | `shino113399` | `123456` |
+| Admin | `admin01` | `123456` |
+| Người bán | `seller1` | `123456` |
+
+---
+
+## 🌐 Biến môi trường
+
+| Biến | Mô tả | Mặc định |
+|---|---|---|
+| `DATABASE_URL` | URL kết nối PostgreSQL | Đọc từ `db.properties` |
+| `JWT_SECRET` | Khóa bí mật JWT | Chuỗi mặc định trong code |
+| `SMTP_HOST` | SMTP server | Đọc từ `email.properties` |
+| `SMTP_PORT` | SMTP port | Đọc từ `email.properties` |
+| `SMTP_USER` | SMTP username | Đọc từ `email.properties` |
+| `SMTP_PASS` | SMTP password | Đọc từ `email.properties` |
+| `SMTP_FROM` | Email người gửi | Đọc từ `email.properties` |
+| `EMAIL_DISABLED` | Tắt gửi email (dev) | `false` |
+| `BOOKSTORE_UPLOAD_DIR` | Thư mục upload media | Mặc định trong code |
+
+---
+
+## 🏗️ Kiến trúc hệ thống
+
 ```mermaid
 flowchart LR
-    subgraph Client
-        JSP[JSP + JSTL]
-        JSAssets[assets/js modules]
+    subgraph Client["🖥️ Client"]
+        JSP["JSP + JSTL"]
+        JS["JavaScript Modules"]
     end
-    subgraph ServletContainer
-        Filters[filters/*.java]
-        Servlets[web/*.java & controller/*]
-        Utils[utils/*.java]
-        DAO[dao/*.java]
+
+    subgraph Server["⚙️ Servlet Container"]
+        Filters["Filters\n(JWT, Encoding)"]
+        Servlets["Servlets\n(web/, controller/)"]
+        Utils["Utils\n(JWT, Email, OTP,...)"]
+        DAO["DAO Layer"]
     end
-    DB[(PostgreSQL)]
-    JSP --> Servlets
-    JSAssets --> Servlets
+
+    DB[("🗄️ PostgreSQL")]
+    SMTP["📧 SMTP Server"]
+
+    JSP --> Filters
+    JS --> Filters
     Filters --> Servlets
     Servlets --> Utils
     Servlets --> DAO
     DAO --> DB
-    Utils -.-> Email[smtp]
-    Utils -.-> OTP[otp_verifications]
+    Utils -.-> SMTP
 ```
 
-## Workflow chinh
+---
+
+## 📊 Sơ đồ chức năng
+
 ```mermaid
-sequenceDiagram
-    participant U as User
-    participant FE as JSP/JS
-    participant SV as Servlet layer
-    participant DAO as DAO layer
-    participant DB as PostgreSQL
+flowchart LR
+    Guest(("👤 Khách")) -->|Xem sách| Catalog["Danh mục & Tìm kiếm"]
+    Guest -->|Đăng ký OTP| Auth["Đăng ký & Xác thực"]
 
-    U->>FE: Dang nhap / Dang ky (OTP)
-    FE->>SV: POST /api/login
-    SV->>DAO: DBUtil.userExists + BCrypt.verify
-    DAO->>DB: SELECT users
-    SV-->>FE: JWT + session
+    Customer(("🛒 Khách hàng")) -->|Giỏ hàng| Cart["Cart API"]
+    Customer -->|Thanh toán| Checkout["Checkout & Payment"]
+    Customer -->|Quản lý| Profile["Đơn hàng, Địa chỉ, Review"]
 
-    U->>FE: Them vao gio hang
-    FE->>SV: POST /api/cart/items
-    SV->>DAO: CartDAO.ensureActiveCart
-    DAO->>DB: UPSERT carts, cart_items
-    SV-->>FE: Cart summary
+    Seller(("🏪 Người bán")) --> SellerProducts["Quản lý sản phẩm"]
+    Seller --> SellerOrders["Quản lý đơn hàng"]
+    Seller --> SellerAnalytics["Thống kê & Cài đặt shop"]
 
-    U->>FE: Dat hang
-    FE->>SV: POST /api/checkout
-    SV->>DAO: OrderDAO.checkout(...)
-    DAO->>DB: INSERT orders, order_items, status history
-    DAO->>DB: UPDATE stock, coupon usage
-    SV-->>FE: Order confirmation
+    Admin(("🔧 Admin")) --> Dashboard["Dashboard & Quản trị"]
+    Admin --> Promotion["Khuyến mãi & Coupon"]
 
-    Shipper->>SV: PATCH /api/shipper/shipments
-    SV->>DAO: ShipmentDAO.updateStatus
-    DAO->>DB: UPDATE shipments, orders.status
+    Shipper(("🚚 Shipper")) --> Shipping["Cập nhật vận chuyển"]
 ```
 
-## Phan tich source code
+---
 
-### Lop Servlet & Filter (backend API/JSP bridge)
-| Module | URL chinh | File | Ghi chu |
-| --- | --- | --- | --- |
-| Auth | `/api/login`, `/api/auth/*` | `src/main/java/web/AuthServlet.java` | Dang ky OTP, dang nhap BCrypt, reset password, sinh JWT, set session seller/shop. |
-| Catalog | `/api/books`, `/books/detail` | `src/main/java/web/BooksApiServlet.java`, `web/BookDetailServlet.java` | Loc, tim kiem, de xuat, thong tin chi tiet, highlight review. |
-| Cart | `/api/cart`, `/api/cart/items/*` | `src/main/java/web/CartServlet.java`, `dao/CartDAO.java` | Gio hang persistent theo session + user, merge khi login, tinh toan tong tien. |
-| Checkout | `/api/checkout`, `/checkout` | `src/main/java/web/CheckoutServlet.java`, `dao/OrderDAO.java` | Tiep nhan dia chi, coupon, shipping quote, tao order + order_items + payment metadata. |
-| Profile | `/api/profile/*` | `src/main/java/web/ProfileServlet.java` | Quan ly thong tin ca nhan, dia chi, don hang, coupon, yeu thich, review lich su. |
-| Reviews & Comments | `/api/reviews`, `/api/comments` | `src/main/java/web/ReviewServlet.java`, `web/CommentServlet.java` | CRUD review + media (FileStorageUtil), binh luan lien ket order. |
-| Shipper APIs | `/api/shipper/*` | `src/main/java/web/ShipperApiServlet.java`, `web/ShippingQuoteServlet.java` | Phan cong shipper, cap nhat trang thai, tinh phi van chuyen dong. |
-| Admin REST | `/api/admin/*` | `src/main/java/web/admin/*.java`, `controller/admin/*.java` | Quan tri user, san pham, promotion, commission, analytics, shipper. |
-| Seller REST | `/api/seller/*` | `src/main/java/web/seller/*.java` | Quan ly shop, san pham (CRUD, upload), don hang, thong ke, coupon shop. |
-| Filter | `/api/*` | `src/main/java/filters/JwtFilter.java`, `filters/EncodingFilter.java` | Kiem tra JWT/session, cho phep endpoint cong khai, thiet lap UTF-8. |
+## 🗃️ Cơ sở dữ liệu
 
-### DAO & Model layer
-- `dao/BookDAO.java`: truy xuat book, filter, thong ke review, update stock.
-- `dao/CartDAO.java`: quan ly bang `carts`, `cart_items`, xu ly merge session/user, lock optimistic.
-- `dao/OrderDAO.java`: tao order, quan ly status, payment metadata JSONB, shipping snapshot, apply coupon, record history.
-- `dao/ShipmentDAO.java`: tim, gan, cap nhat shipment, dong bo status don hang (ket hop shipper_user_id).
-- `dao/ShopDAO.java`, `ShopCouponDAO.java`, `CouponDAO.java`: thong tin shop, coupon chung/shop, su dung/het han.
-- `dao/UserAddressDAO.java`: CRUD dia chi, dat default, mapping JSON shipping snapshot.
-- `dao/ReviewDAO.java`, `CommentDAO.java`, `FavoriteDAO.java`, `RecentViewDAO.java`: tuong tac nguoi dung voi san pham.
-- `models/*.java`: POJO giai ma ket qua: `Order`, `OrderItem`, `Shipment`, `ShippingQuote` (enum MatchLevel), `Cart`, `CartItem`, `Shop`, `ShopCoupon`, `UserAddress` va cac entity lien quan khac.
+### Bảng chính
 
-### Utils & ho tro
-- `utils/DBUtil.java`: quan ly ket noi, doc `DATABASE_URL`/`db.properties`, tao bang co ban (users, carts, cart_items, coupons, shippers, store_discounts, orders, order_items, ...) va cung cap helper user/password/reset token.
-- `utils/JwtUtil.java` + `utils/AuthUtil.java`: phat hanh/kiem tra JWT, rut email/ID tu token hoac session.
-- `utils/OTPUtil.java`: luu OTP vao bang `otp_verifications` voi cooldown, attempt limit.
-- `utils/EmailUtil.java`: doc SMTP config, fallback log console neu disable.
-- `utils/ShippingCalculator.java`: map dia chi -> shipper, tinh match theo district/city/province/region, chon phi tot nhat.
-- `utils/FileStorageUtil.java`: validate MIME, gioi han kich thuoc, luu file upload review vao thu muc cau hinh.
-- `CreateTestUser.java`, `GenerateHash.java`, `TestDB.java`, `run_*` scripts: tien ich CLI/test migration.
+| Bảng | Mô tả |
+|---|---|
+| `users` | Tài khoản (role: admin, seller, customer, shipper) |
+| `books` | Thông tin sách (liên kết shop) |
+| `carts` · `cart_items` | Giỏ hàng persistent theo session/user |
+| `orders` · `order_items` | Đơn hàng (JSONB: shipping, payment, coupon snapshot) |
+| `order_status_history` | Lịch sử trạng thái đơn hàng |
+| `shipments` · `shipment_events` | Theo dõi vận chuyển |
+| `user_addresses` | Địa chỉ giao hàng |
+| `shops` · `shop_settings` | Thông tin shop người bán |
+| `coupons` · `shop_coupons` | Mã khuyến mãi chung & shop |
+| `book_reviews` · `review_media` | Đánh giá & media |
+| `book_favorites` · `recent_views` | Yêu thích & lịch sử xem |
+| `shippers` | Đối tác giao hàng |
+| `otp_verifications` | Xác thực OTP |
 
-### Giao dien JSP & assets
-- `src/main/webapp/index.jsp`, `catalog.jsp`, `book-detail.jsp`, `checkout.jsp`, `profile.jsp` duoc bao boi Sitemesh (`WEB-INF/decorators/main.jsp`) va include header/footer.
-- Admin JSP (`src/main/webapp/admin/*.jsp`) + JS module `assets/js/admin/*` render chart, datatable, form dynamic.
-- Seller JSP (`src/main/webapp/Seller/*.jsp`) + `assets/js/seller/*` quan ly san pham, don, analytics.
-- JS chia nho: `app-shell.js` (layout, auth token), `cart-client.js`, `checkout-page.js`, `global-search.js`.
+### Sơ đồ quan hệ
 
-## Phan tich database
-
-### Bang chinh
-| Bang | Muc dich | Truong dang chu y |
-| --- | --- | --- |
-| `users` | Tai khoan, role (`admin`, `seller`, `customer`, `shipper`), status | `password_hash`, `email_verified`, `reset_token`, `status`. |
-| `otp_verifications` | Luu OTP dang ky/reset | `expires_at`, `attempts`, `verified`. |
-| `books` | Thong tin sach | `shop_id`, `shop_name`, `rating_avg`, `stock_quantity`, `highlights`, `specifications` (JSON text). |
-| `carts` + `cart_items` | Gio hang persistent | `session_id`, `status`, `merge_at`, `unit_price_snapshot`. |
-| `orders` + `order_items` | Don hang | `shipping_snapshot` JSONB, `cart_snapshot`, `payment_metadata`, `coupon_snapshot`, `status` enum. |
-| `order_status_history` (tao trong DBUtil) | Lich su trang thai order | `actor`, `note`. |
-| `shipments` + `shipment_events` | Theo doi van chuyen | `shipper_user_id`, `cod_collected`, `status`, `events` log. |
-| `user_addresses` | Dia chi giao hang | `is_default`, `province`, `city`, `ward`. |
-| `coupons`, `shop_coupons`, `coupon_usages` | Khuyen mai, dieu kien | `type`, `discount_value`, `usage_limit`, `apply_to`. |
-| `book_reviews`, `review_media`, `book_favorites`, `recent_views`, `comments` | Tuong tac nguoi dung | Rang buoc UNIQUE, check do dai noi dung. |
-| `shops`, `shop_settings`, `shop_staff` | Quan ly shop | `commission_rate`, `theme_color`, `status`. |
-| `shippers` | Doi tac giao hang | `service_area`, `base_fee`, `estimated_time`. |
-
-### ER co ban
 ```mermaid
 erDiagram
-    USERS ||--o{ USER_ADDRESSES : has
-    USERS ||--o{ ORDERS : places
-    USERS ||--o{ CARTS : owns
-    USERS ||--o{ BOOK_REVIEWS : writes
-    USERS ||--o{ BOOK_FAVORITES : marks
-    USERS ||--o{ OTP_VERIFICATIONS : requests
-    ORDERS ||--o{ ORDER_ITEMS : contains
-    ORDERS ||--|| SHIPMENTS : generates
-    ORDERS ||--o{ ORDER_STATUS_HISTORY : traces
-    BOOKS ||--o{ ORDER_ITEMS : referencedBy
-    BOOKS ||--o{ BOOK_REVIEWS : rated
-    BOOKS ||--o{ BOOK_FAVORITES : favored
-    BOOKS ||--o{ CART_ITEMS : addedTo
-    CARTS ||--o{ CART_ITEMS : include
-    SHOPS ||--o{ BOOKS : owns
-    SHOPS ||--o{ SHOP_COUPONS : issues
-    SHIPPERS ||--o{ SHIPMENTS : handles
+    USERS ||--o{ USER_ADDRESSES : "có"
+    USERS ||--o{ ORDERS : "đặt"
+    USERS ||--o{ CARTS : "sở hữu"
+    USERS ||--o{ BOOK_REVIEWS : "viết"
+    USERS ||--o{ BOOK_FAVORITES : "yêu thích"
+    ORDERS ||--o{ ORDER_ITEMS : "chứa"
+    ORDERS ||--|| SHIPMENTS : "tạo"
+    ORDERS ||--o{ ORDER_STATUS_HISTORY : "ghi lại"
+    BOOKS ||--o{ ORDER_ITEMS : "thuộc"
+    BOOKS ||--o{ BOOK_REVIEWS : "được đánh giá"
+    BOOKS ||--o{ CART_ITEMS : "thêm vào"
+    CARTS ||--o{ CART_ITEMS : "bao gồm"
+    SHOPS ||--o{ BOOKS : "sở hữu"
+    SHOPS ||--o{ SHOP_COUPONS : "phát hành"
+    SHIPPERS ||--o{ SHIPMENTS : "vận chuyển"
 ```
 
-## Huong dan phat trien tung chuc nang
-- **Xac thuc & dang ky**:
-  1. Cap nhat `AuthServlet` de xu ly business moi (VD multi-factor) va `JwtFilter` neu mo rong danh sach endpoint public.
-  2. Bo sung truong DB trong `users`/`otp_verifications` (cap nhat schema + migration).
-  3. Cap nhat giao dien `login.jsp`, `register.jsp`, assets JS lien quan.
-- **Catalog & tim kiem**:
-  1. Mo rong `BooksApiServlet` (loc, sort), `BookDAO` (query).
-  2. Cap nhat view `catalog.jsp` va script `catalog-page.js`.
-  3. Neu them truong sach -> cap nhat `models/Book.java`, `schema.sql`, migration.
-- **Cart / Checkout**:
-  1. `CartDAO` + `CartServlet` (state machine, voucher).
-  2. `CheckoutServlet` + `OrderDAO` (payment, shipping, coupon).
-  3. View `cart-ui.js`, `checkout.jsp`, `checkout-page.js`.
-  4. Neu them payment provider -> luu metadata JSONB + webhook Servlet moi.
-- **Profile & dich vu hau ban**:
-  1. Mieng ghep `ProfileServlet` (orders, dia chi, coupon).
-  2. DAO tuong ung (`UserAddressDAO`, `FavoriteDAO`, `RecentViewDAO`, `OrderDAO`).
-  3. View `profile.jsp` + JS (dang dong goi lon, can kiem tra phan region).
-- **Admin**:
-  1. Servlet trong `src/main/java/web/admin`, `controller/admin` phu trach JSP.
-  2. Table & chart su dung assets JS (AdDashboard.js, AdProduct.js, ...).
-  3. Cap nhat migration neu them truong (categories, promotions, commission).
-- **Seller**:
-  1. `web/seller/*.java` + JSP `Seller/*.jsp`, script `assets/js/seller`.
-  2. Kiem tra session seller (`SellerPageHelper`, `ShopDAO`).
-  3. Cap nhat `shop_settings`, `shop_coupons` scripts neu mo rong.
-- **Shipper**:
-  1. `ShipperApiServlet`, `ShipmentDAO`, `ShippingCalculator`.
-  2. Cap nhat bang `shipments`, `shipment_events` neu thay doi pipeline.
-  3. Giao dien `dashboard-shipper.jsp`.
+---
 
-## Quy trinh van hanh & quan tri
-- **Job cap nhat**: `OrderDAO` co status transition map (`ALLOWED_STATUSES`, `STATUS_TRANSITIONS`), ket hop seller/admin/shipper update. Dam bao app su dung cung map khi them trang thai moi.
-- **Bao tri DB**: su dung cac file `.sql` theo thu tu thoi gian; script `run_migration_heroku.bat`, `run_add_shop_id_migration.bat` ho tro tren Windows.
-- **Monitoring**: `HealthServlet` (`/api/health`) tra JSON, co the dung cho uptime-check.
-- **Email/OTP**: `EmailUtil` cho phep disable, OTP co cooldown (2 phut) + max attempt 5 (`OTPUtil`).
-- **Upload**: media review duoc kiem tra MIME va kich thuoc (5MB anh, 20MB video); thay doi thu muc qua bien moi truong.
+## ☁️ Triển khai (Heroku / Render)
 
-## Script ho tro & tai lieu
-- `docs/`: dang trong, co the luu file draw.io / plantuml.
-- `CreateTestUser.java`: chay `mvn exec:java -Dexec.mainClass=CreateTestUser` sau khi config DB.
-- `GenerateHash.java`: ho tro tao hash offline.
-- `TestDB.java`, `TestDBServlet` (0-byte) cho phep thu ket noi.
-- `run_add_shop_id_migration.bat`, `apply_migration.sql`, `update_books_shop.sql`: su dung khi bo sung truong `shop_id`.
+Project đã cấu hình sẵn để triển khai trên Heroku:
 
-## Kiem thu & dam bao chat luong
-- **Manual checklist**:
-  - Dang ky/OTP/Dang nhap cho role customer.
-  - Them sach vao gio, merge gio sau khi login.
-  - Checkout COD + giam gia coupon, kiem tra order snapshot.
-  - Seller tao/duyet san pham, thay doi stock, kiem tra admin Approve (status `books.status`).
-  - Shipper cap nhat trang thai, kiem tra `order_status_history`.
-  - Admin quan ly user, shipper, promotion.
+```bash
+# Đăng nhập Heroku
+heroku login
 
-.
+# Tạo app
+heroku create jva-bookstore
+
+# Thêm PostgreSQL addon
+heroku addons:create heroku-postgresql:hobby-dev
+
+# Set biến môi trường
+heroku config:set JWT_SECRET=your-secret-key
+
+# Deploy
+git push heroku main
+```
+
+Các file hỗ trợ triển khai:
+- `Procfile` — lệnh khởi động cho Heroku
+- `app.json` — metadata & addons
+- `system.properties` — Java runtime version
+
+---
+
+## 🔧 Xử lý sự cố
+
+| Lỗi | Giải pháp |
+|---|---|
+| Port 8081 đã sử dụng | `Get-NetTCPConnection -LocalPort 8081 \| ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }` |
+| Tunnel không kết nối | Kiểm tra server đã chạy tại http://localhost:8081 |
+| `JAVA_HOME` không tìm thấy | Kiểm tra JDK 11+ đã cài, cập nhật đường dẫn trong file `.bat` |
+| Lỗi kết nối DB | Kiểm tra PostgreSQL đang chạy, thông tin trong `db.properties` đúng |
+
+---
+
+## 📝 Ghi chú
+
+- **Encoding**: `EncodingFilter` bắt buộc UTF-8 cho mọi request; `DBUtil` set `client_encoding = UTF8`.
+- **Upload media**: Review hỗ trợ upload ảnh (≤5MB) và video (≤20MB), kiểm tra MIME type.
+- **OTP**: Cooldown 2 phút, tối đa 5 lần thử.
+- **Dữ liệu seed**: `BookDataLoader` tự động nạp sách từ CSV khi bảng `books` rỗng.
