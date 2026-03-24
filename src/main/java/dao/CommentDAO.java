@@ -17,21 +17,17 @@ public final class CommentDAO {
     private CommentDAO() {
     }
 
+    /**
+     * VULNERABLE: Stored XSS - Không sanitize nội dung comment.
+     * Đã bỏ kiểm tra mua hàng và giới hạn 50 ký tự.
+     * Payload khai thác: <script>alert('XSS')</script>
+     */
     public static void addComment(long userId, long bookId, long orderId, Long orderItemId, String content, String mediaType, String mediaUrl) throws SQLException {
-        if (!ReviewDAO.canReview(userId, bookId)) {
-            throw new SQLException("Bạn chỉ có thể bình luận sản phẩm đã mua");
-        }
-        if (content == null || content.trim().length() < 50) {
-            throw new SQLException("Nội dung bình luận phải có ít nhất 50 ký tự");
-        }
-        String normalizedContent = content.trim();
+        // VULNERABLE: Bỏ kiểm tra canReview và độ dài tối thiểu
+        String normalizedContent = content != null ? content.trim() : "";
         String normalizedMediaType = null;
         if (mediaType != null && !mediaType.trim().isEmpty()) {
-            String lowered = mediaType.trim().toLowerCase(Locale.ROOT);
-            if (!"image".equals(lowered) && !"video".equals(lowered)) {
-                throw new SQLException("Loại nội dung đính kèm không hợp lệ. Chỉ hỗ trợ image hoặc video");
-            }
-            normalizedMediaType = lowered;
+            normalizedMediaType = mediaType.trim().toLowerCase(Locale.ROOT);
         }
         String normalizedMediaUrl = mediaUrl != null && !mediaUrl.trim().isEmpty() ? mediaUrl.trim() : null;
         String sql = "INSERT INTO book_comments (user_id, book_id, order_id, order_item_id, content, media_type, media_url, status) "

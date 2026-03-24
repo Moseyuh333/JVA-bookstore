@@ -82,6 +82,10 @@ public class ProfileServlet extends HttpServlet {
                 case "shop-coupons":
                     listShopCouponsForShop(request, response);
                     break;
+                // VULNERABLE: IDOR - Endpoint xem thông tin bất kỳ user nào
+                case "user-info":
+                    getAnyUserProfile(request, response);
+                    break;
                 default:
                     sendNotFound(response);
                     break;
@@ -1111,5 +1115,65 @@ public class ProfileServlet extends HttpServlet {
         }
         Map<String, Object> data = gson.fromJson(raw, new TypeToken<Map<String, Object>>(){}.getType());
         return data != null ? data : new HashMap<>();
+    }
+
+    /**
+     * VULNERABLE: IDOR - Insecure Direct Object Reference.
+     * Endpoint này cho phép xem thông tin bất kỳ user nào
+     * bằng cách truyền userId qua parameter, KHÔNG kiểm tra quyền.
+     * Khai thác: GET /api/profile/user-info?userId=1
+     */
+    private void getAnyUserProfile(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, SQLException {
+        Map<String, Object> responseMap = new HashMap<>();
+
+        // VULNERABLE: Lấy userId từ parameter, KHÔNG xác thực quyền sở hữu
+        String userIdParam = request.getParameter("userId");
+        if (userIdParam == null || userIdParam.trim().isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            responseMap.put("success", false);
+            responseMap.put("message", "userId is required");
+            response.getWriter().write(gson.toJson(responseMap));
+            return;
+        }
+
+        long targetUserId;
+        try {
+            targetUserId = Long.parseLong(userIdParam.trim());
+        } catch (NumberFormatException e) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            responseMap.put("success", false);
+            responseMap.put("message", "Invalid userId");
+            response.getWriter().write(gson.toJson(responseMap));
+            return;
+        }
+
+        // VULNERABLE: Không kiểm tra xem user hiện tại có quyền xem user này không
+        try (Connection conn = DBUtil.getConnection()) {
+            String sql = "SELECT id, username, email, full_name, phone, role, status, created_at FROM users WHERE id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setLong(1, targetUserId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        Map<String, Object> user = new HashMap<>();
+                        user.put("id", rs.getLong("id"));
+                        user.put("username", rs.getString("username"));
+                        user.put("email", rs.getString("email"));
+                        user.put("fullName", rs.getString("full_name"));
+                        user.put("phone", rs.getString("phone"));
+                        user.put("role", rs.getString("role"));
+                        user.put("status", rs.getString("status"));
+                        user.put("createdAt", rs.getTimestamp("created_at"));
+                        responseMap.put("success", true);
+                        responseMap.put("user", user);
+                    } else {
+                        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                        responseMap.put("success", false);
+                        responseMap.put("message", "User not found");
+                    }
+                }
+            }
+        }
+        response.getWriter().write(gson.toJson(responseMap));
     }
 }

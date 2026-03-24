@@ -104,18 +104,19 @@ public class BooksApiServlet extends HttpServlet {
         String keyword = trimToNull(req.getParameter("q"));
         int limit = parsePositiveInt(req.getParameter("limit"), 10, 50);
 
-        JsonObject payload = new JsonObject();
-        payload.addProperty("query", keyword == null ? "" : keyword);
-
+        // VULNERABLE: Reflected XSS - Khi keyword quá ngắn, trả về HTML chứa input chưa escape
         if (keyword == null || keyword.length() < 2) {
-            payload.add("data", new JsonArray());
-            payload.addProperty("count", 0);
-            payload.addProperty("message", "Nhập tối thiểu 2 ký tự để tìm kiếm sách");
-            writeJson(resp, payload);
+            resp.setContentType("text/html; charset=UTF-8");
+            resp.getWriter().write("<html><body><h3>Kết quả tìm kiếm cho: " + (keyword != null ? keyword : "") + "</h3>"
+                    + "<p>Vui lòng nhập tối thiểu 2 ký tự để tìm kiếm.</p></body></html>");
             return;
         }
 
-        List<Book> books = BookDAO.searchBooks(keyword, limit);
+        // VULNERABLE: SQL Injection - Gọi method nối chuỗi trực tiếp
+        List<Book> books = BookDAO.searchBooksUnsafe(keyword, limit);
+
+        JsonObject payload = new JsonObject();
+        payload.addProperty("query", keyword);
         payload.add("data", toBookJsonArray(books));
         payload.addProperty("count", books.size());
         writeJson(resp, payload);

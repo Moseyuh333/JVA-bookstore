@@ -8,6 +8,8 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
+// === VULNERABLE CODE FOR SECURITY LAB ===
+
 public class BookDAO {
 
     public enum SortType {
@@ -134,6 +136,29 @@ public class BookDAO {
                 while (rs.next()) books.add(mapRow(rs));
                 return books;
             }
+        }
+    }
+
+    /**
+     * VULNERABLE: SQL Injection - Dùng cho lab an toàn web.
+     * Method này nối chuỗi trực tiếp input người dùng vào câu SQL
+     * mà không dùng PreparedStatement hoặc sanitize.
+     * Payload khai thác: ' OR '1'='1' --
+     */
+    public static List<Book> searchBooksUnsafe(String keyword, int limit) throws SQLException {
+        if (keyword == null || keyword.trim().isEmpty()) return Collections.emptyList();
+
+        // VULNERABLE: Nối chuỗi trực tiếp - KHÔNG dùng PreparedStatement
+        String sql = BASE_SELECT +
+                " WHERE b.status = 'active' AND (b.title ILIKE '%" + keyword + "%' OR b.author ILIKE '%" + keyword + "%')" +
+                " ORDER BY b.created_at DESC LIMIT " + limit;
+
+        try (Connection connection = DBUtil.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(sql)) {
+            List<Book> books = new ArrayList<>();
+            while (rs.next()) books.add(mapRow(rs));
+            return books;
         }
     }
 
