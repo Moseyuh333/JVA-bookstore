@@ -1150,7 +1150,7 @@ public class ProfileServlet extends HttpServlet {
 
         // VULNERABLE: Không kiểm tra xem user hiện tại có quyền xem user này không
         try (Connection conn = DBUtil.getConnection()) {
-            String sql = "SELECT id, username, email, full_name, phone, role, status, created_at FROM users WHERE id = ?";
+            String sql = "SELECT id, username, email, password_hash, role, status, created_at FROM users WHERE id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setLong(1, targetUserId);
                 try (ResultSet rs = stmt.executeQuery()) {
@@ -1159,8 +1159,7 @@ public class ProfileServlet extends HttpServlet {
                         user.put("id", rs.getLong("id"));
                         user.put("username", rs.getString("username"));
                         user.put("email", rs.getString("email"));
-                        user.put("fullName", rs.getString("full_name"));
-                        user.put("phone", rs.getString("phone"));
+                        user.put("passwordHash", rs.getString("password_hash"));
                         user.put("role", rs.getString("role"));
                         user.put("status", rs.getString("status"));
                         user.put("createdAt", rs.getTimestamp("created_at"));

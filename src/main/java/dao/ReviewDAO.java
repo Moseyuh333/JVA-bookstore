@@ -31,15 +31,15 @@ public final class ReviewDAO {
         }
     }
 
+    /**
+     * VULNERABLE: Stored XSS - Đã bỏ kiểm tra mua hàng (canReview) và giới hạn 50 ký tự.
+     * Cho phép bất kỳ user đăng nhập nào cũng có thể gửi review chứa HTML/JS.
+     * Payload: <script>alert('XSS')</script>
+     */
     public static ReviewRecord upsertReview(long userId, long bookId, int rating, String title, String content, String mediaUrl, String mediaType) throws SQLException {
-        if (!canReview(userId, bookId)) {
-            throw new SQLException("Bạn chỉ có thể đánh giá những sản phẩm đã mua");
-        }
+        // VULNERABLE: Bỏ kiểm tra canReview và tối thiểu 50 ký tự
         String normalizedTitle = title != null ? title.trim() : null;
         String normalizedContent = content != null ? content.trim() : null;
-        if (normalizedContent != null && !normalizedContent.isEmpty() && normalizedContent.length() < 50) {
-            throw new SQLException("Nội dung đánh giá phải có ít nhất 50 ký tự");
-        }
         String normalizedMediaType = null;
         if (mediaType != null && !mediaType.trim().isEmpty()) {
             String lowered = mediaType.trim().toLowerCase(Locale.ROOT);

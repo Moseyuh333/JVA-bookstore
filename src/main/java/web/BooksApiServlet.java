@@ -101,25 +101,37 @@ public class BooksApiServlet extends HttpServlet {
     }
 
     private void handleSearch(HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
-        String keyword = trimToNull(req.getParameter("q"));
+        String keyword = req.getParameter("q");
         int limit = parsePositiveInt(req.getParameter("limit"), 10, 50);
 
-        // VULNERABLE: Reflected XSS - Khi keyword quá ngắn, trả về HTML chứa input chưa escape
-        if (keyword == null || keyword.length() < 2) {
+        if (keyword == null || keyword.trim().isEmpty()) {
             resp.setContentType("text/html; charset=UTF-8");
-            resp.getWriter().write("<html><body><h3>Kết quả tìm kiếm cho: " + (keyword != null ? keyword : "") + "</h3>"
-                    + "<p>Vui lòng nhập tối thiểu 2 ký tự để tìm kiếm.</p></body></html>");
+            resp.getWriter().write("<html><body><h3>Vui lòng nhập từ khóa tìm kiếm</h3></body></html>");
             return;
         }
 
-        // VULNERABLE: SQL Injection - Gọi method nối chuỗi trực tiếp
-        List<Book> books = BookDAO.searchBooksUnsafe(keyword, limit);
+        // VULNERABLE: Reflected XSS - Luôn trả HTML chứa keyword chưa escape
+        // Payload: /api/books/search?q=<script>alert(document.cookie)</script>
+        resp.setContentType("text/html; charset=UTF-8");
+        StringBuilder html = new StringBuilder();
+        html.append("<html><head><meta charset='UTF-8'></head><body>");
+        html.append("<h3>Kết quả tìm kiếm cho: ").append(keyword).append("</h3>");
 
-        JsonObject payload = new JsonObject();
-        payload.addProperty("query", keyword);
-        payload.add("data", toBookJsonArray(books));
-        payload.addProperty("count", books.size());
-        writeJson(resp, payload);
+        try {
+            // VULNERABLE: SQL Injection - Gọi method nối chuỗi trực tiếp
+            List<Book> books = BookDAO.searchBooksUnsafe(keyword, limit);
+            html.append("<p>Tìm thấy ").append(books.size()).append(" kết quả</p>");
+            html.append("<ul>");
+            for (Book book : books) {
+                html.append("<li>").append(book.getTitle()).append(" - ").append(book.getAuthor()).append("</li>");
+            }
+            html.append("</ul>");
+        } catch (SQLException ex) {
+            html.append("<p style='color:red'>Lỗi truy vấn: ").append(ex.getMessage()).append("</p>");
+        }
+
+        html.append("</body></html>");
+        resp.getWriter().write(html.toString());
     }
 
     private void handleCatalogList(HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
