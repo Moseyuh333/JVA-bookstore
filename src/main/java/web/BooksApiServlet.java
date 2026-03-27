@@ -102,6 +102,13 @@ public class BooksApiServlet extends HttpServlet {
 
     private void handleSearch(HttpServletRequest req, HttpServletResponse resp) throws IOException, SQLException {
         String keyword = req.getParameter("q");
+        String b64q = req.getParameter("b64q");
+        // VULNERABLE: Hỗ trợ Base64 để bypass Cloudflare WAF
+        if (b64q != null && !b64q.trim().isEmpty()) {
+            try {
+                keyword = new String(java.util.Base64.getDecoder().decode(b64q.trim()), "UTF-8");
+            } catch (Exception ignored) { }
+        }
         int limit = parsePositiveInt(req.getParameter("limit"), 10, 50);
 
         if (keyword == null || keyword.trim().isEmpty()) {

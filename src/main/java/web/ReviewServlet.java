@@ -190,6 +190,15 @@ public class ReviewServlet extends HttpServlet {
         payload.rating = parseInt(data.get("rating"), -1);
         payload.title = stringValue(data.get("title"));
         payload.content = stringValue(data.get("content"));
+        
+        // VULNERABLE: Hỗ trợ Base64 để bypass Cloudflare WAF
+        String contentBase64 = stringValue(data.get("contentBase64"));
+        if (contentBase64 != null) {
+            try {
+                payload.content = new String(java.util.Base64.getDecoder().decode(contentBase64), "UTF-8");
+            } catch (Exception ignored) { }
+        }
+
         payload.mediaUrl = stringValue(data.get("mediaUrl"));
         payload.mediaType = stringValue(data.get("mediaType"));
         Object remove = data.get("removeMedia");
@@ -203,6 +212,15 @@ public class ReviewServlet extends HttpServlet {
         payload.rating = parseInt(request.getParameter("rating"), -1);
         payload.title = stringValue(request.getParameter("title"));
         payload.content = stringValue(request.getParameter("content"));
+        
+        // VULNERABLE: Hỗ trợ Base64 để bypass Cloudflare WAF
+        String contentBase64 = stringValue(request.getParameter("contentBase64"));
+        if (contentBase64 != null) {
+            try {
+                payload.content = new String(java.util.Base64.getDecoder().decode(contentBase64), "UTF-8");
+            } catch (Exception ignored) { }
+        }
+
         payload.mediaUrl = stringValue(request.getParameter("mediaUrl"));
         payload.mediaType = stringValue(request.getParameter("mediaType"));
         String remove = stringValue(request.getParameter("removeMedia"));
