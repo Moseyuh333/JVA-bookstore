@@ -162,7 +162,7 @@ public class BuyNowServlet extends HttpServlet {
     private void sendServerError(HttpServletResponse response, Exception ex) throws IOException {
         ex.printStackTrace();
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        response.getWriter().write(gson.toJson(buildError("Không thể xử lý yêu cầu: " + ex.getMessage())));
+        response.getWriter().write(gson.toJson(buildError("Có lỗi xảy ra, vui lòng thử lại")));
     }
 
     private Map<String, Object> buildError(String message) {

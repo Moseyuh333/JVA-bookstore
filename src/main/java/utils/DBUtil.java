@@ -1144,13 +1144,7 @@ public class DBUtil {
         }
     }
 
-    public static void deleteAllUsers() throws SQLException {
-        String sql = "DELETE FROM users";
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            int count = pstmt.executeUpdate();
-            System.out.println("Deleted " + count + " users from database");
-        }
-    }
+    // deleteAllUsers() method removed for security - too dangerous for production
 
     // utils/DBUtil.java
     public static String getUserRole(String username) throws SQLException {

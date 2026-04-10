@@ -141,7 +141,7 @@ public class AdminUsersServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"An internal error occurred\"}");
         } finally {
             out.flush();
         }
@@ -174,7 +174,7 @@ public class AdminUsersServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + e.getMessage() + "\"}");
+            out.write("{\"error\":\"An internal error occurred\"}");
             e.printStackTrace();
         } finally {
             out.flush();

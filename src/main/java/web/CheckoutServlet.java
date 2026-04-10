@@ -245,9 +245,9 @@ public class CheckoutServlet extends HttpServlet {
     }
 
     private void handleServerError(HttpServletResponse response, Exception ex) throws IOException {
-        ex.printStackTrace();
+        System.err.println("CheckoutServlet error: " + ex.getMessage());
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        response.getWriter().write(gson.toJson(buildError("Có lỗi xảy ra: " + ex.getMessage())));
+        response.getWriter().write(gson.toJson(buildError("Có lỗi xảy ra, vui lòng thử lại")));
     }
 
     private boolean isUserAllowedToShop(HttpServletRequest request) throws SQLException {

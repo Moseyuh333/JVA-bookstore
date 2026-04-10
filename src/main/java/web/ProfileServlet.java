@@ -91,7 +91,8 @@ public class ProfileServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
-            errorResponse.put("message", "Database error: " + ex.getMessage());
+            errorResponse.put("message", "Có lỗi xảy ra, vui lòng thử lại");
+            System.err.println("ProfileServlet DB error: " + ex.getMessage());
             response.getWriter().write(gson.toJson(errorResponse));
         }
     }
@@ -163,7 +164,8 @@ public class ProfileServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
-            errorResponse.put("message", "Database error: " + ex.getMessage());
+            errorResponse.put("message", "Có lỗi xảy ra, vui lòng thử lại");
+            System.err.println("ProfileServlet DB error: " + ex.getMessage());
             response.getWriter().write(gson.toJson(errorResponse));
         }
     }
@@ -196,7 +198,8 @@ public class ProfileServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
-            errorResponse.put("message", "Database error: " + ex.getMessage());
+            errorResponse.put("message", "Có lỗi xảy ra, vui lòng thử lại");
+            System.err.println("ProfileServlet DB error: " + ex.getMessage());
             response.getWriter().write(gson.toJson(errorResponse));
         }
     }
@@ -242,7 +245,8 @@ public class ProfileServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
-            errorResponse.put("message", "Database error: " + ex.getMessage());
+            errorResponse.put("message", "Có lỗi xảy ra, vui lòng thử lại");
+            System.err.println("ProfileServlet DB error: " + ex.getMessage());
             response.getWriter().write(gson.toJson(errorResponse));
         }
     }
@@ -429,10 +433,17 @@ public class ProfileServlet extends HttpServlet {
                 return;
             }
             
-            if (newPassword.length() < 6) {
+            if (newPassword.length() < 8) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 responseMap.put("success", false);
-                responseMap.put("message", "Mật khẩu mới phải có ít nhất 6 ký tự");
+                responseMap.put("message", "Mật khẩu mới phải có ít nhất 8 ký tự");
+                response.getWriter().write(gson.toJson(responseMap));
+                return;
+            }
+            if (!newPassword.matches(".*[a-zA-Z].*") || !newPassword.matches(".*\\d.*")) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                responseMap.put("success", false);
+                responseMap.put("message", "Mật khẩu mới phải chứa cả chữ cái và số");
                 response.getWriter().write(gson.toJson(responseMap));
                 return;
             }

@@ -45,8 +45,8 @@ public class AdminProductsServlet extends HttpServlet {
 
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
-            e.printStackTrace();
+            out.write("{\"error\":\"An internal error occurred\"}");
+            System.err.println("AdminProductsServlet error: " + e.getMessage());
         } finally {
             out.flush();
         }
@@ -73,8 +73,8 @@ public class AdminProductsServlet extends HttpServlet {
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}");
-            e.printStackTrace();
+            out.write("{\"error\":\"An internal error occurred\"}");
+            System.err.println("AdminProductsServlet error: " + e.getMessage());
         } finally {
             out.flush();
         }
@@ -370,30 +370,34 @@ public class AdminProductsServlet extends HttpServlet {
         String userRole = (String) req.getSession().getAttribute("role");
         Integer ownerId = (Integer) req.getSession().getAttribute("user_id");
 
+        boolean isSeller = "seller".equalsIgnoreCase(userRole) && ownerId != null;
+
         String sql = "SELECT " +
                 "COUNT(*) AS total, " +
                 "COUNT(*) FILTER (WHERE COALESCE(b.stock, 0) > 0) AS in_stock, " +
                 "COUNT(*) FILTER (WHERE COALESCE(b.stock, 0) <= 0) AS out_stock " +
-                "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1";
-
-        if ("seller".equalsIgnoreCase(userRole) && ownerId != null) {
-            sql += " AND s.owner_id = " + ownerId;
-        }
+                "FROM books b LEFT JOIN shops s ON b.shop_id = s.id WHERE 1=1" +
+                (isSeller ? " AND s.owner_id = ?" : "");
 
         try (Connection conn = DBUtil.getConnection();
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql)) {
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            if (rs.next()) {
-                int total = rs.getInt("total");
-                int inStock = rs.getInt("in_stock");
-                int outStock = rs.getInt("out_stock");
+            if (isSeller) {
+                pstmt.setInt(1, ownerId);
+            }
 
-                out.write("{\"total\":" + total +
-                        ",\"in_stock\":" + inStock +
-                        ",\"out_stock\":" + outStock + "}");
-            } else {
-                out.write("{\"total\":0,\"in_stock\":0,\"out_stock\":0}");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int total = rs.getInt("total");
+                    int inStock = rs.getInt("in_stock");
+                    int outStock = rs.getInt("out_stock");
+
+                    out.write("{\"total\":" + total +
+                            ",\"in_stock\":" + inStock +
+                            ",\"out_stock\":" + outStock + "}");
+                } else {
+                    out.write("{\"total\":0,\"in_stock\":0,\"out_stock\":0}");
+                }
             }
         }
     }

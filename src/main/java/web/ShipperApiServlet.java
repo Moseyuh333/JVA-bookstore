@@ -60,7 +60,7 @@ public class ShipperApiServlet extends HttpServlet {
                 return;
             }
         } catch (SQLException ex) {
-            writeJson(resp, 500, err("SERVER_ERROR", ex.getMessage()));
+            writeJson(resp, 500, err("SERVER_ERROR", "Có lỗi xảy ra"));
             return;
         }
 
@@ -160,8 +160,8 @@ public class ShipperApiServlet extends HttpServlet {
 
             writeJson(resp, 404, err("NOT_FOUND", "Unknown endpoint: " + path));
         } catch (Exception e) {
-            e.printStackTrace();
-            writeJson(resp, 500, err("SERVER_ERROR", e.getMessage()));
+            System.err.println("ShipperApiServlet error: " + e.getMessage());
+            writeJson(resp, 500, err("SERVER_ERROR", "Có lỗi xảy ra"));
         }
     }
 
@@ -281,8 +281,8 @@ public class ShipperApiServlet extends HttpServlet {
 
             writeJson(resp, 404, err("NOT_FOUND", "Unknown endpoint: " + path));
         } catch (Exception e) {
-            e.printStackTrace();
-            writeJson(resp, 500, err("SERVER_ERROR", e.getMessage()));
+            System.err.println("ShipperApiServlet error: " + e.getMessage());
+            writeJson(resp, 500, err("SERVER_ERROR", "Có lỗi xảy ra"));
         }
     }
 

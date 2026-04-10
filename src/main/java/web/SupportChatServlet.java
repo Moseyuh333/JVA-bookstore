@@ -76,7 +76,7 @@ public class SupportChatServlet extends HttpServlet {
             Map<String, Object> error = new HashMap<>();
             error.put("ok", false);
             error.put("error", "SERVER_ERROR");
-            error.put("message", ex.getMessage());
+            error.put("message", "Có lỗi xảy ra, vui lòng thử lại");
             resp.getWriter().write(gson.toJson(error));
         }
     }
@@ -117,7 +117,7 @@ public class SupportChatServlet extends HttpServlet {
             Map<String, Object> error = new HashMap<>();
             error.put("ok", false);
             error.put("error", "SERVER_ERROR");
-            error.put("message", ex.getMessage());
+            error.put("message", "Có lỗi xảy ra, vui lòng thử lại");
             resp.getWriter().write(gson.toJson(error));
         }
     }
