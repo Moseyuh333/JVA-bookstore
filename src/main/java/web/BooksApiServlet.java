@@ -208,11 +208,10 @@ public class BooksApiServlet extends HttpServlet {
     }
 
     private void sendServerError(HttpServletResponse resp, Exception ex) throws IOException {
-        System.err.println("BooksApiServlet error: " + ex.getMessage());
         resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         JsonObject obj = new JsonObject();
         obj.addProperty("error", "SERVER_ERROR");
-        obj.addProperty("message", "An internal error occurred");
+        obj.addProperty("message", ex.getMessage());
         writeJson(resp, obj);
     }
 

@@ -4,20 +4,6 @@
          xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
     <display-name>JVA Bookstore</display-name>
-
-    <!-- ====== Security Filter (must be FIRST) ====== -->
-    <filter>
-        <filter-name>securityFilter</filter-name>
-        <filter-class>filters.SecurityFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>securityFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-        <dispatcher>REQUEST</dispatcher>
-        <dispatcher>FORWARD</dispatcher>
-    </filter-mapping>
-
-    <!-- ====== Encoding Filter ====== -->
     <filter>
         <filter-name>encodingFilter</filter-name>
         <filter-class>filters.EncodingFilter</filter-class>
@@ -30,17 +16,6 @@
         <dispatcher>INCLUDE</dispatcher>
     </filter-mapping>
 
-    <!-- ====== Admin Authorization Filter ====== -->
-    <filter>
-        <filter-name>adminAuthFilter</filter-name>
-        <filter-class>filters.AdminAuthFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>adminAuthFilter</filter-name>
-        <url-pattern>/api/admin/*</url-pattern>
-    </filter-mapping>
-
-    <!-- ====== Sitemesh ====== -->
     <filter>
         <filter-name>sitemesh</filter-name>
         <filter-class>com.opensymphony.sitemesh.webapp.SiteMeshFilter</filter-class>
@@ -54,29 +29,6 @@
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
-    <!-- ====== Session Configuration ====== -->
-    <session-config>
-        <session-timeout>30</session-timeout>
-        <cookie-config>
-            <http-only>true</http-only>
-            <secure>false</secure>
-        </cookie-config>
-        <tracking-mode>COOKIE</tracking-mode>
-    </session-config>
-
-    <!-- ====== Error Pages (secure - no info leakage) ====== -->
-    <error-page>
-        <error-code>404</error-code>
-        <location>/error.jsp</location>
-    </error-page>
-    <error-page>
-        <error-code>403</error-code>
-        <location>/error.jsp</location>
-    </error-page>
-    <error-page>
-        <error-code>500</error-code>
-        <location>/error.jsp</location>
-    </error-page>
     <error-page>
         <exception-type>java.lang.Throwable</exception-type>
         <location>/error.jsp</location>
@@ -132,5 +84,8 @@
         <servlet-name>HealthServlet</servlet-name>
         <url-pattern>/api/health</url-pattern>
     </servlet-mapping>
+
+    
+    
 
 </web-app>

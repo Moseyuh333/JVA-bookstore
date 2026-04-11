@@ -196,8 +196,8 @@ public class CommentServlet extends HttpServlet {
     }
 
     private void handleServerError(HttpServletResponse response, Exception ex) throws IOException {
-        System.err.println("CommentServlet error: " + ex.getMessage());
+        ex.printStackTrace();
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        response.getWriter().write(gson.toJson(buildError("Có lỗi xảy ra, vui lòng thử lại")));
+        response.getWriter().write(gson.toJson(buildError("Có lỗi xảy ra: " + ex.getMessage())));
     }
 }

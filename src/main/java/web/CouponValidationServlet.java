@@ -159,7 +159,7 @@ public class CouponValidationServlet extends HttpServlet {
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         Map<String, Object> body = new HashMap<>();
         body.put("success", false);
-        body.put("message", "Lỗi hệ thống");
+        body.put("message", ex.getMessage() != null ? ex.getMessage() : "Lỗi hệ thống");
         response.getWriter().write(gson.toJson(body));
     }
 }

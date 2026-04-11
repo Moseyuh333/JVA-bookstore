@@ -21,9 +21,6 @@ import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 @WebServlet(name = "AuthServlet", urlPatterns = {
         "/api/login",
@@ -36,15 +33,10 @@ public class AuthServlet extends HttpServlet {
 
     private static final String ATTR_JSON_BODY = "AUTH_SERVLET_JSON_BODY";
 
-    // Rate limiting: max 5 failed login attempts per IP, reset after 15 minutes
-    private static final int MAX_LOGIN_ATTEMPTS = 5;
-    private static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000L; // 15 minutes
-    private static final ConcurrentHashMap<String, AtomicInteger> loginAttempts = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, AtomicLong> lockoutUntil = new ConcurrentHashMap<>();
-
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+        System.out.println("DEBUG AuthServlet - doPost called, path: " + req.getServletPath());
         resp.setContentType("application/json");
         String path = req.getServletPath();
         PrintWriter out = resp.getWriter();
@@ -64,9 +56,8 @@ public class AuthServlet extends HttpServlet {
                 out.write("{\"error\":\"Endpoint not found\"}");
             }
         } catch (Exception e) {
-            System.err.println("AuthServlet error: " + e.getMessage());
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"An internal error occurred\"}");
+            out.write("{\"error\":\"" + e.getMessage() + "\"}");
         } finally {
             out.flush();
         }
@@ -74,6 +65,7 @@ public class AuthServlet extends HttpServlet {
 
     private void handleLogin(HttpServletRequest req, HttpServletResponse resp, PrintWriter out)
             throws IOException, SQLException {
+        System.out.println("DEBUG AuthServlet - handleLogin called");
         try {
             String username = req.getParameter("username");
             String password = req.getParameter("password");
@@ -81,14 +73,6 @@ public class AuthServlet extends HttpServlet {
             if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.write("{\"error\":\"Username and password required\"}");
-                return;
-            }
-
-            // Rate limiting check
-            String clientIp = getClientIp(req);
-            if (isLockedOut(clientIp)) {
-                resp.setStatus(429); // Too Many Requests
-                out.write("{\"error\":\"Too many failed login attempts. Please try again later.\"}");
                 return;
             }
 
@@ -128,19 +112,12 @@ public class AuthServlet extends HttpServlet {
                 String role = DBUtil.getUserRole(username);
                 int userId = DBUtil.getUserIdByUsername(username);
 
-                // Fix session fixation: invalidate old session before creating new one
-                HttpSession oldSession = req.getSession(false);
-                if (oldSession != null) {
-                    oldSession.invalidate();
-                }
+                // ✅ Lưu session cho JSP
                 HttpSession session = req.getSession(true);
                 session.setAttribute("username", username);
                 session.setAttribute("role", role);
                 session.setAttribute("user_id", userId);
                 session.setAttribute("token", token);
-
-                // Clear rate limiting on successful login
-                clearLoginAttempts(clientIp);
 
                 String sellerStatus = null;
                 if ("seller".equals(role)) {
@@ -149,9 +126,10 @@ public class AuthServlet extends HttpServlet {
                         int shopId = ShopDAO.getShopIdByUserId(userId);
                         if (shopId > 0) {
                             session.setAttribute("shop_id", shopId);
+                            System.out.println("DEBUG Login - Shop ID: " + shopId);
                         }
                     } catch (Exception e) {
-                        System.err.println("Login - Failed to get seller info: " + e.getMessage());
+                        System.out.println("DEBUG Login - Failed to get seller info: " + e.getMessage());
                     }
                 }
 
@@ -173,15 +151,14 @@ public class AuthServlet extends HttpServlet {
 
                 out.write(response);
             } else {
-                recordFailedAttempt(clientIp);
                 resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 out.write("{\"error\":\"Invalid credentials\"}");
             }
 
         } catch (Exception e) {
-            System.err.println("Login error: " + e.getMessage());
+            e.printStackTrace();
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("{\"error\":\"An internal error occurred\"}");
+            out.write("{\"error\":\"Login error: " + e.getMessage() + "\"}");
         }
     }
 
@@ -283,8 +260,7 @@ public class AuthServlet extends HttpServlet {
                 EmailUtil.sendOTPEmail(email, otp);
                 out.write("{\"message\":\"OTP sent successfully\"}");
             } catch (Exception e) {
-                System.err.println("OTP email sending failed: " + e.getMessage());
-                out.write("{\"message\":\"OTP generated (email delivery may be delayed)\"}");
+                out.write("{\"message\":\"OTP generated (email disabled)\",\"debugOtp\":\"" + otp + "\"}");
             }
         } else {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -383,41 +359,5 @@ public class AuthServlet extends HttpServlet {
             System.err.println("AuthServlet - Failed to parse JSON body: " + e.getMessage());
             return null;
         }
-    }
-
-    // === Rate Limiting Helpers ===
-
-    private String getClientIp(HttpServletRequest req) {
-        String forwarded = req.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isEmpty()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return req.getRemoteAddr();
-    }
-
-    private boolean isLockedOut(String ip) {
-        AtomicLong until = lockoutUntil.get(ip);
-        if (until != null && System.currentTimeMillis() < until.get()) {
-            return true;
-        }
-        if (until != null && System.currentTimeMillis() >= until.get()) {
-            // Lockout expired, reset
-            lockoutUntil.remove(ip);
-            loginAttempts.remove(ip);
-        }
-        return false;
-    }
-
-    private void recordFailedAttempt(String ip) {
-        AtomicInteger attempts = loginAttempts.computeIfAbsent(ip, k -> new AtomicInteger(0));
-        int count = attempts.incrementAndGet();
-        if (count >= MAX_LOGIN_ATTEMPTS) {
-            lockoutUntil.put(ip, new AtomicLong(System.currentTimeMillis() + LOCKOUT_DURATION_MS));
-        }
-    }
-
-    private void clearLoginAttempts(String ip) {
-        loginAttempts.remove(ip);
-        lockoutUntil.remove(ip);
     }
 }

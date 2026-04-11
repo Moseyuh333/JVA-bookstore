@@ -56,11 +56,10 @@ public class AdminOrdersServlet extends HttpServlet {
                     break;
             }
         } catch (SQLException ex) {
-            System.err.println("AdminOrdersServlet error: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             Map<String, Object> body = new HashMap<>();
             body.put("success", false);
-            body.put("message", "Có lỗi xảy ra, vui lòng thử lại");
+            body.put("message", "Database error: " + ex.getMessage());
             resp.getWriter().write(gson.toJson(body));
         }
     }
@@ -94,11 +93,10 @@ public class AdminOrdersServlet extends HttpServlet {
                 resp.getWriter().write(gson.toJson(body));
             }
         } catch (SQLException ex) {
-            System.err.println("AdminOrdersServlet error: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             Map<String, Object> body = new HashMap<>();
             body.put("success", false);
-            body.put("message", "Có lỗi xảy ra, vui lòng thử lại");
+            body.put("message", ex.getMessage());
             resp.getWriter().write(gson.toJson(body));
         }
     }
@@ -464,13 +462,38 @@ public class AdminOrdersServlet extends HttpServlet {
         return value != null ? value : defaultValue;
     }
 
-    /**
-     * Authorization is now handled by AdminAuthFilter in web.xml.
-     * This method always returns true - kept for backward compatibility.
-     */
     private boolean isAuthorized(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        // Authorization is handled by AdminAuthFilter in web.xml
-        return true;
+        if (isLocalhost(req)) {
+            return true;
+        }
+        String expected = getAdminSecret();
+        String paramSecret = trimToNull(req.getParameter("secret"));
+        String headerSecret = trimToNull(req.getHeader("X-Admin-Secret"));
+        if (expected.equals(paramSecret) || expected.equals(headerSecret)) {
+            return true;
+        }
+        resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", false);
+        body.put("message", "Forbidden");
+        resp.getWriter().write(gson.toJson(body));
+        return false;
+    }
+
+    private boolean isLocalhost(HttpServletRequest req) {
+        String remote = req.getRemoteAddr();
+        return "127.0.0.1".equals(remote) || "0:0:0:0:0:0:0:1".equals(remote) || "::1".equals(remote);
+    }
+
+    private String getAdminSecret() {
+        String env = System.getenv("ADMIN_PANEL_SECRET");
+        if (env != null) {
+            env = env.trim();
+            if (!env.isEmpty()) {
+                return env;
+            }
+        }
+        return "dev-secret-key-change-me";
     }
 
     private String trimToNull(String value) {
