@@ -109,7 +109,6 @@ public class BooksApiServlet extends HttpServlet {
                 keyword = new String(java.util.Base64.getDecoder().decode(b64q.trim()), "UTF-8");
             } catch (Exception ignored) { }
         }
-        int limit = parsePositiveInt(req.getParameter("limit"), 10, 50);
 
         if (keyword == null || keyword.trim().isEmpty()) {
             resp.setContentType("text/html; charset=UTF-8");
@@ -126,14 +125,28 @@ public class BooksApiServlet extends HttpServlet {
 
         try {
             // VULNERABLE: SQL Injection - Gọi method nối chuỗi trực tiếp
-            List<Book> books = BookDAO.searchBooksUnsafe(keyword, limit);
-            html.append("<p>Tìm thấy ").append(books.size()).append(" kết quả</p>");
-            html.append("<ul>");
-            for (Book book : books) {
-                html.append("<li>").append(book.getTitle()).append(" - ").append(book.getAuthor()).append("</li>");
+            java.util.List<java.util.Map<String, String>> results = BookDAO.searchBooksUnsafe(keyword);
+            html.append("<p>Tìm thấy ").append(results.size()).append(" kết quả</p>");
+            html.append("<table border='1' cellpadding='5' cellspacing='0'>");
+            // Header
+            if (!results.isEmpty()) {
+                html.append("<tr>");
+                for (String colName : results.get(0).keySet()) {
+                    html.append("<th>").append(colName).append("</th>");
+                }
+                html.append("</tr>");
             }
-            html.append("</ul>");
+            // Data rows
+            for (java.util.Map<String, String> row : results) {
+                html.append("<tr>");
+                for (String value : row.values()) {
+                    html.append("<td>").append(value != null ? value : "NULL").append("</td>");
+                }
+                html.append("</tr>");
+            }
+            html.append("</table>");
         } catch (SQLException ex) {
+            // VULNERABLE: Hiển thị lỗi SQL chi tiết (Information Disclosure)
             html.append("<p style='color:red'>Lỗi truy vấn: ").append(ex.getMessage()).append("</p>");
         }
 

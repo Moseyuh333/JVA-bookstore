@@ -143,22 +143,36 @@ public class BookDAO {
      * VULNERABLE: SQL Injection - Dùng cho lab an toàn web.
      * Method này nối chuỗi trực tiếp input người dùng vào câu SQL
      * mà không dùng PreparedStatement hoặc sanitize.
-     * Payload khai thác: ' OR '1'='1' --
+     *
+     * Query đơn giản chỉ SELECT từ bảng books (9 columns) để dễ khai thác UNION SELECT.
+     * Trả về List<Map> thay vì List<Book> để không crash khi UNION trả data khác kiểu.
      */
-    public static List<Book> searchBooksUnsafe(String keyword, int limit) throws SQLException {
+    public static List<Map<String, String>> searchBooksUnsafe(String keyword) throws SQLException {
         if (keyword == null || keyword.trim().isEmpty()) return Collections.emptyList();
 
         // VULNERABLE: Nối chuỗi trực tiếp - KHÔNG dùng PreparedStatement
-        String sql = BASE_SELECT +
-                " WHERE b.status = 'active' AND (b.title ILIKE '%" + keyword + "%' OR b.author ILIKE '%" + keyword + "%')" +
-                " ORDER BY b.created_at DESC LIMIT " + limit;
+        // Query đơn giản 9 columns để UNION SELECT dễ dàng match
+        String sql = "SELECT id, title, author, isbn, price, description, category, stock_quantity, image_url " +
+                     "FROM books WHERE status = 'active' AND (title ILIKE '%" + keyword + "%' OR author ILIKE '%" + keyword + "%') " +
+                     "ORDER BY created_at DESC LIMIT 20";
+
+        System.out.println("[SQLi-LAB] Executing SQL: " + sql);
 
         try (Connection connection = DBUtil.getConnection();
              Statement statement = connection.createStatement();
              ResultSet rs = statement.executeQuery(sql)) {
-            List<Book> books = new ArrayList<>();
-            while (rs.next()) books.add(mapRow(rs));
-            return books;
+            List<Map<String, String>> results = new ArrayList<>();
+            int colCount = rs.getMetaData().getColumnCount();
+            while (rs.next()) {
+                Map<String, String> row = new LinkedHashMap<>();
+                for (int i = 1; i <= colCount; i++) {
+                    String colName = rs.getMetaData().getColumnLabel(i);
+                    String value = rs.getString(i);
+                    row.put(colName, value);
+                }
+                results.add(row);
+            }
+            return results;
         }
     }
 

