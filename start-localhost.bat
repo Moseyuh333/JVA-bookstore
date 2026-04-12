@@ -19,12 +19,16 @@ powershell -Command "$p = Get-NetTCPConnection -LocalPort 8081 -ErrorAction Sile
 REM Đợi 2 giây
 timeout /t 2 /nobreak >nul
 
-REM Rebuild nếu cần
-if not exist "target\ROOT.war" (
-    echo [2/3] Build project...
-    call mvn clean package -DskipTests
-) else (
-    echo [2/3] Project da duoc build (Bo qua buoc build)
+REM Luon rebuild project de dam bao ban moi nhat
+echo [2/3] Build project (mvn clean package)...
+call mvn clean package -DskipTests
+if errorlevel 1 (
+    echo.
+    echo ========================================
+    echo   LOI: Build that bai! Kiem tra log phia tren.
+    echo ========================================
+    pause
+    exit /b 1
 )
 
 REM Khởi động Java server với UTF-8 encoding

