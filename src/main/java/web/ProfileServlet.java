@@ -824,6 +824,11 @@ public class ProfileServlet extends HttpServlet {
         response.getWriter().write(gson.toJson(responseMap));
     }
 
+    /**
+     * VULNERABLE: Chấp nhận cả JSON lẫn form-urlencoded data.
+     * Khi body là form-urlencoded (từ HTML form), request.getParameter() được dùng.
+     * Kết hợp với session-based auth (JSESSIONID cookie tự động gửi) → CSRF có thể khai thác.
+     */
     private void createUserAddress(HttpServletRequest request, HttpServletResponse response) 
             throws IOException, SQLException {
         Map<String, Object> responseMap = new HashMap<>();
@@ -831,7 +836,32 @@ public class ProfileServlet extends HttpServlet {
         if (userId == null) {
             return;
         }
-        Map<String, Object> requestData = readJsonRequest(request);
+
+        // VULNERABLE: Fallback sang request.getParameter() nếu JSON body rỗng
+        // Điều này cho phép HTML form (CSRF) gửi dữ liệu thành công
+        Map<String, Object> requestData;
+        String contentType = request.getContentType();
+        boolean isFormData = contentType != null && 
+                (contentType.contains("application/x-www-form-urlencoded") || contentType.contains("multipart/form-data"));
+        
+        if (isFormData) {
+            // Đọc trực tiếp từ form parameters
+            requestData = new HashMap<>();
+            String[] fields = {"label", "recipientName", "phone", "line1", "line2", "ward", "district", "city", "province", "postalCode", "country", "note"};
+            for (String field : fields) {
+                String value = request.getParameter(field);
+                if (value != null) {
+                    requestData.put(field, value);
+                }
+            }
+            String isDefaultStr = request.getParameter("isDefault");
+            if ("true".equalsIgnoreCase(isDefaultStr)) {
+                requestData.put("isDefault", Boolean.TRUE);
+            }
+        } else {
+            requestData = readJsonRequest(request);
+        }
+
         try {
             UserAddress address = new UserAddress();
             address.setUserId(userId);

